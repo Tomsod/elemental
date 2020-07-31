@@ -1,0 +1,115 @@
+Elemental Mod ver. 1.0
+
+=== Main change: revamped, MM6-like elemental system ===
+
+All attacks (spell or otherwise) now belong to one of the following elements:
+fire, shock (electricity), cold, poison, physical (e.g. weapon attacks),
+mind, magic, holy (undead-targeting attacks), or energy (ignores resistances).
+
+It differs from MM6 in that mind is separate from magic (I think the reason
+there were so many magic-immune monsters in MM6 (undead, titans, elementals...)
+is that NWC wanted to make them immune to mental attacks, and those were
+magic-elemental), and there's a formal element for anti-undead spells.
+
+Spell elements mostly follow MM6, but there are some differences. Here's
+the complete list:
+
+All Fire spells, as well as Sunray, attack with fire.
+Sparks, Lightning Bolt and Starburst attack with electricity.
+Ice Bolt, Ice Blast and Souldrinker* attack with cold.
+Poison Spray, Acid Burst and Toxic Cloud attack with poison.
+Impolsion, Flying Fist**, Shrapmetal, and most direct-damage Earth spells
+are physical attacks.
+All Mind spells attack with mind.
+Mass Distortion, Spirit Lash, Harm, Prismatic Light, Armageddon
+and most debuffs attack with (non-elemental) magic.
+Turn Undead***, Destroy Undead and Control Undead attack with holy.
+Light Bolt attacks with energy, meaning it can't be resisted.
+Dragon Breath attacks with both fire and poison, much like MM8 Darkfire Bolt.
+For resisting this spell, the lesser of the two resistances applies.
+
+* I initially intended to make Souldrinker magic-elemental, but there's
+already Prismatic Light, and plenty of other magic spells, while cold
+was underrepresented.  Hopefully the "sepulchral cold" excuse makes sense.
+** This is a change from MM6.  I'm not completely sure the fist is not
+a metaphor, but if it's not, the physical damage makes more sense.
+*** Turn Undead cannot actually be resisted, but it won't affect
+creatures immune to holy (i.e. non-undead).
+
+Poisoned weapons once again attack with poison instead of body.
+Blasters attack with energy.
+
+Monster attacks and resistances have been reworked.  Generally,
+non-spellcasting monsters are vulnerable to magic; natural, non-poisonous
+monsters are vulnerable to poison, fire-based monsters are vulnerable to cold,
+and cold-based monsters are vulnerable to fire.  In other cases, poison
+resistance was copied from body, magic is approximately light and dark
+averaged, and for undead, spirit was converted to holy.  (Non-undead monsters
+are immune to holy by definition.)  Monsters that attacked with light
+and "earth" now attack with energy; dark attacks are converted to magic.
+Water attacks are now either cold or poison.
+
+The six elemental resistance spells have been renamed appropriately,
+so, Earth now has Magic Resistance spell, Body has Poison Resistance, etc.
+I've managed to draw new buff icons (on the buff panel in the middle-right),
+but the spellbook images and spell-casting animation are a bit beyond my skill.
+Thankfully, they are mostly vague enough to pass as-is.
+I've also renamed Protection from Magic to Immutability to avoid confusion.
+
+There's a couple of other minor changes, such as the new poison resistance
+protecting from the poisoned condition, and Phynaxian Crown boosting both
+cold and poison resistance.
+
+One notable tweak: base stats (Might, Intellect, etc.) are now more effective
+at preventing harmful conditions.  To elaborate: some conditions can be
+prevented by having high base stats, and others, by high elemental resistances.
+But in the original game even with 500+ in all stats the PC only had
+a 2-in-3 chance to resist stat-based conditions, while for resistance-based
+ones one only needed 50-60 or so to achieve the same level of protection.
+Now, base stats are about 4 times more effective for this purpose.
+
+
+=== Undead-related changes ===
+
+I've gone on a surprisingly lengthy detour with various undead-related changes
+while developing this mod.  In addition to the new holy element, these
+mostly concern undead PCs.
+
+The original lich immunities were weird!  The character got 200 body and
+mind resistance on lichification, and then any resistance that was 200 or above
+was treated as an immunity.  That meant a lich could become immune to
+other elements by stacking enough buffs; conversely, if body or mind resistance
+was lowered (e.g. by equipping Hareck's Leather), the existing immunity
+was lost.
+
+In this mod, liches are immune to poison and mind, always, and
+their resistances aren't even checked for this purpose.  In addition,
+zombified players are given the same immunities.  The price for this is the
+vulnerability to holy attacks.  Some monsters (priests, wizards and angels)
+can now cast Turn Undead or Destroy Undead if they detect an undead in your
+party.  Turn Undead scares all undead PC, unconditionally; Destroy Undead
+deals holy damage to one PC.  Liches have some holy resistance (20 plus any
+luck bonus); other zombified PCs are completely vulnerable.
+
+Reanimation spell is also changed: the zombified creadure now has the same
+changes as the zombified PC (poison and mind immunity, but vulnerable to holy).
+Monsters that can cast Destroy Undead may target these monsters as well.
+
+Also, dark temples now don't turn stoned players and liches to zombies.
+
+
+=== Bug fixes ===
+
+While browsing the disassembly, I also found and fixed a few bugs in the
+original game.  I've forwarded those to GrayFace, so hopefully the fixes
+will be included in the next version of MM7Patch.  But for now, they'll be
+in this mod, because why not.
+
+Fix: "of Assasins" and "of Barbarians" weren't dealing elemental damage.
+Fix: Kelebrim wasn't substracting 30 from earth (now poison) resistance.
+Fix: Armageddon could not be resisted (now magic resistance applies).
+Fix: control undead on the GM level did not work.
+Fix: charm on the M level did not work; also, on the GM level it acted
+like on E, and on E it acted like on M.
+Fix: when monster cast spells on another monster, wrong resistance was checked.
+Fix: some pre-placed monsters had spells they couldn't cast.

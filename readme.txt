@@ -12,5 +12,6 @@ archives newly created by MMArchive (at least not by the version I used).
 Instead, you can copy an existing archive, then delete all files from it.
 That usually works.
 
-The games folder contains tools for patching dungeon files
-instead of the files themselves.  See the readme there.
+The tools folder contains tools I used for patching dungeon files
+in games.lod.  See the readme there.  The misc folder has the text files
+included in the release for MMExtension compatibility.

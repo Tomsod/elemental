@@ -1,0 +1,135 @@
+ID	Name	Gender
+1	Простой длинный меч	masculine
+2	Сабля Эльфов	feminine
+3	Острый длинный меч	masculine
+4	Грациозный меч	masculine
+5	Клинок дуэлянта	masculine
+6	Двуручный меч	masculine
+7	Великий меч	masculine
+8	Героический меч	masculine
+9	Палаш	masculine
+10	Стальной палаш	masculine
+11	Меч Чемпиона	masculine
+12	Тесак	masculine
+13	Тесак Гоблинов	masculine
+14	Регнанский Тесак	masculine
+15	Кинжал	masculine
+16	Кинжал Гномов	masculine
+17	Кинжал Зуб Акулы	masculine
+18	Кинжал Убийцы	masculine
+19	Кинжал мага	masculine
+20	Длинный кинжал	masculine
+21	Эрафийский длинный кинжал	masculine
+22	Изысканный длинный кинжал	masculine
+23	Простой топор	masculine
+24	Боевой топор	masculine
+25	Топор гномов	masculine
+26	Стальной топор	masculine
+27	Топор минотавров	masculine
+28	Секира	feminine
+29	Секира воина	feminine
+30	Секира Палача	feminine
+31	Грубое копье	neuter
+32	Копье солдата	neuter
+33	Копье эльфов	neuter
+34	Жестокое копье	neuter
+35	Величественное копье	neuter
+36	Алебарда	feminine
+37	Утяжеленная алебарда	feminine
+38	Мощная алебарда	feminine
+39	Трезубец	masculine
+40	Заостренный трезубец	masculine
+41	Трезубец Войны	masculine
+42	Простой лук	masculine
+43	Большой лук	masculine
+44	Эльфийский большой лук	masculine
+45	Составной лук	masculine
+46	Лук Грифона	masculine
+47	Арбалет	masculine
+48	Тяжелый арбалет	masculine
+49	Идеальный арбалет	masculine
+50	Булава	feminine
+51	Шипастая булава	feminine
+52	Булава Фанатика	feminine
+53	Утренняя Звезда Гномов	feminine
+54	Великий кистень	masculine
+55	Молот	masculine
+56	Молот Войны	masculine
+57	Молот гномов	masculine
+58	Палица	feminine
+59	Шипастая палица	feminine
+60	Стальная палица	feminine
+61	Посох	masculine
+62	Посох со стальной сердцевиной	masculine
+63	Посох Чародея	masculine
+64	Бластер	masculine
+65	Лучевое ружье	neuter
+66	Кожаные Доспехи	plural
+67	Клепанная кожа	feminine
+68	Кожаные доспехи офицера	plural
+69	Регнанские кожаные доспехи	plural
+70	Королевские кожаные доспехи	plural
+71	Кольчуга	feminine
+72	Стальная кольчуга	feminine
+73	Тонкая кольчуга	feminine
+74	Великолепная кольчуга	feminine
+75	Золотая кольчуга	feminine
+76	Латы	plural
+77	Роскошные латы	plural
+78	Латы аристократа	plural
+79	Щит Гоблина	masculine
+80	Деревянный щит	masculine
+81	Щит всадника	masculine
+82	Безупречный щит	masculine
+83	Финаксийский щит	masculine
+84	Небольшой круглый деревянный щит	masculine
+85	Бронзовый щит	masculine
+86	Металлический щит	masculine
+87	Легированный щит	masculine
+88	Величественный щит	masculine
+89	Рогатый шлем	masculine
+90	Шлем новобранца	masculine
+91	Прочный шлем	masculine
+92	Финаксийский шлем	masculine
+93	Шлем могреда	masculine
+94	Шляпа крестьянина	feminine
+95	Шляпа путешественника	feminine
+96	Модная шляпа	feminine
+97	Корона	feminine
+98	Корона Знати	feminine
+99	Королевская корона	feminine
+100	Кожаный пояс	masculine
+101	Красивый пояс	masculine
+102	Крепкий пояс	masculine
+103	Серебряный пояс	masculine
+104	Позолоченный пояс	masculine
+105	Кожаная накидка	feminine
+106	Накидка охотника	feminine
+107	Накидка рейнджера	feminine
+108	Элегантная накидка	feminine
+109	Великолепная накидка	feminine
+110	Латные рукавицы	plural
+111	Стальные латные рукавицы	plural
+112	Серебряные рукавицы	plural
+113	Драконьи рукавицы	plural
+114	Рукавицы из могреда	plural
+115	Кожаные сапоги	plural
+116	Стальные сапоги	plural
+117	Сапоги рейнджера	plural
+118	Сапоги рыцаря	plural
+119	Сапоги паладина	plural
+120	Латунное кольцо	neuter
+121	Кольцо с жемчугом	neuter
+122	Платиновое кольцо	neuter
+123	Изумрудное кольцо	neuter
+124	Кольцо с сапфиром	neuter
+125	Кольцо чернокнижника	neuter
+126	Очарованное кольцо	neuter
+127	Ослепительное кольцо	neuter
+128	Кольцо Чародея	neuter
+129	Кольцо Ангела	neuter
+130	Амулет Глазное яблоко	masculine
+131	Бронзовый амулет	masculine
+132	Амулет ведьмы	masculine
+133	Брелок Голова Смерти	masculine
+134	Амулет Солнца	masculine

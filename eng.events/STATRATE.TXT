@@ -1,0 +1,30 @@
+Value	Bonus	Rating	
+0	-6	Nonexistent
+3	-5	Crippled
+5	-4	Very Poor
+7	-3	Poor
+9	-2	Very Low
+11	-1	Low
+13	0	Average
+15	+1	Above Average
+17	+2	Fair
+19	+3	Good
+21	+4	Quite Good
+25	+5	Very Good
+30	+6	High
+35	+7	Quite High
+40	+8	Very High
+50	+9	Great
+75	+10	Superb
+100	+11	Amazing
+125	+12	Incredible
+150	+13	Gigantic
+175	+14	Fantastic
+200	+15	Astounding
+225	+16	Astonishing
+250	+17	Monumental
+275	+18	Tremendous
+300	+19	Colossal
+350	+20	Awesome
+400	+25	Awe Inspiring
+500	+30	Ultimate

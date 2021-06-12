@@ -1,4 +1,4 @@
-Elemental Mod ver. 1.0
+== Elemental Mod ver. 1.0 ==
 
 === Main change: revamped, MM6-like elemental system ===
 
@@ -91,7 +91,7 @@ party.  Turn Undead scares all undead PC, unconditionally; Destroy Undead
 deals holy damage to one PC.  Liches have some holy resistance (20 plus any
 luck bonus); other zombified PCs are completely vulnerable.
 
-Reanimation spell is also changed: the zombified creadure now has the same
+Reanimation spell is also changed: the zombified creature now has the same
 changes as the zombified PC (poison and mind immunity, but vulnerable to holy).
 Monsters that can cast Destroy Undead may target these monsters as well.
 
@@ -113,3 +113,493 @@ Fix: charm on the M level did not work; also, on the GM level it acted
 like on E, and on E it acted like on M.
 Fix: when monster cast spells on another monster, wrong resistance was checked.
 Fix: some pre-placed monsters had spells they couldn't cast.
+
+-------------------------------------------------------------------------------
+
+== Elemental Mod ver. 2.0 ==
+
+While I originally intended to create a separate balance-concerned mod for
+MM7, I ended up extending this mod with all of my ideas instead.  As such,
+"Elemental Mod" is slowly becoming an artifact title.  Well, at least it's
+catchy!  The final vision for this mod is to "polish" the game by improving
+game mechanics, adding convenient new features, and hopefully improving, or at
+least not breaking too much, balance.
+
+This release mostly concerns itself with the magic system (broadly speaking).
+There's also a bunch of rule changes and a surprising number of bug fixes.
+Hopefully, the latter will be eventually assimilated by the MM7Patch.
+
+
+=== Alchemy changes ===
+
+The first main topic of change is potions.  In general, alchemy should be more
+useful and versatile now, and having a Druid is rewarding.
+
+Several new black potions have been added.  Six of them provide a temporary
+immunity to one of six elements (fire, shock, cold, poison, mind, or magic).
+Their duration is quite short, but complete elemental immunity is hard to
+obtain otherwise, which gives an edge to Druids who alone can brew these
+potions freely.  There's also a black potion that duplicates the Pain
+Reflection spell.
+
+Alchemy has been given an offensive option it lacked before by repurposing
+weapon-enchancing elemental potions into short-range AOE thrown weapons.
+(They still retain their old utility, as well.)  Thrown potions are affected
+by gravity, so their range is limited, especially for characters with low
+Might.  On impact, they explode, damaging monsters in a small radius.  Damage
+is (power)d3 for Flaming and Freezing potions and (power)d2 for Shocking and
+Noxious potions.
+
+Another new quasi-potion is holy water.  It's outside the alchemy system, but
+behaves like a potion otherwise.  Holy water can be bought at most temples and
+acts similarly to the potions from the above paragraph, able to either
+temporarily make one weapon Undead Slaying, or be thrown to damage a group of
+undead monsters.  Unlike elemental potions, the thrown holy water is safe to
+use at a point-blank range -- unless, of course, you have undead in the party.
+Holy water is especially notable as one of the few ways to reliably damage
+Ghosts and Wraiths, who are now immune to unenchanted weapons.
+
+Swift Potions have also been given a new functionality: drinking them causes
+the character to instantly recover (i.e. get an extra turn).  It's probably a
+suboptimal use of a potion in most cases, but some spells (e.g. Ressurection)
+have very long recovery which could make it worthwhile in a combat situation.
+
+There's a number of tweaks as well.  Notably, black potions of Pure Attribute
+(Might, Accuracy, etc.) now give a bonus equal to their power instead of a
+fixed +50.  Since they're usually generated with 20-30 power, this adds a
+strategic dilemma: do you drink one as soon as you find it, obtaining a
+smaller bonus early, or wait until you find a Philosopher's Stone and an
+Alchemy-boosting item, which together can improve the potion's power to 100+,
+thus giving your character a bigger, but delayed, bonus?  You're still limited
+to one of each potion per character, so you cannot choose both!
+
+Potions of Bless, Heroism and Stoneskin have been made a lot less useless by
+adding half of the potion's power to the resulting buff's power.  (Previously,
+these potions always gave the minimal possible bonus of +5, which could be a
+bug.)
+
+Slaying Potions now have a permanent effect if posiible.  Honestly, I was
+somewhat surprised to learn they didn't have it already.
+
+Most potions (specifically, those for which power matters) now have variable
+price dependent on power.  For typical randomly generated power values, the
+resulting price should stay around the same.
+
+The potion recipes sold at alchemy shops have been improved as well.
+They now list the exact needed mixtures instead of cryptic guidelines, and
+reading them automatically adds the recipe to your journal.  With the
+proliferation of spoilers, trying to get the players to discover the recipes
+for themselves is pointless anyway!
+
+Last, but not least, I've added an ability to brew any potion in a single
+click, provided you know the relevant recipes, have the reagents and enough
+bottles, and posess the necessary Alchemy skill!  It's as simple as
+Ctrl-clicking on an existing potion, or its recipe.  The game will then
+attempt to brew another potion of the same type, first from other potions, or
+otherwise from base reagents.  It works exactly like brewing it manually, and
+you will be given a descriptive message if the process fails.  This
+functionality is mostly intended to help streamline batch-brewing potions.
+I'm quite proud of this one.
+
+
+=== Item enchantments ===
+
+The next major part of this release concerns item enchantments AKA bonuses,
+such as "Vampiric" or "of the Gods".  Actually, I mostly concerned myself with
+weapon bonuses specifically.  One of the mod's goals is to strengthen weapon
+combat, as it's commonly considered inferior to magic, and improving weapon
+enchantments helps towards that.
+
+First off, I added a total of nine non-numeric enchantments.  In the below
+list, "tlvl" stands for treasure level, which ranges from 1 to 6.
+
+Spectral: any weapon, tlvl 3-5.  Improves the weapon's resistance penetration
+by changing the element of the attack from physical to magical when it's
+beneficial.  This allows damaging monsters that are immune to normal weapons,
+such as Oozes; the mod also gives this immunity to Ghosts and Wraiths, and
+this enchantment is one of the best ways to deal with them.  It's still
+helpful against other monsters, as many enemies are vulnerable to Magic.
+When fighting with two weapons, only one of which is Spectral, the enchantment
+only affects 50% of the combined damage.
+
+Cursed: any weapon, tlvl 4-5.  When hitting a monster with this weapon, it
+will apply the Cursed debuff with a 20% chance.  Monsters that fail a Magic
+resistance roll will, for the next 20 minutes, have halved chance to-hit, 50%
+chance of a spell failure, and about 25% lowered elemental resistances.
+This is mostly identical to MM6 Mass Curse spell (except for the last part),
+but in this mod, weapons are the only source of the debuff.  Wielding two
+Cursed weapons provides no additional benefit.
+
+Of The Wraith: any weapon, tlvl 5-6, uncommon.  Combines effects of Spectral
+and Cursed.
+
+Soul Stealing: melee weapon, tlvl 5-6, rare.  A counterpart to Vampiric
+weapons, it will restore some spell points when the character kills an enemy
+in melee.  Wielding two such weapons doubles the effect.
+
+Of Backstabbing: melee weapon, tlvl 3-5.  Another "double damage" enchantment,
+this one works on any monster, but only if they're turned away from you.
+Usually enemies will look at you in combat; reliable ways to get them to turn
+around are Mass Fear (or Turn Undead), or Berserk to provoke infighting.
+
+Lightweight: body armor and shields, tlvl 3-5.  Reduces the armor's recovery
+penalty by 10, assuming it's not already nullified by skill.  This means that
+Lightweight leather and shields never slow the character down at all, and
+chain and plate with this enchantment will have a penalty of 0 and 5
+respectively when combined with Expertise in relevant skill.
+
+Of Leaping: boots, tlvl 3-4.  Each pair of boots of Leaping increases jump
+power by 20%, and multiple pairs stack linearly.  They do not affect the Jump
+spell.
+
+Of Permanence: shields, helmets and jewelry, tlvl 4-5, uncommon.  Make the
+wearer immune to the Dispel Magic monster spell.  This spell is nerfed in
+several ways in this mod, and this is one of them.
+
+Sturdy: anything but belts or jewelry, tlvl 3-4, rare.  The enchanted item can
+never break.  Essentially duplicates the effect of Harden Item potion.
+
+Next, I've completely rehauled the temporary enchantment system as provided by
+Fire Aura and such.  Now pretty much any weapon can have a temporary
+enchantment, including already enchanted weapons and artifacts.  This means
+that a weapon can have two bonuses at the same time (permanent and temporary),
+and it also means that Fire Aura no longer becomes useless when you outfit the
+party with good enchanted weapons.  The only limitation is that the temporary
+enchantment musn't be similar in nature to already present bonuses.  For
+example, Ghoulsbane cannot be enchanted with Fire Aura or holy water, and
+weapons of Darkness are unaffected by Vampiric Weapon spell and Swift Potions.
+Also, due to their unique nature, bows of Carnage can only be made Swift.
+
+Among other changes, Undead Slaying weapons now act similarly to the new
+Spectral weapons, dealing Holy damage when attacking Undead.  As noted above,
+this makes holy water very helpful against Ghosts and Wraiths in partucular.
+Most Undead are very vulnerable to Holy, making this enchantment superior to
+Spectral within its scope of effect, especially considering the double damage.
+
+Also, Assassins' weapons now have backstab instead of the modest Disarm bonus.
+
+
+=== Spell tweaks ===
+
+Probably the core content of this release is the multitude of player spell
+tweaks.  Some spells are improved, some are nerfed, and one spell is entirely
+replaced.  One goal I strived towards was to make GM changes of spell effects
+more significant, as many spells had underwhelming changes at grandmastery in
+vanilla.  This was partly because the magic system was blindly copied from
+MM6, where any spell could be cast at any level of mastery, and even high-cost
+spells were substantially better at Master (which was harder to attain than
+MM7 Master).  But in MM7 spell availability is limited by skill, and as the
+result the weaker effects of higher-level spells were simply discarded, often
+leaving them overpowered from the get-go, and with no room for improvement at
+GM.  As such, many spells are now rebalanced by shifting them one level of
+mastery upwards, with Expert having the effect of MM6 Normal skill, Master
+casting as Expert, and GM working as the previous Master.  Some other spells
+were instead just made stronger at GM.  I also improved most debuffs.
+
+Condition cure spells are the prime example of the "shifting" approach, as the
+vanilla GM bonus of unlimited delay was just too useless -- as rightly noted,
+at Master the allowed delay is already 7 days, and who would wait over a week
+before casting a cure?  So, all Expert- and Master-level cure spells are now
+shifted to 3 min/level at E, 1 hour/level at M, and 1 day/level at GM.  Cure
+Weakness and Remove Fear are improved instead, acting on the entire party on
+GM.  Awaken already had, so I just removed the unlimited delay to keep it
+uniform, but left the shortened recovery in place.
+
+Ressurection merits special mention, as I felt having a slightly improved
+Raise Dead as Spirit's ultimate spell was a bit underwhelming.  Now it's a
+"combat revival" sort of spell, as not only it ressurects, it also doesn't
+inflict weakness and restores some HP, leaving the character ready for combat.
+It can still cure eradication like in vanilla, and it remains the only cure
+spell without a time limit.  The only practical downside is the 10-minute
+recovery this spell imposes; I haven't changed that.  (The vanilla description
+claims that higher skill lowers recovery, but this was never actually
+implemented, and I removed that note.)
+
+As mentioned above, I reworked the debuff spells.  While generally magic is
+overpowered, this is not the case for debuffs, which are frustratingly
+unreliable, especially in the late game.  Thus, I made spell skill improve
+their success chance.  The improvement isn't dramatic -- with high skill
+you'll get maybe 150% of the base chance against tougher targets -- but it's
+still noticeable.  A price to pay for this is that the debuff duration is now
+mostly fixed -- it increases with mastery, but the numeric skill value doesn't
+affect it anymore.  Generally it's still enough to last through the combat,
+though.  Turn Undead was also affected by the latter change for uniformity,
+but since it cannot be resisted at all, higher skill reduces recovery instead.
+
+I also added one completely new spell: Spectral Weapon.  It replaces Fate,
+and, true to its name, can enchant one weapon to become Spectral.  It's a Self
+counterpart to Fire Aura and Vampiric Weapon, and works much the same.  The
+spell can be useful both in early game, when you need to fight Ghosts and
+Oozes, and later, when a lot of monsters are less resistant to Magic than to
+physical attacks.  Fate still can be found on scrolls, but you cannot learn it.
+The icon for the new spell may be replaced with a better one in the future.
+
+Next, I backported some spell changes from MM8.  Ice Blast now deals 12 +
+(level)d6 damage (up from d3), Spirit Lash now damages all nearby monsters,
+and Regeneration is massively nerfed from 5/10/15 HP per 5 minutes to 2/3/4.
+
+Returning to shifted spells, Flight now only lasts 10 minutes/level at M, and
+still drains magic at GM.  The three Light buff spells have all been nerfed as
+well: Day of the Gods and Day of Protection now have lower mastery multipliers
+(up to x4 at GM), and Hour of Power has more consistent duration -- the
+vanilla MM7 used a very confusing formula that was probably wrong at several
+places; now the duration exactly matches the duration of its constituent
+spells cast at the equivalent skill level.  Strictly speaking, the two latter
+buffs are now no better than casting their spells separately, assuming equal
+skill; however, improving their effect requires only putting points in the
+school of Light, as opposed to the seven schools that the separate spells are
+spread amongst, so casting them can still be advantageous.
+
+Other GM-level changes: GM Feather Fall grants the same bonus as boots of
+Leaping, GM Torch Light gives even brighter light than M, and GM Wizard Eye
+lasts permanently and can never be dispelled, not even by rest or travel.
+If you do want to dispel it for some reason, just cast it again.  By the way,
+Immolation now has this feature as well, as leaving it on can be dertimental
+around friendly monsters.
+
+Enchant Item is both buffed and nerfed.  On one hand, Master EI now normally
+enchants at tlvl3 (down from 4), and GM, at tlvl4 (down from 5).  To enchant
+at the vanilla power, you need to cast the spell at noon (from 11:00 to 12:59).
+(The noon thing was planned but never implemented in MM6.)  On the other hand,
+special (non-numeric) enchantments now scale with spell's tlvl instead of being
+stuck at tlvl3, which was likely a bug.  Now you can even get "of the Dragon",
+"of Darkness" and other top-tier enchantments, as long as you cast at GM and
+at noon.  I also eliminated the exploit that allowed to enchant items of Arms
+(or Dodging, or the Fist) higher than normally possible.
+
+Preservation now halves the chance of monsters causing instant death or
+eradication.  According to the manual, it was supposed to completely protect
+from these conditions, but it was evidently deemed too powerful.  True, but I
+think partial resistance is okay.  Makes the spell more useful, too.
+
+Mass Distortion now cannot be entirely resisted, unless the monster is immune
+to Magic.  (In vanilla it had a debuff-like resist-to-nullify check AND an
+ordinary damage resistance check, and I consider this a bug.)
+
+Sunray has been buffed by allowing it to be cast in some aboveground indoors
+locations.  Generaly, if it's not a cave, dungeon, or anywhere in the Pit, you
+should be able to cast Sunray while in it (during the daytime, of course).  As
+it was in vanilla, the spell just couldn't compete with Meteor Shower and
+similar outdoor nukes, so now it hopefully will be more useful.
+
+Finally, Berserk spell gained a new functionality: it can be cast on a PC to
+trigger the Insane condition (unless the PC is immune), with all its benefits
+and downsides.
+
+
+=== Item changes ===
+
+The next batch of changes concerns artifacts and various other items.
+Firstly, I added new properties to some artifacts both to make the artifacts
+more competitive, and to make said properties more common.  Here's the list:
+
+Splitter and Forge Gauntlets grant immunity to Fire.
+Twilight grants immunity to Poison (as in the element).
+Phynaxian Crown grants immunity to Cold (and some Poison resistance).
+Mind's Eye grants immunity to Mind.
+Elven Chainmail is now lightweight and adds +5 to Bow skill.
+Old Nick has been significantly buffed number-wise.  It also now backstabs
+instead of slaying elves.
+Corsair also backstabs now.
+Kelebrim grants immunity to Dispel Magic.
+Hermes' Sandals increase jump height.
+
+Elfbane has been completely replaced with Sacrificial Dagger, a new
+Goblin-only artifact that increases maximum SP and has Soul Stealing property.
+
+Morcarack (the Emerald Island dragon) now drops his scales instead of a random
+tlvl 6 item.  This means he can no longer be multilooted until the party has a
+full set of endgame gear; instead, the scales can later be made into one of
+two unique items, plate armor or a shield.  Both grant Fire immunity (and
+Morcarack is now also immune to fire, as he should be), and the plate is also
+lightweight.  (Please note that the graphics for the new items are VERY
+temporary; I'll replace them eventually as soon as I can involve some artist.)
+
+Genie Lamps now give a quintuple bonus (from +5 to +20), and they can only
+increase primary stats and resistances, much like in MM6 (except I put
+Intellect and Personality on the same month to fit).
+
+Basic-level spellbooks can now be found randomly, FWIW.
+
+Blasters and wands are now equipped in the missile weapon slot (like bows).
+Accordingly, they by default will not fire in melee range; if you do want to,
+use the quick spell button (or shift-click on a monster) with no quick spell
+set.  Also, I replaced wand spells Sparks and Spirit Lash with Slow and
+Psychic Shock, as the former two aren't really ranged spells.
+
+On that topic, somewhere in the process of reworking wands I introduced a bug
+that often prevents them from making a sound when fired.  I wasn't able to fix
+it, unfortunately.  It does not affect gameplay, though.
+
+More wand changes: they no longer disappear when they're out of charges.  You
+can see the maximum possible amount of charges the wand can have in its
+description.  Wands often spawn not fully charged.  Equipped empty wands are
+colored red, as if they were broken.  Wand price also depends on both its
+current and maximun charges.  Finally, magic shops can now recharge wands!
+Fancier shops can restore more charges, up to 80% of maximum.
+
+The next few tweaks are intended to make melee slightly stronger.  Firstly,
+the limit on attack speed has been raised -- it's now 10 attacks per round for
+blasters and 5 for any other weapon.  This limit is enforced both in
+turn-based and realtime mode.  Next, when using two weapons, the skill of the
+weapon in the right hand affects the damage now.  (It used to be the left
+hand, which was unfortunate as neither sword nor dagger skill give damage
+bonuses to most classes.)  Lastly, most two-handed swords and axes gained a
+bonus to damage, which will hopefully make them more competitive.
+
+I also reworked the damage dice of many artifacts to bring them in line with
+their base item types.  Charele was a special case, as its improbable 3d9+18
+damage was the entire point of the artifact.  Now it has halberd dice and a
+more realistic to-hit bonus, but it gets the two-handed damage bonus as an
+unique artifact property.  Oh, and Mash is a club instead of a mace now.
+
+
+=== Other changes ===
+
+Probably the largest diversion in this release was when I decided to rework
+the reputation system.  Now, instead of being stored per-map, your reputation
+is shared between all locations in the same region.  The main benefit of the
+new system is that the reputation given in castles and other indoor locations
+is now meaningful.  The reputation penalties given in the dungeons (for theft,
+murder etc.) now matter as well.  Additionally, having all of a dozen
+different reputation counters made it easier to implement a gamescript command
+to change reputation in another region; many quests have been changed to make
+use of this.  The only places where reputation doesn't matters are Eeofol and
+Shoals, as those regions are unpopulated; it always stays at zero there.
+
+Other reputation changes: almost all quests change it now.  Theft doesn't,
+unless you get caught.  Armageddon has a heavy reputation penalty.  Town hall
+bounties improve reputation slightly.  Finally, "disreputable" NPCs such as
+gypsies and pirates will now only change reputation in their home region, but
+this change is permanent.  Rationale: with reputation affecting prices, the
+Duper NPC, unlike in MM6, becomes almost useless.  Now, at least, the Duper's
+Merchant bonus can be used at full effect if you travel to another region
+after hiring them.
+
+Temple donation rewards have been increased in power proportionally to the
+donation cost.  They still depend on the day of the week, as well.
+
+Barrels and cauldrons found in some maps give level-dependent bonuses now, up
+to +15 at level 99.  Drink now or save for later, your choice!  On that note,
+I also changed the barrels in the Walls of Mist so that they refill only once
+per year instead of on each visit.  This was exploitable even in vanilla, but
+with the above improvement it's just too much.
+
+In vanilla, HP and SP could rarely rise above normal maximum.  It would stay
+that way (unless lost or spend) until the first healing effect (including
+regeneration), which would reset it to the limit.  That has been redone.  Now
+there are more ways to legitimately "overheal" (Shared Life, Souldrinker,
+Vampiric and Soul Stealing weapons, and occasionally potions), and healing
+won't remove the extra points, but they will quickly dissipate on their own,
+reducing by 25% every five minutes.
+
+Monster Dispel Magic has been made less annoying.  In addition to items of
+Permanence, it's now possible for party-wide enchantments to resist being
+dispelled (a random PC's resistance is checked for each buff).  The base odds
+of resisting have been increased fourfold as well, as it's one of the cases
+where the game checks primary stats, and such checks were unreasonably
+difficult in vanilla.
+
+Cursed PCs have greatly reduced Luck for symmetry with Cursed monsters.
+
+Wishing wells in Bracada and Eeofol are now limited-use (5/day for the former
+and 12/month for the latter).  I also slightly changed the possible effects.
+
+There are now exactly three challenges of each type instead of seven +5 ones
+and scarcely any others.  Hopefully this will reduce the number of duplicates.
+
+Right-clicking on character stats now displays the base stat value (without
+items) and stat rating (which is used for most stat-related bonuses).
+
+Dwarven guards have been put on a diet & exercise regimen.  Now they're much
+less likely to get stuck in doorways and block passages with their girth.
+
+Some spell descriptions have been rewritten; notably, spell schools now list
+learnable spells.
+
+Rest encounter probabilities are now more varied (used to be 10% almost
+everywhere), and you won't be attacked by normally peaceful monsters.  Also,
+resting is now safe if all monsters on the map are peaceful -- used to be that
+your golem triggered goblin attacks in your castle, which was clearly a bug.
+
+I tweaked shops a little: Tatalian island stores are now open at night, and
+Castle Harmondale shops stay open till 23:00.  Also, castle potion shop is
+replaced by a magic shop (for convenient selling), and former Nighon magic shop
+now sells black potions (more reason to get there early).
+
+Most AOE and shrapnel-like spells now should display a single combined message
+for all damaged monsters -- at least in turn-based mode.  It can break if
+another spell is cast before the previous one hits.  Similarly, stun,
+paralysis, and halved armor messages are combined with the damage messages.
+The only weapon that will still produce two messages is Splitter -- the
+fireball that it spawns usually overwrites the regular damage message.  I
+might fix that later.
+
+Convenience feature: when one of the equipped items is broken, the character's
+AC number becomes colored red.  Empty wands do not trigger this, though.
+
+Steadwick ore smiths can now make two-handed weapons, bows, and shields.
+
+Leaving the Grand Temple of the Moon now only deletes the Telekinesis scrolls
+that were obtained from the unlimited-use secret panel.
+
+Bookshelves are reworked slightly -- almost any spellbook can be looted, and I
+removed the possibility of finding nothing -- if there's anything left, you
+will always find it.  On that topic, high Perception affects bookshelves loot.
+
+Many sarcophages in the Barrows have decent items inside, but graverobbing has
+consequences!  Again, high Perception helps.
+
+Finally, banks now add a 1% interest each week, like in older games.
+
+
+=== Bug fixes ===
+
+The more I mess around with MM7's code, the more bugs I discover.  So why not
+to fix them!  Eventually most of these should end up in the MM7Patch.
+
+Fix: Gibbet wasn't dealing extra damage to dragons or demons.
+Fix: temporary enchantment duration strings weren't localized.
+Fix: some quests were giving/reducing reputation four times instead of one.
+Fix: leave map event didn't trigger when using stables or a boat.
+Fix: faerie pipes award wasn't given to all characters.
+Fix: Archibald was supposed to only give you a blaster if you were on a quest
+to slay Xenofex.
+Fix: white barrels never generated randomly.
+Fix: pickpocketing an item produced a wrong message.
+Fix: failing to cure insanity still caused weakness.
+Fix: failing to raise dead still caused weakness and set HP to 1.
+Fix: GM Immutability could protect from execution in castles.
+Fix: Archers couldn't use their fire arrows.
+Fix: Sacrifice didn't cure conditions or aging.
+Fix: Master Healer NPC removed armor skills.
+Fix: Lloyd's Beacon was usable in Clanker's Lab before you disabled its
+defences.
+Fix: buff duration was displayed incorrectly in some circumstances.
+Fix: Water Walking used power every 5 minutes instead of 20.
+Fix: Control Undead had wrong description.
+Fix: "of Feather Falling" enchantment never generated randomly.
+Fix: zombification worked incorrectly in v1.0 of my patch.
+Fix: some alchemical explosions could break hardened items.
+Fix: item bonuses to GM Bow skill didn't improve damage.
+Fix: "N/A" string that displays when no bow is equipped wasn't localized.
+Fix: The Maze's magic resistance pool could be used repeatedly.
+Fix: Seknit Undershadow's tea didn't stack with other Endurance bonuses.
+Fix: stealing Mr. Malwick's wand gave it wrong max charges count.
+Fix: falling from Celeste was supposed to choose one of 6 different loactions.
+Fix: when visiting a region for a first time, weather wasn't initialised.
+Fix: Bracada docks teleporter was slightly off-target.
+Fix: resting in dark region taverns was often way too long.
+Fix: clubs had no base recovery set (it's 100 now).
+Fix: Hunter NPC and Hunter PC had the same string resource (which broke some
+localizations).
+Fix: Castle Harmondale bookshelf checked for School of Sorcery membership.
+Fix: some objects in the Grand Temple of the Moon reset after save reload.
+Fix: in a couple maps, scripted traps had prohibitive skill requirements.
+Fix: drowning dealt fire damage (it's cold now).
+Fix: travelling to a new region on foot duplicated ground items.
+Fix: some parts of Walls of Mist's keyhole pillars weren't clickable.
+Fix: a part of For Riverstride's exit door didn't work.
+Fix: Welnin +2 accuracy well wasn't clickable.
+Fix: dragons and titans dropped too little gold.
+Fix: mace paralysis checked poison resistance (it's physical now).

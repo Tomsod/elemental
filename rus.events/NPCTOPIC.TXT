@@ -1,0 +1,580 @@
+#	Topic	Requires	Notes	Text #	Owner(s)	Owner #
+1	Замок Хармондейл	0	Praise for Glorious Castle Harmondale	6	Lord Markham	1
+2	Гонка	0	Isn't this hunt exciting?	5	Lord Markham	1
+3	Поздравления	0	Speech for winning the contest (replace with topic 8)	7	Lord Markham	1
+4	Ваш корабль...	0	(replaces topic 7) go to castle Harmondale now	8	Lord Markham	1
+5	Правила Гонки	0	Basic Rules	25	Judge	2
+6	Что у вас есть?	0	"Check for quest items + returns for each one, all, and none"	26-33	Judge	2
+7	Приветствия	0	Gives Questbit 1	2	Docent	3
+8	Изумрудный остров	0		1	Docent	3
+9	Состязание	0		4	Docent	3
+10	Гонка за мусором	0		34	Bard	4
+11	Инструменты	0		35	Bard	4
+12	Лютня	0		36	Bard	4
+13	Купить лютню за 500 золотых	0		"37,38"	Bard	4
+14	Океан	0	Blahblahblah	12	Sally	5
+15	Морская раковина	0	Wanna buy a seashell (there are more elsewhere)	13	Sally	5
+16	Купить раковину за 100 золотых 		Wanna buy a seashell (there are more elsewhere)	"14,15"	Sally	5
+17	Хармондейл	0	Blahblahblah	10	Mr. Malwick	6
+18	Предложение	0	Give proposal	9	Mr. Malwick	6
+19	Принять желз	0	Give wand	11	Mr. Malwick	6
+20	Отказаться от жезла	0	Offer chance again	3	Mr. Malwick	6
+21	"Вашу шляпу, пожалуйста..."	0	Blahblahblah	19	Sal Sharktooth	7
+22	Храм	0	Robbery attempt	16	Sal Sharktooth	7
+23	Отдать шляпу Салу	0	Robbery attempt	17	Sal Sharktooth	7
+24	Оставить шляпу	0	Robbery attempt	18	Sal Sharktooth	7
+25	Я вас предупреждал...	0	Tease	20	Sal Sharktooth	7
+26	"Что ж, хорошо..."	0	Blahblahblah	21	Mr. Malwick	6
+27	Снадобье на шляпу?	0	"Trade hat for red potion + positive, negative, and no potion returns"	39	Adventurer 1	8
+28	Бандиты	0	Bad guys in temple	22	Adventurer 1	8
+29	Синие снадобья	0	Blue potion instructions	23	Adventurer 1	8
+30	Обменять снадобье на шляпу	0		"40,42"	Adventurer 1	8
+31	Оставить снадобье	0		41	Adventurer 1	8
+32	Путешествие на лодке	0	Not sailing yet	24	William	0
+33	Отчалить!	0	"Won contest, ready to go"	43	William	0
+34	Пропавшие участники	0	Markham's go look for contestants	44	Markham	1
+35	Пропавшие участники		Markham's go look for contestants + Positive and negative returns	"45,46"	Markham	1
+36	Пропавшие люди	0	0	47	Donna	0
+37	Заброшенный Храм	0	0	48	Donna	0
+38	Стрекозавры	0	0	49	Mia Lucille	0
+39	Дракон	0	0	50	Mia Lucille	0
+40	Пещера Дракона	0	0	51	Grant	0
+41	Участники	0	0	52	Grant	0
+42	Выключить сопровождение	0	Sets questbit 17	53	Docent	3
+43	Включить сопровождение	0	removes questbit 17	54	Docent	3
+44	Разбойник 	0	0	55	William Lasker	15
+45	Разбойник 	0	0	"56,57"	William Lasker	15
+46	Шпион	0	0	60	William Lasker	15
+47	Шпион	0	0	58-65	William Lasker	15
+48	Выпить чаю	0	0	66	Seknit Undershadow	16
+49	Наемный убийца	0	0	67-70	Seknit Undershadow	16
+50	Наемный убийца	0	0	71-73	Seknit Undershadow	16
+51	Крестоносец	0	0	74	Sir Charles Quixote	17
+52	Крестоносец	0	0	"75,76"	Sir Charles Quixote	17
+53	Герой	0	0	77	Sir Charles Quixote	17
+54	Герой	0	0	78-82	Sir Charles Quixote	17
+55	Привет	0	0	83-87	Alice Hargreave	54
+56	Злодей	0	0	88-90	William Setag	18
+57	Злодей	0	0	"91,92"	William Setag	18
+58	Посвящённый	0	0	93	Bartholomew Hume	38
+59	Посвящённый	0	0	95	Bartholomew Hume	38
+60	Посвящённый	0	0	94	Bartholomew Hume	38
+61	Магистр	0	0	96	Bartholomew Hume	38
+62	Магистр	0	0	"97-8,134-6"	Bartholomew Hume	38
+63	Ниндзя	0	0	136-9	Stephan Sand	39
+64	Ниндзя	0	0	140-2	Stephan Sand	39
+65	Мастер стрелок	0	0	143-6	Lawrence Mark	40
+66	Мастер стрелок	0	0	"147,148"	Lawrence Mark	40
+67	Маг-воин	0	0		Steagal Snick	41
+68	Маг-воин	0	0		Steagal Snick	41
+69	Снайпер	0	0		Steagal Snick	41
+70	Снайпер	0	0		Steagal Snick	41
+71	Чемпион	0	0		Leda Rowan	42
+72	Чемпион	0	0		Leda Rowan	42
+73	Всадник	0	0		Frederick Org	43
+74	Всадник	0	0		Frederick Org	43
+75	Черный Рыцарь	0	0		Frederick Org	43
+76	Черный Рыцарь	0	0		Frederick Org	43
+77	Властелин - рейнджер	0	0		Lysander Sweet	44
+78	Властелин - рейнджер	0	0		Lysander Sweet	44
+79	Охотник	0	0		ebednezar Sour	45
+80	Охотник	0	0		ebednezar Sour	45
+81	Охотник за головами	0	0		ebednezar Sour	45
+82	Охотник за головами	0	0		ebednezar Sour	45
+83	Охотник?	0	Hunter End Promo Quest		Faerie King	52
+84	Сердце Леса	0	Ranger Lord quest		Oldest Tree	53
+85	Сердце Леса	0	Ranger Lord quest		Oldest Tree	53
+86	Священник Света	0	0		Rebecca Devine	46
+87	Священник Света	0	0		Rebecca Devine	46
+88	Священник	0	0		Daedalus Falk	47
+89	Священник	0	0		Daedalus Falk	47
+90	Священник Тьмы	0	0		Daedalus Falk	47
+91	Священник Тьмы	0	0		Daedalus Falk	47
+92	Чародей	0	0		Thomas Grey	48
+93	Чародей	0	0		Thomas Grey	48
+94	Архимаг	0	0		Thomas Grey	48
+95	Архимаг	0	0		Thomas Grey	48
+96	Лич	0	0		Halfgild Wynac	49
+97	Лич	0	0		Halfgild Wynac	49
+98	Великий друид	0	0		Anthony Green	50
+99	Великий друид	0	0		Anthony Green	50
+100	Верховный Друид	0	0		Anthony Green	50
+101	Верховный Друид	0	0		Anthony Green	50
+102	Чернокнижник	0	0		Tor Anwyn	51
+103	Чернокнижник	0	0		Tor Anwyn	51
+104	Части голема	0	0		Golem	56
+105	Обмен голов	0	0		Golem	56
+106	Гоблины	0	0		Butler	58
+107	Спасение гномов	0	0		Dwarf King	59
+108	Спасение гномов	0	0		Dwarf King	59
+109	Использовать Эликсир	0	0		Dwarf Engineer	60
+110	Использовать Эликсир	0	0		Dwarf Prisoner 1	61
+111	Использовать Эликсир	0	0		Dwarf Prisoner 2	62
+112	Использовать Эликсир	0	0		Dwarf Prisoner 3	63
+113	Использовать Эликсир	0	0		Dwarf Prisoner 4	64
+114	Использовать Эликсир	0	0		Dwarf Prisoner 5	65
+115	Использовать Эликсир	0	0		Dwarf Prisoner 6	66
+116	Приглашение...	0	See my boss		Ellen Rockway	67
+117	Фальшивые планы	0	Good work giving the elves false plans		Ellen Rockway	67
+118	Артефакт	0	Good work giving me the artifact		Ellen Rockway	67
+119	Предательство?	0	You betrayed us?		Ellen Rockway	67
+120	Приглашение...	0	See my boss		Alain Hani	68
+121	Фальшивый узник	0	Good work giving the humans the false prisoner		Alain Hani	68
+122	Артефакт	0	Good work giving me the artifact		Alain Hani	68
+123	Предательство?	0	You betrayed us?		Alain Hani	68
+124	Узник Войны	0	0		Queen Catherine	69
+125	Узник Войны	0	0		Queen Catherine	69
+126	Вот фальшивый узник...	0	0		Queen Catherine	69
+127	Планы Риверстрайда	0	0		Queen Catherine	69
+128	Планы Риверстрайда	0	0		Queen Catherine	69
+129	Мы украли планы...	0	0		Queen Catherine	69
+130	Артефакт	0	0		Queen Catherine	69
+131	Планы Риверстрайда	0	0		ElfKing	70
+132	Планы Риверстрайда	0	0		ElfKing	70
+133	Вот фальшивые планы...	0	0		ElfKing	70
+134	Взлом тюрьмы	0	0		ElfKing	70
+135	Взлом тюрьмы	0	0		ElfKing	70
+136	Мы спасли Лорена!..	0	0		ElfKing	70
+137	Артефакт	0	0		ElfKing	70
+138	Подсказка	0	0		Arbiter	74
+139	Пропажа	0	0		Arbiter	74
+140	Артефакт	0	0		Arbiter	74
+141	Я выбираю вас!	0	0		Evil Arbiter	77
+142	Подсказка	0	0		Evil Arbiter	77
+143	Я выбираю вас!	0	0		Judge Fairweather	78
+144	Подсказка	0	0		Judge Fairweather	78
+145	Испытательный Полигон	0	0		Gavin Magnus	79
+146	Испытательный Полигон	0	0		Gavin Magnus	79
+147	Храм Тьмы	0	0		Resurectra	80
+148	Храм Тьмы	0	0		Resurectra	80
+149	Удар по дьяволам	0	0		Resurectra	80
+150	Удар по дьяволам	0	0		Resurectra	80
+151	Вампиры	0	0		Crag Hack	81
+152	Вампиры	0	0		Crag Hack	81
+153	Сосуды Души	0	0		Sir Caneghm	82
+154	Сосуды Души	0	0		Sir Caneghm	82
+155	Толберти	0	0		Robert the Wise	83
+156	Толберти	0	0		Robert the Wise	83
+157	Храм Света	0	0		Kastore	84
+158	Храм Света	0	0		Kastore	84
+159	Удар по дьяволам	0	0		Kastore	84
+160	Удар по дьяволам	0	0		Kastore	84
+161	Сосуды Души	0	0		Maximus	85
+162	Сосуды Души	0	0		Maximus	85
+163	Лаборатория Кланкера	0	0		Dark Shade	86
+164	Лаборатория Кланкера	0	0		Dark Shade	86
+165	Роберт Мудрый	0	0		Tolberti	87
+166	Роберт Мудрый	0	0		Tolberti	87
+167	Инкубатор	0	0		Archibald	88
+168	Инкубатор	0	0		Archibald	88
+169	Последнее задание	0	0		Resurectra	80
+170	Последнее задание	0	0		Resurectra	80
+171	Последнее задание	0	0		Kastore	84
+172	Последнее задание	0	0		Kastore	84
+173	Войти в Храм Света	0	0		Dungeon Entrance	89
+174	Войти в Храм Тьмы	0	0		Dungeon Entrance	90
+175	Томас Грей	0	0		Eric Swarrel	281
+176	Книжная лавка	0	0		Eric Swarrel	281
+177	Книжная лавка	0	0		Eric Swarrel	281
+178	Кости Зокарра	0	0		Dwarf King	59
+179	Квест	0	0		Tarin Withern	93
+180	Квест	0	0		Tarin Withern	93
+181	Квест	0	0		Mazim Dusk	
+182	Квест	0	0		Mazim Dusk	
+183	Квест	0	0		Davrick Peladium	
+184	Квест	0	0		Davrick Peladium	
+185	Квест	0	0		Norbert Thrush	
+186	Письмо Траша	0	0		Lord Markham	
+187	Квест	0	0		Norbert Thrush	
+188	Квест	0	0		Johann Kerrid	
+189	Свирель	0	0		Faerie King	
+190	Квест	0	0		Johann Kerrid	
+191	Квест	0	0		Niles Stantley	
+192	Квест	0	0		Niles Stantley
+193	Квест	0	0		Niles Stantley
+194	Квест	0	0		Spark Burnkindle
+195	Квест	0	0		Spark Burnkindle
+196	Квест	0	0		Seth Drakkson
+197	Квест	0	0		Seth Drakkson
+198	Квест	0	0		Darron Temper
+199	Квест	0	0		Darron Temper
+200	Эксперт посоха				
+201	Мастер посоха				
+202	Великий магистр посоха				
+203	Эксперт меча				
+204	Мастер меча				
+205	Великий магистр меча				
+206	Эксперт кинжала				
+207	Мастер кинжала				
+208	Великий магистр кинжала
+209	Эксперт топора
+210	Мастер топора
+211	Великий магистр топора
+212	Эксперт копья
+213	Мастер копья
+214	Великий магистр копья
+215	Эксперт лука
+216	Мастер лука
+217	Великий магистр лука
+218	Эксперт булавы
+219	Мастер булавы
+220	Великий магистр булавы
+221	Эксперт древнего оружия
+222	Мастер древнего оружия
+223	Великий магистр древнего оружия
+224	Эксперт щита
+225	Мастер щита
+226	Великий магистр щита
+227	Эксперт кожаных доспехов
+228	Мастер кожаных доспехов
+229	Великий магистр кожаных доспехов
+230	Эксперт кольчуги
+231	Мастер кольчуги
+232	Великий магистр кольчуги
+233	Эксперт лат
+234	Мастер лат
+235	Великий магистр лат
+236	Эксперт магии Огня
+237	Мастер магии Огня
+238	Великий магистр магии Огня
+239	Эксперт магии Воздуха
+240	Мастер магии Воздуха
+241	Великий магистр магии Воздуха
+242	Эксперт магии Воды
+243	Мастер магии Воды
+244	Великий магистр магии Воды
+245	Эксперт магии Земли
+246	Мастер магии Земли
+247	Великий магистр магии Земли
+248	Эксперт магии Духа
+249	Мастер магии Духа
+250	Великий магистр магии Духа
+251	Эксперт магии Мысли
+252	Мастер магии Мысли
+253	Великий магистр магии Мысли
+254	Эксперт магии Тела
+255	Мастер магии Тела
+256	Великий магистр магии Тела
+257	Эксперт магии Света
+258	Мастер магии Света
+259	Великий магистр магии Света
+260	Эксперт магии Тьмы
+261	Мастер магии Тьмы
+262	Великий магистр магии Тьмы
+263	Эксперт опознания предметов
+264	Мастер опознания предметов
+265	Великий магистр опознания предметов
+266	Эксперт торговли
+267	Мастер торговли
+268	Великий магистр торговли
+269	Эксперт починки предметов
+270	Мастер починки предметов
+271	Великий магистр починки предметов
+272	Эксперт атлетики	
+273	Мастер атлетики	
+274	Великий магистр атлетики	
+275	Эксперт медитации	
+276	Мастер медитации	
+277	Великий магистр медитации	
+278	Эксперт восприятия	
+279	Мастер восприятия	
+280	Великий магистр восприятия	
+281	Эксперт дипломатии	
+282	Мастер дипломатии	
+283	Великий магистр дипломатии	
+284	Эксперт воровства	Not used
+285	Мастер воровства	Not used
+286	Великий магистр воровства	Not used
+287	Эксперт нейтрализации ловушек	
+288	Мастер нейтрализации ловушек
+289	Великий магистр нейтрализации ловушек
+290	Эксперт ловкости
+291	Мастер ловкости
+292	Великий магистр ловкости
+293	Эксперт рукопашного боя
+294	Мастер рукопашного боя
+295	Великий магистр рукопашного боя
+296	Эксперт опознания монстров
+297	Мастер опознания монстров
+298	Великий магистр опознания монстров
+299	Эксперт оружейник
+300	Мастер оружейник
+301	Великий магистр оружейник
+302	Эксперт воровства
+303	Мастер воровства
+304	Великий магистр воровства		
+305	Эксперт алхимии		
+306	Мастер алхимии		
+307	Великий магистр алхимии		
+308	Эксперт обучения		
+309	Мастер обучения		
+310	Великий магистр обучения		
+311	Охота за вознаграждение		
+312	Заплатить штраф		
+313	Квест		
+314	Квест		
+315	Элси Педертон		James Teacher Hints
+316	Джиллиан Митрит		James Teacher Hints
+317	Тугор Слайсер		James Teacher Hints
+318	Чедрик Таунсейвер		James Teacher Hints
+319	Азног Слэшер		James Teacher Hints
+320	Токен Фист		James Teacher Hints
+321	Далин Кинэдж		James Teacher Hints
+322	Карн Стоунклевер		James Teacher Hints
+323	Кладерин Сильверпойнт		James Teacher Hints
+324	Селин Фальконай		James Teacher Hints
+325	Ланши Равенсайт		James Teacher Hints
+326	Кардрик Верный		James Teacher Hints
+327	Брат Ротхэм		James Teacher Hints
+328	Пэтвин Феллберн		James Teacher Hints
+329	Исрам Галлоусвелл		James Teacher Hints
+330	Федвин Смитсон		James Teacher Hints
+331	Рабиса Недлон		James Teacher Hints
+332	Мийон Быстрый		James Teacher Hints
+333	Медвари Драконтрекер		James Teacher Hints
+334	Халиан Невемор		James Teacher Hints
+335	Декиан Форджрайт		James Teacher Hints
+336	Брэнд Мастер		James Teacher Hints
+337	Ашен Темпер		James Teacher Hints
+338	Блейз 		James Teacher Hints
+339	Рислин Гринсторм		James Teacher Hints
+340	Гейл		James Teacher Hints
+341	Тобрен Рейншильд		James Teacher Hints
+342	Торрент		James Teacher Hints
+343	Лара Стоунрайт		James Teacher Hints
+344	Аваланш		James Teacher Hints
+345	Хитер Дримрайт		James Teacher Hints
+346	Бенджамин Спокойный		James Teacher Hints
+347	Майлс Фезервинд		James Teacher Hints
+348	Ксавьер Бремен		James Teacher Hints
+349	Брат Бомбах		James Teacher Hints
+350	Темпус		James Teacher Hints
+351	Самюэль Бенсон		James Teacher Hints
+352	Пейдж Блюсван		James Teacher Hints
+353	Бетольд Каверхилл		James Teacher Hints
+354	Бригхэм Скромный		James Teacher Hints
+355	Томас Мор		James Teacher Hints
+356	Гарет Умелец		James Teacher Hints
+357	Ванда Фоустрайк		James Teacher Hints
+358	Эвандар Томас		James Teacher Hints
+359	Тесса Гринсвард		James Teacher Hints
+360	Кейн		James Teacher Hints
+361	Гаррет Доутс		James Teacher Hints
+362	Петра Клеарай		James Teacher Hints
+363	Ленорд Скиннер		James Teacher Hints
+364	Силк Квиктанг		James Teacher Hints
+365	Оберик Крейн		James Teacher Hints
+366	Кеннет Вейн		James Teacher Hints
+367	Ульбрехт Дебошир		James Teacher Hints
+368	Норрис 		James Teacher Hints
+369	Джени Свифтфут		James Teacher Hints
+370	Райвен Охотник		James Teacher Hints
+371	Паула Брайтспир		James Teacher Hints
+372	Ласитер Убийца		James Teacher Hints
+373	Лин Шадоураннер		James Teacher Hints
+374	Эверил Найтвокер		James Teacher Hints
+375	Элзбет Винтерспун		James Teacher Hints
+376	Люсид Эппл		James Teacher Hints
+377	Дороти Сеньяк		James Teacher Hints
+378	Вильям Девис		James Teacher Hints
+379	Хелена Морнингстар		James Teacher Hints
+380	Гэвин Магнус 		James Teacher Hints
+381	Сет Даркенмор		James Teacher Hints
+382	Арчибальд		James Teacher Hints
+383	Пустая бочка		
+384	Красная бочка
+385	Желтая бочка
+386	Синяя бочка
+387	Оранжевая бочка
+388	Зеленая бочка
+389	Пурпурная бочка
+390	Белая бочка
+391	Пустой котел
+392	Дымящийся котел
+393	Морозный котел
+394	Шоковый котел
+395	Ядовитый котел
+396	Мусорная куча
+397	Мусорная куча
+398	Мусорная куча
+399	Вступить в бой на Арене
+400	Членство в Гильдии Стихий
+401	Членство в Гильдии Эго
+402	Членство в Гильдии Воздуха
+403	Членство в Гильдии Земли
+404	Членство в Гильдии Огня
+405	Членство в Гильдии Воды
+406	Членство в Гильдии Тела
+407	Членство в Гильдии Мысли
+408	Членство в Гильдии Духа
+409	Членство в Гильдии Света
+410	Членство в Гильдии Тьмы
+411	Мусорная куча
+412	Костер
+413	Костер
+414	Чаша с едой
+415	Пустой бочонок
+416	Бочонок		
+417	Гриб		
+418	Лорд Мархэм		James Quest Hint
+419	Мастер вор		James Quest Hint
+420	Сторожевые башни		James Quest Hint
+421	Билл Ласкер		James Quest Hint
+422	Леди Кармин		James Quest Hint
+423	Наемные убийцы		James Quest Hint
+424	Ромтракс Бессердечный		James Quest Hint
+425	Крестоносцы		James Quest Hint
+426	Самое волшебное		James Quest Hint
+427	Злодеи		James Quest Hint
+428	Обучение монахов		James Quest Hint
+429	Медузы		James Quest Hint
+430	Храм Баа		James Quest Hint
+431	Пропавшие овцы		James Quest Hint
+432	Шифры		James Quest Hint
+433	Природа слизня		James Quest Hint
+434	Медузы		James Quest Hint
+435	Цитадель Титанов		James Quest Hint
+436	Арена		James Quest Hint
+437	Чемпионаты на Арене		James Quest Hint
+438	Дом с привидениями		James Quest Hint
+439	Призраки		James Quest Hint
+440	Секретный проход		James Quest Hint
+441	Феи		James Quest Hint
+442	Сумасшедший лес		James Quest Hint
+443	Самое Старое Дерево		James Quest Hint
+444	Охота за головами		James Quest Hint
+445	Профессия - охота за головами		James Quest Hint
+446	Приливные пещеры		James Quest Hint
+447	Архипелаг Эвенморн		James Quest Hint
+448	Карты рифов		James Quest Hint
+449	Проклятие		James Quest Hint
+450	Части голема		James Quest Hint
+451	Големы		James Quest Hint
+452	Свиток Божественного Вмешательства		James Quest Hint
+453	Божество		James Quest Hint
+454	Сосуды Души		James Quest Hint
+455	Обряды		James Quest Hint
+456	Каменный Круг		James Quest Hint
+457	Летний круг		James Quest Hint
+458	Кладбище		James Quest Hint
+459	Ориентация в курганах		James Quest Hint
+460	Страна Титанов		James Quest Hint
+461	Мегадракон		James Quest Hint
+462	Квест		Statuette
+463	Квест		Statuette
+464	Квест		Painting
+465	Квест		Painting
+466	Квест		Arcomage
+467	Квест		Arcomage
+468	Каменный город		James Quest Hint
+469	Каменный город		James Quest Hint
+470	Проход в Нигон		James Quest Hint
+471	Туннели чернокнижников		James Quest Hint
+472	Курганы		James Quest Hint
+473	Медузы		James Quest Hint
+474	Копи красных гномов		James Quest Hint
+475	Статуи		James Quest Hint
+476	Каменный город		James Quest Hint
+477	Хармондейл		James Quest Hint
+478	Повстанцы		James Quest Hint
+479	Замок Хармондейл		James Quest Hint
+480	Тулареанские пещеры		James Quest Hint
+481	Пещеры Белого утеса		James Quest Hint
+482	Форт Риверстрайд		James Quest Hint
+483	Трофей		James Quest Hint
+484	Судья		James Quest Hint
+485	Пропажа и находка		James Quest Hint
+486	Выбор		James Quest Hint
+487	Испытательный Полигон		James Quest Hint
+488	Небеса		James Quest Hint
+489	Бездна		James Quest Hint
+490	Небеса		James Quest Hint
+491	Загадочные убийства		James Quest Hint
+492	Криган		James Quest Hint
+493	Поражение в войне		James Quest Hint
+494	В Дейе		James Quest Hint
+495	Роланд Энротский		James Quest Hint
+496	Сосуды Души		James Quest Hint
+497	Чернокнижники		James Quest Hint
+498	Защита Кланкера		James Quest Hint
+499	Учителя эксперты		James Quest Hint
+500	Пропавшие люди		James Quest Hint
+501	Изготовить оружие		
+502	Изготовить доспехи		
+503	Изготовить предмет		
+504	Сигнал 		James Hint
+505	Стрекозавры		James Hint
+506	Упавшие деревья		James Hint
+507	Телепортеры Бракады		James Hint
+508	Перестройка замка		Butler Text
+509	Памятники		Butler Text
+510	Спорная территория		Butler Text
+511	Замок Хармондейл		Butler Text
+512	Огни маяков		Spy Text
+513	Заплатить 1000 золота		Ambush
+514	Не платить		Ambush
+515	Купить наконечники стрел за 200 золотых		Trading Triangle
+516	Продать тулареанскую древесину		Trading Triangle
+517	Купить перья грифонов за 200 золотых		Trading Triangle
+518	Продать наконечники стрел		Trading Triangle
+519	Купить тулареанскую древесину за 200 золотых		Trading Triangle
+520	Продать перья грифонов		Trading Triangle
+521	Купить песок за 2000 золотых	1	Trading Triangle
+522	Продать энротское вино	1	Trading Triangle
+523	Купить стеклянные бутылки за 2000 золотых	2	Trading Triangle
+524	Продать песок	2	Trading Triangle
+525	Купить энротское вино за 2000 золотых	3	Trading Triangle
+526	Продать стеклянные бутылки	3	Trading Triangle
+527	Расписание движения кораблей		James Hint
+528	Нигонский туннель		James Hint
+529	Торговля		James Hint
+530	Пьедестал Ускорения		
+531	Пьедестал Устойчивости к Магии		
+532	Пьедестал Дня Богов		
+533	Пьедестал Щита		
+534	Пьедестал Устойчивости к Холоду		
+535	Пьедестал Устойчивости к Огню		
+536	Пьедестал Мужества		
+537	Пьедестал Заклания		
+538	Пьедестал Устойчивости к Мысли		
+539	Пьедестал Устойчивости к Яду		
+540	Пьедестал Каменной кожи		
+541	Пьедестал Устойчивости к Грому		
+542	Игра на Силу		
+543	Игра на Выносливость		
+544	Игра на Интеллект					
+545	Игра на Силу духа					
+546	Игра на Меткость					
+547	Игра на Скорость					
+548	Игра на Удачу					
+549	Состязание на Силу					
+550	Состязание на Выносливость					
+551	Состязание на Интеллект					
+552	Состязание на Силу духа					
+553	Состязание на Меткость					
+554	Состязание на Скорость					
+555	Состязание на Удачу					
+556	Испытание Силы					
+557	Испытание Выносливости					
+558	Испытание Интеллекта					
+559	Испытание Силы духа					
+560	Испытание Меткости
+561	Испытание Скорости
+562	Испытание Удачи
+563	Вызов Силы
+564	Вызов Выносливости
+565	Вызов Интеллекта
+566	Вызов Силы духа
+567	Вызов Меткости
+568	Вызов Скорости
+569	Вызов Удачи
+570	Предатель!
+571	Святилище
+572	Состязания
+573	Пока вы не ушли...
+574	Броня из драконьей чешуи
+575	Сделать латы за 4000 золотых
+576	Сделать щит за 2000 золотых					
+577	Продать чешую за 2500 золотых					
+578	Еще не готово?					
+579						

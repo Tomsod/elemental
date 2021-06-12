@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define byte(address) (*(uint8_t *) (address))
@@ -80,6 +81,608 @@ static void erase_code(uintptr_t address, int length)
 
 //---------------------------------------------------------------------------//
 
+enum elements
+{
+    FIRE = 0,
+    ELECTRICITY = 1,
+    COLD = 2,
+    POISON = 3,
+    PHYSICAL = 4,
+    HOLY = 6,
+    MIND = 7,
+    MAGIC = 8,
+    ENERGY = 9,
+    FIRE_POISON = 10,
+};
+
+#define IMMUNE 200
+
+#define GLOBAL_TXT 0x5e4000
+
+enum spcitems_txt
+{
+    SPC_CARNAGE = 3,
+    SPC_FROST = 5,
+    SPC_SPARKS = 7,
+    SPC_FLAME = 11,
+    SPC_POISON = 13,
+    SPC_VAMPIRIC = 16,
+    SPC_DRAGON_SLAYING = 40,
+    SPC_DARKNESS = 41,
+    SPC_DRAGON = 46,
+    SPC_SWIFT = 59,
+    SPC_UNDEAD_SLAYING = 64,
+    SPC_DAVID = 65,
+    SPC_ASSASSINS = 67,
+    SPC_BARBARIANS = 68,
+    // 73+ are my addition
+    SPC_SPECTRAL = 73,
+    SPC_CURSED = 74,
+    SPC_WRAITH = 75,
+    SPC_SOUL_STEALING = 76,
+    SPC_BACKSTABBING = 77,
+    SPC_LIGHTWEIGHT = 78,
+    SPC_LEAPING = 79,
+    SPC_PERMANENCE = 80,
+    SPC_STURDY = 81,
+    SPC_COUNT = 81,
+};
+
+enum player_stats
+{
+    STAT_MIGHT = 0,
+    STAT_INTELLECT = 1,
+    STAT_PERSONALITY = 2,
+    STAT_ENDURANCE = 3,
+    STAT_ACCURACY = 4,
+    STAT_SPEED = 5,
+    STAT_LUCK = 6,
+    STAT_FIRE_RES = 10,
+    STAT_POISON_RES = 13,
+    STAT_MELEE_DAMAGE_BASE = 26,
+    STAT_HOLY_RES = 33,
+    STAT_FIRE_POISON_RES = 47,
+};
+
+#define CLASS_LICH 35
+
+#define SKIP(bytes) char JOIN(unknown_, __COUNTER__)[bytes]
+#define JOIN(a, b) JOIN2(a, b)
+#define JOIN2(a, b) a ## b
+
+struct __attribute__((packed)) item
+{
+    uint32_t id;
+    uint32_t bonus;
+    uint32_t bonus_strength;
+    uint32_t bonus2;
+    uint32_t charges;
+    uint32_t flags;
+    uint8_t body_slot;
+    uint8_t max_charges;
+    uint8_t owner;
+    SKIP(1);
+    uint64_t temp_ench_time;
+};
+
+struct __attribute__((packed)) spell_buff
+{
+    uint64_t expire_time;
+    uint16_t power;
+    uint16_t skill;
+    uint16_t overlay_id;
+    uint8_t caster;
+    uint8_t bits;
+};
+
+#define PLAYER_MAX_ITEMS 138
+
+struct __attribute__((packed)) player
+{
+    uint64_t conditions[20];
+    SKIP(8);
+    char name[16];
+    SKIP(4);
+    uint16_t might_base;
+    SKIP(2);
+    uint16_t intellect_base;
+    SKIP(2);
+    uint16_t personality_base;
+    SKIP(2);
+    uint16_t endurance_base;
+    SKIP(2);
+    uint16_t speed_base;
+    SKIP(2);
+    uint16_t accuracy_base;
+    SKIP(2);
+    uint16_t luck_base;
+    SKIP(318);
+    struct item items[PLAYER_MAX_ITEMS];
+    uint32_t inventory[14*9];
+    SKIP(44);
+    struct spell_buff spell_buffs[24];
+    SKIP(540);
+};
+
+enum player_buffs
+{
+    PBUFF_FIRE_RES = 5,
+    PBUFF_SHOCK_RES = 0,
+    PBUFF_COLD_RES = 22,
+    PBUFF_POISON_RES = 2,
+    PBUFF_MIND_RES = 9,
+    PBUFF_MAGIC_RES = 3,
+    PBUFF_PAIN_REFLECTION = 10,
+    PBUFF_PRESERVATION = 11,
+};
+
+enum skill_mastery
+{
+    NORMAL = 1,
+    EXPERT = 2,
+    MASTER = 3,
+    GM = 4,
+    // we mark the elemental immunity buffs
+    // with a special mastery level of 5
+    IMMUNITY_MARKER = 5,
+};
+
+#define MOUSE_ITEM 0xad458c
+
+enum items
+{
+    BLASTER = 64,
+    BLASTER_RIFLE = 65,
+    STEEL_CHAIN_MAIL = 72,
+    LAST_BODY_ARMOR = 78, // noble plate armor
+    LAST_PREFIX = 134, // can be prefixed (sun amulet)
+    FIRST_WAND = 135,
+    LAST_WAND = 159,
+    FIRST_REAGENT = 200,
+    LAST_REAGENT = 214, // not counting gray
+    POTION_BOTTLE = 220,
+    FIRST_POTION = 222,
+    FIRST_COMPLEX_POTION = 225,
+    FIRST_LAYERED_POTION = 228,
+    FIRST_WHITE_POTION = 240,
+    FLAMING_POTION = 246,
+    FREEZING_POTION = 247,
+    NOXIOUS_POTION = 248,
+    SHOCKING_POTION = 249,
+    SWIFT_POTION = 250,
+    FIRST_BLACK_POTION = 262,
+    PURE_LUCK = 264,
+    LAST_OLD_POTION = 271,
+    POTION_MAGIC_IMMUNITY = 277,
+    POTION_PAIN_REFLECTION = 278,
+    LAST_POTION = 278,
+    HOLY_WATER = 279, // not a potion
+    PUCK = 500,
+    CORSAIR = 503,
+    GOVERNOR_S_ARMOR = 504,
+    SPLITTER = 506,
+    GHOULSBANE = 507,
+    GIBBET = 508,
+    CHARELE = 509,
+    OLD_NICK = 517,
+    KELEBRIM = 520,
+    PHYNAXIAN_CROWN = 523,
+    TWILIGHT = 525,
+    JUSTICE = 527,
+    HERMES_SANDALS = 529,
+    ELFBANE = 531,
+    MIND_S_EYE = 532,
+    ELVEN_CHAINMAIL = 533,
+    FORGE_GAUNTLETS = 534,
+    SACRIFICIAL_DAGGER = 553,
+    RED_DRAGON_SCALE_MAIL = 554,
+    RED_DRAGON_SCALE_SHIELD = 555,
+    FIRST_RECIPE = 740,
+    LAST_RECIPE = 778,
+};
+
+enum item_slot
+{
+    SLOT_OFFHAND = 0,
+    SLOT_MAIN_HAND = 1,
+    SLOT_MISSILE = 2,
+    SLOT_BODY_ARMOR = 3,
+    SLOT_HELM = 4,
+    SLOT_BELT = 5,
+    SLOT_CLOAK = 6,
+    SLOT_GAUNTLETS = 7,
+};
+
+#define BUFF_STRINGS 0x506798
+
+#define TEMP_ENCH_MARKER 0xff
+
+enum monster_group
+{
+    MG_UNDEAD = 1,
+    MG_DEMON = 2,
+    MG_DRAGON = 3,
+    MG_TITAN = 7,
+};
+
+// Maximum number of alternative recipe chains for a potion that is itself
+// present in some recipe (i.e. white or simpler).  Currently that's
+// Divine Restoration with 3 recipes.
+#define MAX_WHITE_BREWS 3
+// Maximum number of alternative recipe chains for any potion (including
+// black).  Currently that's Rejuvenation, which can be brewn in 3*3 ways
+// (3 ways to brew the first potion and 3 alternatives for the second one).
+#define MAX_BLACK_BREWS 9
+
+struct __attribute__((packed)) items_txt_item
+{
+    SKIP(4);
+    char *name;
+    char *generic_name;
+    SKIP(18);
+    uint8_t mod1_dice_count;
+    SKIP(1);
+    uint8_t mod2;
+    SKIP(15);
+};
+
+#define ITEMS_TXT_ADDR 0x5d2864
+#define ITEMS_TXT ((struct items_txt_item *) ITEMS_TXT_ADDR)
+
+enum skill
+{
+    SKILL_MASK = 63,
+    SKILL_EXPERT = 64,
+    SKILL_MASTER = 128,
+    SKILL_GM = 256,
+};
+
+enum skills
+{
+    SKILL_SWORD = 1,
+    SKILL_AXE = 3,
+    SKILL_BOW = 5,
+    SKILL_BLASTER = 7,
+    SKILL_IDENTIFY_ITEM = 21,
+    SKILL_MERCHANT = 22,
+    SKILL_REPAIR = 23,
+    SKILL_BODYBUILDING = 24,
+    SKILL_MEDITATION = 25,
+    SKILL_PERCEPTION = 26,
+    SKILL_DISARM_TRAPS = 29,
+    SKILL_IDENTIFY_MONSTER = 32,
+    SKILL_STEALING = 34,
+    SKILL_ALCHEMY = 35,
+    SKILL_LEARNING = 36,
+    SKILL_NONE = 37, // used by clubs
+};
+
+#define AUTONOTES ((uint8_t *) 0xacd636)
+
+enum face_animations
+{
+    ANIM_ID_FAIL = 9,
+    ANIM_MIX_POTION = 16,
+    ANIM_SMILE = 36,
+    ANIM_SHAKE_HEAD = 67,
+};
+
+#define SOUND_BUZZ 27
+#define SOUND_SPELL_FAIL 209
+
+#define EVT_AUTONOTES 223
+// my additions
+#define EVT_REP_GROUP 400
+#define EVT_DISABLED_SPELL 401
+
+enum gender
+{
+    GENDER_MASCULINE = 0,
+    GENDER_FEMININE,
+    GENDER_NEUTER,
+    GENDER_PLURAL,
+};
+
+#define EVENTS_LOD ((void *) 0x6be8d8)
+#define SAVEGAME_LOD ((void *) 0x6a06a0)
+
+#define MAP_VARS 0x5e4b10
+
+// Number of barrels in the Wall of Mist.
+#define WOM_BARREL_CNT 15
+
+// my addition
+#define QBIT_REFILL_WOM_BARRELS 350
+
+// Not quite sure what this is, but it holds aimed spell data.
+struct __attribute__((packed)) dialog_param
+{
+    uint16_t spell;
+    uint16_t player;
+    SKIP(6);
+    uint16_t skill; // 0 if cast from spellbook
+    SKIP(8);
+};
+
+enum objlist
+{
+    OBJ_FIRE = 510, // generic elemental projectile
+    OBJ_FIREARROW = 550,
+    OBJ_ACID_BURST = 3060,
+    OBJ_FLAMING_POTION = 12000,
+    OBJ_FLAMING_EXPLOSION = 12001,
+    OBJ_SHOCKING_POTION = 12010,
+    OBJ_SHOCKING_EXPLOSION = 12011,
+    OBJ_FREEZING_POTION = 12020,
+    OBJ_FREEZING_EXPLOSION = 12021,
+    OBJ_NOXIOUS_POTION = 12030,
+    OBJ_NOXIOUS_EXPLOSION = 12031,
+    OBJ_THROWN_HOLY_WATER = 12040,
+    OBJ_HOLY_EXPLOSION = 12041,
+};
+
+#define ELEMENT(spell) byte(0x5cbecc + (spell) * 0x24)
+
+#define PARTY_BUFFS 0xacd6c4
+
+enum party_buffs
+{
+    BUFF_FEATHER_FALL = 5,
+    BUFF_IMMOLATION = 10,
+    BUFF_WATER_WALK = 18,
+    BUFF_WIZARD_EYE = 19,
+};
+
+enum stditems_txt
+{
+    STD_ARMS = 22,
+    STD_FIST = 24,
+};
+
+struct __attribute((packed)) spell_info
+{
+    SKIP(8);
+    uint16_t cost_gm;
+    uint16_t delay_normal;
+    uint16_t delay_expert;
+    SKIP(2);
+    uint16_t delay_gm;
+    SKIP(1);
+    uint8_t damage_dice;
+};
+
+#define SPELL_INFO ((struct spell_info *) 0x4e3c46)
+
+enum spells
+{
+    SPL_TORCH_LIGHT = 1,
+    SPL_FIRE_BOLT = 2,
+    SPL_IMMOLATION = 8,
+    SPL_WIZARD_EYE = 12,
+    SPL_FEATHER_FALL = 13,
+    SPL_ICE_BLAST = 32,
+    SPL_STUN = 34,
+    SPL_SLOW = 35,
+    SPL_MASS_DISTORTION = 44,
+    SPL_SPECTRAL_WEAPON = 47,
+    SPL_TURN_UNDEAD = 48,
+    SPL_SPIRIT_LASH = 52,
+    SPL_REMOVE_FEAR = 56,
+    SPL_BERSERK = 62,
+    SPL_CURE_WEAKNESS = 67,
+    SPL_HEAL = 68,
+    SPL_DESTROY_UNDEAD = 79,
+    SPL_PARALYZE = 81,
+    SPL_VAMPIRIC_WEAPON = 91,
+    SPL_SHRINKING_RAY = 92,
+    SPL_CONTROL_UNDEAD = 94,
+    SPL_ARMAGEDDON = 98,
+    LAST_REAL_SPELL = 99,
+    SPL_ARROW = 100, // pseudo-spell for bows
+    SPL_FATE = 103, // was 47
+    // new pseudo-spells
+    SPL_FLAMING_POTION = 104,
+    SPL_SHOCKING_POTION = 105,
+    SPL_FREEZING_POTION = 106,
+    SPL_NOXIOUS_POTION = 107,
+    SPL_HOLY_WATER = 108,
+};
+
+struct __attribute__((packed)) map_monster
+{
+    SKIP(77);
+    uint8_t spell1;
+    SKIP(7);
+    uint8_t holy_resistance;
+    SKIP(126);
+    struct spell_buff spell_buffs[22];
+    SKIP(272);
+};
+
+#define MAP_MONSTERS_ADDR 0x5fefd8
+#define MAP_MONSTERS ((struct map_monster *) MAP_MONSTERS_ADDR)
+
+#define MON_TARGETS ((uint32_t *) 0x4f6c88)
+
+enum target
+{
+    TGT_MONSTER = 3,
+    TGT_PARTY = 4,
+};
+
+#define PARTY_ADDR 0xacd804
+#define PARTY ((struct player *) PARTY_ADDR)
+
+#define COND_AFRAID 3
+
+struct __attribute__((packed)) mapstats_item
+{
+    SKIP(44);
+    uint8_t reputation_group; // my addition
+    SKIP(23);
+};
+
+#define MAPSTATS ((struct mapstats_item *) 0x5caa38)
+
+#define CUR_MAP_FILENAME ((char *) 0x6be1c4)
+
+// Indoor or outdoor reputation for the loaded map.
+#define CURRENT_REP dword(dword(0x6be1e0) == 2 ? 0x6a1140 : 0x6be514)
+
+enum profession
+{
+    NPC_PIRATE = 45,
+    NPC_GYPSY = 48,
+    NPC_DUPER = 50,
+    NPC_BURGLAR = 51,
+    NPC_FALLEN_WIZARD = 52,
+};
+
+// New max number of global.evt comands (was 4400 before).
+#define GLOBAL_EVT_LINES 4850
+// New max size of global.evt itself (was 46080 bytes before).
+#define GLOBAL_EVT_SIZE 48000
+
+// Data from parsing spcitems.txt.
+struct __attribute__((packed)) spcitem
+{
+    char *name;
+    char *description;
+    uint8_t probability[12]; // for item types 1-12
+    uint32_t value;
+    uint8_t level; // A-D == 0-3
+    SKIP(3); // unused
+};
+
+// my addition
+#define MBUFF_CURSED 0
+// vanilla
+#define MBUFF_FEAR 4
+
+static int __cdecl (*uncased_strcmp)(const char *left, const char *right)
+    = (funcptr_t) 0x4caaf0;
+static int __thiscall (*get_player_resistance)(const void *player, int stat)
+    = (funcptr_t) 0x48e7c8;
+static int __thiscall (*has_item_in_slot)(void *player, int item, int slot)
+    = (funcptr_t) 0x48d6ef;
+// Not 100% sure what this one does.
+static funcptr_t rgb_color = (funcptr_t) 0x40df03;
+static int __cdecl (*sprintf)(char *str, const char *format, ...)
+    = (funcptr_t) 0x4cad70;
+static funcptr_t ftol = (funcptr_t) 0x4ca74c;
+static funcptr_t add_buff = (funcptr_t) 0x458519;
+static funcptr_t elem_damage = (funcptr_t) 0x439e16;
+static funcptr_t monster_resists = (funcptr_t) 0x427522;
+static funcptr_t monster_in_group = (funcptr_t) 0x438bce;
+static funcptr_t is_artifact = (funcptr_t) 0x456d98;
+static int __thiscall (*get_skill)(void *player, int skill)
+    = (funcptr_t) 0x48f87a;
+static void __fastcall (*show_status_text)(char *string, int seconds)
+    = (funcptr_t) 0x44c1a1;
+static void __thiscall (*show_face_animation)(void *player, int animation,
+                                              int unused)
+    = (funcptr_t) 0x4948a9;
+static void __thiscall (*delete_backpack_item)(void *player, int cell)
+    = (funcptr_t) 0x492a2e;
+static void __thiscall (*add_mouse_item)(void *this, void *item)
+    = (funcptr_t) 0x4936d9;
+#define MOUSE_THIS_ADDR 0xacce38
+#define MOUSE_THIS ((void *) MOUSE_THIS_ADDR)
+static int __thiscall (*put_in_backpack)(void *player, int slot, int item_id)
+    = (funcptr_t) 0x4927a0;
+static void __thiscall (*make_sound)(void *this, int sound, int object,
+                                     int loops, int x, int y, int unknown,
+                                     int volume, int playback_rate)
+    = (funcptr_t) 0x4aa29b;
+#define SOUND_THIS ((void *) 0xf78f58)
+// It might also be Set instead of Add.
+static void __thiscall (*evt_add)(void *player, int what, int amount)
+    = (funcptr_t) 0x44a5ee;
+static int __thiscall (*exists_in_lod)(void *lod, char *filename)
+    = (funcptr_t) 0x461659;
+static char *__thiscall (*load_from_lod)(void *lod, char *filename,
+                                         int use_malloc)
+    = (funcptr_t) 0x410897;
+static void (*mm7_free)(void *ptr) = (funcptr_t) 0x4caefc;
+#define QBITS ((void *) 0xacd59d)
+static int __fastcall (*check_qbit)(void *qbits, int bit)
+    = (funcptr_t) 0x449b7a;
+static void __fastcall (*add_reply)(int number, int action)
+    = (funcptr_t) 0x4b362f;
+static void __fastcall (*spend_gold)(int amount) = (funcptr_t) 0x492bae;
+static void __thiscall (*init_item)(void *item) = (funcptr_t) 0x402f07;
+static int __thiscall (*get_attack_delay)(void *player, int ranged)
+    = (funcptr_t) 0x48e19b;
+static int __thiscall (*get_might)(void *player) = (funcptr_t) 0x48c922;
+static int __thiscall (*get_intellect)(void *player) = (funcptr_t) 0x48c9a8;
+static int __thiscall (*get_personality)(void *player) = (funcptr_t) 0x48ca25;
+static int __thiscall (*get_endurance)(void *player) = (funcptr_t) 0x48caa2;
+static int __thiscall (*get_accuracy)(void *player) = (funcptr_t) 0x48cb1f;
+static int __thiscall (*get_speed)(void *player) = (funcptr_t) 0x48cb9c;
+static int __thiscall (*get_luck)(void *player) = (funcptr_t) 0x48cc19;
+static void (*change_weather)(void) = (funcptr_t) 0x48946d;
+static int __fastcall (*is_hostile_to)(void *monster, void *target)
+    = (funcptr_t) 0x40104c;
+static int __fastcall (*color_stat)(int modified, int base)
+    = (funcptr_t) 0x4178a7;
+static void __thiscall (*set_specitem_bonus)(void *items_txt, void *item)
+    = (funcptr_t) 0x456d51;
+static int __thiscall (*timed_cure_condition)(void *player, int condition,
+                                              int time1, int time2)
+    = (funcptr_t) 0x4908a0;
+static int __thiscall (*get_full_hp)(void *player) = (funcptr_t) 0x48e4f0;
+static int __fastcall (*get_monsters_around_party)(int *buffer,
+                                                   int buffer_size, int radius)
+    = (funcptr_t) 0x46a8a2;
+static void __fastcall (*damage_monster_from_party)(int source, int monster,
+                                                    void *force_vector)
+    = (funcptr_t) 0x439463;
+static funcptr_t print_string = (funcptr_t) 0x44ce34;
+static void __thiscall (*remove_buff)(void *buff) = (funcptr_t) 0x4585be;
+// Not dead, stoned, paralyzed, etc.
+static int __thiscall (*player_active)(void *player) = (funcptr_t) 0x492c03;
+// Seems like this is a method of player, but ecx isn't actually used.
+static int __stdcall (*get_effective_stat)(int stat) = (funcptr_t) 0x48ea13;
+static int __fastcall (*roll_dice)(int count, int sides)
+    = (funcptr_t) 0x452b5a;
+static int __fastcall (*spell_damage)(int spell, int skill, int mastery,
+                                      int monster_hp) = (funcptr_t) 0x43b006;
+static int __thiscall (*damage_player)(void *player, int damage, int element)
+    = (funcptr_t) 0x48dc04;
+static void __fastcall (*attack_monster)(int attacker, int defender,
+                                         void *force, int attack_type)
+    = (funcptr_t) 0x43b1d3;
+static int __fastcall (*skill_mastery)(int skill) = (funcptr_t) 0x45827d;
+static int (*random)(void) = (funcptr_t) 0x4caac2;
+static int __thiscall (*save_file_to_lod)(void *lod, const void *header,
+                                          void *file, int unknown)
+    = (funcptr_t) 0x461b85;
+static int __thiscall (*get_map_index)(struct mapstats_item *mapstats,
+                                       char *filename) = (funcptr_t) 0x4547cf;
+static void (*on_map_leave)(void) = (funcptr_t) 0x443fb8;
+static void *__thiscall (*find_in_lod)(void *lod, char *filename, int unknown)
+    = (funcptr_t) 0x4615bd;
+static int __cdecl (*fread)(void *buffer, int size, int count, void *stream)
+    = (funcptr_t) 0x4cb8a5;
+static int (*get_eff_reputation)(void) = (funcptr_t) 0x47752f;
+static int __thiscall (*get_full_sp)(void *player) = (funcptr_t) 0x48e55d;
+// Technically thiscall, but ecx isn't used.
+static int __stdcall (*monster_resists_condition)(void *monster, int element)
+    = (funcptr_t) 0x427619;
+// Same.
+static void __stdcall (*magic_sparkles)(void *monster, int unknown)
+    = (funcptr_t) 0x4a7e19;
+static int __thiscall (*has_enchanted_item)(void *player, int enchantment)
+    = (funcptr_t) 0x48d6b6;
+static int __fastcall (*player_has_item)(int item, void *player,
+                                         int check_mouse)
+    = (funcptr_t) 0x43ee38;
+static int __thiscall (*identify_price)(void *player, float shop_multiplier)
+    = (funcptr_t) 0x4b80dc;
+static char *__thiscall (*item_name)(struct item *item) = (funcptr_t) 0x4564c5;
+
+//---------------------------------------------------------------------------//
+
 static const char *const elements[] = {"fire", "elec", "cold", "pois", "phys",
                                        0, "holy", "mind", "magic", "ener",
                                        "firepois"};
@@ -87,30 +690,27 @@ static const char *const elements[] = {"fire", "elec", "cold", "pois", "phys",
 // Patch spells.txt parsing, specifically possible spell elements.
 static inline void spells_txt(void)
 {
-    patch_pointer(0x45395c, elements[1]);
-    patch_pointer(0x453975, elements[2]);
-    patch_pointer(0x45398e, elements[3]);
-    patch_pointer(0x4539a7, elements[6]);
-    patch_pointer(0x4539d9, elements[4]);
-    patch_byte(0x4539ea, 4); // body (8) -> phys (4)
-    patch_pointer(0x4539f2, elements[9]);
-    patch_pointer(0x453a0b, elements[10]);
-    patch_byte(0x453a39, 8); // unused (5) -> magic (8)
+    patch_pointer(0x45395c, elements[ELECTRICITY]);
+    patch_pointer(0x453975, elements[COLD]);
+    patch_pointer(0x45398e, elements[POISON]);
+    patch_pointer(0x4539a7, elements[HOLY]);
+    patch_pointer(0x4539d9, elements[PHYSICAL]);
+    patch_byte(0x4539ea, PHYSICAL);
+    patch_pointer(0x4539f2, elements[ENERGY]);
+    patch_pointer(0x453a0b, elements[FIRE_POISON]);
+    patch_byte(0x453a39, MAGIC); // was unused (5)
 }
-
-static int __cdecl (*uncased_strcmp)(const char *left, const char *right)
-    = (funcptr_t) 0x4caaf0;
 
 // The original function compared the first letter only.
 // This is why some monsters attacked with earth instead of energy.
 static int __fastcall attack_type(const char *attack)
 {
     if (!attack)
-        return 4;
-    for (int idx = 0; idx <= 9; idx++)
+        return PHYSICAL;
+    for (int idx = FIRE; idx <= ENERGY; idx++)
         if (elements[idx] && !uncased_strcmp(attack, elements[idx]))
             return idx;
-    return 4;
+    return PHYSICAL;
 }
 
 // Patch monsters.txt parsing: remove two resistance fields
@@ -133,7 +733,7 @@ static void __declspec(naked) skip_known_monster_res(void)
         mov ecx, dword ptr [ebp-8]
         cmp ecx, 0x10
         jne not_holy
-        cmp dword ptr [ebp-0xb0], 200
+        cmp dword ptr [ebp-0xb0], IMMUNE
         jne not_holy
         add ecx, 4
         not_holy:
@@ -156,7 +756,7 @@ static void __declspec(naked) skip_unknown_monster_res(void)
         mov ecx, dword ptr [ebp-0x24]
         cmp ecx, 4
         jne not_holy
-        cmp dword ptr [ebp-0xb0], 200
+        cmp dword ptr [ebp-0xb0], IMMUNE
         jne not_holy
         inc ecx
         not_holy:
@@ -179,39 +779,21 @@ static inline void skip_monster_res(void)
     hook_call(0x41f3a3, skip_unknown_monster_res, 6);
 }
 
-#define GLOBAL_TXT 0x5e4000
-
-// Change school names in the spellbook from e.g. "Fire" to "Fire Magic".
-// It's necessary because we changed "Air", "Body", etc. strings
-// to the new element names.
-static inline void spell_scholls(void)
-{
-    patch_dword(0x45332f, GLOBAL_TXT + 283 * 4);
-    patch_dword(0x453347, GLOBAL_TXT + 284 * 4);
-    patch_dword(0x45335f, GLOBAL_TXT + 285 * 4);
-    patch_dword(0x45338f, GLOBAL_TXT + 286 * 4);
-    patch_dword(0x4533bf, GLOBAL_TXT + 289 * 4);
-    patch_dword(0x4533e3, GLOBAL_TXT + 290 * 4);
-    patch_dword(0x453407, GLOBAL_TXT + 291 * 4);
-    patch_dword(0x45342b, GLOBAL_TXT + 287 * 4);
-    patch_dword(0x45344f, GLOBAL_TXT + 288 * 4);
-}
-
 // Just (temporarily) change assassins to poison and barbarians to frost.
 static void __declspec(naked) assassins_barbarians(void)
 {
     asm
       {
         mov ebx, dword ptr [ebx+0xc]
-        cmp ebx, 0x43
+        cmp ebx, SPC_ASSASSINS
         jne not_assassins
-        mov ebx, 0xd
+        mov ebx, SPC_POISON
         not_assassins:
-        cmp ebx, 0x44
+        cmp ebx, SPC_BARBARIANS
         jne not_barbarians
-        mov ebx, 5
+        mov ebx, SPC_FROST
         not_barbarians:
-        cmp ebx, 0x2e
+        cmp ebx, SPC_DRAGON
         ret
       }
 }
@@ -259,10 +841,10 @@ static inline void elemental_weapons(void)
     hook_call(0x439e6b, assassins_barbarians, 6);
     hook_call(0x439f47, poisoned_weapons, 7);
     patch_bytes(0x439f70, poison_chunk, 2);
-    patch_dword(0x439f6c, 3); // was 2 (water) for some reason
-    patch_dword(0x439f7d, 3); // was 8 (body)
+    patch_dword(0x439f6c, POISON); // was 2 (water) for some reason
+    patch_dword(0x439f7d, POISON); // was 8 (body)
     patch_dword(0x439e67, dword(0x439e67) + 7); // Old Nick
-    patch_byte(0x439f82, 8); // this is now Old Nick's posion damage
+    patch_byte(0x439f82, 13); // this is now Old Nick's posion damage
 }
 
 // Fire-poison resistance is the minimum of the two.
@@ -281,7 +863,7 @@ static void __declspec(naked) fire_poison_monster(void)
       }
 }
 
-// Recognise element 10 (fire-poison) as the stat 0x2f (hitherto unused).
+// Recognise element 10 (fire-poison) as the stat 47 (hitherto unused).
 static void __declspec(naked) fire_poison_stat(void)
 {
     asm
@@ -297,25 +879,21 @@ static void __declspec(naked) fire_poison_stat(void)
         push 0x48d4e4
         ret
         fire_poison:
-        _emit 0x6a
-        _emit 0x2f
+        push STAT_FIRE_POISON_RES
         push 0x48d4db
         ret
       }
 }
-
-static int __thiscall (*get_player_resistance)(const void *player, int stat)
-    = (funcptr_t) 0x48e7c8;
 
 // Can't just compare resistance values in-function, as player resistances
 // are quite complex.  So we're replacing the call entirely and calling
 // the original function twice.
 static int __thiscall fire_poison_player(const void *player, int stat)
 {
-    if (stat != 0x2f)
+    if (stat != STAT_FIRE_POISON_RES)
         return get_player_resistance(player, stat);
-    int fire_res = get_player_resistance(player, 0xa);
-    int poison_res = get_player_resistance(player, 0xd);
+    int fire_res = get_player_resistance(player, STAT_FIRE_RES);
+    int poison_res = get_player_resistance(player, STAT_POISON_RES);
     if (fire_res < poison_res)
         return fire_res;
     else
@@ -338,7 +916,7 @@ static void __declspec(naked) eff_stat_chunk(void)
     asm
       {
         shl ebx, 2
-        _emit 0xe9
+        _emit 0xe9 ; jmp
       }
 }
 
@@ -363,23 +941,78 @@ static inline void condition_resistances(void)
     patch_dword(0x48e121, magic_res); // aged
 }
 
-// Undead players are either liches or zombies.
+// Undead players are either liches (returns 1) or zombies (returns 2).
 static int __thiscall __declspec(naked) is_undead(void *player)
 {
     asm
       {
         xor eax, eax
-        cmp byte ptr [ecx+0xb9], 35
-        je undead
         cmp dword ptr [ecx+0x88], 0
-        jnz undead
+        jnz zombie
         cmp dword ptr [ecx+0x8c], 0
-        jnz undead
+        jnz zombie
+        cmp byte ptr [ecx+0xb9], CLASS_LICH
+        je lich
         ret
-        undead:
+        zombie:
+        inc eax
+        lich:
         inc eax
         ret
       }
+}
+
+// Returns 2 for temporary immunity (zombie or potion), 1 for permanent
+// (lich or artifact), 0 if no immunity.
+static int __thiscall is_immune(struct player *player, unsigned int element)
+{
+    // dragon breath; we don't return 2 here
+    if (element == FIRE_POISON)
+        return is_immune(player, FIRE) && is_immune(player, POISON);
+
+    // elemental resistance/immunity buffs
+    static const int buffs[] = { PBUFF_FIRE_RES, PBUFF_SHOCK_RES,
+                                 PBUFF_COLD_RES, PBUFF_POISON_RES, -1, -1, -1,
+                                 PBUFF_MIND_RES, PBUFF_MAGIC_RES };
+    if (element <= MAGIC && buffs[element] != -1
+        && player->spell_buffs[buffs[element]].skill == IMMUNITY_MARKER)
+        return 2;
+
+    int undead = is_undead(player);
+    if (undead)
+      {
+        if (element == POISON || element == MIND)
+            return undead;
+      }
+    else
+      {
+        if (element == HOLY)
+            return 1;
+      }
+
+    switch (element)
+      {
+    case FIRE:
+        if (has_item_in_slot(player, SPLITTER, SLOT_MAIN_HAND)
+            || has_item_in_slot(player, FORGE_GAUNTLETS, SLOT_GAUNTLETS)
+            || has_item_in_slot(player, RED_DRAGON_SCALE_MAIL, SLOT_BODY_ARMOR)
+            || has_item_in_slot(player, RED_DRAGON_SCALE_SHIELD, SLOT_OFFHAND))
+            return 1;
+        break;
+    case COLD:
+        if (has_item_in_slot(player, PHYNAXIAN_CROWN, SLOT_HELM))
+            return 1;
+        break;
+    case POISON:
+        if (has_item_in_slot(player, TWILIGHT, SLOT_CLOAK))
+            return 1;
+        break;
+    case MIND:
+        if (has_item_in_slot(player, MIND_S_EYE, SLOT_HELM))
+            return 1;
+        break;
+      }
+    return 0;
 }
 
 // Calls the old, replaced function.
@@ -398,14 +1031,59 @@ static int __thiscall __declspec(naked) inflict_condition(void *player,
       }
 }
 
-// Undead are normally immune to poison, fear, insanity, and paralysis,
-// i.e. all that is resisted by Poison or Mind.
-static int __thiscall undead_conditions(void *player, int condition,
-                                        int can_resist)
+// Some of the status conditions can be prevented by high
+// Poison, Mind or Magic resistance, so naturally
+// a corresponding immunity will apply to them as well.
+// Update: also put Preservation's new effect here.
+static int __thiscall condition_immunity(struct player *player, int condition,
+                                         int can_resist)
 {
-    if (can_resist && is_undead(player) && 1 << condition & 0x1568) // bitmask
-        return 0;
+    if (can_resist)
+      {
+        int bit = 1 << condition;
+        int element = -1;
+        if (bit & 0x540) // poisoned 1, 2, 3
+            element = POISON;
+        else if (bit & 0x1028) // afraid, insane, paralyzed
+            element = MIND;
+        else if (bit & 0x1c000) // dead, stoned, eradicated
+            element = MAGIC;
+        if (element != -1 && is_immune(player, element))
+            return FALSE;
+        // Preservation now gives a 50% chance to avoid instant death.
+        if ((bit & 0x14000) // dead or eradicated
+            && player->spell_buffs[PBUFF_PRESERVATION].expire_time
+            && random() & 1)
+            return FALSE;
+      }
     return inflict_condition(player, condition, can_resist);
+}
+
+// Add another immunity check in the code that handles
+// special monster attacks.  All relevant attacks, except aging,
+// inflict conditions that are already handled above, but
+// disabling them here also prevents relevant face animations.
+static void __declspec(naked) monster_bonus_immunity(void)
+{
+    asm
+      {
+        mov eax, dword ptr [esp+4]
+        cmp eax, STAT_POISON_RES
+        jne not_poison
+        sub eax, 3
+        not_poison:
+        sub eax, 7
+        push eax
+        call is_immune
+        test eax, eax
+        jnz immune
+        mov ecx, esi
+        push 0x48e7c8
+        ret
+        immune:
+        push 0x48e0c8
+        ret 8
+      }
 }
 
 // The original code equaled body (now magic) and spirit (now holy) resistance
@@ -414,10 +1092,10 @@ static void __declspec(naked) holy_is_not_magic(void)
 {
     asm
       {
-        mov edi, 8
-        cmp ebp, 0x21
+        mov edi, MAGIC
+        cmp ebp, STAT_HOLY_RES
         jne not_holy
-        mov edi, 6
+        mov edi, HOLY
         mov ebx, 4
         not_holy:
         test ebx, ebx
@@ -430,10 +1108,10 @@ static void __declspec(naked) holy_is_not_magic_base(void)
 {
     asm
       {
-        mov edi, 8
-        cmp dword ptr [esp+20], 0x21
+        mov edi, MAGIC
+        cmp dword ptr [esp+20], STAT_HOLY_RES
         jne not_holy
-        mov edi, 6
+        mov edi, HOLY
         mov eax, 4
         not_holy:
         test eax, eax
@@ -448,136 +1126,105 @@ static void __declspec(naked) holy_is_not_magic_base(void)
 // or mind resistance was lowered (e.g. by equipping Hareck's Leather),
 // the existing immunity was lost.
 // In this mod, liches and zombies are always immune to poison and mind,
-// and their resistances aren't even checked for this purpose.  The code below
-// is probably not even necessary, but just in case, it raises the relevant
-// resistances to 200 if less.
-static void __declspec(naked) at_least_200(void)
+// and their resistances aren't even checked for this purpose.  The magic
+// number 200 is only respected for monsters.
+
+// Replace the old code described above with the new immunity check.
+static void __declspec(naked) immune_to_damage(void)
 {
     asm
       {
         push eax
         mov ecx, esi
-        call is_undead
+        push dword ptr [ebp+8]
+        call is_immune
         test eax, eax
         pop eax
-        jz not_undead
-        cmp ebp, 0xd
-        je immune
-        cmp ebp, 0xe
-        jne not_immune
-        immune:
-        mov ecx, 200
-        cmp eax, ecx
-        jge quit
-        mov eax, ecx
-        not_immune:
-        quit:
-        ret
-        not_undead:
-        cmp ebp, 0x21
-        je immune
-        ret
-      }
-}
-
-// Ditto, but for base resistances.
-static void __declspec(naked) at_least_200_base(void)
-{
-    asm
-      {
-        xchg ebx, ecx
-        call is_undead
+        jnz immune
         test eax, eax
-        mov eax, dword ptr [esp+16]
-        jz not_undead
-        cmp eax, 0xd
-        je immune
-        cmp eax, 0xe
-        jne not_immune
-        immune:
-        mov eax, 200
-        cmp ebx, eax
-        jle quit
-        mov eax, ebx
-        quit:
         ret
-        not_undead:
-        cmp eax, 0x21
-        je immune
-        not_immune:
-        mov eax, ebx
-        ret
-      }
-}
-
-// The most important part: if an immunity applies, zero out all damage.
-static void __declspec(naked) immune_if_200(void)
-{
-    asm
-      {
-        push eax
-        mov ecx, esi
-        call is_undead
-        test eax, eax
-        pop eax
-        mov ecx, dword ptr [ebp+8]
-        jz not_undead
-        cmp ecx, 3
-        je immune
-        cmp ecx, 7
-        jne not_immune
         immune:
         xor eax, eax
         ret
-        not_undead:
-        cmp ecx, 6
-        je immune
-        not_immune:
-        test eax, eax
-        ret
       }
 }
 
-// Note: I'm only guessing at what these functions are.
-funcptr_t color_stat = (funcptr_t) 0x4178a7;
-funcptr_t compose_string = (funcptr_t) 0x4cad70;
-
-// This code changes the stats screen to always display "Immune" for undead
-// instead of only when the relevant resistance is >= 200.
-static void __declspec(naked) display_immunity(void)
+// New code for displaying elemental immunity in the stats screen.
+// White if permanent, green if temporary.
+static void __declspec(naked) display_immunity(int string, int element)
 {
     asm
       {
-        push ecx
         mov ecx, edi
-        call is_undead
+        push dword ptr [esp+8]
+        call is_immune
         test eax, eax
-        jz not_undead
-        mov ecx, dword ptr [esp+36]
-        mov edx, 200
-        call dword ptr ds:color_stat
-        pop ecx
-        push dword ptr [GLOBAL_TXT+0x9c4]
+        jz not_immune
+        dec eax
+        jz permanent
+        xor ecx, ecx
+        mov edx, 0xff
+        push ecx
+        call dword ptr ds:rgb_color
+        permanent:
+        mov ecx, dword ptr [esp+4]
+        push dword ptr [GLOBAL_TXT+625*4]
         push eax
-        push dword ptr [GLOBAL_TXT+ecx]
+        push dword ptr [GLOBAL_TXT+ecx*4]
         push 0x4e2de0
         push esi
-        call dword ptr ds:compose_string
+        call dword ptr ds:sprintf
         add esp, 20
-        ret
-        not_undead:
-        pop ecx
+        not_immune:
+        ret 8
+      }
+}
+
+// The unmodded game did not have the immunity code for the first four
+// resistances, so I'm adding the instructions I owerwrote at the end here.
+
+static void __declspec(naked) display_fire_immunity(void)
+{
+    asm
+      {
+        push FIRE
+        push 87
+        call display_immunity
+        mov edx, dword ptr [0x5c3468]
         ret
       }
 }
 
-// The unmodded game did not have the immunity code for earth (now poison)
-// resistance, so I'm adding the instruction I owerwrote at the end here.
+static void __declspec(naked) display_elec_immunity(void)
+{
+    asm
+      {
+        push ELECTRICITY
+        push 6
+        call display_immunity
+        mov edx, dword ptr [0x5c3468]
+        ret
+      }
+}
+
+static void __declspec(naked) display_cold_immunity(void)
+{
+    asm
+      {
+        push COLD
+        push 240
+        call display_immunity
+        mov edx, dword ptr [0x5c3468]
+        ret
+      }
+}
+
 static void __declspec(naked) display_poison_immunity(void)
 {
     asm
       {
-        mov ecx, 0x118
+        push POISON
+        push 70
         call display_immunity
         mov edx, dword ptr [0x5c3468]
         ret
@@ -588,25 +1235,40 @@ static void __declspec(naked) display_mind_immunity(void)
 {
     asm
       {
-        mov ecx, 0x238
+        push MIND
+        push 142
         call display_immunity
         ret
       }
 }
 
-// Make undead characters immune to poison and mind, and all others, immune
-// to holy.
-static void undead_immunities(void)
+static void __declspec(naked) display_magic_immunity(void)
 {
-    hook_jump(0x492d5d, undead_conditions);
+    asm
+      {
+        push MAGIC
+        push 29
+        call display_immunity
+        ret
+      }
+}
+
+// Rewrite and expand the old lich immunity system.  Now one can also
+// get an immunity from zombification, potions, or artifacts.
+static inline void undead_immunities(void)
+{
+    hook_jump(0x492d5d, condition_immunity);
+    hook_call(0x48dd27, monster_bonus_immunity, 5);
     hook_call(0x48e85f, holy_is_not_magic, 5);
     hook_call(0x48e764, holy_is_not_magic_base, 5);
-    hook_call(0x48e8d1, at_least_200, 7);
-    erase_code(0x48e8db, 13);
-    hook_call(0x48e7af, at_least_200_base, 7);
-    erase_code(0x48e7b8, 13);
-    hook_call(0x48d4e7, immune_if_200, 7);
+    hook_call(0x48d4e7, immune_to_damage, 7);
     erase_code(0x48d4f3, 10);
+
+    // Remove the code that capped lich resistances at 200.
+    erase_code(0x48e7af, 7);
+    erase_code(0x48e7b8, 11);
+    erase_code(0x48e8d1, 7);
+    erase_code(0x48e8db, 13);
 
     // Tweak bonus resistances on lichification: remove 200 body and mind,
     // but add 20 holy and 20 magic.
@@ -615,10 +1277,846 @@ static void undead_immunities(void)
     patch_word(0x44a76d, 20); // 200 res -> 20 res
     erase_code(0x44a76f, 9); // remove body
 
+    hook_call(0x418d8e, display_fire_immunity, 6);
+    hook_call(0x418e0f, display_elec_immunity, 6);
+    hook_call(0x418e90, display_cold_immunity, 6);
     hook_call(0x418f0c, display_poison_immunity, 6);
     hook_call(0x418f91, display_mind_immunity, 5);
     erase_code(0x418f96, 51); // old mind immunity code
-    erase_code(0x41904e, 56); // old body immunity code
+    hook_call(0x41904e, display_magic_immunity, 5);
+    erase_code(0x419053, 51); // old body immunity code
+}
+
+#define NEW_STRING_COUNT 32
+static char *new_strings[NEW_STRING_COUNT];
+
+// We need a few localizable strings, which we'll add to global.txt.
+static void __declspec(naked) read_global_txt(void)
+{
+    asm
+      {
+        cmp dword ptr [esp+24], 0x5e4a94
+        jne not_at_end
+        mov dword ptr [esp+24], offset new_strings
+        not_at_new_end:
+        cmp ebx, 1
+        ret
+        not_at_end:
+        cmp dword ptr [esp+24], offset new_strings + NEW_STRING_COUNT * 4
+        jne not_at_new_end
+        ret
+      }
+}
+
+// Rewrite an MM7Patch fix that was keyed to the old global.txt end.
+// Is this... metahacking?
+static void __declspec(naked) new_global_txt_parse_check(void)
+{
+    asm
+      {
+        cmp dword ptr [esp+28], offset new_strings + NEW_STRING_COUNT * 4
+        je quit
+        push 0x4cc17b
+        quit:
+        ret
+      }
+}
+
+// Defined in the temp enchants section below.
+static void replace_duration_strings(void);
+
+// Instead of replacing every instance of e.g. "water" with "cold",
+// overwrite string pointers themselves.  Note that spell school names
+// are stored separately by now and are thus not affected.
+static void new_element_names(void)
+{
+    // fire is unchanged
+    dword(GLOBAL_TXT + 6 * 4) = dword(GLOBAL_TXT + 71 * 4); // electricity
+    dword(GLOBAL_TXT + 240 * 4) = dword(GLOBAL_TXT + 43 * 4); // cold
+    dword(GLOBAL_TXT + 70 * 4) = dword(GLOBAL_TXT + 166 * 4); // poison
+    dword(GLOBAL_TXT + 214 * 4) = (uintptr_t) new_strings[0]; // holy
+    // mind is unchanged
+    dword(GLOBAL_TXT + 29 * 4) = dword(GLOBAL_TXT + 138 * 4); // magic
+    dword(GLOBAL_TXT + 133 * 4) = (uintptr_t) new_strings[1]; // energy
+    // dark is not displayed anymore
+}
+
+// We need to do a few things after global.txt is parsed.
+static void __declspec(naked) global_txt_tail(void)
+{
+    asm
+      {
+        mov dword ptr [0x5067f4], eax
+        call replace_duration_strings
+        call new_element_names
+        ret
+      }
+}
+
+// Messing with global.txt.
+static inline void global_txt(void)
+{
+    hook_call(0x452d41, read_global_txt, 8);
+    hook_call(0x452d3a, new_global_txt_parse_check, 5);
+    hook_call(0x45386a, global_txt_tail, 5);
+}
+
+// Behind the scenes, elemental immunity uses the same buff ID as elemental
+// resistance.  Thus, it's impossible to have both at the same time
+// (not that it would be useful anyway).  So, if you drink one potion
+// while under effect of other, the new effect will replace the old.
+static void __declspec(naked) resistance_replaces_immunity(void)
+{
+    asm
+      {
+        adc edx, dword ptr [0xacce68]
+        cmp word ptr [ecx+10], IMMUNITY_MARKER
+        jne not_immunity
+        and dword ptr [ecx], 0
+        and dword ptr [ecx+4], 0
+        not_immunity:
+        ret
+      }
+}
+
+static const uint32_t new_potion_buffs[] = { PBUFF_FIRE_RES, PBUFF_SHOCK_RES,
+                                             PBUFF_COLD_RES, PBUFF_POISON_RES,
+                                             PBUFF_MIND_RES, PBUFF_MAGIC_RES,
+                                             PBUFF_PAIN_REFLECTION };
+
+static void throw_potions_jump(void); // defined below
+
+// Add elemental immunity potions and the pain reflection potion.
+// Magic immunity lasts 3 min/level, the rest are 10 min/level.
+// TODO: do we really need to use floats just to divide by 30?
+static void __declspec(naked) new_potion_effects(void)
+{
+    asm
+      {
+        cmp edx, LAST_OLD_POTION
+        ja new
+        jmp dword ptr [0x468ebe+eax*4]
+        new:
+        cmp edx, HOLY_WATER
+        je throw_potions_jump
+        mov ecx, offset new_potion_buffs
+        mov ecx, dword ptr [ecx+eax*4-52*4]
+        shl ecx, 4
+        lea ecx, [esi+0x17a0+ecx]
+        push ebx
+        push ebx
+        cmp edx, POTION_PAIN_REFLECTION
+        je pain_reflection
+        push ebx
+        push IMMUNITY_MARKER
+        cmp word ptr [ecx+10], IMMUNITY_MARKER
+        je set_duration
+        and dword ptr [ecx], 0
+        and dword ptr [ecx+4], 0
+        jmp set_duration
+        pain_reflection:
+        ; power is meaningless for this buff, but let`s compute it anyway
+        mov eax, dword ptr [MOUSE_ITEM+4]
+        shr eax, 1
+        add eax, 5
+        push eax
+        push GM ; black = gm, not that it matters much
+        set_duration:
+        cmp edx, POTION_MAGIC_IMMUNITY
+        mov eax, dword ptr [MOUSE_ITEM+4]
+        je magic
+        imul eax, eax, 128 * 60 * 10
+        jmp multiply
+        magic:
+        imul eax, eax, 128 * 60 * 3
+        multiply:
+        push eax
+        fild dword ptr [esp]
+        add esp, 4
+        fmul dword ptr [0x4d8470]
+        call dword ptr ds:ftol
+        add eax, dword ptr [0xacce64]
+        adc edx, dword ptr [0xacce68]
+        push edx
+        push eax
+        call dword ptr ds:add_buff
+        push 0x4687a8
+        ret
+      }
+}
+
+// Pretend the new potions are Rejuvenation (271) for purposes of mixing.
+// Black potions always explode anyway, so the separate logic is unneeded.
+static void __declspec(naked) mix_new_potions_1(void)
+{
+    asm
+      {
+        cmp ecx, LAST_POTION
+        jg quit
+        cmp ecx, LAST_OLD_POTION
+        jng quit
+        mov ecx, LAST_OLD_POTION
+        cmp ecx, ecx
+        quit:
+        ret
+      }
+}
+
+// Ditto.
+static void __declspec(naked) mix_new_potions_2(void)
+{
+    asm
+      {
+        cmp edx, LAST_POTION
+        jg quit
+        cmp edx, LAST_OLD_POTION
+        jng quit
+        mov edx, LAST_OLD_POTION
+        cmp edx, edx
+        quit:
+        ret
+      }
+}
+
+// Display e.g. "fire imm" instead of "fire res" player buff when appropriate.
+static void __declspec(naked) immunity_strings(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ebp-20]
+        cmp word ptr [eax+10], IMMUNITY_MARKER
+        mov eax, dword ptr [ebp-4]
+        jne quit
+        xor ecx, ecx
+        cmp eax, BUFF_STRINGS + 5*4
+        je fire
+        cmp eax, BUFF_STRINGS + 0*4
+        je shock
+        cmp eax, BUFF_STRINGS + 22*4
+        je cold
+        cmp eax, BUFF_STRINGS + 2*4
+        je poison
+        cmp eax, BUFF_STRINGS + 9*4
+        je mind
+        cmp eax, BUFF_STRINGS + 3*4
+        jne quit
+        inc ecx
+        mind:
+        inc ecx
+        poison:
+        inc ecx
+        cold:
+        inc ecx
+        shock:
+        inc ecx
+        fire:
+        mov eax, offset new_strings + 2 * 4
+        lea eax, [eax+ecx*4]
+        quit:
+        movzx ecx, byte ptr [edi-1]
+        ret
+      }
+}
+
+// Add new black potions.  Also some holy water code.
+static inline void new_potions(void)
+{
+    hook_call(0x468c50, resistance_replaces_immunity, 6);
+    // holy water is handled below but the jump is here
+    patch_byte(0x46878a, HOLY_WATER - POTION_BOTTLE);
+    hook_jump(0x468791, new_potion_effects);
+    hook_call(0x4163b1, mix_new_potions_1, 6);
+    hook_call(0x4163d7, mix_new_potions_2, 6);
+    patch_byte(0x41d653, byte(0x41d657)); // move an instruction
+    hook_call(0x41d654, immunity_strings, 7);
+    patch_byte(0x4b8fd4, LAST_RECIPE - FIRST_RECIPE + 1); // sell new recipes
+    patch_dword(0x490f1f, LAST_RECIPE); // allow selling new recipes
+}
+
+// We now store a temporary enchantment in the bonus strength field,
+// with the bonus ID set to 0xff.  The following patches
+// make the game ignore this ID where appropriate.
+// The first one deals with the displayed name.
+static void __declspec(naked) ignore_temp_ench_name(void)
+{
+    asm
+      {
+        cmp dword ptr [esi+4], eax
+        jz ignore
+        cmp dword ptr [esi+4], TEMP_ENCH_MARKER
+        jnz quit
+        ignore:
+        push 0x4565b2
+        ret 4
+        quit:
+        ret
+      }
+}
+
+// This one deals with description.  (See also display_temp_enchant below.)
+static void __declspec(naked) ignore_temp_ench_desc(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ecx+4]
+        cmp eax, TEMP_ENCH_MARKER
+        jz quit
+        cmp eax, ebx
+        quit:
+        ret
+      }
+}
+
+// Next, we handle the price.
+static void __declspec(naked) ignore_temp_ench_price(void)
+{
+    asm
+      {
+        cmp dword ptr [esi+4], eax
+        jz ignore
+        cmp dword ptr [esi+4], TEMP_ENCH_MARKER
+        jnz quit
+        ignore:
+        push 0x4564a2
+        ret 4
+        quit:
+        ret
+      }
+}
+
+// Finally, let's allow the Enchant Item spell to enchant such weapons.
+static void __declspec(naked) ignore_temp_ench_enchant_item(void)
+{
+    asm
+      {
+        jz quit
+        cmp dword ptr [edi+4], TEMP_ENCH_MARKER
+        quit:
+        ret
+      }
+}
+
+// Replace the calls to the weapon elemental damage function with
+// our code that calls it twice, for both permanent and temporary bonus.
+static void __declspec(naked) temp_elem_damage(void)
+{
+    asm
+      {
+        push ecx
+        push eax
+        call dword ptr ds:elem_damage
+        pop ecx
+        cmp dword ptr [ecx+4], TEMP_ENCH_MARKER
+        jne quit
+        push eax
+        xor edx, edx
+        push edx
+        push edx
+        sub esp, 32
+        push 1
+        and dword ptr [esp+20], 0
+        mov ecx, dword ptr [ecx+8]
+        mov dword ptr [esp+12], ecx
+        mov ecx, esp
+        lea edx, [esp+36]
+        lea eax, [esp+40]
+        push eax
+        call dword ptr ds:elem_damage
+        add esp, 36
+        pop ecx
+        pop edx
+        or dword ptr [ebp-16], edx
+        push eax
+        push ecx
+        push esi
+        call dword ptr ds:monster_resists
+        add dword ptr [ebp-12], eax
+        pop eax
+        quit:
+        ret 4
+      }
+}
+
+// The projectile damage code needs an extra instruction.
+static void __declspec(naked) bow_temp_damage(void)
+{
+    asm
+      {
+        and dword ptr [ebp-12], 0
+        jmp temp_elem_damage
+      }
+}
+
+// Check for temporary swiftness enchantments.
+static void __declspec(naked) temp_swiftness(void)
+{
+    asm
+      {
+        cmp dword ptr [edx+4], TEMP_ENCH_MARKER
+        jne no_temp
+        mov ecx, dword ptr [edx+8]
+        cmp ecx, SPC_SWIFT
+        je swift
+        cmp ecx, SPC_DARKNESS
+        je swift
+        no_temp:
+        mov ecx, dword ptr [edx+12]
+        cmp ecx, SPC_SWIFT
+        swift:
+        ret
+      }
+}
+
+// Store temp enchant in eax for the next chunk.
+static void __declspec(naked) temp_bane_bow_1(void)
+{
+    asm
+      {
+        xor eax, eax
+        xor edx, edx
+        cmp dword ptr [ebx+4], TEMP_ENCH_MARKER
+        jne no_temp
+        mov eax, dword ptr [ebx+8]
+        no_temp:
+        mov ebx, dword ptr [ebx+12]
+        cmp ebx, SPC_UNDEAD_SLAYING
+        ret
+      }
+}
+
+// Check monster bane twice for both possible enchants.
+static void __declspec(naked) temp_bane_bow_2(void)
+{
+    asm
+      {
+        mov ebx, eax
+        call dword ptr ds:monster_in_group
+        cmp ebx, SPC_UNDEAD_SLAYING
+        je undead
+        cmp ebx, SPC_DRAGON_SLAYING
+        je dragon
+        ret
+        dragon:
+        mov edx, MG_DRAGON
+        jmp temp
+        undead:
+        mov edx, MG_UNDEAD
+        temp:
+        mov ecx, dword ptr [ebp+8]
+        push eax
+        call dword ptr ds:monster_in_group
+        pop ecx
+        or eax, ecx
+        ret
+      }
+}
+
+// Avoid skipping the code below for non-bane weapons.
+static void __declspec(naked) temp_bane_melee_1(void)
+{
+    asm
+      {
+        cmp eax, SPC_DAVID ; replaced code
+        pop edx
+        jne no_bane
+        push MG_TITAN ; replaced code
+        jmp edx
+        no_bane:
+        push 0
+        jmp edx
+      }
+}
+
+// Check bane twice for melee weapons.  Also fixes Gibbet.
+// We also check for backstab damage here.
+static void __declspec(naked) temp_bane_melee_2(void)
+{
+    asm
+      {
+        cmp ebp, CORSAIR
+        je backstab
+        cmp ebp, OLD_NICK
+        je backstab
+        cmp eax, SPC_BACKSTABBING
+        je backstab
+        cmp eax, SPC_ASSASSINS
+        jne no_backstab
+        backstab:
+        test dword ptr [esp+40], 2 ; 1st param, backstab bit
+        mov eax, 1 ; return true
+        jnz quit
+        no_backstab:
+        call dword ptr ds:monster_in_group
+        cmp ebp, GIBBET
+        je dragon
+        cmp dword ptr [ebx+4], TEMP_ENCH_MARKER
+        jne quit
+        mov ecx, dword ptr [ebx+8]
+        cmp ecx, SPC_UNDEAD_SLAYING
+        je undead
+        cmp ecx, SPC_DRAGON_SLAYING
+        je dragon
+        quit:
+        ret
+        dragon:
+        mov edx, MG_DRAGON
+        jmp temp
+        undead:
+        mov edx, MG_UNDEAD
+        temp:
+        mov ecx, dword ptr [esp+48]
+        push eax
+        call dword ptr ds:monster_in_group
+        pop ecx
+        or eax, ecx
+        cmp ebp, GIBBET
+        jne quit
+        inc ebp
+        mov edx, MG_DEMON
+        jmp temp
+      }
+}
+
+static char enchant_buffer[100];
+
+// Print the temp enchantment description.
+static void __declspec(naked) display_temp_enchant(void)
+{
+    asm
+      {
+        add dword ptr [ebp-8], 100
+        skip:
+        dec dword ptr [ebp-24]
+        jz quit
+        cmp dword ptr [ebp-24], 1
+        jne quit
+        mov ecx, dword ptr [ebp-4]
+        cmp dword ptr [ecx+4], TEMP_ENCH_MARKER
+        jne skip
+        mov dword ptr [ebp-8], offset enchant_buffer
+        cmp ebx, 1
+        quit:
+        ret
+      }
+}
+
+// New buffer for enchantment data.  Mostly used in spcitems_buffer() below.
+static struct spcitem spcitems[SPC_COUNT];
+
+// Adjust description screen height to fit the new line.
+// Also compose the line itself while we're at it.
+static void __declspec(naked) temp_enchant_height(void)
+{
+    asm
+      {
+        add dword ptr [ebp-12], 100
+        skip:
+        dec dword ptr [ebp-24]
+        jz quit
+        cmp dword ptr [ebp-24], 1
+        jne quit
+        mov ecx, dword ptr [ebp-4]
+        cmp dword ptr [ecx+4], TEMP_ENCH_MARKER
+        jne skip
+        mov eax, dword ptr [ecx+8]
+        imul eax, eax, 28
+        add eax, offset spcitems - 24
+        push dword ptr [eax]
+        push dword ptr [new_strings + 8*4]
+        push 0x4e2e80
+        ; for some reason clang crashes if I try to push offsets directly
+        mov eax, offset enchant_buffer
+        push eax
+        call dword ptr ds:sprintf
+        add esp, 16
+        mov dword ptr [ebp-12], offset enchant_buffer
+        cmp ebx, 1
+        quit:
+        ret
+      }
+}
+
+// Temp enchantment duration strings weren't localized.
+// Also here: the "N/A" string for the (lack of) ranged damage.
+static void replace_duration_strings(void)
+{
+    patch_pointer(0x41e0cc, new_strings[9]);
+    patch_pointer(0x41e0f2, new_strings[10]);
+    patch_pointer(0x41e126, new_strings[11]);
+    patch_pointer(0x41e162, new_strings[12]);
+    patch_pointer(0x41e1a6, new_strings[13]);
+    patch_pointer(0x41e1f2, new_strings[14]);
+    patch_pointer(0x48d3cc, new_strings[22]);
+}
+
+// Rules for temporary enchantments: weapons that already
+// attack with the same element are forbidden, as are
+// bows of carnage; items with a numeric bonus also cannot
+// get a temp enchantment.  If an artifact or an enchanted item
+// is targeted by a GM-level spell, it's enchanted temporarily.
+static void __declspec(naked) enchant_weapon(void)
+{
+    asm
+      {
+        jnz temporary
+        cmp dword ptr [ebp-24], GM
+        jne temporary
+        cmp dword ptr [esi+12], 0
+        jnz temporary
+        mov eax, dword ptr [esp+8]
+        mov dword ptr [esi+12], eax
+        ret 8
+        temporary:
+        cmp dword ptr [esi+4], 0
+        jnz fail
+        cmp dword ptr [esi+12], SPC_CARNAGE
+        je fail
+        cmp dword ptr [esp+8], SPC_SPECTRAL
+        je spectral
+        xor eax, eax
+        push eax
+        push eax
+        mov ecx, esi
+        lea edx, [esp+4]
+        push esp
+        call dword ptr ds:elem_damage
+        pop edx
+        pop ecx
+        or eax, edx
+        jz okay
+        cmp dword ptr [esp+4], ecx
+        je fail
+        okay:
+        mov dword ptr [esi+4], TEMP_ENCH_MARKER
+        mov eax, dword ptr [esp+8]
+        mov dword ptr [esi+8], eax
+        test eax, eax
+        ret 8
+        spectral:
+        cmp dword ptr [esi+12], SPC_SPECTRAL
+        je fail
+        cmp dword ptr [esi+12], SPC_WRAITH
+        jne okay
+        fail:
+        xor esi, esi
+        push 0x4290a7
+        ret 16
+      }
+}
+
+// Rehaul Fire Aura according to the above rules.
+// Spectral Weapon code also arrives here (FIRE is ignored).
+static void __declspec(naked) fire_aura(void)
+{
+    asm
+      {
+        mov esi, dword ptr [ebp-28]
+        push dword ptr [ebp-4]
+        push FIRE
+        call enchant_weapon
+        ret
+      }
+}
+
+// Rehaul Vampiric Weapon.
+static void __declspec(naked) vampiric_weapon(void)
+{
+    asm
+      {
+        mov esi, dword ptr [ebp-12]
+        push SPC_VAMPIRIC
+        push 10
+        call enchant_weapon
+        ret
+      }
+}
+
+// Make the new checks for the weapon-enchanting potions.
+// Bows of carnage can be enchanted by swift potions only.
+// Also handles holy water.
+static void __declspec(naked) weapon_potions(void)
+{
+    asm
+      {
+        mov ebx, eax
+        cmp ebx, SPC_SWIFT
+        je swift
+        cmp dword ptr [esi+12], SPC_CARNAGE
+        je fail
+        cmp ebx, SPC_UNDEAD_SLAYING
+        je undead
+        cmp ebx, SPC_DRAGON_SLAYING
+        je dragon
+        xor edi, edi
+        cmp ebx, SPC_FLAME
+        je fire
+        cmp ebx, SPC_SPARKS
+        je shock
+        cmp ebx, SPC_FROST
+        je frost
+        cmp ebx, SPC_POISON
+        jne fail
+        inc edi
+        frost:
+        inc edi
+        shock:
+        inc edi
+        fire:
+        xor eax, eax
+        push eax
+        push eax
+        mov ecx, esi
+        lea edx, [esp+4]
+        push esp
+        call dword ptr ds:elem_damage
+        pop edx
+        pop ecx
+        or eax, edx
+        jz okay
+        cmp ecx, edi
+        je fail
+        okay:
+        mov dword ptr [esi+4], TEMP_ENCH_MARKER
+        mov dword ptr [esi+8], ebx
+        fmul dword ptr [0x4d8470]
+        ret
+        swift:
+        cmp dword ptr [esi+12], SPC_DARKNESS
+        je fail
+        cmp dword ptr [esi], PUCK
+        je fail
+        jmp dupe
+        undead:
+        cmp dword ptr [esi], GHOULSBANE
+        je fail
+        cmp dword ptr [esi], JUSTICE
+        je fail
+        dragon:
+        cmp dword ptr [esi], GIBBET
+        je fail
+        dupe:
+        cmp dword ptr [esi+12], ebx
+        jne okay
+        fail:
+        fstp st(0)
+        push 0x41677e
+        ret 4
+      }
+}
+
+// Let the enchantment aura of weapon potions vary in color.
+static void __declspec(naked) potion_aura(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ebp-12] ; replaced code
+        or al, 8 ; temp bonus bit
+        mov cl, 16
+        cmp ebx, SPC_FLAME
+        je red
+        cmp ebx, SPC_SPARKS
+        je purple
+        cmp ebx, SPC_FROST
+        je blue
+        cmp ebx, SPC_POISON
+        je green
+        cmp ebx, SPC_SWIFT
+        je green
+        cmp ebx, SPC_DRAGON_SLAYING
+        je red
+        cmp ebx, SPC_UNDEAD_SLAYING
+        je blue
+        purple:
+        shl cl, 1
+        green:
+        shl cl, 1
+        blue:
+        shl cl, 1
+        red:
+        or al, cl
+        ret
+      }
+}
+
+// Prevent the game from applying the enchantment
+// too early and in the wrong place.
+static void __declspec(naked) slaying_potion_chunk(void)
+{
+    asm
+      {
+        mov eax, SPC_DRAGON_SLAYING
+        nop
+        nop
+      }
+}
+
+// Allow slaying potions to enchant weapons permanently if possible.
+static void __declspec(naked) permanent_slaying(void)
+{
+    asm
+      {
+        jnz quit
+        mov ecx, ITEMS_TXT_ADDR - 4
+        push esi
+        call dword ptr ds:is_artifact
+        test eax, eax
+        jnz quit
+        cmp dword ptr [ebp-4], 2 ; equip stat, 0-2 = weapon
+        ja quit
+        mov dword ptr [esi+12], SPC_DRAGON_SLAYING
+        or dword ptr [esi+20], 16 ; red aura
+        push 0x4168b4
+        ret 4
+        quit:
+        ret
+      }
+}
+
+// Allow weapons to have two enchantments at once, one permanent
+// and one temporary.  Only some temporary enchantments are supported.
+static inline void temp_enchants(void)
+{
+    hook_call(0x456593, ignore_temp_ench_name, 5);
+    hook_call(0x41ddb5, ignore_temp_ench_desc, 5);
+    hook_call(0x456495, ignore_temp_ench_price, 5);
+    hook_call(0x42ab7d, ignore_temp_ench_enchant_item, 9); // GM
+    hook_call(0x42ae0d, ignore_temp_ench_enchant_item, 9); // master
+    // there's still some MM6 code for expert and normal enchant item,
+    // but it's practically unreachable and doesn't enchant weapons anyway
+    hook_call(0x43992b, bow_temp_damage, 5); // bow or other projectile
+    patch_byte(0x439983, 0x01); // mov -> add
+    hook_call(0x4399bc, temp_elem_damage, 5); // melee weapon(s)
+    hook_call(0x48e4b4, temp_swiftness, 6);
+    hook_call(0x48d260, temp_bane_bow_1, 6);
+    patch_byte(0x48d28b, 11); // redirect a jump to always reach the below hook
+    hook_call(0x48d297, temp_bane_bow_2, 5);
+    // melee bane code is repeated for either hand
+    hook_call(0x48ceb6, temp_bane_melee_1, 7);
+    hook_call(0x48cecf, temp_bane_melee_2, 5);
+    hook_call(0x48cfe1, temp_bane_melee_1, 7);
+    hook_call(0x48cffa, temp_bane_melee_2, 5);
+    hook_call(0x41e025, display_temp_enchant, 7);
+    patch_dword(0x41dfe5, 4); // one more cycle
+    hook_call(0x41de8d, temp_enchant_height, 7);
+    patch_dword(0x41de37, 4); // ditto
+    hook_call(0x429122, fire_aura, 15);
+    erase_code(0x4290f7, 10); // remove old enchantment checks
+    erase_code(0x42901a, 12); // make GM fall through to M WRT duration
+    hook_call(0x42de58, vampiric_weapon, 20);
+    erase_code(0x42de21, 18); // remove old enchantment checks
+    erase_code(0x42dda3, 5); // make GM fall through to M WRT duration
+    // erase bonus number instead of special bonus on enchantment expire
+    patch_byte(0x4582bc, 8);
+    hook_call(0x41688e, weapon_potions, 6);
+    hook_call(0x4168a9, potion_aura, 5);
+    // remove some of the old restrictions
+    erase_code(0x416872, 12);
+    erase_code(0x41690b, 9);
+    erase_code(0x416932, 12);
+    // pass the enchantment to our code in eax
+    patch_bytes(0x416884, slaying_potion_chunk, 7);
+    hook_call(0x41684e, permanent_slaying, 6);
+    erase_code(0x416953, 3);
 }
 
 // Bug fix: Kelebrim wasn't penalizing earth (now poison) resistance.
@@ -626,7 +2124,7 @@ static void __declspec(naked) kelebrim(void)
 {
     asm
       {
-        cmp esi, 13
+        cmp esi, STAT_POISON_RES
         jne quit
         sub edi, 30
         quit:
@@ -635,72 +2133,1403 @@ static void __declspec(naked) kelebrim(void)
       }
 }
 
-// Tweak the Phynaxian Crown: instead of +50 Water Res.,
-// give it +30 Cold and Poison Res.
-// Reason: it's supposed to protect against all of Water Magic.
-static void __declspec(naked) phynaxian(void)
+// Compound buff potions like Bless or Stoneskin always granted the minimal
+// possible bonus (+5, corresponding to the spell skill of 0), irrespective
+// of the potion's power.  Now this bonus is increased by half the power.
+static void __declspec(naked) buff_potions_power(void)
 {
     asm
       {
-        cmp esi, 12
-        je boost
-        cmp esi, 13
+        cmp dword ptr [esp+12], MASTER
         jne quit
-        boost:
-        add edi, 30
+        cmp dword ptr [esp+16], 5
+        jne quit
+        mov eax, dword ptr [MOUSE_ITEM+4]
+        shr eax, 1
+        add dword ptr [esp+16], eax
         quit:
+        push 0x458519 ; replaced call
         ret
       }
 }
 
-// One of the more satisfying tweaks: make blasters shoot energy!
-// That is, they now ignore physical immunity (as well as all others).
-static void __declspec(naked) blasters(void)
+// From parsing potion.txt and potnotes.txt, sorted by the resulting potion.
+static struct recipe {
+    int count;
+    struct variant {
+        int left, right;
+        int note;
+    } variants[3];
+} recipes[LAST_POTION+1-FIRST_COMPLEX_POTION];
+
+// Fill the recipes array.  I wanted to make this fastcall, but clang is buggy.
+static void __stdcall add_recipe(int result, int note, int row, int column)
+{
+    struct recipe *this = &recipes[result-FIRST_COMPLEX_POTION];
+    for (int i = 0; i < this->count; i++)
+        if (note == this->variants[i].note)
+            return;
+    this->variants[this->count] = (struct variant) { row + FIRST_POTION,
+                                                     column + FIRST_POTION,
+                                                     note };
+    this->count++;
+}
+
+// Called for each cell in potnotes.txt.
+static void __declspec(naked) maybe_add_recipe(void)
 {
     asm
       {
-        cmp dword ptr [ebx+36], 64
-        je blaster
-        cmp dword ptr [ebx+36], 65
-        jne ordinary
-        blaster:
-        mov dword ptr [ebp-8], 9
+        movzx edx, word ptr [esi]
+        test edx, edx
+        jz empty
+        movzx ecx, word ptr [esi-5000]
+        push dword ptr [ebp-4]
+        push dword ptr [ebp-12]
+        push edx
+        push ecx
+        call add_recipe
+        empty:
+        inc dword ptr [ebp-4]
+        cmp dword ptr [ebp-4], 50
         ret
-        ordinary:
-        mov dword ptr [ebp-8], 4
+      }
+}
+
+// Represents a full chain of alchemical mixes.  The resulting potion ID
+// is in the function's context.
+struct brew {
+    uint32_t unused_items[5];
+    unsigned int power;
+    int used_reagents;
+    int used_bottles;
+    int produced_bottles;
+};
+
+// Guts of the autobrew, called recursively.  Positive return: number of
+// alternative brews.  Negative: ID of unbrewable potion.
+static int recursive_brew(struct player *player, int potion,
+                          uint32_t unused_items[5], struct brew *brews)
+{
+    if (potion < FIRST_COMPLEX_POTION)
+      {
+        // red, blue, or yellow potion
+        int first_reagent = (potion - FIRST_POTION) * 5 + FIRST_REAGENT;
+        for (int i = 1; i <= PLAYER_MAX_ITEMS; i++)
+          {
+            if (!(unused_items[i>>5] & (1 << (i & 31))))
+                continue;
+            int id = player->items[i-1].id;
+            if (id >= first_reagent && id < first_reagent + 5)
+              {
+                memcpy(brews[0].unused_items, unused_items, 4*5);
+                brews[0].unused_items[i>>5] &= ~(1 << (i & 31));
+                //TODO: respect power limiting if added
+                brews[0].power = ITEMS_TXT[id].mod1_dice_count
+                               + (get_skill(player, SKILL_ALCHEMY)
+                                  & SKILL_MASK);
+                brews[0].used_reagents = 1;
+                brews[0].used_bottles = 1;
+                brews[0].produced_bottles = 0;
+                return 1;
+              }
+          }
+        return -potion;
+      }
+
+    int brew_count = 0;
+    // we're relying on the fact that any potion
+    // is brewn from potions with lower numeric IDs
+    int unbrewable = potion;
+    for (int i = 0; i < recipes[potion-FIRST_COMPLEX_POTION].count; i++)
+      {
+        int note = recipes[potion-FIRST_COMPLEX_POTION].variants[i].note - 1;
+        if (!(AUTONOTES[note >> 3] & (128 >> (note & 7))))
+            continue;
+        int left = 0, right = 0;
+        int rcleft = recipes[potion-FIRST_COMPLEX_POTION].variants[i].left;
+        int rcright = recipes[potion-FIRST_COMPLEX_POTION].variants[i].right;
+        // prefer pre-existing potions if present
+        for (int j = 1; j <= PLAYER_MAX_ITEMS; j++)
+          {
+            if (!(unused_items[j>>5] & (1 << (j & 31))))
+                continue;
+            if (!left && rcleft == player->items[j-1].id)
+                left = j;
+            else if (!right && rcright == player->items[j-1].id)
+                right = j;
+            if (left && right)
+                break;
+          }
+        if (right)
+          {
+            if (!left)
+              {
+                // swap for simplicity
+                left = right;
+                right = 0;
+                int temp = rcright;
+                rcright = rcleft;
+                rcleft = temp;
+              }
+            else
+              {
+                // no need to recurse
+                memcpy(brews[brew_count].unused_items, unused_items, 4*5);
+                brews[brew_count].unused_items[left>>5] &= ~(1 << (left & 31));
+                brews[brew_count].unused_items[right>>5] &= ~(1 << (right
+                                                                    & 31));
+                brews[brew_count].power = (player->items[left-1].bonus
+                                           + player->items[right-1].bonus) / 2;
+                brews[brew_count].used_reagents = 0;
+                brews[brew_count].used_bottles = 0;
+                brews[brew_count].produced_bottles = 1;
+                brew_count++;
+                continue;
+              }
+          }
+
+        struct brew left_buffer[MAX_WHITE_BREWS];
+        int left_count = 0;
+        if (!left)
+          {
+            int result = recursive_brew(player, rcleft, unused_items,
+                                        left_buffer);
+            if (result < 0)
+              {
+                if (-result < unbrewable)
+                    unbrewable = -result;
+                continue;
+              }
+            left_count = result;
+          }
+        else
+          {
+            // fill the brew struct for a uniform code
+            left_count = 1;
+            memcpy(left_buffer[0].unused_items, unused_items, 4*5);
+            left_buffer[0].unused_items[left>>5] &= ~(1 << (left & 31));
+            left_buffer[0].power = player->items[left-1].bonus;
+            left_buffer[0].used_reagents = 0;
+            left_buffer[0].used_bottles = 0;
+            left_buffer[0].produced_bottles = 0;
+          }
+
+        int right_unbrewable = unbrewable;
+        struct brew right_buffer[MAX_WHITE_BREWS];
+        int right_count = 0;
+        for (int j = 0; j < left_count; j++)
+          {
+            int result = recursive_brew(player, rcright,
+                                        left_buffer[j].unused_items,
+                                        right_buffer);
+            if (result < 0)
+              {
+                if (-result < right_unbrewable)
+                    right_unbrewable = -result;
+                continue;
+              }
+            for (int k = 0; k < result; k++)
+              {
+                memcpy(brews[brew_count].unused_items,
+                       right_buffer[k].unused_items, 4*5);
+                brews[brew_count].power = (left_buffer[j].power
+                                           + right_buffer[k].power) / 2;
+                brews[brew_count].used_reagents = right_buffer[k].used_reagents
+                                                + left_buffer[j].used_reagents;
+                // bottles count is a bit complicated, as empty bottles
+                // produced by the left sub-brew can be utilized in the right
+                int used = left_buffer[j].used_bottles;
+                int produced = right_buffer[k].produced_bottles + 1;
+                int unused = left_buffer[j].produced_bottles
+                           - right_buffer[k].used_bottles;
+                if (unused > 0)
+                    produced += unused;
+                else
+                    used -= unused;
+                brews[brew_count].used_bottles = used;
+                brews[brew_count].produced_bottles = produced;
+                // or vice versa (by right, in the left)
+                used = right_buffer[k].used_bottles;
+                produced = left_buffer[k].produced_bottles + 1;
+                unused = right_buffer[k].produced_bottles
+                       - left_buffer[j].used_bottles;
+                if (unused > 0)
+                    produced += unused;
+                else
+                    used -= unused;
+                // we want the minimum
+                if (used < brews[brew_count].used_bottles)
+                  {
+                    brews[brew_count].used_bottles = used;
+                    brews[brew_count].produced_bottles = produced;
+                  }
+                brew_count++;
+              }
+            right_count += result;
+          }
+        if (!right_count)
+            unbrewable = right_unbrewable;
+      }
+    if (brew_count > 0)
+        return brew_count;
+    else
+        return -unbrewable;
+}
+
+// Sets up the recursive brew above and deals with the consequences.
+static void __thiscall brew_if_possible(struct player *player, int potion)
+{
+    static char message[128];
+
+    // allow brewing from a recipe
+    if (potion >= FIRST_RECIPE)
+        potion = ITEMS_TXT[potion].mod2 + FIRST_REAGENT;
+
+    int alchemy = get_skill(player, SKILL_ALCHEMY);
+    if (potion >= FIRST_COMPLEX_POTION && !alchemy
+        || potion >= FIRST_LAYERED_POTION && alchemy < SKILL_EXPERT
+        || potion >= FIRST_WHITE_POTION && alchemy < SKILL_MASTER
+        || potion >= FIRST_BLACK_POTION && alchemy < SKILL_GM)
+      {
+        // don't have the skill
+        show_face_animation(player, ANIM_ID_FAIL, 0);
+        sprintf(message, new_strings[15], player->name,
+                ITEMS_TXT[potion].generic_name);
+        show_status_text(message, 2);
+        return;
+      }
+
+    uint32_t usable[5] = {0};
+    int bottles = 0;
+    for (int i = 0; i < 14*9; i++)
+      {
+        int item = player->inventory[i];
+        if (item > 0)
+          {
+            int id = player->items[item-1].id;
+            if (id == POTION_BOTTLE)
+                bottles++;
+            else if (id >= FIRST_POTION && id <= LAST_POTION
+                     || id >= FIRST_REAGENT && id <= LAST_REAGENT)
+                usable[item>>5] |= 1 << (item & 31);
+          }
+      }
+
+    struct brew buffer[MAX_BLACK_BREWS];
+    int result = recursive_brew(player, potion, usable, buffer);
+    if (result < 0)
+      {
+        if (-result < FIRST_COMPLEX_POTION)
+          {
+            // not enough reagents
+            show_face_animation(player, ANIM_SHAKE_HEAD, 0);
+            make_sound(SOUND_THIS, SOUND_BUZZ, 0, 0, -1, 0, 0, 0, 0);
+            show_status_text(new_strings[16], 2);
+          }
+        else
+          {
+            // don't know recipe
+            show_face_animation(player, ANIM_ID_FAIL, 0);
+            sprintf(message, new_strings[17], ITEMS_TXT[-result].name);
+            show_status_text(message, 2);
+          }
+        return;
+      }
+
+    int best_brew = -1;
+    int least_reagents = 999;
+    for (int i = 0; i < result; i++)
+      {
+        if (buffer[i].used_bottles > bottles)
+            continue;
+        if (buffer[i].used_reagents < least_reagents)
+          {
+            least_reagents = buffer[i].used_reagents;
+            best_brew = i;
+          }
+      }
+    if (best_brew == -1)
+      {
+        // not enough bottles
+        show_face_animation(player, ANIM_SHAKE_HEAD, 0);
+        make_sound(SOUND_THIS, SOUND_BUZZ, 0, 0, -1, 0, 0, 0, 0);
+        show_status_text(new_strings[18], 2);
+        return;
+      }
+
+    int delete_bottles = buffer[best_brew].used_bottles
+                       - buffer[best_brew].produced_bottles;
+    for (int i = 0; i < 5; i++)
+        usable[i] &= ~buffer[best_brew].unused_items[i];
+    for (int i = 0; i < 14*9; i++)
+      {
+        int item = player->inventory[i];
+        if (item > 0)
+          {
+            int id = player->items[item-1].id;
+            if (id == POTION_BOTTLE && delete_bottles > 0)
+                delete_bottles--;
+            else if (!(usable[item>>5] & (1 << (item & 31))))
+                continue;
+            delete_backpack_item(player, i);
+          }
+      }
+
+    // the bottles aren't created pre-ID'd, but I'm willing to let it slide
+    // also this function would fail if there were no place for a bottle,
+    // but this shouldn't ever happen as bottles come from used potions
+    for (int i = 0; i > delete_bottles; i--)
+        put_in_backpack(player, -1, POTION_BOTTLE);
+    struct item brewn_potion = { .id = potion, .flags = 1, // identified
+                                 .bonus = buffer[best_brew].power };
+    add_mouse_item(MOUSE_THIS, &brewn_potion);
+        show_face_animation(player, ANIM_MIX_POTION, 0); // successful brew
+}
+
+// Hooks in the backpack code to implement autobrew on ctrl-click.
+static void __declspec(naked) autobrew(void)
+{
+    asm
+      {
+        lea esi, [ebx+0x1f0+eax*4]
+        push 0x11
+        call dword ptr ds:0x4d8260
+        test ax, ax
+        js ctrl
+        quit:
+        mov ecx, 9
+        ret
+        ctrl:
+        mov eax, dword ptr [esi]
+        cmp eax, FIRST_POTION
+        jb quit
+        cmp eax, LAST_POTION
+        jbe brewable
+        cmp eax, FIRST_RECIPE
+        jb quit
+        cmp eax, LAST_RECIPE
+        ja quit
+        brewable:
+        mov ecx, ebx
+        push eax
+        call brew_if_possible
+        push 0x4220e0
+        ret 8
+      }
+}
+
+// Update autonotes when reading potion recipes.
+static void __thiscall read_recipe(void *player, int id)
+{
+    if (id < FIRST_RECIPE || id > LAST_RECIPE)
+        return;
+    int potion = ITEMS_TXT[id].mod2 + 200;
+    struct recipe *this = &recipes[potion-FIRST_COMPLEX_POTION];
+    for (int i = 0; i < this->count; i++)
+        evt_add(player, EVT_AUTONOTES, this->variants[i].note);
+}
+
+// Hook for the above.
+static void __declspec(naked) read_recipe_hook(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [esp+4]
+        push esi
+        call read_recipe
+        add esi, -700
+        ret
+      }
+}
+
+// In line with the throwable elemental potions,
+// give swift potions an alternative use as well:
+// drinking one causes the PC to instantly recover (i.e. get a free turn).
+static void __declspec(naked) drink_swift_potion(void)
+{
+    asm
+      {
+        mov word ptr [esi+0x1934], bx ; recovery delay
+        cmp dword ptr [0xacd6b4], ebx ; turn-based flag
+        jz quit
+        mov ecx, dword ptr [0x4f86d8+12] ; count of tb actors
+        cmp ecx, ebx ; just in case
+        jle quit
+        mov eax, dword ptr [ebp+8] ; player id
+        dec eax
+        shl eax, 3
+        add eax, TGT_PARTY
+        mov edx, 0x4f86d8 + 16
+        next_actor:
+        add edx, 16
+        cmp dword ptr [edx], eax ; tb actor id
+        loopne next_actor
+        jne quit
+        mov dword ptr [edx+4], ebx ; tb actor recovery
+        quit:
+        push 0x4687a8 ; post-drink effects
+        ret
+      }
+}
+
+// Let the pure attribute black potions give bonus equal to their power,
+// instead of a fixed +50.  This adds a strategic dilemma: do you drink it
+// as soon as you find it and enjoy a smaller bonus right now, or wait until
+// you have a philosopher's stone and an alchemy-boosting item, which will
+// give you a bigger bonus later?  You still cannot drink the potion twice.
+static void __declspec(naked) pure_potions_power(void)
+{
+    asm
+      {
+        xor ecx, ecx
+        sub edx, PURE_LUCK
+        je luck
+        dec edx
+        je speed
+        dec edx
+        je intellect
+        dec edx
+        je endurance
+        dec edx
+        je personality
+        dec edx
+        je accuracy
+        jmp might
+        luck:
+        inc ecx
+        accuracy:
+        inc ecx
+        speed:
+        inc ecx
+        endurance:
+        inc ecx
+        personality:
+        inc ecx
+        intellect:
+        inc ecx
+        might:
+        mov edx, dword ptr [MOUSE_ITEM+4] ; potion power
+        add dx, word ptr [esi+188+ecx*4] ; base attribute
+        test dh, dh ; can`t raise higher than 255
+        jz not_above_limit
+        mov dx, 255
+        not_above_limit:
+        mov word ptr [esi+188+ecx*4], dx
+        ret
+      }
+}
+
+static void wand_price(void); // defined below
+
+// Make the price of most potions variable.
+// Potion price is arranged so that at the typical potion powers
+// (2d4*rarity -- avg. 5*rarity) the old price is mostly unchanged.
+// RGB potions are an exception, their "default" price is bumped to 10.
+// Holy water: 50 + 10*power (avoid sell price being higher than donation)
+// Catalist: 1 + power (also an exception)
+// Red and blue: 5 + power
+// Yellow: fixed 10 (no variable effect) -- this is a bump
+// Green, orange, purple: fixed 50 (no variable effect)
+// Layered potions: 75 + 5*power, unless no variable effect
+// White: 350 + 20*power, unless no variable effect
+// Black: 1000 + 40*power, unless no variable effect
+// The hook for the wand price function is also here.
+static void __declspec(naked) potion_price(void)
+{
+    asm
+      {
+        mov edi, dword ptr [ITEMS_TXT_ADDR+eax+16] ; base value
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+28], 14 ; potion or bottle
+        je potion
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+28], 12 ; wand
+        je wand_price
+        xor edx, edx ; set zf
+        ret
+        potion:
+        movzx eax, byte ptr [ITEMS_TXT_ADDR+eax+30] ; value multiplier
+        mul dword ptr [esi+4] ; potion power
+        add edi, eax
+        ; zf must be unset now
+        ret
+      }
+}
+
+static int have_itemgend;
+static char itemgend[LAST_PREFIX+1];
+
+// Parse itemgend.txt (items' grammatical gender list) if available.
+// Called from spells_txt_tail() below.
+static void parse_itemgend(void)
+{
+    // Note: this function only checks in *.lod, not in DataFiles.
+    // However, the load_from_lod() below does check there.
+    // As such, there'll be a false negative if the mod's events.lod
+    // isn't present, but its contents are unpacked in DataFiles.
+    have_itemgend = exists_in_lod(EVENTS_LOD, "itemgend.txt");
+    if (!have_itemgend)
+        return;
+
+    char *file = load_from_lod(EVENTS_LOD, "itemgend.txt", TRUE);
+    if (strtok(file, "\r\n")) // skip first line
+        for (int i = 1; i <= LAST_PREFIX; i++)
+          {
+            char *line = strtok(0, "\r\n");
+            if (!line)
+                break;
+            // we need first character of third cell
+            line = strchr(line, '\t');
+            if (line)
+                line = strchr(line + 1, '\t');
+            if (!line)
+                continue;
+
+            char gender;
+            switch (line[1])
+              {
+                case 'm':
+                case 'M':
+                default:
+                    gender = GENDER_MASCULINE;
+                    break;
+                case 'f':
+                case 'F':
+                    gender = GENDER_FEMININE;
+                    break;
+                case 'n':
+                case 'N':
+                    gender = GENDER_NEUTER;
+                    break;
+                case 'p':
+                case 'P':
+                    gender = GENDER_PLURAL;
+                    break;
+              }
+            itemgend[i] = gender;
+          }
+    mm7_free(file);
+}
+
+// Formats item enchantment prefixes according to their grammatical gender.
+// The substring "^R[masculine;feminine;neuter;plural]" is replaced
+// with one of the four words inside it.
+static char *__stdcall prefix_gender(unsigned int item_id, int enchant)
+{
+    char *prefix = spcitems[enchant-1].name;
+    if (!have_itemgend)
+        return prefix;
+    char *subst = strstr(prefix, "^R[");
+    if (!subst)
+        return prefix;
+
+    static char buffer[100];
+    memcpy(buffer, prefix, subst - prefix);
+    buffer[subst - prefix] = 0;
+    int gender = GENDER_MASCULINE;
+    if (item_id <= LAST_PREFIX)
+        gender = itemgend[item_id];
+    char *varpart = subst + 3; // strlen("^R[")
+    for (int i = 0; i < gender; i++)
+      {
+        char *next = strchr(varpart, ';');
+        if (!next)
+            break;
+        varpart = next + 1;
+      }
+    char *end = strpbrk(varpart, ";]");
+    if (end)
+        strncat(buffer, varpart, end - varpart);
+    else
+        strcat(buffer, varpart);
+    char *rest = strchr(subst, ']');
+    if (rest)
+        strcat(buffer, rest + 1);
+    return buffer;
+}
+
+// Hook for the above.  Replaces enchantment name push.
+static void __declspec(naked) prefix_hook(void)
+{
+    asm
+      {
+        push eax
+        push esi
+        call prefix_gender
+        pop ecx
+        push eax
+        jmp ecx
+      }
+}
+
+// Exploit fix: barrels in Walls of Mist were refilled on each visit.
+// Now the barrel contents are stored in the savefile.
+// Called in save_game_hook() below.
+// (Note that leaving a map also forces an autosave.)
+static void save_wom_barrels(void)
+{
+    if (uncased_strcmp(CUR_MAP_FILENAME, "d11.blv")) // walls of mist
+        return;
+    // name could be shorter, I'm guessing here
+    static const struct { char name[20]; int size; int unknown; } header
+        = { "barrels.bin", 15, 0 };
+    save_file_to_lod(SAVEGAME_LOD, &header, (void *) (MAP_VARS + 75), 0);
+}
+
+// Restore the saved barrels, unless a quest bit is set.
+// The quest bit should be reset every year.
+// Called in load_map_hook() below.
+// This is actually called on each savegame reload as well, but it's okay.
+static void load_wom_barrels(void)
+{
+    if (uncased_strcmp(CUR_MAP_FILENAME, "d11.blv")) // walls of mist
+        return;
+    if (check_qbit(QBITS, QBIT_REFILL_WOM_BARRELS))
+        return;
+    void *file = find_in_lod(SAVEGAME_LOD, "barrels.bin", 1);
+    // barrel data occupies map vars 75 to 89
+    // it would be more proper to dynamically determine barrel count, but eeh
+    if (file)
+        fread((void *) (MAP_VARS + 75), 1, WOM_BARREL_CNT, file);
+}
+
+// Make the genie lamps give +5 to +20 to stats instead of +1 to +4.
+static void __declspec(naked) lamp_quadruple(void)
+{
+    asm
+      {
+        mov eax, dword ptr [0xacd54c] ; week of month
+        lea eax, [eax*4+eax+4]
+        ret
+      }
+}
+
+// Put Intellect and Personality on the same month to fit.
+static void __declspec(naked) lamp_int_or_per(void)
+{
+    asm
+      {
+        test dword ptr [0xacd550], 1 ; day of month
+        jz per
+        push 0x4682a4
+        ret
+        per:
+        mov ecx, dword ptr [0x507a00] ; "personality"
+        mov dword ptr [ebp-8], ecx
+        push 0x4682b0
+        ret
+      }
+}
+
+// Shift the base stat names according to the change.
+static void __declspec(naked) lamp_stat_name(void)
+{
+    asm
+      {
+        mov ecx, eax
+        cmp ecx, 2
+        jb okay
+        inc ecx
+        okay:
+        mov ecx, dword ptr [0x5079f8+ecx*4] ; replaced code
         ret
       }
 }
 
 // Misc item tweaks.
-static void misc_items(void)
+static inline void misc_items(void)
 {
     patch_pointer(0x48f698, kelebrim); // jump table
-    hook_call(0x48f111, phynaxian, 8);
-    hook_call(0x439639, blasters, 7);
+    // phynaxian crown now grants poison instead of water resistance
+    patch_byte(0x48f113, STAT_POISON_RES);
+    // make blasters ignore resistances like in mm6
+    patch_dword(0x43963c, ENERGY); // blaster element
+    // remove splitter and forge gauntlets' fire res bonus
+    // now that they give an immunity
+    patch_dword(0x48f660, dword(0x48f664));
+    erase_code(0x48f258, 8);
+    hook_call(0x468c58, buff_potions_power, 5);
+    hook_call(0x453e34, maybe_add_recipe, 7);
+    hook_call(0x4220b4, autobrew, 7);
+    hook_call(0x467f79, read_recipe_hook, 6);
+    patch_pointer(0x468f36, drink_swift_potion); // jump table
+    hook_call(0x468c7b, pure_potions_power, 8); // pure luck
+    hook_call(0x468c98, pure_potions_power, 8); // pure speed
+    hook_call(0x468cb5, pure_potions_power, 8); // pure intellect
+    hook_call(0x468cd2, pure_potions_power, 8); // pure endurance
+    hook_call(0x468cef, pure_potions_power, 8); // pure personality
+    hook_call(0x468d0c, pure_potions_power, 8); // pure accuracy
+    hook_call(0x468d29, pure_potions_power, 8); // pure might
+    hook_call(0x45647e, potion_price, 6);
+    erase_code(0x456624, 3); // do not multiply ench id
+    hook_call(0x456633, prefix_hook, 6);
+    patch_byte(0x450a15, 7); // enable white barrels
+    hook_call(0x46825f, lamp_quadruple, 5);
+    // Change genie lamp rewards alike MM6: first six months are base stats
+    // (Int and Per share a month), last six months are resistances.
+    // We're rewriting a jumptable here.
+    patch_pointer(0x468e92, lamp_int_or_per);
+    // move the rest of base stats one up
+    patch_dword(0x468e96, dword(0x468e9a));
+    patch_dword(0x468e9a, dword(0x468e9e));
+    patch_dword(0x468e9e, dword(0x468ea2));
+    patch_dword(0x468ea2, dword(0x468ea6));
+    hook_call(0x468274, lamp_stat_name, 7);
+    // the code for resistances exists, but it's not in the table
+    patch_dword(0x468ea6, 0x4683f0);
+    patch_dword(0x468eaa, 0x4683de);
+    patch_dword(0x468eae, 0x4683cc);
+    patch_dword(0x468eb2, 0x4683ba);
+    patch_dword(0x468eb6, 0x4683a8);
+    patch_dword(0x468eba, 0x468396);
 }
 
-#define ELEMENT(spell) byte(0x5cbecc + (spell) * 0x24)
+static uint32_t potion_damage;
+
+// Allow using Flaming, Freezing, Shocking and Noxious potions
+// to deal splash elemental damage at a short range.
+static void __declspec(naked) throw_potions_jump(void)
+{
+    asm
+      {
+        cmp dword ptr [0x4e28d8], 23 ; current screen
+        je fail
+        cmp dword ptr [0x4e28d8], 13 ; inside a house
+        jne pass
+        fail:
+        push 0x468e87
+        ret
+        pass:
+        mov ecx, esi
+        mov eax, dword ptr [0x4685ee]
+        add eax, 0x4685f2
+        call eax ; mm7patch`s active player check
+        test eax, eax
+        jnz active
+        push 0x4685f6
+        ret
+        active:
+        mov eax, dword ptr [MOUSE_ITEM+4] ; item bonus
+        mov dword ptr [potion_damage], eax
+        mov eax, dword ptr [MOUSE_ITEM] ; item type
+        ; both the four potions and their four spells are contiguous,
+        ; but the order is different.  thus, we shuffle them a bit
+        mov esi, eax
+        sub esi, FLAMING_POTION
+        jz flaming
+        dec esi
+        jz freezing
+        dec esi
+        jz noxious
+        dec esi
+        jz shocking
+        ; but the holy water stands aside
+        mov esi, SPL_HOLY_WATER
+        jmp quit
+        noxious:
+        inc esi
+        freezing:
+        inc esi
+        shocking:
+        inc esi
+        flaming:
+        add esi, SPL_FLAMING_POTION
+        quit:
+        push 0x46867e
+        ret
+      }
+}
+
+// Provide the proper spell power for the potion throw event.
+// We hijacked the scroll cast event for this,
+// which uses a fixed power, so we store the power in a static var.
+static void __declspec(naked) throw_potions_power(void)
+{
+    asm
+      {
+        pop eax
+        cmp dword ptr [esp+28], SPL_FLAMING_POTION ; param 1 = spell
+        jb ordinary
+        cmp dword ptr [esp+28], SPL_HOLY_WATER
+        ja ordinary
+        push dword ptr [potion_damage]
+        push eax
+        ret
+        ordinary:
+        push 0x85 ; scroll power = M5
+        push eax
+        ret
+      }
+}
+
+static void aim_remove_fear(void); // defined below
+
+// Pretend that the thrown potion is Fire Bolt for aiming purposes.
+// There's also a Remove Fear aiming hook here now.
+// Also handles the new Fate spell ID.
+static void __declspec(naked) aim_potions_type(void)
+{
+    asm
+      {
+        cmp ecx, SPL_REMOVE_FEAR
+        je aim_remove_fear
+        cmp ecx, SPL_FATE
+        jne not_fate
+        mov ecx, SPL_HEAL ; same aiming mode
+        not_fate:
+        cmp ecx, SPL_FLAMING_POTION
+        jb ordinary
+        cmp ecx, SPL_HOLY_WATER
+        ja quit
+        mov ecx, SPL_FIRE_BOLT
+        ordinary:
+        sub ecx, 2
+        cmp ecx, 95
+        quit:
+        ret
+      }
+}
+
+// Give back the potion if aiming prompt is cancelled.
+// Note: this will fail if the PC's backpack is full.
+static void __thiscall aim_potions_refund(struct dialog_param *this)
+{
+    int item_id;
+    switch (this->spell)
+      {
+    case SPL_FLAMING_POTION:
+        item_id = FLAMING_POTION;
+        break;
+    case SPL_SHOCKING_POTION:
+        item_id = SHOCKING_POTION;
+        break;
+    case SPL_FREEZING_POTION:
+        item_id = FREEZING_POTION;
+        break;
+    case SPL_NOXIOUS_POTION:
+        item_id = NOXIOUS_POTION;
+        break;
+    case SPL_HOLY_WATER:
+        item_id = HOLY_WATER;
+        break;
+    default:
+        return;
+      }
+    int slot = put_in_backpack(&PARTY[this->player], -1, item_id);
+    if (!slot)
+        return;
+    struct item *potion = &PARTY[this->player].items[slot-1];
+    potion->bonus = this->skill;
+    potion->flags = 1; // identified
+    return;
+}
+
+// Hook for the above.
+static void __declspec(naked) aim_potions_refund_hook(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [0x507a54] ; current dialog, I think
+        cmp ecx, ebx
+        jz quit
+        mov ecx, dword ptr [ecx+28] ; dialog param
+        call aim_potions_refund
+        mov ecx, dword ptr [0x507a54]
+        quit:
+        ret
+      }
+}
+
+// Supply the objlist ID for thrown potions.
+static void __declspec(naked) cast_potions_object(void)
+{
+    asm
+      {
+        cmp eax, SPL_FLAMING_POTION
+        jb ordinary
+        cmp eax, SPL_HOLY_WATER
+        ja ordinary
+        lea eax, [eax+eax*4]
+        lea eax, [OBJ_FLAMING_POTION-SPL_FLAMING_POTION*10+eax*2]
+        ret
+        ordinary:
+        mov ax, word ptr [0x4e3ab0+eax*4-4]
+        ret
+      }
+}
+
+static void forbid_spell(void); // defined below
+
+// Used in damage_messages() below.
+static int last_hit_player;
+
+// Redirect potion pseudo-spell code to the attack spell code.
+// This hook is also reused for spell disabling.
+// The new Fate spell ID is also handled here.
+static void __declspec(naked) cast_potions_jump(void)
+{
+    asm
+      {
+        mov dword ptr [last_hit_player], esi ; reset to 0
+        jna forbid_spell
+        cmp eax, SPL_FATE - 1
+        je fate
+        cmp eax, SPL_FLAMING_POTION - 1
+        jb not_it
+        cmp eax, SPL_HOLY_WATER - 1
+        ja not_it
+        mov dword ptr [ebp-0xb4], 100 ; recovery
+        push 0x4289c6
+        ret 4
+        not_it:
+        push 0x428295
+        ret 4
+        fate:
+        mov word ptr [ebx], SPL_SPECTRAL_WEAPON ; for the sound
+        push 0x42b91d ; fate code
+        ret 4
+      }
+}
+
+// Let the throw velocity depend on strength.
+static void __declspec(naked) cast_potions_speed(void)
+{
+    asm
+      {
+        movzx eax, word ptr [eax+ecx+48]
+        cmp word ptr [ebx], SPL_FLAMING_POTION
+        jb ordinary
+        cmp word ptr [ebx], SPL_HOLY_WATER
+        ja ordinary
+        push eax
+        push edx
+        mov ecx, dword ptr [ebp-32]
+        call dword ptr ds:get_might
+        push eax
+        call dword ptr ds:get_effective_stat
+        imul eax, 100
+        pop edx
+        pop ecx
+        add eax, ecx
+        ordinary:
+        ret
+      }
+}
+
+// Make a thrown potion sound (or something alike it, anyway).
+static void __declspec(naked) cast_potions_sound(void)
+{
+    asm
+      {
+        cmp eax, SPL_FLAMING_POTION
+        jb ordinary
+        cmp eax, SPL_HOLY_WATER
+        ja ordinary
+        mov eax, 108 ; wood weapon vs leather01l
+        ret
+        ordinary:
+        movsx eax, word ptr [0x4edf30+eax*2] ; spell sound
+        ret
+      }
+}
+
+// Redirect the explode action for the new potions to fireball.
+static void __declspec(naked) explode_potions_jump(void)
+{
+    asm
+      {
+        cmp cx, OBJ_FLAMING_POTION
+        je potion
+        cmp cx, OBJ_SHOCKING_POTION
+        je potion
+        cmp cx, OBJ_FREEZING_POTION
+        je potion
+        cmp cx, OBJ_NOXIOUS_POTION
+        je potion
+        cmp cx, OBJ_THROWN_HOLY_WATER 
+        je potion
+        mov eax, OBJ_ACID_BURST
+        ret
+        potion:
+        push 0x46c887
+        ret 4
+      }
+}
+
+// Potions have a smaller radius than a fireball.
+static void __declspec(naked) explode_potions_radius(void)
+{
+    asm
+      {
+        pop edx
+        cmp word ptr [esi], OBJ_FLAMING_EXPLOSION
+        je potion
+        cmp word ptr [esi], OBJ_SHOCKING_EXPLOSION
+        je potion
+        cmp word ptr [esi], OBJ_FREEZING_EXPLOSION
+        je potion
+        cmp word ptr [esi], OBJ_NOXIOUS_EXPLOSION
+        je potion
+        cmp word ptr [esi], OBJ_HOLY_EXPLOSION
+        je potion
+        push 0x200
+        push edx
+        ret
+        potion:
+        push 0x100
+        push edx
+        ret
+      }
+}
+
+// Provide sounds for exploding/shattering potions.
+static void __declspec(naked) explode_potions_sound(void)
+{
+    asm
+      {
+        cmp eax, SPL_FLAMING_POTION
+        je flaming
+        cmp eax, SPL_SHOCKING_POTION
+        je shocking
+        cmp eax, SPL_FREEZING_POTION
+        je freezing
+        cmp eax, SPL_NOXIOUS_POTION
+        je noxious
+        cmp eax, SPL_HOLY_WATER
+        je holy
+        movsx eax, word ptr [0x4edf30+eax*2] ; spell sound
+        ret
+        flaming:
+        mov eax, 10011 - 1 ; 04firebolt03
+        ret
+        shocking:
+        mov eax, 17040 - 1 ; Sparks
+        ret
+        freezing:
+        mov eax, 12091 - 1 ; iceblast2
+        ret
+        noxious:
+        mov eax, 1371 - 1 ; Ooze_die
+        ret
+        holy:
+        mov eax, 14040 - 1 ; 49RemoveCurse03
+        ret
+      }
+}
+
+// Calculate the potion damage and element for monsters.
+static void __declspec(naked) damage_potions_monster(void)
+{
+    asm
+      {
+        cmp eax, SPL_FLAMING_POTION
+        jb ordinary
+        cmp eax, SPL_HOLY_WATER
+        ja ordinary
+        jne not_holy
+        add eax, 2 ; it`s number 4, but the holy element is 6
+        not_holy:
+        sub eax, SPL_FLAMING_POTION
+        mov dword ptr [ebp-8], eax ; element
+        ; the higher bits of the potion`s power are here:
+        mov ecx, dword ptr [ebx+0x50] ; spell mastery
+        ; this will only work properly with power < 192
+        ; thankfully, potions with power > 135 are not legitimately brewable
+        dec ecx
+        shl ecx, 6
+        add ecx, dword ptr [ebx+0x4c] ; the rest of potion/spell power
+        mov edx, 3
+        and eax, 1
+        sub edx, eax ; d2 for elec and poison, d3 for fire, cold, and holy
+        call dword ptr ds:roll_dice
+        push 0x439767
+        ret 8
+        ordinary:
+        push 0x48e189 ; replaced function call
+        ret
+      }
+}
+
+// Ditto, for players.
+static void __declspec(naked) damage_potions_player(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ebx+0x48] ; spell id
+        cmp eax, SPL_FLAMING_POTION
+        jb ordinary
+        cmp eax, SPL_HOLY_WATER
+        ja ordinary
+        jne not_holy
+        add eax, 2 ; it`s number 4, but the holy element is 6
+        not_holy:
+        sub eax, SPL_FLAMING_POTION
+        push eax
+        ; the higher bits of the potion`s power are here:
+        mov ecx, dword ptr [ebx+0x50] ; spell mastery
+        ; this will only work properly with power < 192
+        ; thankfully, potions with power > 135 are not legitimately brewable
+        dec ecx
+        shl ecx, 6
+        add ecx, dword ptr [ebx+0x4c] ; the rest of potion/spell power
+        mov edx, 3
+        and eax, 1
+        sub edx, eax ; d2 for elec and poison, d3 for fire, cold, and holy
+        call dword ptr ds:roll_dice
+        pop ecx
+        push 0x43a95a
+        ret 4
+        ordinary:
+        push 0x48e4f0 ; replaced function call
+        ret
+      }
+}
+
+// Redirect applied holy water to the weapon potions code.
+static void __declspec(naked) holy_water_jump(void)
+{
+    asm
+      {
+        cmp ecx, HOLY_WATER
+        je quit
+        cmp ecx, SWIFT_POTION ; replaced code
+        quit:
+        ret
+      }
+}
+
+// Supply the Undead Slaying enchantment when applying holy water.
+static void __declspec(naked) holy_water_enchant(void)
+{
+    asm
+      {
+        cmp eax, HOLY_WATER
+        je holy
+        mov eax, dword ptr [0x4e28fc+eax*4-FLAMING_POTION*4] ; replaced code
+        ret
+        holy:
+        mov eax, SPC_UNDEAD_SLAYING
+        ret
+      }
+}
+
+// Add the pseudo-button-thing corresponding
+// to the "bless water" dialog option.
+static void __declspec(naked) add_bless_water_reply(void)
+{
+    asm
+      {
+        call dword ptr ds:add_reply
+        mov ecx, 2
+        mov edx, 12
+        call dword ptr ds:add_reply
+        push 96 ; learn skills action
+        push 0x4b3cfc ; four-reply branch
+        ret
+      }
+}
+
+static char reply_buffer[100];
+
+// Supply yhe text to the new "bless water" reply
+// when calculating text position.
+static void __declspec(naked) bless_water_reply_sizing(void)
+{
+    asm
+      {
+        inc edi
+        lea eax, [ebp-336] ; donate string
+        cmp dword ptr [ebp-24], eax
+        je new_reply
+        cmp dword ptr [ebp-24], offset reply_buffer
+        jne ordinary
+        mov dword ptr [ebp-24], eax
+        ordinary:
+        add dword ptr [ebp-24], 100
+        ret
+        new_reply:
+        mov eax, dword ptr [0x507a40] ; parent dialogue or smth
+        mov eax, dword ptr [eax+28] ; param = temple id
+        ; cheapest temples won`t sell holy water
+        ; to avoid buy price being lower than sell price
+        ; besides, it wouldn`t be too strong anyway
+        cmp eax, 74 ; emerald island healer
+        je skip
+        cmp eax, 86 ; castle harmondale inner temple
+        je skip
+        ; also no holy water in dark temples
+        cmp eax, 78 ; deyja temple
+        je skip
+        cmp eax, 81 ; the pit temple
+        je skip
+        cmp eax, 82 ; nighon temple
+        jne not_dark
+        skip:
+        and dword ptr [reply_buffer], 0
+        inc edi
+        jmp ordinary
+        not_dark:
+        push ecx
+        imul eax, eax, 52 ; 2devents struct size
+        fld dword ptr [0x5912b8+eax+32] ; val field = temple cost
+        push 10
+        fimul dword ptr [esp]
+        fistp dword ptr [esp]
+        push dword ptr [new_strings+19*4]
+        ; for some reason clang crashes if I try to push offsets directly
+        mov eax, offset reply_buffer
+        push eax
+        call dword ptr ds:sprintf
+        add esp, 12
+        pop ecx
+        mov dword ptr [ebp-24], offset reply_buffer
+        ret
+      }
+}
+
+// Print the "bless water" reply.
+static void __declspec(naked) bless_water_reply_text(void)
+{
+    asm
+      {
+        inc dword ptr [ebp-24]
+        lea eax, [ebp-336] ; donate string
+        cmp dword ptr [ebp-4], eax
+        je new_reply
+        cmp dword ptr [ebp-4], offset reply_buffer
+        jne ordinary
+        mov dword ptr [ebp-4], eax
+        ordinary:
+        add dword ptr [ebp-4], 100
+        ret
+        new_reply:
+        cmp dword ptr [reply_buffer], 0
+        jnz have_reply
+        inc dword ptr [ebp-24]
+        inc dword ptr [ebp-8]
+        mov eax, dword ptr [esi+52] ; next (disabled) reply
+        and dword ptr [eax+20], 0 ; bottom = 0 (prevent clicking)
+        jmp ordinary
+        have_reply:
+        mov dword ptr [ebp-4], offset reply_buffer
+        ret
+      }
+}
+
+// Generate the holy water item for a donation.
+static void __declspec(naked) bless_water_action(void)
+{
+    asm
+      {
+        jne not_donate
+        push 0x4b7324 ; replaced je
+        ret 4
+        not_donate:
+        cmp eax, 1
+        je bless
+        ret
+        bless:
+        mov eax, dword ptr [0x507a40] ; parent dialogue or smth
+        mov eax, dword ptr [eax+28] ; param = temple id
+        imul eax, eax, 52 ; 2devents struct size
+        fld dword ptr [0x5912b8+eax+32] ; val field = temple cost
+        fistp dword ptr [esp] ; don`t need the return address anymore
+        pop ebx
+        lea ecx, [ebx*4+ebx] ; price = heal cost x 10
+        shl ecx, 1
+        cmp dword ptr [0xacd56c], ecx ; party gold
+        jae can_pay
+        push 0x4b75bc ; not enough gold branch
+        ret
+        can_pay:
+        call dword ptr ds:spend_gold
+        mov eax, ebx
+        xor edx, edx
+        mov ecx, 5
+        div ecx ; temple power = cost / 5
+        mov ebx, eax
+        mov eax, dword ptr [0xacd550] ; day of month
+        add ecx, 2 ; ecx = 7
+        div ecx
+        lea ebx, [ebx*2+edx+1] ; water power = temple power * 2 + weekday
+        sub esp, 36
+        mov ecx, esp
+        call dword ptr ds:init_item
+        mov dword ptr [esp], HOLY_WATER ; id
+        mov dword ptr [esp+4], ebx ; power
+        mov dword ptr [esp+20], 1 ; identified flag
+        mov ecx, MOUSE_THIS_ADDR
+        push esp
+        call dword ptr ds:add_mouse_item
+        mov ecx, esi
+        ; second dword parameter is unused
+        push ANIM_SMILE
+        call dword ptr ds:show_face_animation
+        push 0x4b749f ; return to main menu branch (I think)
+        ret 32
+      }
+}
+
+// Allow using the four elemental damage potions as throwing weapons.
+// Also adds throwable (and appliable) holy water.
+static inline void throw_potions(void)
+{
+    // the next four rewrite the potion jump table
+    // holy water jump is in new_potion_effects() above
+    patch_pointer(0x468f26, throw_potions_jump);
+    patch_pointer(0x468f2a, throw_potions_jump);
+    patch_pointer(0x468f2e, throw_potions_jump);
+    patch_pointer(0x468f32, throw_potions_jump);
+    hook_call(0x434723, throw_potions_power, 5);
+    hook_call(0x42777e, aim_potions_type, 6);
+    hook_call(0x432809, aim_potions_refund_hook, 6);
+    hook_call(0x427eda, cast_potions_object, 8);
+    hook_call(0x4280c7, cast_potions_jump, 6);
+    hook_call(0x428c30, cast_potions_speed, 5);
+    hook_call(0x42e891, cast_potions_sound, 8);
+    hook_call(0x46c0c2, explode_potions_jump, 5);
+    hook_call(0x46c902, explode_potions_radius, 5);
+    hook_call(0x46cc01, explode_potions_sound, 8);
+    hook_call(0x43974c, damage_potions_monster, 5);
+    hook_call(0x43a938, damage_potions_player, 5);
+    // there are two potion ID checks
+    hook_call(0x4167a2, holy_water_jump, 6);
+    hook_call(0x416802, holy_water_jump, 6);
+    hook_call(0x416946, holy_water_enchant, 7);
+    // applied holy water effect is in temp_enchants() above
+    hook_jump(0x4b3d1f, add_bless_water_reply);
+    hook_call(0x4b777b, bless_water_reply_sizing, 5);
+    hook_call(0x4b785a, bless_water_reply_text, 7);
+    // instead of unused reply's height (offset 12), erase its bottom
+    // (offset 20), which is the one that's checked for collision.
+    // before I added a new reply, this somehow worked as is,
+    // but now the unused heal reply overlaps the donate reply,
+    // preventing it from being selected without this fix.
+    patch_byte(0x4b76dc, 20);
+    hook_call(0x4b7059, bless_water_action, 6);
+}
 
 // Some spell elements are hardcoded.  I could just re-hardcode them to
 // my new elements, but it's much cooler to use the data from spells.txt.
 // Thus, this function is called just after spells.txt is parsed.
 static void spell_elements(void)
 {
-    patch_byte(0x439c48, ELEMENT(34)); // shock
-    patch_byte(0x428dc6, ELEMENT(35)); // slow
-    patch_byte(0x428748, ELEMENT(44)); // mass distortion
-    patch_byte(0x428cce, ELEMENT(81)); // paralysis
-    patch_byte(0x46bf8c, ELEMENT(92)); // shrinking ray
-    patch_byte(0x42e0be, ELEMENT(94)); // control undead
+    patch_byte(0x439c48, ELEMENT(SPL_STUN));
+    patch_byte(0x428dc6, ELEMENT(SPL_SLOW));
+    patch_byte(0x428748, ELEMENT(SPL_MASS_DISTORTION));
+    patch_byte(0x428cce, ELEMENT(SPL_PARALYZE));
+    patch_byte(0x46bf8c, ELEMENT(SPL_SHRINKING_RAY));
+    patch_byte(0x42e0be, ELEMENT(SPL_CONTROL_UNDEAD));
     // Armageddon element wasn't updated from MM6, where it was 5 (then magic).
     // As in MM7 resistance 5 is unused, armageddon became irresistible.
-    patch_byte(0x401b74, ELEMENT(98)); // armageddon (to monsters)
-    patch_byte(0x401bfb, ELEMENT(98)); // armageddon (to players)
+    patch_byte(0x401b74, ELEMENT(SPL_ARMAGEDDON)); // to monsters
+    patch_byte(0x401bfb, ELEMENT(SPL_ARMAGEDDON)); // to players
     // Not sure if the next two do anything, but just in case.
-    patch_byte(0x46c9ea, ELEMENT(81)); // paralysis
-    patch_byte(0x46c9e6, ELEMENT(92)); // shrinking ray
+    patch_byte(0x46c9ea, ELEMENT(SPL_PARALYZE));
+    patch_byte(0x46c9e6, ELEMENT(SPL_SHRINKING_RAY));
 }
+
+// Defined below.
+static void parse_statrate(void);
 
 // Let's ride on the tail of the spells.txt parsing function.
 static void __declspec(naked) spells_txt_tail(void)
@@ -710,12 +3539,679 @@ static void __declspec(naked) spells_txt_tail(void)
         pop ebx
         add esp, 16
         call spell_elements
+        call parse_itemgend
+        call parse_statrate
+        ret
+      }
+}
+
+static const float jump_multiplier = 0.2f; // +20% per effect
+
+// Let GM Feather Fall boost normal jump slightly.
+// Also handles boots of leaping (including Hermes' Sandals).
+static void __declspec(naked) feather_fall_jump(void)
+{
+    asm
+      {
+        fld1
+        cmp word ptr [PARTY_BUFFS+16*BUFF_FEATHER_FALL+10], GM
+        jne no_ff
+        fadd dword ptr [jump_multiplier]
+        no_ff:
+        mov ecx, 4
+        check_boots:
+        mov eax, dword ptr [0xa74f44+ecx*4] ; PC pointers
+        mov edx, dword ptr [eax+0x1968] ; boots slot
+        test edx, edx
+        jz next_pc
+        lea edx, [edx+edx*8]
+        cmp dword ptr [eax+0x214+edx*4-36], HERMES_SANDALS
+        je leaping
+        cmp dword ptr [eax+0x214+edx*4-36+12], SPC_LEAPING
+        jne next_pc
+        leaping:
+        fadd dword ptr [jump_multiplier]
+        next_pc:
+        loop check_boots
+        fmulp
+        fmul dword ptr [0x4d873c] ; replaced code
+        ret
+      }
+}
+
+// Make GM Torch Light even brighter than M.
+static void __declspec(naked) torch_light_gm(void)
+{
+    asm
+      {
+        cmp dword ptr [ebp-24], GM ; spell school mastery
+        jne master
+        mov dword ptr [ebp-4], 5
+        ret
+        master:
+        mov dword ptr [ebp-4], 4 ; replaced code
+        ret
+      }
+}
+
+static int enchant_item_gm_noon;
+
+// Buff allowed special enchantments for GM Enchant Item, esp. at noon.
+static void __declspec(naked) enchant_item_lvl45(void)
+{
+    asm
+      {
+        cmp al, 1
+        jz quit
+        cmp al, 2
+        jz quit
+        cmp dword ptr [enchant_item_gm_noon], 0
+        jnz noon
+        test al, al
+        jmp quit
+        noon:
+        cmp al, 3
+        quit:
+        ret
+      }
+}
+
+// At noon (11:00 to 12:59), Enchant Item is more powerful.
+// Master casts as GM, and GM uses treasure level 5 instead of 4.
+static void __declspec(naked) enchant_item_noon_check(void)
+{
+    asm
+      {
+        mov dword ptr [enchant_item_gm_noon], esi ; esi == 0
+        cmp dword ptr [0xacd554], 11 ; hour of day
+        jb quit
+        cmp dword ptr [0xacd554], 12 ; hour of day
+        ja quit
+        cmp ecx, GM
+        jae gm
+        inc ecx
+        quit:
+        add eax, PARTY_ADDR ; replaced code
+        ret
+        gm:
+        inc dword ptr [enchant_item_gm_noon]
+        jmp quit
+      }
+}
+
+// Let GM Enchant Item use treasure level 4
+// for numeric enchantments, except at noon.
+static void __declspec(naked) enchant_item_noon_numeric(void)
+{
+    asm
+      {
+        cmp dword ptr [enchant_item_gm_noon], 0
+        jz lvl4
+        mov ecx, dword ptr [0x5e3f88] ; replaced code
+        ret
+        lvl4:
+        mov ecx, dword ptr [0x5e3f80] ; lvl 4 min
+        mov esi, dword ptr [0x5e3f84] ; lvl 4 max
+        ret
+      }
+}
+
+// Halve "of Arms", "of Dodging", and "of the Fist".
+// This branch of code may be unused in practice, but whatever.
+static void __declspec(naked) enchant_item_halve_expert(void)
+{
+    asm
+      {
+        add edx, ecx ; replaced code
+        cmp dword ptr [esi+4], STD_ARMS
+        jb normal
+        cmp dword ptr [esi+4], STD_FIST
+        ja normal
+        ; note that the minimum is 3, so we don`t need to check for zero
+        shr edx, 1
+        normal:
+        mov dword ptr [esi+8], edx ; replaced code
+        ret
+      }
+}
+
+// Halve "of Arms", "of Dodging", and "of the Fist".
+// Covers both the Master and GM cases, and also the unused Normal case.
+static void __declspec(naked) enchant_item_halve_others(void)
+{
+    asm
+      {
+        add edx, ecx ; replaced code
+        cmp dword ptr [edi+4], STD_ARMS
+        jb normal
+        cmp dword ptr [edi+4], STD_FIST
+        ja normal
+        ; note that the minimum is 3, so we don`t need to check for zero
+        shr edx, 1
+        normal:
+        mov dword ptr [edi+8], edx ; replaced code
+        ret
+      }
+}
+
+// Allow the Berserk spell to be cast on a PC to trigger the Insane condition.
+// Currently respects undead-ness and other immunities.
+static void __declspec(naked) berserk_pc(void)
+{
+    asm
+      {
+        jne not_monster ; we replaced a jne
+        ret
+        not_monster:
+        cmp dword ptr [ebp-8], esi ; target monster == 0 (just to be sure)
+        jnz quit
+        movzx ecx, word ptr [ebx+4] ; target player
+        imul ecx, ecx, 6972 ; sizeof(struct player)
+        add ecx, PARTY_ADDR
+        mov esi, ecx
+        call dword ptr ds:player_active ; exclude dead etc. players
+        test eax, eax
+        jz quit
+        push 1 ; can resist -- arguable, but avoids abuse
+        push 5 ; insane condition
+        mov ecx, esi
+        call condition_immunity ; our wrapper for inflict_condition()
+        quit:
+        push 0x42deaa ; post-cast code
+        ret 4
+      }
+}
+
+// Store up to 100 nearby monsters on the stack,
+// abort the spell if there are none.
+static void __declspec(naked) spirit_lash_count_targets(void)
+{
+    asm
+      {
+        mov eax, 0x100 ; radius
+        cmp dword ptr [ebp-24], GM
+        jne master
+        mov eax, 0x200 ; larger radius
+        master:
+        sub esp, 400 ; buffer
+        mov ecx, esp
+        mov edx, 100 ; buffer size
+        push eax
+        call dword ptr ds:get_monsters_around_party
+        cmp eax, 0
+        jle fail
+        mov esi, eax ; monsters count
+        push 0x429687 ; projectile init code
+        ret
+        fail:
+        add esp, 400
+        push 0x429655 ; spell fail code
+        ret
+      }
+}
+
+// Origin the Spirit Lash (bogus) projectile at the party instead of target.
+// That way we don't need to recalculate it for each monster.
+// This chunk deals with X coordinate.
+static void __declspec(naked) spirit_lash_x_chunk(void)
+{
+    asm
+      {
+        mov eax, dword ptr [0xacd4ec] ; party.x
+        nop
+        nop
+      }
+}
+
+// This chunk deals with Y coordinate.
+static void __declspec(naked) spirit_lash_y_chunk(void)
+{
+    asm
+      {
+        mov eax, dword ptr [0xacd4f0] ; party.y
+        nop
+        nop
+      }
+}
+
+// This chunk deals with Z coordinate.  Some further code is erased.
+static void __declspec(naked) spirit_lash_z_chunk(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [0xacd4f4] ; party.z
+      }
+}
+
+// Damage each nearby monster.
+static void __declspec(naked) spirit_lash_damage(void)
+{
+    asm
+      {
+        mov ebx, ecx ; projectile
+        lea edi, [esi*4-400] ; (-edi) == excess length of buffer
+        pop ecx ; undo an earlier push
+        loop:
+        pop edx ; next monster in the buffer
+        mov ecx, ebx
+        lea eax, [ebp-284] ; force vector
+        push eax
+        call dword ptr ds:damage_monster_from_party
+        dec esi
+        jnz loop
+        sub esp, edi ; discard rest of buffer
+        push 0x42977b ; return address
+        ret
+      }
+}
+
+// Direct calls from assembly are not relocated properly.
+static funcptr_t memset_ptr = memset;
+
+// Bug fix: Sacrifice didn't cure conditions or aging, despite the description.
+// It still doesn't cure zombification, but neither does DI.
+static void __declspec(naked) sacrifice_conditions(void)
+{
+    asm
+      {
+        push 16 * 8 ; all conditions except zombie
+        push 0 ; zero out
+        push edi ; conditions are at beginning of struct player
+        call dword ptr ds:memset_ptr
+        add esp, 12
+        and word ptr [edi+222], 0 ; cure aging
+        add edi, 6972 ; replaced code
+        ret
+      }
+}
+
+// A bitfield to store spells disabled by scripts.
+static uint8_t disabled_spells[(LAST_REAL_SPELL+7)/8];
+
+// Reset disabled spell on map reload.
+static void reset_disabled_spells(void)
+{
+    memset(disabled_spells, 0, sizeof(disabled_spells));
+}
+
+// Check the disabled spells bitfield.
+static int __stdcall check_spell_disabled(unsigned spell)
+{
+    if (spell > LAST_REAL_SPELL)
+        return 0;
+    return !!(disabled_spells[spell/8] & (1 << (spell & 7)));
+}
+
+// Check if a spell is disabled on this map; if so, fail.
+// Called from cast_potions_jump() above.
+static void __declspec(naked) forbid_spell(void)
+{
+    asm
+      {
+        inc eax
+        push eax
+        call check_spell_disabled
+        test eax, eax
+        jnz disabled
+        ; restore registers
+        movsx eax, word ptr [ebx]
+        dec eax
+        mov ecx, dword ptr [ebp-24]
+        mov edx, 3
+        ret
+        disabled:
+        push 0x4290c1
+        ret 4
+      }
+}
+
+// Set the disabled spell bit.
+static void __stdcall disable_spell(unsigned spell)
+{
+    if (spell <= LAST_REAL_SPELL)
+        disabled_spells[spell/8] |= 1 << (spell & 7);
+}
+
+// Unset the disabled spell bit.
+static void __stdcall enable_spell(unsigned spell)
+{
+    if (spell <= LAST_REAL_SPELL)
+        disabled_spells[spell/8] &= ~(1 << (spell & 7));
+}
+
+// Disregard duration when determining if GM Wizard Eye is active.
+static void __declspec(naked) wizard_eye_functionality(void)
+{
+    asm
+      {
+        movzx eax, word ptr [PARTY_BUFFS+16*BUFF_WIZARD_EYE+10] ; replaced code
+        cmp eax, GM
+        jne quit
+        mov dword ptr [ebp-24], 1 ; wizard eye active
+        quit:
+        ret
+      }
+}
+
+// Do not ever dispel GM Wizard Eye.
+static void __declspec(naked) wizard_eye_permanence(void)
+{
+    asm
+      {
+        cmp esi, PARTY_BUFFS + 16 * BUFF_WIZARD_EYE
+        jne not_eye
+        cmp word ptr [esi+10], GM
+        je quit ; caller will also check zf later
+        not_eye:
+        mov word ptr [esi+10], bx ; replaced code
+        cmp ax, bx ; replaced code
+        quit:
+        ret
+      }
+}
+
+// Disregard duration when displaying GM Wizard Eye animation.
+static void __declspec(naked) wizard_eye_animation(void)
+{
+    asm
+      {
+        cmp word ptr [PARTY_BUFFS+16*BUFF_WIZARD_EYE+10], MASTER
+        jg quit ; caller will also check flags
+        cmp dword ptr [PARTY_BUFFS+16*BUFF_WIZARD_EYE+4], 0 ; replaced code
+        quit:
+        ret
+      }
+}
+
+// Handle durationless GM Wizard Eye when counting buffs to display.
+static void __declspec(naked) wizard_eye_display_count(void)
+{
+    asm
+      {
+        cmp eax, PARTY_BUFFS + 16 * BUFF_WIZARD_EYE
+        jne not_eye
+        cmp word ptr [eax+10], MASTER
+        jg quit ; caller will also check flags
+        not_eye:
+        cmp dword ptr [eax+4], ebx ; replaced code
+        jl skip
+        quit:
+        ret
+        skip:
+        push 0x41d712 ; replaced jump
+        ret 4
+      }
+}
+
+// Always display GM Wizard Eye, regardless of duration.
+static void __declspec(naked) wizard_eye_display(void)
+{
+    asm
+      {
+        cmp ecx, PARTY_BUFFS + 16 * BUFF_WIZARD_EYE
+        jne not_eye ; note that WE is last buff so it`ll never be greater
+        cmp word ptr [ecx+10], MASTER
+        not_eye:
+        mov ecx, dword ptr [ecx+4] ; replaced code
+        jg quit ; caller will also check flags
+        test ecx, ecx ; replaced code
+        quit:
+        ret
+      }
+}
+
+// Direct calls from assembly are not relocated.
+static funcptr_t strcpy_ptr = strcpy;
+static funcptr_t strcat_ptr = strcat;
+
+// Display GM Wizard Eye duration as "Permanent".
+static void __declspec(naked) wizard_eye_display_duration(void)
+{
+    asm
+      {
+        cmp dword ptr [ebp-8], PARTY_BUFFS + 16 * BUFF_WIZARD_EYE
+        jne not_eye
+        cmp word ptr [PARTY_BUFFS+16*BUFF_WIZARD_EYE+10], GM
+        je permanent
+        not_eye:
+        push 0x41d1b6 ; replaced function call
+        ret
+        permanent:
+        push 0x4e323c ; right-align code
+        push 0x5c5c30 ; buffer used by the replaced function
+        call dword ptr ds:strcpy_ptr
+        push dword ptr [GLOBAL_TXT+121*4] ; "permanent"
+        push 0x5c5c30
+        call dword ptr ds:strcat_ptr
+        push 32 ; a single space
+        push esp ; as a string
+        push 0x5c5c30
+        call dword ptr ds:strcat_ptr
+        add esp, 28
+        ; no, I don`t know what most of these params do
+        xor eax, eax
+        push eax
+        push eax
+        push eax
+        push 0x5c5c30
+        push eax
+        push esi
+        push 32
+        mov edx, dword ptr [ebp-12]
+        mov ecx, edi
+        call dword ptr ds:print_string
+        ret 12
+      }
+}
+
+// GM Wizard Eye is applied permanently.
+// Casting it the second time will cancel it.
+// TODO: cancelling could have a different sound?
+static void __declspec(naked) wizard_eye_cast(void)
+{
+    asm
+      {
+        cmp dword ptr [ebp-24], GM
+        je permanent
+        shl eax, 7 ; replaced code
+        mov dword ptr [ebp-20], eax ; replaced code
+        ret
+        permanent:
+        mov di, word ptr [PARTY_BUFFS+16*BUFF_WIZARD_EYE+10]
+        mov ecx, PARTY_BUFFS + 16 * BUFF_WIZARD_EYE
+        call dword ptr ds:remove_buff
+        mov word ptr [PARTY_BUFFS+16*BUFF_WIZARD_EYE+10], si ; == 0
+        cmp di, GM
+        je remove
+        add word ptr [PARTY_BUFFS+16*BUFF_WIZARD_EYE+10], GM
+        remove:
+        push 0x42deaa ; post-cast code
+        ret 8
+      }
+}
+
+// Day of Protection always applies Wizard Eye at Master skill.
+// Do not overwrite existing permanent Eye, though.
+static void __declspec(naked) wizard_eye_from_day_of_protection(void)
+{
+    asm
+      {
+        cmp word ptr [PARTY_BUFFS+16*BUFF_WIZARD_EYE+10], GM
+        je skip
+        mov dword ptr [ebp-24], MASTER ; no GM
+        fild qword ptr [0xacce64] ; replaced code
+        ret
+        skip:
+        push 0x42deaa ; post-cast code
+        ret 4
+      }
+}
+
+// When re-casting Immolation or GM Wizard Eye to switch them off,
+// do not charge spell points.
+static void __declspec(naked) switch_off_spells_for_free(void)
+{
+    asm
+      {
+        mov dword ptr [ebp-180], eax ; replaced code
+        jnz quit ; not casting from a spellbook
+        cmp word ptr [ebx], SPL_IMMOLATION
+        jne not_immolation
+        mov eax, dword ptr [PARTY_BUFFS+16*BUFF_IMMOLATION]
+        or eax, dword ptr [PARTY_BUFFS+16*BUFF_IMMOLATION+4]
+        ret ; zf will be checked shortly
+        not_immolation:
+        cmp word ptr [ebx], SPL_WIZARD_EYE
+        jne set_zf
+        cmp dword ptr [ebp-24], GM
+        jne set_zf
+        cmp word ptr [PARTY_BUFFS+16*BUFF_WIZARD_EYE+10], GM
+        jne set_zf
+        cmp esi, 1 ; clear zf
+        ret
+        set_zf:
+        test esi, esi
+        quit:
+        ret
+      }
+}
+
+// Allow cancelling Immolation by casting it a second time.
+static void __declspec(naked) switch_off_immolation(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [PARTY_BUFFS+16*BUFF_IMMOLATION]
+        or ecx, dword ptr [PARTY_BUFFS+16*BUFF_IMMOLATION+4]
+        jz cast
+        cmp word ptr [ebx+10], si ; only if casting from spellbook
+        jz remove
+        cast:
+        shl eax, 7 ; replaced code
+        mov dword ptr [ebp-44], eax ; replaced code
+        ret
+        remove:
+        mov ecx, PARTY_BUFFS + 16 * BUFF_IMMOLATION
+        call dword ptr ds:remove_buff
+        push 0x42deaa ; post-cast code
+        ret 8
+      }
+}
+
+// Make HoP duration equivalent to its component spells
+// when cast separately at the same skill and mastery.
+static void __declspec(naked) hour_of_power_duration(void)
+{
+    asm
+      {
+        imul eax, eax, 75
+        add eax, 60 * 60
+        imul ecx, ecx, 15
+        add ecx, 60 * 60
+        ret
+      }
+}
+
+// Redirect GM Day of Protection cast to old Master code.
+static void __declspec(naked) day_of_protection_chunk(void)
+{
+    asm
+      {
+        cmp ecx, GM
+        nop
+        nop
+      }
+}
+
+// Increase GM Flight duration instead of removing mana drain.
+static void __declspec(naked) flight_duration(void)
+{
+    asm
+      {
+        jnz quit ; if not GM
+        imul edi, edi, 6
+        mov dword ptr [ebp-16], edi ; duration multiplier
+        quit:
+        ret
+      }
+}
+
+// Make Water Walk drain power only every 20 minutes, as per description.
+static void __declspec(naked) water_walk_power_drain(void)
+{
+    asm
+      {
+        movzx edi, word ptr [PARTY_BUFFS+16*BUFF_WATER_WALK+8] ; power field
+        add eax, edi
+        xor edx, edx
+        mov edi, 4 ; every 4th 5th min == every 20th min
+        div edi
+        mov word ptr [PARTY_BUFFS+16*BUFF_WATER_WALK+8], dx ; store remainder
+        mov edx, 1 ; restore previous value
+        add ecx, 6464 ; replaced code
+        ret
+      }
+}
+
+// Spectral Weapon spell reuses Fire Aura code, sans enchantment ID.
+static void __declspec(naked) spectral_weapon(void)
+{
+    asm
+      {
+        mov dword ptr [ebp-4], SPC_SPECTRAL
+        push 0x42903f ; fire aura code
+        ret
+      }
+}
+
+// Also, SW has a purple enchantment aura instead of red.
+static void __declspec(naked) spectral_aura(void)
+{
+    asm
+      {
+        cmp word ptr [ebx], SPL_SPECTRAL_WEAPON
+        je spectral
+        or dword ptr [esi+20], 0x10 ; replaced code
+        push 0x42dea0 ; replaced jump
+        ret
+        spectral:
+        push 0x42de9c ; vamp weapon purple aura
+        ret
+      }
+}
+
+// We replaced Fate with SW for players, but not for monsters,
+// so monster info should display the old spell name.
+static void __declspec(naked) monster_fate(void)
+{
+    asm
+      {
+        pop edx
+        cmp eax, SPL_SPECTRAL_WEAPON * 9
+        je spectral
+        push dword ptr [0x5cbeb4+eax*4] ; replaced code
+        jmp edx
+        spectral:
+        push dword ptr [GLOBAL_TXT+221*4] ; "fate"
+        jmp edx
+      }
+}
+
+// Let the scrolls cast a spell according to mod1 in items.txt,
+// as opposed to their item ID.  Allows retaining Fate scrolls.
+static void __declspec(naked) scroll_spell_id(void)
+{
+    asm
+      {
+        lea ecx, [eax+eax*2]
+        shl ecx, 4
+        movzx esi, byte ptr [ITEMS_TXT_ADDR+ecx+30] ; mod1
         ret
       }
 }
 
 // Misc spell tweaks.
-static void misc_spells(void)
+static inline void misc_spells(void)
 {
     // Charm and control undead were buggy: grandmaster control undead had
     // a very high value for duration (to simulate permanence) and due to
@@ -727,8 +4223,8 @@ static void misc_spells(void)
     // Both bugs are fixed below.
     patch_dword(0x42e06a, 0xffffff); // control undead overflow
     patch_dword(0x428ea5, 0xffffff); // charm overflow
-    patch_byte(0x428e8f, 3); // charm master
-    patch_byte(0x428e9f, 4); // charm GM
+    patch_byte(0x428e8f, MASTER); // charm master
+    patch_byte(0x428e9f, GM); // charm GM
     // Another bug: in the inter-monster combat, when one monster cast a spell
     // on another, the spell's element was read from the defending monster's
     // data.  Fixed below:
@@ -736,7 +4232,7 @@ static void misc_spells(void)
     patch_byte(0x43b2e2, 0x4f);
     // Some mod-specific tweaks for a change: let's swap the effects of
     // earth (now poison) and body (now magic) resistance spells.
-    // (In MM6 poison res. was a Body spell, and magic res was an Earth spell.)
+    // (In MM6 poison res was a Body spell, and magic res was an Earth spell.)
     uint32_t poison = dword(0x48f7ec);
     patch_dword(0x48f7ec, dword(0x48f81c));
     patch_dword(0x48f81c, poison);
@@ -749,7 +4245,97 @@ static void misc_spells(void)
     // This cannot be done on startup, but is delayed until spells.txt is read.
     hook_jump(0x453b35, spells_txt_tail);
     // Poison chest traps are also hardcoded.
-    patch_dword(0x438f11, 3); // body (8) to poison (3)
+    patch_dword(0x438f11, POISON); // was body (8)
+    // Buff Ice Blast a little (d3 -> d6 damage).  Stolen from MM8.
+    SPELL_INFO[SPL_ICE_BLAST].damage_dice = 6;
+    hook_call(0x4742bd, feather_fall_jump, 6); // outdoors
+    hook_call(0x47301e, feather_fall_jump, 6); // indoors
+    // Remove the shorter delay from GM Feather Fall.
+    SPELL_INFO[SPL_FEATHER_FALL].delay_gm = 120;
+    hook_call(0x428466, torch_light_gm, 7);
+    // Remove the shorter delay from GM Torch Light.
+    SPELL_INFO[SPL_TORCH_LIGHT].delay_gm = 60;
+    // Let's adjust Enchant item slightly.  Firstly, numerical enchantments
+    // will be as powerful as vanilla only at noon, otherwise they're one TL
+    // lower (so, TL3 at M and TL4 at GM).  On the other hand, special
+    // enchantments now improve along with the numerical ones instead of being
+    // stuck at TL 3, which was likely a bug.
+    patch_dword(0x42b1f7, 0x5e3f7c); // TL3 max number for E
+    patch_dword(0x42b1fe, 0x5e3f78); // TL3 min number for E
+    patch_dword(0x42af9b, 0x5e3f7c); // TL3 max number for M
+    patch_dword(0x42afa1, 0x5e3f78); // TL3 min number for M
+    hook_call(0x42ad3b, enchant_item_lvl45, 6);
+    hook_call(0x42ab30, enchant_item_noon_check, 5);
+    hook_call(0x42ad0f, enchant_item_noon_numeric, 6);
+    // Bug fix: let EI halve some numeric enchs like when naturally generated.
+    hook_call(0x42b208, enchant_item_halve_expert, 5); // expert
+    hook_call(0x42b468, enchant_item_halve_others, 5); // all others
+    // Remove double resistance check from Mass Distortion.
+    erase_code(0x428769, 8); // ignore result of the resistance check
+    // Allow casting Berserk on a PC.
+    patch_byte(0x427c9f + SPL_BERSERK - 2, 5); // can target monsters and pcs
+    // TODO: instead of a call we could substitute the jne address
+    hook_call(0x42c4d7, berserk_pc, 6);
+    // Upgrade Spirit Lash to its MM8 version.
+    patch_byte(0x427c9f + SPL_SPIRIT_LASH - 2, 11); // immediate
+    hook_jump(0x42958f, spirit_lash_count_targets);
+    patch_bytes(0x429708, spirit_lash_x_chunk, 7);
+    patch_bytes(0x429715, spirit_lash_y_chunk, 7);
+    patch_bytes(0x429722, spirit_lash_z_chunk, 6);
+    erase_code(0x429728, 27); // unneeded monster z-coord calculation
+    hook_jump(0x429776, spirit_lash_damage);
+    // Nerf Regeneration spell like in MM8.
+    // Instead of 5/15/50 HP per 5 min (E/M/G), restore only 2/3/4.
+    erase_code(0x493d51, 3); // it multiplied the spell's power 5x
+    patch_dword(0x429190, 2); // expert
+    // master is already 3
+    patch_dword(0x429182, 4); // GM
+    hook_call(0x42e362, sacrifice_conditions, 6);
+    erase_code(0x428b0d, 19); // enable sun ray in (some) dungeons
+    // Make GM Wizard Eye permanent and not dispellable.
+    hook_call(0x441dc3, wizard_eye_functionality, 7);
+    hook_call(0x4585c8, wizard_eye_permanence, 7);
+    hook_call(0x44155d, wizard_eye_animation, 7);
+    hook_call(0x41d704, wizard_eye_display_count, 5);
+    hook_call(0x41d7b6, wizard_eye_display, 5);
+    hook_call(0x41d819, wizard_eye_display_duration, 5);
+    hook_call(0x429e6f, wizard_eye_cast, 6);
+    hook_call(0x42d892, wizard_eye_from_day_of_protection, 6);
+    SPELL_INFO[SPL_WIZARD_EYE].cost_gm = 1; // remove previous GM bonus
+    hook_call(0x428037, switch_off_spells_for_free, 6);
+    hook_call(0x429937, switch_off_immolation, 6);
+    // Nerf Day of Gods from x3/x4/x5 to x2/x3/x4.
+    patch_byte(0x42d440, 6); // E jump -> cnanged GM code
+    patch_byte(0x42d443, 36); // M jump -> E
+    patch_word(0x42d445, 0x0f74); // GM check: jnz E -> jz M
+    patch_dword(0x42d449, 7200); // new duration constant for GM
+    patch_byte(0x42d452, 0x3f); // GM power: x5 -> x2
+    // Make Hour of Power duration more consistent.
+    patch_dword(0x42d8bd, 48); // GM duration multiplier for most spells
+    patch_dword(0x42d8c4, 16); // GM duration multiplier for haste
+    hook_call(0x42d8f6, hour_of_power_duration, 6);
+    erase_code(0x42d8fc, 9); // old duration code
+    // Nerf Day of Protection from x4/x5 to x3/x4.
+    patch_bytes(0x42d6ab, day_of_protection_chunk, 5);
+    erase_code(0x42d6b2, 3); // old not-GM jump
+    patch_byte(0x42d6b7, 0x7f); // x5 -> x3
+    patch_dword(0x42d6bf, 60*60*3); // duration (was 5 hours)
+    // Nerf Flight a bit.
+    patch_dword(0x42a285, 60*10); // reduce M flight duration to 10 min/skill
+    hook_call(0x42a294, flight_duration, 5);
+    hook_call(0x493a1e, water_walk_power_drain, 6);
+    // Implement the Spectral Weapon spell (replaces Fate).
+    patch_pointer(0x42ea21, spectral_weapon);
+    patch_byte(0x427ccc, 1); // targets an item
+    hook_jump(0x429161, spectral_aura);
+    hook_call(0x41f0ec, monster_fate, 7); // first spell
+    hook_call(0x41f13c, monster_fate, 7); // second spell
+    hook_call(0x468654, scroll_spell_id, 6); // for fate scrolls
+    // Set the same delays as Vampiric Weapon.
+    SPELL_INFO[SPL_SPECTRAL_WEAPON].delay_normal = 120;
+    SPELL_INFO[SPL_SPECTRAL_WEAPON].delay_expert = 100;
+    // BTW, GM Vampiric Weapon for some reason had a larger delay?  Fixed here:
+    SPELL_INFO[SPL_VAMPIRIC_WEAPON].delay_gm = 90;
 }
 
 // For consistency with players, monsters revived with Reanimate now have
@@ -759,11 +4345,11 @@ static void __declspec(naked) zombify(void)
 {
     asm
       {
-        mov dword ptr [edi+0x53], 200
-        mov dword ptr [edi+0x54], 200
-        cmp dword ptr [edi+0x55], 200
+        mov byte ptr [edi+0x53], IMMUNE
+        mov byte ptr [edi+0x54], IMMUNE
+        cmp byte ptr [edi+0x55], IMMUNE
         jne not_immune
-        mov dword ptr [edi+0x54], 0
+        mov byte ptr [edi+0x55], 0
         not_immune:
         lea ecx, [edi+0x164]
         ret
@@ -776,7 +4362,10 @@ static void __declspec(naked) destroy_undead_chunk(void)
 {
     asm
       {
-        cmp dword ptr [eax+0x55], 200
+        cmp byte ptr [eax+0x55], IMMUNE
+        nop
+        nop
+        nop
       }
 }
 
@@ -785,7 +4374,7 @@ static void __declspec(naked) control_undead_chunk(void)
 {
     asm
       {
-        cmp dword ptr [eax+0x5fefd8+0x55], 200
+        cmp byte ptr [MAP_MONSTERS_ADDR+eax+0x55], IMMUNE
       }
 }
 
@@ -797,7 +4386,10 @@ static void __declspec(naked) turn_undead_chunk(void)
 {
     asm
       {
-        cmp dword ptr [edi+0x55], 200
+        cmp byte ptr [edi+0x55], IMMUNE
+        nop
+        nop
+        nop
       }
 }
 
@@ -808,7 +4400,7 @@ static void __declspec(naked) zombificable_chunk(void)
 {
     asm
       {
-        cmp byte ptr [esi+0xb9], 35
+        cmp byte ptr [esi+0xb9], CLASS_LICH
         _emit 0x74
         _emit 0x0d
         mov eax, dword ptr [ebp-0x2c]
@@ -819,15 +4411,146 @@ static void __declspec(naked) zombificable_chunk(void)
       }
 }
 
+// Let the Undead Slaying weapons attack with Holy instead of Physical
+// when it's preferable.  Together with ghosts now immune to Physical,
+// makes holy water useful.  If dual-wielding, only 50% of damage is affected.
+// The new Spectral/Wraith weapons are also handled here.  Undead Slaying
+// always takes precedence over Spectral, which is okay since
+// all undead are at least as vulnerable to Holy as to Magic.
+// TODO: check if this works properly with Day of Protection
+static void __declspec(naked) undead_slaying_element(void)
+{
+    asm
+      {
+        and dword ptr [ebp-20], 0 ; zero out the damage just in case
+        cmp dword ptr [ebp-8], PHYSICAL ; main attack element
+        jne skip
+        mov al, byte ptr [esi+89] ; monster physical res
+        cmp al, byte ptr [esi+85] ; monster holy res
+        seta dl
+        cmp al, byte ptr [esi+86] ; monster magic res
+        seta dh
+        test dx, dx
+        jz skip
+        test ebx, ebx ; projectile
+        jz prepare
+        cmp dword ptr [ebx+72], SPL_ARROW
+        jne skip
+        prepare:
+        push ebx ; backup
+        push 0 ; count of weapons
+        push 0 ; count of undead slaying weapons
+        push 0 ; count of spectral weapons
+        test ebx, ebx
+        movzx ebx, dx
+        jz weapon
+        ; bow
+        mov ecx, 1 ; no looping
+        mov eax, dword ptr [edi+0x1950] ; bow slot
+        jmp check_slot
+        weapon:
+        mov ecx, 2 ; main hand first
+        check_hand:
+        mov eax, dword ptr [edi+ecx*4+0x1944] ; one of hand slots
+        check_slot:
+        test eax, eax
+        jz other_hand
+        lea eax, [eax+eax*8]
+        lea eax, [edi+0x214+eax*4-36]
+        test byte ptr [eax+20], 2 ; broken bit
+        jnz other_hand
+        mov edx, dword ptr [eax] ; id
+        lea edx, [edx+edx*2]
+        shl edx, 4
+        cmp byte ptr [ITEMS_TXT_ADDR+edx+28], 2 ; equip stat 0-2 = weapon
+        ja other_hand
+        inc dword ptr [esp+8] ; have a weapon
+        test bl, bl
+        jz skip_undead
+        cmp dword ptr [eax], GHOULSBANE
+        je undead
+        cmp dword ptr [eax], GIBBET
+        je undead
+        cmp dword ptr [eax], JUSTICE
+        je undead
+        cmp dword ptr [eax+12], SPC_UNDEAD_SLAYING
+        je undead
+        cmp dword ptr [eax+4], TEMP_ENCH_MARKER
+        jne skip_undead
+        cmp dword ptr [eax+8], SPC_UNDEAD_SLAYING
+        jne skip_undead
+        undead:
+        inc dword ptr [esp+4] ; have an undead slaying weapon
+        jmp other_hand
+        skip_undead:
+        test bh, bh
+        jz other_hand
+        cmp dword ptr [eax+12], SPC_SPECTRAL
+        je spectral
+        cmp dword ptr [eax+12], SPC_WRAITH
+        je spectral
+        cmp dword ptr [eax+4], TEMP_ENCH_MARKER
+        jne other_hand
+        cmp dword ptr [eax+8], SPC_SPECTRAL
+        je spectral
+        cmp dword ptr [eax+8], SPC_WRAITH
+        jne other_hand
+        spectral:
+        inc dword ptr [esp] ; have a spectral weapon
+        other_hand:
+        dec ecx
+        jnz check_hand
+        pop edx ; spectral
+        pop ebx ; undead sl.
+        pop ecx ; total
+        test ebx, ebx
+        jnz holy
+        test edx, edx
+        jz quit
+        cmp edx, ecx
+        je just_magic
+        holy:
+        cmp ebx, ecx
+        je just_holy
+        ; split the damage in half
+        mov eax, dword ptr [ebp-12]
+        shr eax, 1
+        sub dword ptr [esp+8], eax ; pushed damage
+        push eax
+        cmp ebx, edx ; only equal here if both == 1 and two weapons
+        je both
+        push PHYSICAL
+        jmp either
+        both:
+        push MAGIC
+        either:
+        push esi
+        call dword ptr ds:monster_resists
+        mov dword ptr [ebp-20], eax ; lesser half of damage
+        test ebx, ebx
+        jz just_magic
+        just_holy:
+        mov dword ptr [ebp-8], HOLY
+        jmp quit
+        just_magic:
+        mov dword ptr [ebp-8], MAGIC
+        quit:
+        pop ebx
+        skip:
+        ret
+      }
+}
+
 // Tweaks of zombie players and monsters.
-static void zombie_stuff(void)
+static inline void zombie_stuff(void)
 {
     hook_call(0x42dcd0, zombify, 6);
     patch_bytes(0x428987, destroy_undead_chunk, 7);
-    patch_bytes(0x42e0a5, control_undead_chunk, 10);
-    erase_code(0x42e0af, 5);
+    patch_bytes(0x42e0ad, control_undead_chunk, 7);
     patch_bytes(0x42bce1, turn_undead_chunk, 7);
     patch_bytes(0x4b75e3, zombificable_chunk, 22);
+    hook_call(0x4398c3, undead_slaying_element, 5);
+    patch_byte(0x4398d3, 0x01); // mov -> add (to weapon damage)
 }
 
 // Calls the original function.
@@ -854,12 +4577,12 @@ static int __fastcall parse_new_spells(char **words, int *extra_words)
     if (!uncased_strcmp(first_word, "turn"))
       {
         ++*extra_words;
-        return 48;
+        return SPL_TURN_UNDEAD;
       }
     if (!uncased_strcmp(first_word, "destroy"))
       {
         ++*extra_words;
-        return 79;
+        return SPL_DESTROY_UNDEAD;
       }
     return parse_spell(words, extra_words);
 }
@@ -879,48 +4602,37 @@ static int __thiscall __declspec(naked) monster_considers_spell(void *this,
       }
 }
 
-// Not dead, stoned, paralyzed, etc.
-static int __thiscall (*player_active)(void *player) = (funcptr_t) 0x492c03;
-
 // Monsters can now cast turn undead (only on party, only if liches or zombies
 // present) and destoy undead (on any undead PC or monster).
-static int __thiscall consider_new_spells(void *this, void *monster, int spell)
+static int __thiscall consider_new_spells(void *this,
+                                          struct map_monster *monster,
+                                          int spell)
 {
-    int monster_id = ((uintptr_t) monster - 0x5fefd8) / 0x344;
-    unsigned int target = dword(0x4f6c88 + monster_id * 4);
-    if (spell == 48) // turn undead
+    int monster_id = monster - MAP_MONSTERS;
+    unsigned int target = MON_TARGETS[monster_id];
+    if (spell == SPL_TURN_UNDEAD)
       {
         // Make sure we're targeting the party (no effect on monsters so far).
-        if (target != 4)
+        if (target != TGT_PARTY)
             return 0;
 
         for (int i = 0; i < 4; i++)
-          {
-            void *player = (void *) (0xacd804 + i * 0x1b3c);
-            uint64_t *conditions = player;
-                                                           // not afraid
-            if (is_undead(player) && player_active(player) && !conditions[3])
+            if (is_undead(&PARTY[i]) && player_active(&PARTY[i])
+                && !PARTY[i].conditions[COND_AFRAID])
                 return 1;
-          }
         return 0;
       }
-    else if (spell == 79) // destroy undead
+    else if (spell == SPL_DESTROY_UNDEAD)
       {
-        if (target == 4) // party
+        if (target == TGT_PARTY)
           {
             for (int i = 0; i < 4; i++)
-              {
-                void *player = (void *) (0xacd804 + i * 0x1b3c);
-                if (is_undead(player) && player_active(player))
+                if (is_undead(&PARTY[i]) && player_active(&PARTY[i]))
                     return 1;
-              }
             return 0;
           }
-        else if ((target & 7) == 3) // monster
-          {
-            uintptr_t target_monster = 0x5fefd8 + (target >> 3) * 0x344;
-            return byte(target_monster + 0x55) != 200; // not immune to holy
-          }
+        else if ((target & 7) == TGT_MONSTER) 
+            return MAP_MONSTERS[target>>3].holy_resistance != IMMUNE;
         else // shouldn't happen
             return 0;
       }
@@ -945,87 +4657,3736 @@ static void __fastcall __declspec(naked) monster_casts_spell(int monster,
       }
 }
 
-static void __thiscall (*make_sound)(void *this, int sound, int param_2,
-                                     int param_3, int param_4, int param_5,
-                                     int param_6, int param_7, int param_8)
-    = (funcptr_t) 0x4aa29b;
-static int __fastcall (*spell_damage)(int spell, int skill, int mastery,
-                                      int monster_hp) = (funcptr_t) 0x43b006;
-static int __thiscall (*damage_player)(void *player, int damage, int element)
-    = (funcptr_t) 0x48dc04;
-static void __fastcall (*attack_monster)(int attacker, int defender,
-                                         void *force, int attack_type)
-    = (funcptr_t) 0x43b1d3;
-static int __fastcall (*skill_mastery)(int skill) = (funcptr_t) 0x45827d;
-static int (*random)(void) = (funcptr_t) 0x4caac2;
-
 // Turn undead scares all undead PCs, with no chance to resist.
 // Destroy undead damages one undead PC or monster with Holy.
+// We also handle the Cursed monster debuff here.
 static void __fastcall cast_new_spells(int monster, void *vector, int spell,
                                        int action, int skill)
 {
-    void *sound_this = (void *) 0xf78f58;
+    if (MAP_MONSTERS[monster].spell_buffs[MBUFF_CURSED].expire_time
+        && random() & 1) // 50% chance
+      {
+        make_sound(SOUND_THIS, SOUND_SPELL_FAIL, 0, 0, -1, 0, 0, 0, 0);
+        return;
+      }
+
     int spell_sound = word(0x4edf30 + spell * 2);
-    if (spell == 48) // turn undead
+    if (spell == SPL_TURN_UNDEAD)
       {
         // we must be targeting the party
         for (int i = 0; i < 4; i++)
-          {
-            void *player = (void *) (0xacd804 + i * 0x1b3c);
-            if (is_undead(player) && player_active(player))
-                inflict_condition(player, 3, 0); // cause fear unconditionally
-          }
-        make_sound(sound_this, spell_sound, 0, 0, -1, 0, 0, 0, 0);
+            if (is_undead(&PARTY[i]) && player_active(&PARTY[i]))
+                inflict_condition(&PARTY[i], COND_AFRAID, 0);
+        make_sound(SOUND_THIS, spell_sound, 0, 0, -1, 0, 0, 0, 0);
       }
-    else if (spell == 79) // destroy undead
+    else if (spell == SPL_DESTROY_UNDEAD)
       {
-        unsigned int target = dword(0x4f6c88 + monster * 4);
-        if (target == 4) // party
+        unsigned int target = MON_TARGETS[monster];
+        if (target == TGT_PARTY)
           {
-            void *target_player;
+            struct player *target_player;
             int count = 1;
             for (int i = 0; i < 4; i++)
-              {
-                void *player = (void *) (0xacd804 + i * 0x1b3c);
-                if (is_undead(player) && player_active(player)
+                if (is_undead(&PARTY[i]) && player_active(&PARTY[i])
                     && !(random() % count)) // randomly choose one player
                   {
-                    target_player = player;
+                    target_player = &PARTY[i];
                     count++;
                   }
-              }
             if (count > 1)
               {
                 int mastery = skill_mastery(skill);
-                skill &= 0x3f;
+                skill &= SKILL_MASK;
                 int damage = spell_damage(spell, skill, mastery, 0);
                 damage_player(target_player, damage, ELEMENT(spell));
               }
           }
-        else if ((target & 7) == 3) // monster
+        else if ((target & 7) == TGT_MONSTER)
           {
             int attack_type;
             // hack to determine which spell (first or second) we're casting
-            if (byte(0x5fefd8 + monster * 0x344 + 0x4d) == spell)
+            if (MAP_MONSTERS[monster].spell1 == spell)
                 attack_type = 2;
             else
                 attack_type = 3;
             uint32_t force[3];
             memset(force, 0, 12); // no knockback so far
-            attack_monster(monster * 8 + 3, target >> 3, force, attack_type);
+            attack_monster(monster * 8 + TGT_MONSTER, target >> 3, force,
+                           attack_type);
           }
-        make_sound(sound_this, spell_sound, 0, 0, -1, 0, 0, 0, 0);
+        make_sound(SOUND_THIS, spell_sound, 0, 0, -1, 0, 0, 0, 0);
       }
     else
         monster_casts_spell(monster, vector, spell, action, skill);
 }
 
 // Make Turn Undead and Destroy Undead castable by monsters.
-static void new_monster_spells(void)
+static inline void new_monster_spells(void)
 {
     hook_jump(0x45490e, parse_new_spells);
     hook_jump(0x4270b9, consider_new_spells);
     hook_jump(0x404ac7, cast_new_spells);
+}
+
+// Calling atoi directly from assembly doesn't seem to work,
+// probably because it's not relocated.
+static funcptr_t atoi_ptr = atoi;
+
+// Parse the new "reputation group" column in mapstats.txt.
+static void __declspec(naked) parse_mapstats_rep(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ebp-12] ; replaced code
+        dec eax ; replaced code
+        cmp eax, 8 ; new column
+        je reput
+        jl fixed
+        dec eax
+        fixed:
+        cmp eax, 28 ; replaced code
+        ret
+        reput:
+        push edi
+        call dword ptr ds:atoi_ptr
+        pop ecx
+        imul ecx, ebx, 68 ; struct size
+        mov byte ptr [esi+ecx+44], al ; unused byte
+        push 0x45472a ; default case
+        ret 4
+      }
+}
+
+#define REP_GROUP_COUNT 16
+// Stored reputation for the game's different regions.
+// 12-15 are unused.  0 is always neutral.
+static int regional_reputation[REP_GROUP_COUNT];
+#define REP_STACK_SIZE 8
+// Current reputation group.  Stores multiple values
+// to be pushed/popped by the game script.
+static int reputation_group[REP_STACK_SIZE];
+// Top of the reputation group stack.
+static int reputation_index;
+
+// Zero out all reputation on a new game.
+static void __declspec(naked) new_game_rep(void)
+{
+    asm
+      {
+        mov dword ptr [0xacd4f8], eax ; replaced code
+        xor eax, eax
+        mov dword ptr [reputation_group], eax
+        mov dword ptr [reputation_index], eax
+        push ecx
+        push edi
+        cld
+        mov edi, offset regional_reputation
+        mov ecx, REP_GROUP_COUNT
+        rep stosd
+        pop edi
+        pop ecx
+        ret
+      }
+}
+
+// Load reputation data from the savegame, if said data exists.
+static void load_game_rep(void)
+{
+    void *file = find_in_lod(SAVEGAME_LOD, "reputatn.bin", 1);
+    if (file)
+        fread(regional_reputation, sizeof(int), REP_GROUP_COUNT, file);
+    else // new or unpatched game; zero out all rep
+        memset(regional_reputation, 0, REP_GROUP_COUNT * sizeof(int));
+    reputation_group[0] = 0; // will be set on map load
+    reputation_index = 0;
+}
+
+// For bank_interest() below, stores the last week the interest was applied.
+// On a reload it's reset to 0 and then overwriten properly on the next tick.
+// On a new game it's lowered to the current week, which is also 0.
+static int last_bank_week;
+
+// Hook for the above.
+// Also inits bank interest counter and resets hit messages.
+static void __declspec(naked) load_game_hook(void)
+{
+    asm
+      {
+        call load_game_rep
+        and dword ptr [last_bank_week], 0
+        and dword ptr [last_hit_player], 0
+        pop eax
+        push 0x4e958c ; replaced code
+        jmp eax
+      }
+}
+
+// Update and save reputation into the savefile.
+static void save_game_rep(void)
+{
+    // name could be shorter, I'm guessing here
+    static const struct { char name[20]; int size; int unknown; } header
+        = { "reputatn.bin", REP_GROUP_COUNT * sizeof(int), 0 };
+    int group = reputation_group[reputation_index];
+    if (group) // do not store group 0
+        regional_reputation[group] = CURRENT_REP;
+    save_file_to_lod(SAVEGAME_LOD, &header, regional_reputation, 0);
+}
+
+// Hook for the above.  Also handles WoM barrels.
+static void __declspec(naked) save_game_hook(void)
+{
+    asm
+      {
+        call save_game_rep
+        call save_wom_barrels
+        lea eax, [ebp-68] ; replaced code
+        ret 8
+      }
+}
+
+// Set the map's default reputation group and update current reputation.
+static void load_map_rep(void)
+{
+    reputation_index = 0;
+    int map_index = get_map_index(MAPSTATS, CUR_MAP_FILENAME);
+    reputation_group[0] = MAPSTATS[map_index].reputation_group;
+    CURRENT_REP = regional_reputation[reputation_group[0]];
+}
+
+// Hook for the above.  It's somewhat awkward, but Grayface has
+// already claimed all good places to fit a call into.
+// Also handles WoM barrels, resetting disabled spells, and weather,
+// which was not initialized properly on visiting a new map.
+static void __declspec(naked) load_map_hook(void)
+{
+    asm
+      {
+        jg load
+        mov dword ptr [esp], 0x444380 ; replaced jump
+        load:
+        call load_map_rep
+        call load_wom_barrels
+        call reset_disabled_spells
+        cmp dword ptr [0x6be1e0], 2 ; test if outdoors
+        jne quit
+        cmp dword ptr [0x6a1160], esi ; last visit time, 0 if just refilled
+        jnz quit
+        cmp dword ptr [0x6a1164], esi ; second half (esi == 0, btw)
+        jnz quit
+        call dword ptr ds:change_weather
+        quit:
+        ret
+      }
+}
+
+// Store the current reputation as the map is offloaded.
+// Somewhat redundant, as every map change induces an autosave,
+// and we sync rep on saving, but better safe than sorry.
+static void leave_map_rep(void)
+{
+    int group = reputation_group[reputation_index];
+    if (group) // do not store group 0
+        regional_reputation[group] = CURRENT_REP;
+}
+
+// Hook for the above.  Again, inserted in a somewhat inconvenient place.
+// This function governs the LeaveMap event, as I understand,
+// but it wasn't called on boat/horse travel, which is fixed below.
+static void __declspec(naked) leave_map_hook(void)
+{
+    asm
+      {
+        jle quit
+        call leave_map_rep
+        pop eax
+        push esi ; replaced code
+        mov esi, 0x5b645c ; replaced code
+        jmp eax
+        quit:
+        call leave_map_rep
+        push 0x443ffd ; replaced jump
+        ret 4
+      }
+}
+
+// Bug fix: trigger the LeaveMap event when traveling by horse or boat.
+static void __declspec(naked) leave_horse_boat(void)
+{
+    asm
+      {
+        call dword ptr ds:on_map_leave
+        movzx eax, byte ptr [esi] ; replaced code
+        imul eax, eax, 68 ; replaced code
+        ret
+      }
+}
+
+// Always display zero reputation in unpopulated areas.
+// Technically it still can be changed, but since there are no shops etc.,
+// it can be safely ignored.  It also resets to zero on reload.
+static void __declspec(naked) show_zero_rep(void)
+{
+    asm
+      {
+        xor eax, eax
+        mov ecx, dword ptr [reputation_index]
+        ; clang refuses to compile [rep_group+ecx*4], so I have to improvise
+        mov edx, offset reputation_group
+        cmp dword ptr [edx+ecx*4], eax
+        jz zero
+        call dword ptr ds:get_eff_reputation
+        zero:
+        ret
+      }
+}
+
+// Allow accessing reputation group in the game script (as varnum 0x190).
+// Cmp checks if the current group equals the given value.
+static void __declspec(naked) cmp_rep(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [reputation_index]
+        mov edx, offset reputation_group
+        mov edx, dword ptr [edx+ecx*4]
+        xor eax, eax
+        cmp dword ptr [ebp+12], edx
+        sete al
+        ret
+      }
+}
+
+// Hook for the new gamescript cmp code.
+static void __declspec(naked) evt_cmp_hook(void)
+{
+    asm
+      {
+        cmp eax, EVT_REP_GROUP
+        je rep
+        cmp eax, EVT_DISABLED_SPELL
+        je spell
+        lea ecx, [eax-0xe0] ; replaced code
+        ret
+        rep:
+        call cmp_rep
+        jmp quit
+        spell:
+        push dword ptr [ebp+12]
+        call check_spell_disabled
+        quit:
+        push 0x44a3e6
+        ret 4
+      }
+}
+
+// Add pushes new group on the stack, while preserving the original value.
+// Useful for temporarily changing the group.
+static void __stdcall add_rep(int new_group)
+{
+    int old_group = reputation_group[reputation_index];
+    if (old_group) // do not store group 0
+        regional_reputation[old_group] = CURRENT_REP;
+    if (reputation_index < REP_STACK_SIZE - 1) // guard from overflow
+        reputation_index++;
+    reputation_group[reputation_index] = new_group;
+    CURRENT_REP = regional_reputation[new_group];
+}
+
+// Hook for the new gamescript add code.
+static void __declspec(naked) evt_add_hook(void)
+{
+    asm
+      {
+        cmp eax, EVT_REP_GROUP
+        je rep
+        cmp eax, EVT_DISABLED_SPELL
+        je spell
+        sub eax, 307 ; replaced code
+        ret
+        rep:
+        push dword ptr [ebp+12]
+        call add_rep
+        jmp quit
+        spell:
+        push dword ptr [ebp+12]
+        call disable_spell
+        quit:
+        push 0x44b90d
+        ret 4
+      }
+}
+
+// Sub removes the given value from the stack, if found.
+// Can be used to restore the original group after using Add.
+static void __stdcall sub_rep(int group_to_remove)
+{
+    for (int i = reputation_index; i >= 1; i--) // do not remove rep_group[0]
+        if (reputation_group[i] == group_to_remove)
+          {
+            if (i == reputation_index)
+              {
+                // current group changes
+                if (group_to_remove) // do not store group 0
+                    regional_reputation[group_to_remove] = CURRENT_REP;
+                CURRENT_REP = regional_reputation[reputation_group[i-1]];
+              }
+            else
+              {
+                // remove by shifting the rest of stack one left
+                for (int j = i; j < reputation_index; j++)
+                    reputation_group[j] = reputation_group[j+1];
+              }
+            reputation_index--;
+            break;
+          }
+}
+
+// Hook for the new gamescript subtract code.
+static void __declspec(naked) evt_sub_hook(void)
+{
+    asm
+      {
+        cmp eax, EVT_REP_GROUP
+        je rep
+        cmp eax, EVT_DISABLED_SPELL
+        je spell
+        sub eax, 308 ; replaced code
+        ret
+        rep:
+        push dword ptr [ebp+12]
+        call sub_rep
+        jmp quit
+        spell:
+        push dword ptr [ebp+12]
+        call enable_spell
+        quit:
+        push 0x44bb0d
+        ret 4
+      }
+}
+
+// Set discards the stack and changes the current group to the given value.
+// Can be used to "permanently" change the group,
+// as long as it's done on every game/map reload.
+static void __stdcall set_rep(int new_group)
+{
+    int old_group = reputation_group[reputation_index];
+    if (old_group) // do not store group 0
+        regional_reputation[old_group] = CURRENT_REP;
+    reputation_index = 0;
+    reputation_group[0] = new_group;
+    CURRENT_REP = regional_reputation[new_group];
+}
+
+// Hook for the new gamescript set code.
+static void __declspec(naked) evt_set_hook(void)
+{
+    asm
+      {
+        cmp eax, EVT_REP_GROUP
+        je rep
+        cmp eax, EVT_DISABLED_SPELL
+        je spell
+        sub eax, 307 ; replaced code
+        ret
+        rep:
+        push dword ptr [ebp+12]
+        call set_rep
+        jmp quit
+        spell:
+        push dword ptr [ebp+12]
+        call disable_spell
+        quit:
+        push 0x44af3b
+        ret 4
+      }
+}
+
+// Only decrease rep if the PC was caught stealing.
+static void __declspec(naked) pickpocket_rep(void)
+{
+    asm
+      {
+        test eax, eax
+        jnz skip
+        inc dword ptr [esi+8] ; reputation
+        skip:
+        mov ecx, edi ; replaced code
+        ret
+      }
+}
+
+// Armageddon did not affect reputation, even if it killed peasants.
+// Let's overcompensate by adding an unconditional rep penalty.
+static void armageddon_rep(void)
+{
+    uint32_t *rep = &CURRENT_REP;
+    *rep += 20;
+    if ((signed) *rep > 10000) // vanilla rep code often has this limit
+        *rep = 10000;
+}
+
+// Hook for the above.
+static void __declspec(naked) armageddon_hook(void)
+{
+    asm
+      {
+        call armageddon_rep
+        cmp dword ptr [0x6650a8], esi ; replaced code
+        ret
+      }
+}
+
+// Let the town hall bounties affect reputation slightly.
+static void __stdcall bounty_rep(int level)
+{
+    int rep = (level + 10) / 20; // 0 to 5
+    if (rep)
+        CURRENT_REP -= rep;
+}
+
+// Hook for the above.
+static void __declspec(naked) bounty_hook(void)
+{
+    asm
+      {
+        movzx ebx, byte ptr [0x5cccc0+eax+8] ; monsters.txt level
+        push ebx
+        call bounty_rep
+        mov eax, ebx
+        ret
+      }
+}
+
+// Change "evil" hireable NPC penalty: instead of temporary -5 rep
+// in all regions, give a permanent -5 in their home region.
+static void __stdcall hire_npc_rep(int profession)
+{
+    if (profession == NPC_PIRATE || profession == NPC_GYPSY
+        || profession == NPC_DUPER || profession == NPC_BURGLAR
+        || profession == NPC_FALLEN_WIZARD)
+      {
+        uint32_t *rep = &CURRENT_REP;
+        *rep += 5;
+        if ((signed) *rep > 10000) // vanilla rep code often has this limit
+            *rep = 10000;
+      }
+}
+
+// Hook for the above.
+static void __declspec(naked) hire_npc_hook(void)
+{
+    asm
+      {
+        push dword ptr [ebp+24] ; npc profession
+        call hire_npc_rep
+        cmp dword ptr [0xad44f4], esi ; replaced code
+        ret
+      }
+}
+
+// Let the reputation values be shared between different locations
+// in the same region.  Among other things, this makes quests
+// completed in castles affect your reputation properly.
+static inline void reputation(void)
+{
+    hook_call(0x45403c, parse_mapstats_rep, 7);
+    patch_byte(0x454739, 30); // one more column
+    hook_call(0x460a97, new_game_rep, 5);
+    hook_call(0x45f0f2, load_game_hook, 5);
+    hook_call(0x45f911, save_game_hook, 5);
+    hook_call(0x444011, load_map_hook, 6);
+    hook_call(0x443fc1, leave_map_hook, 8);
+    hook_call(0x4b6a89, leave_horse_boat, 6);
+    hook_call(0x41ab0f, show_zero_rep, 5);
+    hook_call(0x44a111, evt_cmp_hook, 6);
+    hook_call(0x44b85f, evt_add_hook, 5);
+    hook_call(0x44bff0, evt_sub_hook, 5);
+    hook_call(0x44ae96, evt_set_hook, 5);
+
+    // Some further reputation tweaks.
+    hook_call(0x42ec41, pickpocket_rep, 5);
+    // Related: fix a wrong pickpocket message.
+    patch_pointer(0x48da92, &new_strings[20]);
+    // Do not decrease rep on successful shoplift.
+    patch_byte(0x4b13bf, 0);
+    hook_call(0x401b4e, armageddon_hook, 6);
+    hook_call(0x4bd223, bounty_hook, 7);
+    hook_call(0x4bc695, hire_npc_hook, 6);
+    // Remove an ongoing NPC rep penalty.
+    erase_code(0x477549, 72);
+}
+
+// With all the reputation-related script changes,
+// global.evt now has slightly more commands than the game can hold.
+// I could try to remove something, but it'll probably only grow over time,
+// so I might as well manually increase the limit already.
+static inline void expand_global_evt(void)
+{
+    // The easiest way is to supply a bigger buffer.
+    static uint32_t global_evt_lines[GLOBAL_EVT_LINES*3];
+    // Just replace the buffer address and the size constant everywhere.
+    patch_dword(0x443de5, GLOBAL_EVT_LINES * 12);
+    patch_pointer(0x443def, global_evt_lines);
+    patch_pointer(0x443e0e, global_evt_lines + 1);
+    patch_dword(0x446709, GLOBAL_EVT_LINES * 12);
+    patch_pointer(0x44670e, global_evt_lines);
+    // The next constant is shared with the map event lines buffer,
+    // but there's no harm in increasing it.
+    patch_dword(0x4468b9, GLOBAL_EVT_LINES * 12);
+    patch_pointer(0x4468e9, global_evt_lines);
+    // Both times the buffer is read, it's copied into another
+    // statically allocated buffer, both of which also need to be replaced.
+    static uint32_t evt_lines_buffer[GLOBAL_EVT_LINES*3];
+    patch_pointer(0x446713, evt_lines_buffer);
+    patch_pointer(0x446754, evt_lines_buffer);
+    patch_pointer(0x44675c, evt_lines_buffer + 1);
+    patch_pointer(0x446764, evt_lines_buffer + 2);
+    static uint32_t evt_lines_buffer_2[GLOBAL_EVT_LINES*3];
+    patch_pointer(0x446904, evt_lines_buffer_2);
+    patch_pointer(0x44694d, evt_lines_buffer_2);
+    patch_pointer(0x44695d, evt_lines_buffer_2 + 1);
+    patch_pointer(0x446969, evt_lines_buffer_2 + 2);
+    // After tweaking barrels, I also ran out of the buffer that holds
+    // global.evt raw data.  Let's replace it here as well!
+    static uint8_t global_evt_buffer[GLOBAL_EVT_SIZE];
+    patch_dword(0x443dc6, GLOBAL_EVT_SIZE);
+    patch_pointer(0x443dcb, global_evt_buffer);
+    patch_pointer(0x443e15, global_evt_buffer + 2);
+    patch_pointer(0x443e1c, global_evt_buffer + 1);
+    patch_pointer(0x443e2c, global_evt_buffer + 3);
+    patch_pointer(0x443e38, global_evt_buffer);
+    patch_pointer(0x44671d, global_evt_buffer);
+    patch_pointer(0x4468e4, global_evt_buffer);
+}
+
+// If a PC's health is above maximum, cancel all health regeneration
+// and decrease excess HP by 25% instead.  Zombies and jar-less liches
+// are considered to only have half their normal maximum HP.
+static void __declspec(naked) hp_burnout(void)
+{
+    asm
+      {
+        mov ecx, esi
+        call dword ptr ds:get_full_hp
+        mov ecx, dword ptr [ebp-16] ; lich wo jar
+        or ecx, dword ptr [ebp-24] ; zombie
+        jz healthy
+        shr eax, 1 ; undead max hp penalty
+        healthy:
+        sub eax, dword ptr [esi+6460] ; current hp
+        jge no_burnout
+        sar eax, 2 ; 25%, rounded up
+        add dword ptr [esi+6460], eax ; burnout
+        push 0x493d93 ; skip hp regen code
+        ret 4
+        no_burnout:
+        test ebx, ebx
+        jz no_item_regen
+        mov eax, dword ptr [esi+112] ; replaced code
+        ret
+        no_item_regen:
+        push 0x493d1e ; replaced jump
+        ret 4
+      }
+}
+
+// Instead of lowering SP to maximum if above, simply decrease it back.
+static void __declspec(naked) mp_regen_chunk(void)
+{
+    asm
+      {
+        dec dword ptr [edi]
+      }
+}
+
+// Like with HP above, decrease excess SP by 25% instead of regeneration.
+// Jar-less liches have halved maximum, zombies can hold no SP.
+static void __declspec(naked) sp_burnout(void)
+{
+    asm
+      {
+        xor eax, eax ; zombies have no sp
+        cmp dword ptr [ebp-24], 0 ; zombie
+        jnz compare_sp
+        mov ecx, esi
+        call dword ptr ds:get_full_sp
+        cmp dword ptr [ebp-16], 0 ; lich wo jar
+        jz compare_sp
+        shr eax, 1 ; jar-less liches have half sp
+        compare_sp:
+        sub eax, dword ptr [esi+6464] ; current sp
+        jge quit
+        sar eax, 2 ; 25%, rounded up
+        add dword ptr [esi+6464], eax ; burnout
+        quit:
+        push 0x493f3a ; skip old lich/zombie code
+        ret
+      }
+}
+
+// Do not remove HP above maximum when healing.
+// Allow healing potions to cure above max HP (only if HP wasn't full before).
+static void __declspec(naked) healing_potions(void)
+{
+    asm
+      {
+        cmp dword ptr [esi+6460], eax
+        jge skip
+        add dword ptr [esi+6460], ecx ; replaced code
+        cmp dword ptr [esp+8], 0x4687a8 ; check if called from potion code
+        je skip
+        ret
+        skip:
+        push 0x48dbe8 ; skip extra HP shredding
+        ret 4
+      }
+}
+
+// Preserve the amount of restored SP instead of adding it right away.
+static void __declspec(naked) magic_potion_chunk_1(void)
+{
+    asm
+      {
+        mov ebx, eax
+      }
+}
+
+// Allow magic potions to restore SP above max (only if it was below before).
+static void __declspec(naked) magic_potion_chunk_2(void)
+{
+    asm
+      {
+        jge skip ; current sp was compared to full sp
+        add dword ptr [edi], ebx ; restore sp
+        skip:
+        xor ebx, ebx ; ebx was zero before
+      }
+}
+
+// Do not lower HP to maximum during a Divine Intervention.
+static void __declspec(naked) divine_intervention_hp(void)
+{
+    asm
+      {
+        cmp dword ptr [edx+6460], eax ; current vs max hp
+        jge quit
+        mov dword ptr [edx+6460], eax ; replaced code
+        quit:
+        ret
+      }
+}
+
+// Do not lower SP to maximum during a Divine Intervention.
+static void __declspec(naked) divine_intervention_sp(void)
+{
+    asm
+      {
+        cmp dword ptr [ecx+6464], eax ; current vs max sp
+        jge quit
+        mov dword ptr [ecx+6464], eax ; replaced code
+        quit:
+        ret
+      }
+}
+
+// Do not lower HP to maximum after a Sacrifice.
+static void __declspec(naked) sacrifice_hp(void)
+{
+    asm
+      {
+        cmp dword ptr [edi+6460], eax ; current vs max hp
+        jge quit
+        mov dword ptr [edi+6460], eax ; replaced code
+        quit:
+        ret
+      }
+}
+
+// Do not lower SP to maximum after a Sacrifice.
+static void __declspec(naked) sacrifice_sp(void)
+{
+    asm
+      {
+        cmp dword ptr [edi+6464], eax ; current vs max sp
+        jge quit
+        mov dword ptr [edi+6464], eax ; replaced code
+        quit:
+        ret
+      }
+}
+
+// Prevent healer NPC from lowering HP to maximum.
+// Also reused in temple code to similar effect.
+static void __declspec(naked) healer_or_temple_hp(void)
+{
+    asm
+      {
+        cmp dword ptr [esi+6460], eax ; current vs max hp
+        jge quit
+        mov dword ptr [esi+6460], eax ; replaced code
+        quit:
+        ret
+      }
+}
+
+// Prevent expert healer NPC from lowering HP to maximum.
+static void __declspec(naked) expert_healer_hp(void)
+{
+    asm
+      {
+        cmp dword ptr [esi+6340], eax ; current vs max hp
+        jge quit
+        mov dword ptr [esi+6340], eax ; replaced code
+        quit:
+        ret
+      }
+}
+
+// Prevent master healer NPC from lowering HP to maximum.
+static void __declspec(naked) master_healer_hp(void)
+{
+    asm
+      {
+        cmp dword ptr [esi+6180], eax ; current vs max hp
+        jge quit
+        mov dword ptr [esi+6180], eax ; replaced code
+        quit:
+        ret
+      }
+}
+
+
+// Prevent temples from lowering SP to maximum.
+static void __declspec(naked) temple_sp(void)
+{
+    asm
+      {
+        cmp dword ptr [esi+6464], eax ; current vs max sp
+        jge quit
+        mov dword ptr [esi+6464], eax ; replaced code
+        quit:
+        ret
+      }
+}
+
+// Preserve HP/SP bonus instead of adding it right away.
+static void __declspec(naked) evt_add_hp_sp_chunk_1(void)
+{
+    asm
+      {
+        mov esi, eax
+      }
+}
+
+// Do not decrease HP/SP if it's above maximum.
+static void __declspec(naked) evt_add_hp_sp_chunk_2(void)
+{
+    asm
+      {
+        jge quit
+        add dword ptr [ebx], esi
+        cmp dword ptr [ebx], eax
+        jle quit
+        mov dword ptr [ebx], eax
+        quit:
+      }
+}
+
+// Allow raising HP and SP above maximum, but drain the excess quickly.
+static inline void hp_sp_burnout(void)
+{
+    hook_call(0x493cc5, hp_burnout, 5);
+    // SP regeneration no longer erases SP above maximum.
+    patch_bytes(0x493dac, mp_regen_chunk, 2); // regular regen
+    erase_code(0x493dae, 7);
+    patch_bytes(0x493e8f, mp_regen_chunk, 2); // lich jar regen
+    erase_code(0x493e91, 7);
+    // Instead, extra SP quickly burns out.
+    // We jump over the old undead code here (which drains hp and sp
+    // if above 50% or so), but it's incorporated in the new code.
+    // TODO: wouldn't it be simpler to adjust max HP and SP directly?
+    hook_jump(0x493e98, sp_burnout);
+    // Now we patch all major sources of healing to preserve HP/SP above max.
+    hook_call(0x48dbd4, healing_potions, 6);
+    patch_bytes(0x4687c5, magic_potion_chunk_1, 2);
+    patch_bytes(0x468d82, magic_potion_chunk_2, 6);
+    erase_code(0x468d88, 9); // old shred-sp-above-max code
+    erase_code(0x42bf80, 36); // allow Shared Life to heal above maximum
+    hook_call(0x42dac4, divine_intervention_hp, 6);
+    hook_call(0x42dad9, divine_intervention_sp, 6);
+    hook_call(0x42e351, sacrifice_hp, 6);
+    hook_call(0x42e35c, sacrifice_sp, 6);
+    erase_code(0x42e6c4, 36); // allow Souldrinker to heal above maximum
+    // BTW, Souldrinker cures flat (7*skill+25) per visible monster,
+    // irrespective of the actual damage.  Should this be documented?
+    erase_code(0x4399e2, 26); // allow vampiric melee weapons to overheal
+    erase_code(0x439951, 26); // allow vampiric bows to overheal
+    hook_call(0x4bb83f, healer_or_temple_hp, 6); // healer
+    hook_call(0x4bb816, expert_healer_hp, 6);
+    hook_call(0x4bb76c, master_healer_hp, 6);
+    // Bug fix: master healer erased armor skills.
+    // A very strange code that was overwriting the armor skill data
+    // with the duration of unused condition 19.
+    // I've no clue what it was supposed to be.
+    erase_code(0x4bb762, 5);
+    hook_call(0x4b755e, healer_or_temple_hp, 6); // temple
+    hook_call(0x4b7569, temple_sp, 6);
+    // Dealing with the gamescript add HP/SP commands below.
+    patch_bytes(0x44b123, evt_add_hp_sp_chunk_1, 2); // hp
+    patch_bytes(0x44b12c, evt_add_hp_sp_chunk_2, 10); // hp
+    erase_code(0x44b136, 5); // old hp code
+    patch_bytes(0x44b16b, evt_add_hp_sp_chunk_1, 2); // sp
+    patch_bytes(0x44b174, evt_add_hp_sp_chunk_2, 10); // sp
+    erase_code(0x44b17e, 3); // old sp code
+}
+
+// Recognize fire arrows as valid projectiles for the Shield spell.
+static void __declspec(naked) shield_fire_arrow(void)
+{
+    asm
+      {
+        jz quit
+        cmp ax, OBJ_FIRE ; replaced code
+        jz quit
+        cmp ax, OBJ_FIREARROW
+        quit:
+        ret
+      }
+}
+
+// Bug fix: display minutes in buff duration if it's over a day long
+// but there are no hours to display -- i.e.  "X days Y minutes".
+static void __declspec(naked) days_minutes_buff(void)
+{
+    asm
+      {
+        cmp dword ptr [esp+56], 0 ; replaced code (days)
+        jz quit
+        cmp ebp, 0 ; hours
+        quit:
+        ret
+      }
+}
+
+// Bug fix: do not display seconds in buff duration if at least two
+// of days, hours, or minutes have been printed already.
+static void __declspec(naked) seconds_buff(void)
+{
+    // skip seconds if zf == 0
+    asm
+      {
+        jnz have_seconds
+        cmp eax, 1 ; clear zf
+        ret
+        have_seconds:
+        cmp dword ptr [esp+56], 0 ; days
+        jz no_days
+        cmp ebp, 0 ; hours
+        jnz quit
+        minutes:
+        cmp dword ptr [esp+36], 0 ; minutes
+        ret
+        no_days:
+        cmp ebp, 0 ; hours
+        jnz minutes
+        quit:
+        ret
+      }
+}
+
+// Make temple donation spells more powerful, depending on the
+// donation cost.  Wizard Eye (5 rep) needs special handling
+// because of the differently arranged code.
+static void __declspec(naked) temple_wizard_eye_power(void)
+{
+    asm
+      {
+        lea edx, [ecx-1]
+        mov ecx, SPL_WIZARD_EYE
+        mov eax, dword ptr [0x507a40] ; parent dialogue or smth
+        mov eax, dword ptr [eax+28] ; param = temple id
+        imul eax, eax, 52 ; 2devents struct size
+        fld dword ptr [0x5912b8+eax+32] ; val field = temple cost
+        push 5
+        fidiv dword ptr [esp] ; temple power = cost / 5
+        fistp dword ptr [esp]
+        pop eax
+        add dword ptr [esp+4], eax ; add temple power to spell power
+        ret
+      }
+}
+
+// Make temple donation spells more powerful, depending on the
+// donation cost.  10+ rep spells can all be patched the same way.
+static void __declspec(naked) temple_other_spells_power(void)
+{
+    asm
+      {
+        div edi
+        mov eax, dword ptr [0x507a40] ; parent dialogue or smth
+        mov eax, dword ptr [eax+28] ; param = temple id
+        imul eax, eax, 52 ; 2devents struct size
+        fld dword ptr [0x5912b8+eax+32] ; val field = temple cost
+        push 5
+        fidiv dword ptr [esp] ; temple power = cost / 5
+        fistp dword ptr [esp]
+        pop eax
+        lea edx, [edx+1+eax+SKILL_MASTER] ; spell pwr = temple pwr + weekday
+        ret
+      }
+}
+
+// Since blasters have a different min recovery, we need to check for them.
+static void __declspec(naked) recovery_check_blaster(void)
+{
+    asm
+      {
+        cmp eax, SKILL_BLASTER
+        jne not_it
+        mov dword ptr [ebp+8], 2 ; store in ranged param (which was 1)
+        not_it:
+        movzx eax, word ptr [0x4edd80+eax*2] ; replaced code
+        ret
+      }
+}
+
+// Set min weapon recovery to 10 for blasters and 20 otherwise.
+// TODO: move the hook slightly below once I can disable mm7patch hooks
+static void __declspec(naked) min_weapon_recovery(void)
+{
+    asm
+      {
+        add ecx, dword ptr [ebp-20] ; replaced code
+        add ecx, dword ptr [ebp-4] ; replaced code
+        mov eax, 20
+        cmp dword ptr [ebp+8], 2
+        jne not_blaster
+        mov eax, 10
+        not_blaster:
+        cmp ecx, eax
+        jge quit
+        mov ecx, eax
+        quit:
+        ret
+      }
+}
+
+// MM7Patch has a hardcoded cap of 30 on melee recovery.
+// As such, we need to correct the displayed number if it should be lower.
+static void __stdcall display_melee_recovery(char *buffer)
+{
+    struct player *current = &PARTY[dword(0x507a6c)-1];
+    int recovery = get_attack_delay(current, 0);
+    if (recovery >= 30)
+        return;
+    char *number = strstr(buffer, "30");
+    if (!number)
+        return;
+    // don't need printf for this
+    number[0] = recovery / 10 + '0';
+    number[1] = recovery % 10 + '0';
+}
+
+// Hook for the above.
+static void __declspec(naked) display_melee_recovery_hook(void)
+{
+    asm
+      {
+        cmp edi, 15 ; screen area id
+        jne not_it
+        push ebx
+        call display_melee_recovery
+        not_it:
+        mov ecx, dword ptr [ebp-4] ; replaced code
+        test ecx, ecx ; replaced code
+        ret
+      }
+}
+
+// When calculating skill damage bonus, use mainhand weapon if present.
+static void __declspec(naked) melee_damage_check_main_weapon_first(void)
+{
+    asm
+      {
+        inc edi
+        lea edx, [esi+0x1948+SLOT_MAIN_HAND*4]
+        ret
+      }
+}
+
+// Continuation of the previous hook; ensures the offhand is checked later.
+static void __declspec(naked) melee_damage_weapon_loop_chunk(void)
+{
+    asm
+      {
+        sub edx, 4
+        dec edi
+        nop
+        nop
+        nop
+        _emit 0x74 ; jz
+      }
+}
+
+// Let the bank account grow by 1% per week.
+// First time this code is reached (after each reload),
+// the last week var is initialised instead.
+// It's probably possible to miss out on a weekly interest
+// by reloading one tick before a week change, but it's quite unlikely.
+static void __declspec(naked) bank_interest(void)
+{
+    asm
+      {
+        cmp dword ptr [last_bank_week], 1
+        jb update_week
+        sub eax, dword ptr [last_bank_week]
+        je no_interest
+        update_week:
+        mov dword ptr [last_bank_week], esi
+        jb no_interest
+        mov ecx, eax
+        mov ebx, dword ptr [0xacd570] ; bank gold
+        push 100
+        interest:
+        mov eax, ebx
+        xor edx, edx
+        div dword ptr [esp]
+        add ebx, eax
+        loop interest
+        mov dword ptr [0xacd570], ebx ; new bank gold
+        pop eax
+        no_interest:
+        mov ebx, esi ; replaced code
+        shr ebx, 2 ; replaced code
+        ret
+      }
+}
+
+// Ditto, but the code here uses different registers.
+static void __declspec(naked) bank_interest_2(void)
+{
+    asm
+      {
+        call bank_interest
+        mov edi, ebx
+        ret
+      }
+}
+
+#define STATRATE_COUNT 29
+static char *statrates[STATRATE_COUNT];
+
+// Parse statrate.txt, which contains skill rating titles.
+static void parse_statrate(void)
+{
+    char *file = load_from_lod(EVENTS_LOD, "statrate.txt", FALSE);
+    if (strtok(file, "\r\n")) // skip first line
+        for (int i = 0; i < STATRATE_COUNT; i++)
+          {
+            char *line = strtok(0, "\r\n");
+            if (!line)
+                break;
+            // titles are in the third (and last) field of every line
+            line = strchr(line, '\t');
+            if (line)
+                line = strchr(line + 1, '\t');
+            if (line)
+                statrates[i] = line + 1;
+          }
+}
+
+// Display skill bonus and base skill value in the tooltip.
+static char *__stdcall stat_hint(char *description, int stat)
+{
+    static char buffer[400];
+    struct player *current = &PARTY[dword(0x507a6c)-1];
+    int total, base;
+
+    switch (stat)
+      {
+        case STAT_MIGHT:
+            total = get_might(current);
+            base = current->might_base;
+            break;
+        case STAT_INTELLECT:
+            total = get_intellect(current);
+            base = current->intellect_base;
+            break;
+        case STAT_PERSONALITY:
+            total = get_personality(current);
+            base = current->personality_base;
+            break;
+        case STAT_ENDURANCE:
+            total = get_endurance(current);
+            base = current->endurance_base;
+            break;
+        case STAT_ACCURACY:
+            total = get_accuracy(current);
+            base = current->accuracy_base;
+            break;
+        case STAT_SPEED:
+            total = get_speed(current);
+            base = current->speed_base;
+            break;
+        case STAT_LUCK:
+            total = get_luck(current);
+            base = current->luck_base;
+            break;
+        default:
+            return description;
+      }
+    int bonus = get_effective_stat(total);
+    int rating = bonus;
+    if (rating > 25)
+        rating = 22;
+    else if (rating > 20)
+        rating = 21;
+    rating += 6;
+    strcpy(buffer, description);
+    sprintf(buffer + strlen(buffer), "\n\n%s: %s (%+d)\n%s: %d",
+            new_strings[25], statrates[rating], bonus, new_strings[26], base);
+    return buffer;
+}
+
+// Hook for the above.
+static void __declspec(naked) stat_hint_hook(void)
+{
+    asm
+      {
+        mov ebx, ecx
+        push edi
+        push dword ptr [0x5c85f8+eax]
+        call stat_hint
+        mov ecx, ebx
+        mov ebx, eax
+        ret
+      }
+}
+
+// Give the two-handed swords and axes doubled quality bonus to damage.
+// Charele also gets this bonus (as an unique artifact property).
+static void __declspec(naked) th_weapons_damage(void)
+{
+    asm
+      {
+        movzx eax, byte ptr [ITEMS_TXT_ADDR+esi+32] ; replaced code (dmg bonus)
+        cmp ebp, CHARELE
+        je doubled
+        cmp byte ptr [ITEMS_TXT_ADDR+esi+28], 1 ; two-handed weapon
+        jne quit
+        cmp byte ptr [ITEMS_TXT_ADDR+esi+29], SKILL_SWORD
+        je doubled
+        cmp byte ptr [ITEMS_TXT_ADDR+esi+29], SKILL_AXE
+        jne quit
+        doubled:
+        shl eax, 1
+        quit:
+        ret
+      }
+}
+
+// Display new two-handed weapon stats correctly.
+static void __declspec(naked) th_weapons_description(void)
+{
+    asm
+      {
+        lea eax, [ebp-204] ; replaced code
+        mov ecx, dword ptr [ebp-4] ; item
+        cmp dword ptr [ecx], CHARELE
+        je doubled
+        cmp byte ptr [edi+28], 1
+        jne quit
+        cmp byte ptr [edi+29], SKILL_SWORD
+        je doubled
+        cmp byte ptr [edi+29], SKILL_AXE
+        jne quit
+        doubled:
+        shl dword ptr [esp+4], 1 ; pushed bonus damage
+        quit:
+        ret
+      }
+}
+
+// Calculate the new minimum damage for two-handed weapons.
+static void __declspec(naked) th_weapons_min_damage(void)
+{
+    asm
+      {
+        movzx edi, byte ptr [ITEMS_TXT_ADDR+eax+32] ; replaced code (dmg bonus)
+        cmp edx, CHARELE
+        je doubled
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+28], 1 ; two-handed weapon
+        jne quit
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_SWORD
+        je doubled
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_AXE
+        jne quit
+        doubled:
+        shl edi, 1
+        quit:
+        ret
+      }
+}
+
+// Calculate the new maximum damage for two-handed weapons.
+static void __declspec(naked) th_weapons_max_damage(void)
+{
+    asm
+      {
+        cmp edx, CHARELE
+        je damage
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+28], 1 ; two-handed weapon
+        jne damage
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_SWORD
+        je damage
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_AXE
+        damage:
+        movzx eax, byte ptr [ITEMS_TXT_ADDR+eax+32] ; replaced code (dmg bonus)
+        jne skip
+        shl eax, 1
+        skip:
+        ret
+      }
+}
+
+// Not sure if this is ever used, but just in case.
+static void __declspec(naked) th_weapons_damage_bonus(void)
+{
+    asm
+      {
+        movzx edi, byte ptr [ITEMS_TXT_ADDR+eax+32] ; replaced code (dmg bonus)
+        cmp esi, STAT_MELEE_DAMAGE_BASE
+        jne quit
+        cmp eax, CHARELE * 48
+        je doubled
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+28], 1 ; two-handed weapon
+        jne quit
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_SWORD
+        je doubled
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_AXE
+        jne quit
+        doubled:
+        shl edi, 1
+        quit:
+        ret
+      }
+}
+
+// Make it so rest encounters are only triggered if there are hostile
+// monsters on the map.  Also exclude all types of peasants.
+static void __declspec(naked) rest_encounters(void)
+{
+    asm
+      {
+        cmp eax, 38 ; first peasant
+        jl not_peasant
+        cmp eax, 61 ; last peasant
+        jg not_peasant
+        xor eax, eax ; set zf
+        ret
+        not_peasant:
+        test byte ptr [esi+36+2], 8 ; hostile
+        jnz quit
+        mov ecx, esi
+        xor edx, edx
+        call dword ptr ds:is_hostile_to
+        test eax, eax
+        quit:
+        ret
+      }
+}
+
+// Allow resting for less than 12 hours in dark region taverns.
+// Previously, it was until next dawn and then 13 more hours,
+// which sometimes amounted to more than 24 hours.
+// Now, it's until 17:00 and then one more hour.
+// TODO: dark training halls have the same bug, but it's less pronounced
+// as they close one hour after dawn anyway.  Still, may want to fix it later.
+static void __declspec(naked) dark_region_taverns(void)
+{
+    asm
+      {
+        cmp eax, 13 * 60 ; will be more if it`s past 17h now
+        jg less
+        add eax, 12 * 60 ; replaced code
+        ret
+        less:
+        sub eax, 12 * 60 ; 24h less
+        ret
+      }
+}
+
+// Give clubs a base recovery of 100.  Dunno why Grayface hadn't fixed it.
+static void __declspec(naked) club_recovery(void)
+{
+    asm
+      {
+        cmp eax, SKILL_NONE
+        jne not_club
+        xor eax, eax ; default (staff) recovery
+        not_club:
+        movzx eax, word ptr [0x4edd80+eax*2] ; replaced code
+        ret
+      }
+}
+
+// Display AC in red if the PC wears a broken item.
+static void __declspec(naked) color_broken_ac(void)
+{
+    asm
+      {
+        call dword ptr ds:color_stat ; replaced call
+        mov ecx, 16
+        check_broken:
+        mov edx, dword ptr [ebp+0x1948+ecx*4-4] ; equipped items
+        test edx, edx
+        jz next
+        lea edx, [edx+edx*8]
+        lea edx, [ebp+0x214+edx*4-36]
+        test byte ptr [edx+20], 2 ; broken bit
+        jz next
+        mov ecx, 255 ; red
+        xor edx, edx
+        push edx
+        call dword ptr ds:rgb_color
+        ret
+        next:
+        loop check_broken
+        ret
+      }
+}
+
+// Same, but for the stats screen.
+static void __declspec(naked) color_broken_ac_2(void)
+{
+    asm
+      {
+        mov ebp, edi
+        jmp color_broken_ac
+      }
+}
+
+// Implement the CheckSkill 0x2b command properly.  From what I understand,
+// it's supposed to check for effective skill (multiplied by mastery).
+// Some skills (such as Perception) are multiplied before adding NPC etc.
+// bonuses, others are after; I chose the uniform approach here (always after).
+static int __stdcall check_skill(int player, int skill, int level, int mastery)
+{
+    if (player == 5)
+      {
+        for (int each = 0; each < 4; each++)
+            if (check_skill(each, skill, level, mastery))
+                return TRUE;
+        return FALSE;
+      }
+    if (player == 4)
+        player = dword(0x507a6c) - 1;
+    if (player < 0 || player > 3)
+        player = random() & 3;
+
+    int current_skill = get_skill(&PARTY[player], skill);
+    int current_mastery = skill_mastery(current_skill);
+    if (current_mastery < mastery + 1)
+        return FALSE;
+    current_skill &= SKILL_MASK;
+    switch (skill)
+      {
+        // skills that are 100% at GM
+        case SKILL_PERCEPTION:
+        case SKILL_IDENTIFY_ITEM:
+        case SKILL_REPAIR:
+        case SKILL_DISARM_TRAPS:
+        case SKILL_MERCHANT:
+        case SKILL_IDENTIFY_MONSTER:
+            if (current_mastery == GM)
+              {
+                current_skill = 10000;
+                break;
+              }
+            /* else fall through */
+        // skills that are x1/2/3/5 dep. on mastery
+        case SKILL_BODYBUILDING:
+        case SKILL_MEDITATION:
+        case SKILL_LEARNING:
+        case SKILL_STEALING:
+            if (current_mastery == GM)
+                current_mastery++;
+            current_skill *= current_mastery;
+            break;
+      }
+    return current_skill >= level;
+}
+
+// Hook for the above.
+static void __declspec(naked) check_skill_hook(void)
+{
+    asm
+      {
+        movzx eax, byte ptr [esi+6] ; mastery
+        push eax
+        push dword ptr [esi+7] ; level
+        movzx eax, byte ptr [esi+5] ; skill
+        push eax
+        push dword ptr [esp+44] ; player
+        call check_skill
+        test eax, eax
+        jz fail
+        push 0x446c33 ; cmd jump
+        ret
+        fail:
+        push 0x448356 ; next cmp
+        ret
+      }
+}
+
+// Initialise specitems spawned through Add gamescript command.
+// Necessary for the new Barrow Knife.
+static void __declspec(naked) evt_add_specitem(void)
+{
+    asm
+      {
+        push eax
+        push eax
+        mov ecx, ITEMS_TXT_ADDR - 4
+        call dword ptr ds:set_specitem_bonus
+        pop eax
+        mov ecx, MOUSE_THIS_ADDR ; replaced code
+        ret
+      }
+}
+
+// Initalise pickpocketed specitems, e.g. Lady Carmine's Dagger.
+static void __declspec(naked) pickpocket_specitem(void)
+{
+    asm
+      {
+        lea esi, [ebp-52] ; replaced code
+        push esi
+        mov ecx, ITEMS_TXT_ADDR - 4
+        call dword ptr ds:set_specitem_bonus
+        mov ecx, 9 ; replaced code
+        ret
+      }
+}
+
+// Bug fix: drowning dealt fire damage for some reason.
+// Not sure if it should be cold or physical or energy, but the canonical
+// reason for drowning is that "the water is very cold", so there.
+static void __declspec(naked) drowning_element(void)
+{
+    asm
+      {
+        mov dword ptr [esp+8], COLD
+        jmp dword ptr ds:damage_player ; replaced call
+      }
+}
+
+// When searching for a place to put a new object into, only consider
+// the first (map objects count) objects as existant.
+// Previously all 1000 object slots were checked, and since walk travel
+// does not overwrite old objects with zeroes, they were duplicated.
+static void __declspec(naked) check_object_chunk(void)
+{
+    asm
+      {
+        cmp ebx, dword ptr [0x6650ac] ; map object count
+      }
+}
+
+// This is called on a game save to cull expired objects, and suffers from
+// much the same bug.  Together with the above chunk, duplication is fixed.
+// TODO: it's possible the first obj could be duplicated still; check that
+static void __declspec(naked) recount_objects(void)
+{
+    asm
+      {
+        cmp ebp, dword ptr [0x6650ac] ; map object count
+        ret
+      }
+}
+
+// Brand the title screen with current version of the mod.
+static void __declspec(naked) print_version(void)
+{
+    asm
+      {
+        mov eax, dword ptr [esi+24] ; replaced code
+        cmp eax, 1 ; if in main menu
+        jne quit
+        cmp dword ptr [0x4e28d8], 0 ; current screen
+        jz version
+        quit:
+        cmp eax, 70 ; replaced code
+        ret
+        version:
+        xor eax, eax
+        push eax
+        push eax
+        push eax
+        push dword ptr [new_strings+31*4]
+        push eax
+        push 450
+        push 10
+        mov edx, dword ptr [0x5c3488] ; font
+        mov ecx, dword ptr [0x506dcc] ; dialog
+        call dword ptr ds:print_string
+        push 0x4160a3 ; next cycle
+        ret 4
+      }
+}
+
+// Some uncategorized gameplay changes.
+static inline void misc_rules(void)
+{
+    // Now that archers have fire arrows, we need to handle them properly.
+    hook_call(0x43a499, shield_fire_arrow, 6);
+    hook_call(0x41d2c9, days_minutes_buff, 5);
+    hook_call(0x41d307, seconds_buff, 6);
+    // Make temple donation rewards stronger.
+    hook_call(0x4b73a9, temple_wizard_eye_power, 6); // wizard eye (5 rep)
+    hook_call(0x4b73cd, temple_other_spells_power, 6); // preservation (10 rep)
+    hook_call(0x4b73fb, temple_other_spells_power, 6); // immutability (15 rep)
+    hook_call(0x4b7429, temple_other_spells_power, 6); // hour of pow. (20 rep)
+    hook_call(0x4b7457, temple_other_spells_power, 6); // day of prot. (25 rep)
+    // Lower minimum recovery for weapon attacks.
+    hook_call(0x48e1ff, recovery_check_blaster, 8);
+    hook_call(0x48e4dd, min_weapon_recovery, 6);
+    erase_code(0x406498, 8); // turn based recovery limit
+    erase_code(0x42efcb, 7); // melee attack recovery limit
+    erase_code(0x42ec54, 7); // theft recovery limit
+    hook_call(0x418437, display_melee_recovery_hook, 5);
+    hook_call(0x48fd79, melee_damage_check_main_weapon_first, 6);
+    patch_bytes(0x48fda6, melee_damage_weapon_loop_chunk, 8);
+    hook_call(0x4b1bd9, bank_interest, 5);
+    hook_call(0x4940b1, bank_interest_2, 5);
+    hook_call(0x4180ae, stat_hint_hook, 6);
+    hook_call(0x48ce6a, th_weapons_damage, 7);
+    hook_call(0x41dd47, th_weapons_description, 6);
+    hook_call(0x48ebee, th_weapons_min_damage, 7);
+    hook_call(0x48ed95, th_weapons_max_damage, 7);
+    hook_call(0x48ecb0, th_weapons_damage_bonus, 7);
+    hook_call(0x4506a5, rest_encounters, 13);
+    hook_call(0x433fc7, dark_region_taverns, 5);
+    hook_call(0x48e27c, club_recovery, 8);
+    // Upgrade Castle Harmondale (now Nighon) potion shop to item level 5.
+    patch_word(0x4f045e, 5);
+    patch_word(0x4f069e, 5);
+    hook_call(0x41a810, color_broken_ac, 5);
+    hook_call(0x4189be, color_broken_ac_2, 5);
+    // Localization fix: separate hunter-as-npc and hunter-as-class strings.
+    patch_pointer(0x452fa6, &new_strings[30]);
+    patch_pointer(0x48c310, &new_strings[30]);
+    patch_pointer(0x4484f3, check_skill_hook);
+    hook_call(0x44b360, evt_add_specitem, 5);
+    hook_call(0x48dab0, pickpocket_specitem, 6);
+    hook_call(0x49431f, drowning_element, 5);
+    patch_bytes(0x42f5f0, check_object_chunk, 6);
+    hook_call(0x42fa30, recount_objects, 5);
+    // Let mace paralysis be physical-elemental (was earth/poison).
+    patch_byte(0x439cd3, PHYSICAL);
+    hook_call(0x415745, print_version, 6);
+}
+
+// Instead of special duration, make sure we (initially) target the first PC.
+static void __declspec(naked) cure_weakness_chunk(void)
+{
+    asm
+      {
+        mov word ptr [ebx+4], si
+        nop
+      }
+}
+
+// Allow GM Cure Weakness to affect entire party.
+static void __declspec(naked) mass_cure_weakness(void)
+{
+    asm
+      {
+        lea ecx, [PARTY_ADDR+edi] ; replaced code
+        call dword ptr ds:timed_cure_condition ; replaced code
+        cmp dword ptr [ebp-24], GM
+        jne quit
+        cmp word ptr [ebx+4], 3
+        jae quit
+        inc word ptr [ebx+4]
+        push 0x42cb17 ; loop for all PCs
+        ret
+        quit:
+        push 0x42deaa ; spell cast successfully
+        ret
+      }
+}
+
+// Make Remove Fear party-wide at GM as well.  Unfortunately, there's
+// no ready code to check for GM Mind, so let's write our own.
+// Called in aim_potions_type() above.
+static void __declspec(naked) aim_remove_fear(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [esp+32] ; skill override
+        test ecx, ecx
+        jnz override
+        movzx ecx, word ptr [eax+298] ; mind skill
+        override:
+        push 0x427807 ; test-if-GM hammerhands code
+        ret 4
+      }
+}
+
+// Basically the same as mass_cure_weakness() above, but with a different jump.
+static void __declspec(naked) mass_remove_fear(void)
+{
+    asm
+      {
+        lea ecx, [PARTY_ADDR+edi] ; replaced code
+        call dword ptr ds:timed_cure_condition ; replaced code
+        cmp dword ptr [ebp-24], GM
+        jne quit
+        cmp word ptr [ebx+4], 3
+        jae quit
+        inc word ptr [ebx+4]
+        push 0x42c262 ; loop for all PCs
+        ret
+        quit:
+        push 0x42deaa ; post-cast code
+        ret
+      }
+}
+
+// Code for new GM Stone to Flesh, with 1 day/skill cure duration.
+static void __declspec(naked) stone_to_flesh_chunk(void)
+{
+    asm
+      {
+        imul edi, edi, 60*60*24 ; one day (M duration)
+        _emit 0xeb ; jmp
+        _emit 0xc1 ; to 0x42b5dd
+      }
+}
+
+// Code for new GM effect of most other cure condition spells.
+// Falls through to Master case.
+static void __declspec(naked) gm_cure_chunk(void)
+{
+    asm
+      {
+        imul edi, edi, 24 ; will be multiplied further after fallthrough
+        nop
+        nop
+      }
+}
+
+// Bug fix: failing to cure insanity would still inflict weakness.
+static void __declspec(naked) failed_cure_weakness(void)
+{
+    asm
+      {
+        test al, al ; result of curing attempt
+        jz skip
+        imul ecx, ecx, 6972 ; replaced code
+        ret
+        skip:
+        push 0x42deaa ; post-cast code
+        ret 4
+      }
+}
+
+// Bug fix: cure unconsciousness, set HP to 1, and inflict weakness
+// only if Raise Dead succeeds in removing the dead condition.
+static void __declspec(naked) raise_dead_chunk(void)
+{
+    asm
+      {
+        test al, al
+        _emit 0x75 ; jnz
+        _emit 0x8c ; to modified GM code
+        push 0x42deaa ; post-cast code
+        ret
+      }
+}
+
+// Let Resurrection restore some HP.
+static void __declspec(naked) resurrection_chunk(void)
+{
+    asm
+      {
+        add edi, 5
+        lea edi, [edi*4+edi]
+        shl edi, 1
+        lea ecx, [PARTY_ADDR+eax]
+        call dword ptr ds:get_full_hp
+        cmp edi, eax
+        jbe fits
+        mov edi, eax
+        fits:
+        nop
+        nop
+      }
+}
+
+// Rehaul the condition cure spells.  Generally, GM no longer
+// removes time limit, with most spells' mastery effects shifted.
+static inline void cure_spells(void)
+{
+    // Allow GM Cure Weakness to target entire party, but remove untimed cure.
+    patch_byte(0x427c9f + SPL_CURE_WEAKNESS - 2, 8); // same as hammerhands
+    patch_bytes(0x42caee, cure_weakness_chunk, 5);
+    erase_code(0x42cb3c, 27); // remove some obsolete checks
+    hook_jump(0x42cb7a, mass_cure_weakness);
+    // Same for Remove Fear.  We can reuse the same chunk here.
+    patch_bytes(0x42c239, cure_weakness_chunk, 5);
+    erase_code(0x42c287, 27); // remove similar obsolete checks
+    hook_jump(0x42c2c5, mass_remove_fear);
+    // Just remove the untimed cure for GM Awaken.  10 days is plenty enough.
+    erase_code(0x42a64f, 5);
+    erase_code(0x42a680, 22);
+    // Shift the max cure delay multipliers: Stone to Flesh.
+    patch_dword(0x42b5d9, 60*3); // E -> N
+    patch_dword(0x42b620, 60*60); // M -> E
+    patch_bytes(0x42b614, stone_to_flesh_chunk, 8); // GM -> M (new code)
+    patch_byte(0x42b5d6, 61); // and a jump to it
+    erase_code(0x42b60e, 4); // remove old GM check
+    // Shift the max cure delay multipliers: Remove Curse.
+    patch_bytes(0x42ba07, gm_cure_chunk, 5); // GM -> M
+    patch_dword(0x42ba0e, 60*60); // M -> E
+    patch_dword(0x42ba16, 60*3); // E -> N
+    erase_code(0x42ba4b, 16); // remove old GM code
+    // Shift the max cure delay multipliers: Cure Paralysis.
+    // The code changes are basically the same as with Remove Curse.
+    patch_bytes(0x42c196, gm_cure_chunk, 5); // GM -> M
+    patch_dword(0x42c19d, 60*60); // M -> E
+    patch_dword(0x42c1a5, 60*3); // E -> N
+    erase_code(0x42c1f5, 10); // remove old GM check
+    // Shift the max cure delay multipliers: Cure Insanity.
+    // Again, we can use the same code chunk here.
+    patch_bytes(0x42c850, gm_cure_chunk, 5); // GM -> M
+    patch_dword(0x42c857, 60*60); // M -> E
+    erase_code(0x42c8c4, 30); // remove old GM code
+    hook_call(0x42c91e, failed_cure_weakness, 6); // might as well
+    // Shift the max cure delay multipliers: Cure Poison.
+    // Similar code, similar patches.
+    patch_bytes(0x42cc56, gm_cure_chunk, 5); // GM -> M
+    patch_dword(0x42cc5d, 60*60); // M -> E
+    patch_dword(0x42cc65, 60*3); // E -> N
+    erase_code(0x42ccd2, 67); // remove old GM code
+    // Shift the max cure delay multipliers: Cure Disease.
+    // There sure is a lot of copy-pasted code in the game.
+    patch_bytes(0x42cfd0, gm_cure_chunk, 5); // GM -> M
+    patch_dword(0x42cfd7, 60*60); // M -> E
+    erase_code(0x42d044, 67); // remove old GM code
+    // Shift the max cure delay multipliers: Raise Dead.
+    // This should be the last one.
+    patch_bytes(0x42bda5, gm_cure_chunk, 5); // GM -> M
+    patch_dword(0x42bdac, 60*60); // M -> E
+    // A bit intricate: we want all the side-effects of Raise Dead
+    // (unconsc. cure, HP set to 1, and weakness) to only trigger
+    // if the main effect succeeds.  Unconsc. cure also must be untimed,
+    // as it plausibly may be present longer than death.
+    // Thankfully, the old GM code more or less does just that.
+    patch_bytes(0x42be19, (void *) 0x42be03, 10); // move HP = 1 past the check
+    erase_code(0x42be23, 17); // remove (the rest of) untimed death cure
+    erase_code(0x42bdff, 16); // remove old GM check
+    patch_byte(0x42be00, 65); // extend jmp to over all old GM code
+    patch_bytes(0x42be7f, raise_dead_chunk, 10);
+    // Resurrection is overhauled: no time limit, no weakness,
+    // and it restores HP a bit.  This means a lot of cut code.
+    erase_code(0x42bfe6, 12); // old mastery checks
+    patch_bytes(0x42c04d, resurrection_chunk, 28); // calculate HP
+    erase_code(0x42c069, 6); // old GM check
+    erase_code(0x42c13e, 22); // old weakness code
+    erase_code(0x42c17f, 5); // fall through to set edi code
+}
+
+// Let the magic skill affect the chance of debuffs working.
+// Shrinking Ray requires special handling here.
+// Also handles Cursed monsters.
+static void __declspec(naked) pierce_debuff_resistance(void)
+{
+    asm
+      {
+        add ecx, esi
+        xor esi, esi
+        cmp dword ptr [ebp+4], 0x46bf98 ; gm shrinking ray code
+        jne not_gm_ray
+        mov esi, dword ptr [ebp-8] ; stored edi
+        jmp shrinking_ray
+        not_gm_ray:
+        cmp dword ptr [ebp+4], 0x46ca24 ; projectile impact code
+        jne not_projectile
+        mov esi, dword ptr [ebp-4] ; stored esi
+        shrinking_ray:
+        mov esi, dword ptr [esi+76] ; spell skill
+        jmp not_spell
+        not_projectile:
+        cmp dword ptr [ebp+4], 0x427db8 ; start of cast spell function
+        jb not_spell
+        cmp dword ptr [ebp+4], 0x42e968 ; end of cast spell function
+        ja not_spell
+        mov esi, dword ptr [ebp] ; stored ebp
+        mov esi, dword ptr [esi-56] ; spell skill
+        not_spell:
+        shl esi, 1 ; double the skill to make the effect noticeable
+        mov edx, dword ptr [edi+212+MBUFF_CURSED*16]
+        or edx, dword ptr [edi+212+MBUFF_CURSED*16+4]
+        jz not_cursed
+        add esi, 10 ; effectively lowers res by 25% before skill bonus
+        not_cursed:
+        add esi, 30 ; standard difficulty check
+        cdq ; replaced code
+        add ecx, esi
+        ret
+      }
+}
+
+// Make sure to compare the roll with the new difficulty check.
+static void __declspec(naked) debuff_resist_chunk(void)
+{
+    asm
+      {
+        cmp edx, esi
+        nop
+      }
+}
+
+// Give Basic Slow a fixed duration of 5 minutes.
+static void __declspec(naked) slow_5min_chunk(void)
+{
+    asm
+      {
+        mov eax, 60 * 5
+        nop
+      }
+}
+
+// Give Expert+ Slow a fixed duration of 20 minutes.
+static void __declspec(naked) slow_20min_chunk(void)
+{
+    asm
+      {
+        mov eax, 60 * 20
+        nop
+      }
+}
+
+// The duration patched above actually wasn't used at all;
+// instead it was fixed 3 min/skill, which is likely a bug.
+static void __declspec(naked) slow_multiply_duration_chunk(void)
+{
+    asm
+      {
+        mov edi, dword ptr [ebp-16]
+        shl edi, 7
+      }
+}
+
+// Make Turn Undead duration dependent only on mastery and not skill.
+// Instead, skill reduces recovery.
+static void __declspec(naked) turn_undead_duration_chunk(void)
+{
+    asm
+      {
+        ; edx == 3
+        sub edx, 2 ; normal 5 min
+        jmp duration
+        shl edx, 1 ; gm 1 hour
+        shl edx, 1 ; master 30 min
+        duration:
+        imul eax, edx, 60 * 5 ; expert 15 min
+        sub dword ptr [ebp-180], edi ; recovery
+      }
+}
+
+// Standardized Expert debuff duration of 15 minutes.
+// Used in Charm, Berserk, Master Mass Fear, and Control Undead.
+static void __declspec(naked) duration_15min_chunk(void)
+{
+    asm
+      {
+        mov eax, 60 * 15
+        nop
+      }
+}
+
+// Standardized Master debuff duration of 30 minutes.
+// Used in Berserk, GM Mass Fear, and Control Undead.
+static void __declspec(naked) duration_30min_chunk(void)
+{
+    asm
+      {
+        mov eax, 60 * 30
+        nop
+      }
+}
+
+// Standardized GM debuff duration of 1 hour.
+// Used in Berserk and Enslave.
+static void __declspec(naked) duration_1hour_chunk(void)
+{
+    asm
+      {
+        mov eax, 60 * 60
+        nop
+      }
+}
+
+// Give Paralyze a fixed duration of 5/10/20/30 min on N/E/M/G.
+static void __declspec(naked) paralyze_duration(void)
+{
+    asm
+      {
+        mov edx, dword ptr [ebp-24] ; skill mastery
+        xor eax, eax
+        dec edx ; 0/1/2/3
+        setz al ; 1/0/0/0
+        lea edi, [eax+edx*2] ; 1/2/4/6
+        imul edi, edi, 60 * 5 ; x 5 min
+        shl edi, 7 ; seconds to ticks
+        ret
+      }
+}
+
+// Give Shrinking Ray a fixed duration of 20 minutes.
+static void __declspec(naked) shrinking_ray_duration_chunk(void)
+{
+    asm
+      {
+        mov eax, 128 * 60 * 20 ; in ticks
+        push 0 ; replaced code
+        nop
+      }
+}
+
+// Rework most debuff spells: the duration now only depends on mastery,
+// and the skill increases success chance.
+// TODO: rework mace paralysis as well?  see 0x439cfe
+static inline void debuff_spells(void)
+{
+    hook_call(0x4276a1, pierce_debuff_resistance, 5);
+    erase_code(0x428fc8, 6); // do not multiply shrinking ray's skill by 300
+    patch_bytes(0x4276aa, debuff_resist_chunk, 3);
+    patch_bytes(0x428d6b, slow_5min_chunk, 6);
+    patch_bytes(0x428d73, slow_20min_chunk, 6);
+    patch_bytes(0x428d8b, slow_20min_chunk, 6);
+    patch_bytes(0x428d95, slow_20min_chunk, 6);
+    patch_bytes(0x428df5, slow_multiply_duration_chunk, 6);
+    // Make Turn Undead duration fixed, for symmetry with other debuffs.
+    patch_bytes(0x42bbed, turn_undead_duration_chunk, 21);
+    patch_byte(0x42bbe6, 15); // expert jump
+    patch_byte(0x42bbe9, 10); // master jump
+    patch_word(0x42bbeb, 0x0574); // new GM jump: jnz N -> jz GM
+    patch_bytes(0x428e86, duration_15min_chunk, 6); // Charm
+    // Berserk
+    patch_bytes(0x42c4ac, duration_15min_chunk, 6); // E
+    patch_bytes(0x42c4a4, duration_30min_chunk, 6); // M
+    patch_bytes(0x42c49c, duration_1hour_chunk, 6); // GM
+    // Mass Fear
+    patch_bytes(0x42c696, duration_15min_chunk, 6); // M
+    patch_bytes(0x42c68e, duration_30min_chunk, 6); // GM
+    patch_bytes(0x42c5a6, duration_1hour_chunk, 6); // Enslave
+    hook_call(0x428cf5, paralyze_duration, 6);
+    // Control Undead
+    patch_bytes(0x42e07c, duration_15min_chunk, 6); // E
+    patch_bytes(0x42e072, duration_30min_chunk, 6); // M
+    patch_bytes(0x46ca44, shrinking_ray_duration_chunk, 7); // N/E/M
+    patch_bytes(0x46bf9c, shrinking_ray_duration_chunk, 8); // GM
+}
+
+// Provide the new buffer address to the parsing function.
+static void __declspec(naked) spcitems_address_chunk(void)
+{
+    asm
+      {
+        mov eax, offset spcitems
+        nop
+      }
+}
+
+// Now provide the address for the generation probabilities specifically.
+static void __declspec(naked) spcitems_probability_address_chunk(void)
+{
+    asm
+      {
+        mov edx, offset spcitems + 8
+        nop
+      }
+}
+
+// The item generator needs the enchantment level address.
+static void __declspec(naked) spcitems_level_address_chunk(void)
+{
+    asm
+      {
+        mov ecx, offset spcitems + 24
+        nop
+      }
+}
+
+// Calculate probability address from level address provided earlier.
+static void __declspec(naked) spcitems_probability_from_level_chunk(void)
+{
+    asm
+      {
+        movzx eax, byte ptr [ecx-16+eax]
+      }
+}
+
+// Address for probabilities again, but into a different register.
+static void __declspec(naked) spcitems_probability_address_chunk_2(void)
+{
+    asm
+      {
+        mov ebx, offset spcitems + 8
+        nop
+      }
+}
+
+// We will need a new spcitems buffer to store new enchantments.
+static inline void spcitems_buffer(void)
+{
+    // spcitems.txt parsing function
+    patch_bytes(0x457023, spcitems_address_chunk, 6);
+    patch_dword(0x457032, SPC_COUNT); // loop count
+    patch_bytes(0x45713d, spcitems_probability_address_chunk, 6);
+    patch_byte(0x45714b, SPC_COUNT); // stored for later
+    // items.txt parser
+    patch_bytes(0x4578c0, spcitems_address_chunk, 6);
+    patch_byte(0x4578e4, SPC_COUNT);
+    // random item generator
+    patch_bytes(0x456be9, spcitems_level_address_chunk, 6);
+    patch_bytes(0x456c37, spcitems_probability_from_level_chunk, 5);
+    erase_code(0x456c3c, 4);
+    patch_bytes(0x456c7e, spcitems_probability_address_chunk_2, 6);
+    patch_bytes(0x456cbd, spcitems_probability_address_chunk_2, 5);
+    // item name
+    patch_pointer(0x456616, spcitems - 1);
+    // the other reference is handled in prefix_gender() above
+    patch_pointer(0x41ddf7, &(spcitems-1)->description); // item description
+    patch_pointer(0x4564ae, &(spcitems-1)->value); // item value
+    // enchant item spell (some of these are unused, but whatever)
+    patch_pointer(0x42ad56, spcitems->probability);
+    patch_pointer(0x42ada0, spcitems->probability);
+    patch_pointer(0x42add5, spcitems->probability);
+    patch_pointer(0x42afe6, spcitems->probability);
+    patch_pointer(0x42b030, spcitems->probability);
+    patch_pointer(0x42b069, spcitems->probability);
+    patch_pointer(0x42b251, spcitems->probability);
+    patch_pointer(0x42b29b, spcitems->probability);
+    patch_pointer(0x42b2d0, spcitems->probability);
+    patch_pointer(0x42ad37, &spcitems->level);
+    patch_pointer(0x42afc7, &spcitems->level);
+    patch_pointer(0x42b232, &spcitems->level);
+}
+
+// Recognize some of the new enchantment names as prefixes.
+static void __declspec(naked) new_prefixes(void)
+{
+    asm
+      {
+        je quit ; replaced jump
+        cmp eax, SPC_BARBARIANS ; replaced code
+        je quit
+        cmp eax, SPC_SPECTRAL
+        je quit
+        cmp eax, SPC_CURSED
+        je quit
+        cmp eax, SPC_SOUL_STEALING
+        je quit
+        cmp eax, SPC_LIGHTWEIGHT
+        je quit
+        cmp eax, SPC_STURDY
+        quit:
+        ret ; zf will be checked shortly
+      }
+}
+
+// Display the Cursed monster debuff.  It's the same color as Fate.
+// We overwrite a switch table overflow check here,
+// but the overflow cannot happen anyway, so it's okay.
+static void __declspec(naked) display_cursed_debuff(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [ebp-52] ; current buff
+        dec ecx
+        js cursed
+        ret
+        cursed:
+        mov ecx, dword ptr [GLOBAL_TXT+52*4]
+        push 0x41ecd8 ; fate code
+        ret 4
+      }
+}
+
+// Cursed monsters now miss 50% of their attacks against PCs.
+static void __declspec(naked) cursed_monster_hits_player(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [esp+8] ; monster
+        mov edx, dword ptr [ecx+212+MBUFF_CURSED*16]
+        or edx, dword ptr [ecx+212+MBUFF_CURSED*16+4]
+        jz success
+        call dword ptr ds:random
+        and eax, 1
+        jnz success
+        pop ecx
+        ret 8 ; force a miss (eax == 0)
+        success:
+        pop eax
+        push esi ; replaced code
+        mov esi, dword ptr [esp+8] ; replaced code
+        jmp eax ; check for hit as normal
+      }
+}
+
+// Cursed monsters also miss 50% of attacks against other monsters.
+// Because spells in MvM combat also have a to-hit roll for some reason,
+// only 25% of such spells will succeed if attacker is cursed!  Oh well.
+static void __declspec(naked) cursed_monster_hits_monster(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [esp+12] ; attacker
+        mov edx, dword ptr [ecx+212+MBUFF_CURSED*16]
+        or edx, dword ptr [ecx+212+MBUFF_CURSED*16+4]
+        jz success
+        call dword ptr ds:random
+        and eax, 1
+        jnz success
+        add esp, 8
+        ret 16 ; force a miss (eax == 0)
+        success:
+        lea ebp, [esp+4] ; replaced code (modified)
+        mov ecx, dword ptr [ebp+12] ; replaced code
+        ret
+      }
+}
+
+// In addition, resistances of a cursed monster are considered 25% lower.
+static void __declspec(naked) cursed_monster_resists_damage(void)
+{
+    asm
+      {
+        add eax, edx ; replaced code
+        lea esi, [eax+30] ; replaced code
+        mov ecx, dword ptr [ebp+8] ; monster
+        mov edx, dword ptr [ecx+212+MBUFF_CURSED*16]
+        or edx, dword ptr [ecx+212+MBUFF_CURSED*16+4]
+        jz quit
+        shr eax, 2
+        sub esi, eax ; reduce by 25%
+        quit:
+        ret
+      }
+}
+
+// Implement cursed weapons; the debuff is inflicted with a 20% chance.
+// TODO: should it make a sound?
+static void __declspec(naked) cursed_weapon(void)
+{
+    asm
+      {
+        test ebx, ebx
+        jz melee
+        cmp dword ptr [ebx+72], SPL_ARROW
+        jne fail
+        mov eax, dword ptr [edi+0x1950] ; bow slot
+        jmp check
+        melee:
+        mov eax, dword ptr [edi+0x194c] ; main hand
+        test eax, eax
+        jz offhand
+        lea eax, [eax+eax*8]
+        lea eax, [edi+0x214+eax*4-36]
+        test byte ptr [eax+20], 2 ; broken bit
+        jnz offhand
+        cmp dword ptr [eax+12], SPC_CURSED
+        je cursed
+        cmp dword ptr [eax+12], SPC_WRAITH
+        je cursed
+        offhand:
+        mov eax, dword ptr [edi+0x1948] ; offhand
+        check:
+        test eax, eax
+        jz fail
+        lea eax, [eax+eax*8]
+        lea eax, [edi+0x214+eax*4-36]
+        test byte ptr [eax+20], 2 ; broken bit
+        jnz fail
+        cmp dword ptr [eax+12], SPC_CURSED
+        je cursed
+        cmp dword ptr [eax+12], SPC_WRAITH
+        jne fail
+        cursed:
+        call dword ptr ds:random
+        mov ecx, 5 ; 20% chance
+        xor edx, edx
+        div ecx
+        test edx, edx
+        jnz fail
+        push MAGIC
+        push esi ; monster
+        call dword ptr ds:monster_resists_condition
+        test eax, eax
+        jz fail
+        xor ebx, ebx
+        mov eax, 128 * 60 * 20 / 30 ; 20 min
+        mov edx, dword ptr [0xacce68] ; current time, high dword
+        add eax, dword ptr [0xacce64] ; current time, low dword
+        adc edx, ebx
+        lea ecx, [esi+212] ; cursed debuff
+        push ebx
+        push ebx
+        push ebx
+        push ebx
+        push edx
+        push eax
+        call dword ptr ds:add_buff
+        push ebx
+        push esi
+        call dword ptr ds:magic_sparkles
+        fail:
+        mov ecx, 0x5c5c30 ; replaced code
+        ret
+      }
+}
+
+// We need this for damage_messages() below,
+// as the murder code overwrites ebx which stored it.
+static int stored_projectile;
+
+// Implement soul stealing weapons: when used to kill a monster,
+// they add SP equal to monster's level.  Just like vampiric weapons,
+// overheal is possible, and wielding two such weapons will double SP gain.
+// The new Sacrificial Dagger is also soul stealing.
+// Also here: store the damaging projectile for later use.
+static void __declspec(naked) soul_stealing_weapon(void)
+{
+    asm
+      {
+        mov dword ptr [stored_projectile], ebx
+        test ebx, ebx
+        jnz quit
+        movzx eax, byte ptr [edi+0xb9] ; class
+        cmp byte ptr [0x4ed634+eax], bl ; sp multiplier
+        jz quit
+        mov eax, dword ptr [edi+0x194c] ; main hand
+        test eax, eax
+        jz offhand
+        lea eax, [eax+eax*8]
+        lea eax, [edi+0x214+eax*4-36]
+        test byte ptr [eax+20], 2 ; broken bit
+        jnz offhand
+        cmp dword ptr [eax], SACRIFICIAL_DAGGER
+        je soul_mainhand
+        cmp dword ptr [eax+12], SPC_SOUL_STEALING
+        jne offhand
+        soul_mainhand:
+        movzx eax, byte ptr [esi+52] ; monster level
+        add dword ptr [edi+6464], eax ; add SP -- overheal is OK here
+        offhand:
+        mov eax, dword ptr [edi+0x1948] ; offhand
+        test eax, eax
+        jz quit
+        lea eax, [eax+eax*8]
+        lea eax, [edi+0x214+eax*4-36]
+        test byte ptr [eax+20], 2 ; broken bit
+        jnz quit
+        cmp dword ptr [eax], SACRIFICIAL_DAGGER
+        je soul_offhand
+        cmp dword ptr [eax+12], SPC_SOUL_STEALING
+        jne quit
+        soul_offhand:
+        movzx eax, byte ptr [esi+52] ; monster level
+        add dword ptr [edi+6464], eax ; add SP -- overheal is OK here
+        quit:
+        mov ecx, dword ptr [ebp-24] ; replaced code
+        xor edx, edx ; replaced code
+        ret
+      }
+}
+
+// If the monster can be backstabbed, add 2 to the first parameter
+// of melee damage function.
+static void __declspec(naked) check_backstab(void)
+{
+    asm
+      {
+        mov edx, dword ptr [0xacd4f8] ; party direction
+        sub dx, word ptr [esi+154] ; monster direction
+        test dh, 6 ; we want no more than +/-512 mod 2048 difference
+        jnp quit ; PF == 1 will match 0x000 and 0x110 only
+        add dword ptr [esp+4], 2 ; backstab flag
+        quit:
+        mov dword ptr [ebp-8], 4 ; replaced code
+        ret
+      }
+}
+
+// Since we repurposed the second bit of the first parameter
+// to the melee damage function, we must rewrite its original read
+// to only check the first bit.
+static void __declspec(naked) melee_might_check_chunk(void)
+{
+    asm
+      {
+        and dword ptr [esp+36], 1
+      }
+}
+
+// Make afraid monsters face away from you in turn-based mode,
+// for easier backstabbing.  Will only work on hostile monsters.
+// If the monster fights someone else, it will face away from them.
+static void __declspec(naked) turn_afraid_monster(void)
+{
+    asm
+      {
+        test byte ptr [ebx+38], 8 ; hostile bit
+        jz skip
+        mov edx, dword ptr [ebx+212+MBUFF_FEAR*16]
+        or edx, dword ptr [ebx+212+MBUFF_FEAR*16+4]
+        jnz turn
+        cmp byte ptr [ebx+60], 1 ; ai type
+        jb skip ; suicidal
+        je turn ; wimp
+        movzx edx, word ptr [ebx+40] ; monster hp
+        lea edx, [edx+edx*4] ; 1/5th == 20%
+        cmp byte ptr [ebx+60], 3 ; aggressive
+        jne check_hp
+        shl edx, 1 ; 1/10th == 10%
+        check_hp:
+        cmp edx, dword ptr [ebx+108] ; full hp
+        ja skip
+        turn:
+        xor ax, 0x400 ; turn around
+        skip:
+        mov word ptr [ebx+154], ax ; replaced code
+        ret
+      }
+}
+
+// Implement the lightweight armor enchantment: it reduces the
+// recovery penalty by 10 after any skill bonuses, but never below 0.
+// Elven Chainmail and RDSM are also lightweight.
+static void __declspec(naked) lightweight_armor(void)
+{
+    asm
+      {
+        call dword ptr ds:ftol ; replaced code
+        mov ecx, dword ptr [esi+0x1954] ; armor slot
+        lea ecx, [ecx+ecx*8]
+        cmp dword ptr [esi+0x214+ecx*4-36], ELVEN_CHAINMAIL
+        je lightweight
+        cmp dword ptr [esi+0x214+ecx*4-36], RED_DRAGON_SCALE_MAIL
+        je lightweight
+        cmp dword ptr [esi+0x214+ecx*4-36+12], SPC_LIGHTWEIGHT
+        jne quit
+        lightweight:
+        sub eax, 10
+        jge quit
+        xor eax, eax
+        quit:
+        ret
+      }
+}
+
+// Ditto, but for shields.  In practice, lightweight shields
+// are only useful at Basic skill.
+static void __declspec(naked) lightweight_shield(void)
+{
+    asm
+      {
+        call dword ptr ds:ftol ; replaced code
+        mov ecx, dword ptr [esi+0x1948] ; offhand slot
+        lea ecx, [ecx+ecx*8]
+        cmp dword ptr [esi+0x214+ecx*4-36+12], SPC_LIGHTWEIGHT
+        jne quit
+        sub eax, 10
+        jge quit
+        xor eax, eax
+        quit:
+        ret
+      }
+}
+
+// In line with condition_resistances(), increase Int/Per dispel
+// resistance effect fourfold: from (Int+Per)/2 to (Int+Per)*2.
+static void __declspec(naked) dispel_chunk(void)
+{
+    asm
+      {
+        shl edi, 1
+      }
+}
+
+// Let the items of Permanence (and Kelebrim) protect from enemy Dispel Magic.
+// Also store which PCs resisted in ebx, for use later.
+static void __declspec(naked) dispel_immunity(void)
+{
+    asm
+      {
+        shl ebx, 1 ; unaffected pcs bitbield
+        inc ebx ; mark as resisted
+        idiv edi ; replaced code
+        cmp edx, 30 ; replaced code
+        jge quit
+        mov ecx, dword ptr [esi]
+        push SPC_PERMANENCE
+        call dword ptr ds:has_enchanted_item
+        dec eax ; set flags
+        jz immune
+        mov ecx, dword ptr [esi]
+        push 0
+        push KELEBRIM
+        call dword ptr ds:has_item_in_slot
+        dec eax ; set flags
+        immune:
+        lea ebx, [ebx+eax] ; ebx-- if no immunity
+        quit:
+        ret ; next command is jge
+      }
+}
+
+// Allow the party to resist global buff dispel.  Each buff is assigned
+// to a random PC (unless it has a caster set), and if said PC resisted,
+// the buff will not be dispelled.
+static void __declspec(naked) dispel_party_buffs(void)
+{
+    asm
+      {
+        mov esi, PARTY_BUFFS
+        check_buff:
+        mov cl, byte ptr [esi+14] ; caster
+        test cl, cl
+        jnz has_caster
+        call dword ptr ds:random
+        mov cl, al
+        and cl, 3
+        inc cl
+        has_caster:
+        mov edx, 16
+        shr edx, cl
+        test edx, ebx
+        jnz resisted
+        mov ecx, esi
+        call dword ptr ds:remove_buff
+        resisted:
+        add esi, 16
+        cmp esi, PARTY_ADDR
+        jl check_buff
+        xor ebx, ebx
+        pop edx
+        mov eax, dword ptr [ebp-4] ; replaced code
+        push ebx ; replaced code
+        push ebx ; replaced code
+        jmp edx
+      }
+}
+
+// Prevent sturdy armor from breaking on unconsciousness.
+static void __declspec(naked) sturdy_body_armor(void)
+{
+    asm
+      {
+        cmp dword ptr [ecx-8], SPC_STURDY
+        je sturdy
+        mov eax, dword ptr [ecx] ; replaced code
+        test ah, 2 ; replaced code
+        ret
+        sturdy:
+        test ecx, ecx ; clear zf
+        ret
+      }
+}
+
+// Also prevent sturdy items from being broken by monsters.
+static void __declspec(naked) mon_breaks_sturdy_item(void)
+{
+    asm
+      {
+        mov ebx, dword ptr [ebp-4] ; replaced code
+        cmp dword ptr [ebx+12], SPC_STURDY
+        je sturdy
+        test byte ptr [ebx+21], 2 ; replaced code
+        ret
+        sturdy:
+        test ebx, ebx ; clear zf
+        ret
+      }
+}
+
+// Sturdy items also shouldn't be broken by alchemical explosions.
+// This also fixes a bug wherein some alchemical explosions
+// (those not from black potions) were checking the hardened bit
+// on the wrong items.  Now hardened items are excluded from
+// the eligible items list, so the wrong check is harmless.
+static void __declspec(naked) alchemy_breaks_items(void)
+{
+    asm
+      {
+        cmp ecx, 134 ; replaced code
+        jg quit
+        cmp dword ptr [eax+12], SPC_STURDY
+        je sturdy
+        test byte ptr [eax+21], 2 ; hardened
+        ; test sets flags perfectly for jg later
+        quit:
+        ret
+        sturdy:
+        cmp eax, 0 ; set flags for jg
+        ret
+      }
+}
+
+// Let's add some new item enchantments.
+static inline void new_enchants(void)
+{
+    // Some new enchant names are prefixes.
+    hook_call(0x4565fc, new_prefixes, 5);
+    // Spectral weapons are handled in undead_slaying_element() above.
+    // Implement the monster cursed condition.
+    patch_dword(0x41ec01, 212); // start from debuff 0 (cursed)
+    hook_call(0x41ec1e, display_cursed_debuff, 13);
+    erase_code(0x41ede3, 1); // one more cycle
+    // effect on spells handled in cast_new_spells() above
+    hook_call(0x427464, cursed_monster_hits_player, 5);
+    hook_call(0x427373, cursed_monster_hits_monster, 5);
+    hook_call(0x4275a0, cursed_monster_resists_damage, 5);
+    // condition resistance is handled in pierce_debuff_resistance() above
+    hook_call(0x439bf2, cursed_weapon, 5);
+    // For symmetry, indirectly penalize cursed players' resistances
+    // through reducing luck to 10% of base.
+    patch_byte(0x4ede62, 10);
+    hook_call(0x439b0b, soul_stealing_weapon, 5);
+    hook_call(0x439863, check_backstab, 7);
+    // backstab damage doubled in temp_bane_melee_2() above
+    patch_bytes(0x48d04f, melee_might_check_chunk, 5);
+    hook_call(0x402fe2, turn_afraid_monster, 7);
+    hook_call(0x403ef9, turn_afraid_monster, 7);
+    // Give the "assassins'" ench backstab as well, but remove disarm bonus.
+    patch_dword(0x48f724, dword(0x48f700)); // skill bonus jumptable
+    hook_call(0x48e376, lightweight_armor, 5);
+    hook_call(0x48e3e7, lightweight_shield, 5);
+    // leaping boots dealt with in feather_fall_jump() above
+    // Let's tweak dispel mechanics while we're at it.
+    patch_bytes(0x405471, dispel_chunk, 2);
+    erase_code(0x405428, 23); // remove unconditional party buff dispel
+    hook_call(0x40548a, dispel_immunity, 5);
+    hook_call(0x4054d8, dispel_party_buffs, 5);
+    hook_call(0x48dcad, sturdy_body_armor, 5);
+    hook_call(0x48dff2, mon_breaks_sturdy_item, 7);
+    hook_call(0x41611a, alchemy_breaks_items, 6);
+}
+
+// Let the Elven Chainmail also improve bow skill.
+static void __declspec(naked) elven_chainmail_bow_bonus(void)
+{
+    asm
+      {
+        jne not_speed ; replaced jump
+        add edi, 15 ; replaced code
+        ret
+        not_speed:
+        cmp esi, 44 ; bow skill
+        jne quit
+        add dword ptr [esp+20], 5 ; bonus
+        quit:
+        ret
+      }
+}
+
+// Bug fix: let the bow skill boni from artifacts increase damage at GM.
+static void __declspec(naked) bow_skill_bonus_damage(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [ebp-16]
+        push SKILL_BOW
+        call dword ptr ds:get_skill
+        and eax, SKILL_MASK
+        ret
+      }
+}
+
+// Display the modified bow damage.
+static void __declspec(naked) bow_skill_bonus_damage_display(void)
+{
+    asm
+      {
+        mov ecx, esi
+        push SKILL_BOW
+        call dword ptr ds:get_skill
+        ret
+      }
+}
+
+// Implement the Sacrificial Dagger SP bonus.
+static void __declspec(naked) sacrificial_dagger_sp_bonus(void)
+{
+    asm
+      {
+        cmp eax, SACRIFICIAL_DAGGER
+        jne not_it
+        cmp esi, 8 ; sp stat
+        jne not_it
+        add edi, 30
+        not_it:
+        sub eax, PUCK ; replaced code
+        ret
+      }
+}
+
+// Restrict the Sacrificial Dagger to goblins in the same way as Elfbane.
+static void __declspec(naked) sacrificial_dagger_goblin_only(void)
+{
+    asm
+      {
+        mov edx, MIND_S_EYE ; replaced code
+        cmp eax, SACRIFICIAL_DAGGER
+        jne not_it
+        mov eax, ELFBANE
+        not_it:
+        ret
+      }
+}
+
+// Set a (previously unused) bit if we should display RDSM.
+static void __declspec(naked) check_for_worn_rdsm(void)
+{
+    asm
+      {
+        push ebp
+        mov ecx, RED_DRAGON_SCALE_MAIL
+        call dword ptr ds:player_has_item
+        or byte ptr [0x511087], al
+        mov edx, edi
+        mov ecx, ELVEN_CHAINMAIL ; replaced code
+        ret
+      }
+}
+
+// Count RDSM as proper body armor for the characted doll code.
+static void __declspec(naked) display_worn_rdsm(void)
+{
+    asm
+      {
+        cmp edx, RED_DRAGON_SCALE_MAIL
+        jne not_it
+        cmp byte ptr [0x511087], 0
+        jz not_it
+        ; edx already contains what we need
+        push 0x43cbe7
+        ret 4
+        not_it:
+        lea eax, [edx-504] ; replaced code
+        ret
+      }
+}
+
+// Something related to worn armor display.
+static uint32_t rdsm_display_vars[12];
+
+// Insert RDSM into body armor display loop.
+static void __declspec(naked) display_worn_rdsm_2(void)
+{
+    asm
+      {
+        cmp eax, LAST_BODY_ARMOR + 1
+        jne quit
+        mov dword ptr [esp+20], RED_DRAGON_SCALE_MAIL
+        lea edx, [edi+edi*2]
+        shl edx, 2
+        add edx, offset rdsm_display_vars - 8
+        mov dword ptr [esp+24], edx
+        cmp eax, LAST_BODY_ARMOR + 2 ; set flags
+        quit:
+        ret
+      }
+}
+
+// Another body armor display check (two of them actually).
+static void __declspec(naked) display_worn_rdsm_3(void)
+{
+    asm
+      {
+        cmp ecx, RED_DRAGON_SCALE_MAIL
+        jne not_it
+        mov ecx, STEEL_CHAIN_MAIL ; temporary
+        not_it:
+        sub eax, GOVERNOR_S_ARMOR ; replaced code
+        ret
+      }
+}
+
+// Now we provide a prevoiusly stored value to the display code.
+static void __declspec(naked) display_worn_rdsm_4(void)
+{
+    asm
+      {
+        mov ebx, dword ptr [esp+32] ; worn body armor
+        cmp dword ptr [ebx], RED_DRAGON_SCALE_MAIL
+        jne not_it
+        mov eax, dword ptr [esp+40] ; body type
+        lea eax, [eax+eax*2]
+        mov ebx, offset rdsm_display_vars
+        mov ebx, dword ptr [ebx+eax*4]
+        ret
+        not_it:
+        mov ebx, dword ptr [0x511110+eax*4] ; replaced code
+        ret
+      }
+}
+
+// Another place which needs the new value.
+static void __declspec(naked) display_worn_rdsm_5(void)
+{
+    asm
+      {
+        mov ebx, dword ptr [esp+52] ; worn body armor (offset)
+        cmp dword ptr [ebx+0x1f0], RED_DRAGON_SCALE_MAIL
+        jne not_it
+        mov ebx, dword ptr [esp+44] ; body type
+        lea ebx, [ebx+ebx*2]
+        shl ebx, 2
+        add ebx, offset rdsm_display_vars - 0x511110
+        ret
+        not_it:
+        lea ebx, [edi+edi*2]
+        shl ebx, 2
+        ret
+      }
+}
+
+// The last bit of display code which needs the new var.
+static void __declspec(naked) display_worn_rdsm_6(void)
+{
+    asm
+      {
+        mov ebx, dword ptr [esp+52] ; worn body armor (offset)
+        cmp dword ptr [ebx+0x1f0], RED_DRAGON_SCALE_MAIL
+        jne not_it
+        mov eax, dword ptr [esp+44] ; body type
+        lea eax, [eax+eax*2]
+        mov ebx, offset rdsm_display_vars + 4
+        mov ebx, dword ptr [ebx+eax*4]
+        ret
+        not_it:
+        mov ebx, dword ptr [0x511114+eax*4] ; replaced code
+        ret
+      }
+}
+
+// Add the new properties to some old artifacts.
+static inline void new_artifacts(void)
+{
+    // remove old (and nonfunctional) elven chainmail recovery bonus
+    erase_code(0x48ea64, 12);
+    // elven chainmail is lightweight now
+    hook_call(0x48f24e, elven_chainmail_bow_bonus, 5);
+    hook_call(0x48d2c0, bow_skill_bonus_damage, 5);
+    hook_call(0x48d15e, bow_skill_bonus_damage_display, 6);
+    hook_call(0x48d1cb, bow_skill_bonus_damage_display, 6);
+    hook_call(0x48eee0, sacrificial_dagger_sp_bonus, 5);
+    hook_call(0x492c4a, sacrificial_dagger_goblin_only, 5);
+    // corsair and old nick can backstab now
+    erase_code(0x48ceae, 8); // old nick elf slaying
+    erase_code(0x48cfd9, 8); // ditto
+    // old nick poison damage increased in elemental_weapons() above
+    patch_byte(0x48f086, 13); // old nick disarm bonus
+    // kelebrim protects from dispel
+    // hermes' sandals grant leaping
+    // rdsm is lightweight
+    hook_call(0x43c170, check_for_worn_rdsm, 5);
+    hook_call(0x43c952, display_worn_rdsm, 6);
+    hook_call(0x43c52c, display_worn_rdsm_2, 6);
+    hook_call(0x43d42f, display_worn_rdsm_3, 5);
+    hook_call(0x43db2b, display_worn_rdsm_3, 5);
+    hook_call(0x43d493, display_worn_rdsm_4, 7);
+    hook_call(0x43dbaf, display_worn_rdsm_5, 6);
+    hook_call(0x43dd42, display_worn_rdsm_6, 7);
+}
+
+// When calculating missile damage, take note of the weapon's skill.
+static void __declspec(naked) check_missile_skill(void)
+{
+    asm
+      {
+        movzx eax, byte ptr [ITEMS_TXT_ADDR+esi+29] ; item skill
+        mov dword ptr [ebp-8], eax ; unused var
+        movzx eax, byte ptr [ITEMS_TXT_ADDR+esi+32] ; replaced code
+        ret
+      }
+}
+
+// Do not add GM Bow damage if we're using blasters.
+static void __declspec(naked) check_missile_skill_2(void)
+{
+    asm
+      {
+        cmp dword ptr [ebp-8], SKILL_BLASTER
+        je quit
+        mov ax, word ptr [edi] ; replaced code
+        test ax, ax ; replaced code
+        quit:
+        ret
+      }
+}
+
+// Use ranged recovery time when shooting blasters.
+static void __declspec(naked) blaster_ranged_recovery(void)
+{
+    asm
+      {
+        inc dword ptr [esp+4] ; melee -> ranged
+        push 0x48e19b ; replaced call
+        ret
+      }
+}
+
+// Use a ranged weapon in melee if 0.  Strictly speaking, we should have
+// an array of 40 here (one for each action), but it seems to work fine.
+static int use_melee_attack;
+
+// Allow shooting blasters (and bows) in melee
+// by pressing quick cast with no spell set (or no SP).
+static void __declspec(naked) missile_on_quick_cast(void)
+{
+    asm
+      {
+        mov dword ptr [use_melee_attack], ebx ; == 0 if we fall from quick cast
+        or ebx, 1 ; restore the proper value
+        mov eax, dword ptr [0x50ca50] ; replaced code
+        ret
+      }
+}
+
+// Similarly, allow shooting in melee by shift-clicking with no quick spell.
+// TODO: could also check SP for symmetry
+static void __declspec(naked) missile_on_shift_click(void)
+{
+    asm
+      {
+        movzx ecx, byte ptr [eax+0x1a4f] ; replaced code
+        test ecx, ecx
+        jz no_spell
+        ret
+        no_spell:
+        mov dword ptr [use_melee_attack], ecx ; == 0
+        mov eax, dword ptr [0x50ca50] ; actions count
+        push 0x42255e ; weapon attack code
+        ret 4
+      }
+}
+
+// We'll need to remove zero from the melee flag on each normal click.
+static void __declspec(naked) melee_on_normal_click(void)
+{
+    asm
+      {
+        or dword ptr [use_melee_attack], 1
+        mov eax, dword ptr [0x50ca50] ; replaced code
+      }
+}
+
+// If in melee range and use melee flag set, disable blasters and wands.
+static void __declspec(naked) allow_melee_with_blasters(void)
+{
+    asm
+      {
+        xor ecx, ecx ; replaced code
+        cmp dword ptr [use_melee_attack], ecx
+        jz check_blaster
+        cmp dword ptr [ebp-4], 407 ; melee range
+        jg check_blaster
+        and dword ptr [ebp-12], ecx ; disable wand and set zf
+        ret
+        check_blaster:
+        cmp dword ptr [ebp-8], ecx ; replaced code (blaster check)
+        ret
+      }
+}
+
+// As denoted above, allow bows in melee if use melee flag unset.
+static void __declspec(naked) allow_bows_in_melee(void)
+{
+    asm
+      {
+        cmp dword ptr [use_melee_attack], ecx
+        jz quit
+        fnstsw ax ; replaced code
+        test ah, 0x41 ; replaced code
+        quit:
+        ret
+      }
+}
+
+// 0 if no blaster, 1 to draw later, 2 if drawing now.
+static int draw_blaster;
+
+// Do not draw equipped small blaster behind the body.
+static void __declspec(naked) postpone_drawing_blaster(void)
+{
+    asm
+      {
+        and dword ptr [draw_blaster], 0
+        mov eax, dword ptr [ebx+0x1948+SLOT_MISSILE*4] ; replaced code
+        test eax, eax ; replaced code
+        jz quit
+        lea edx, [eax+eax*8]
+        cmp dword ptr [ebx+0x214+edx*4-36], BLASTER
+        jne quit
+        mov byte ptr [draw_blaster], 1
+        ; we will skip drawing it now because zf == 1
+        quit:
+        ret
+      }
+}
+
+// Instead, draw it between body and a belt.
+static void __declspec(naked) draw_blaster_behind_belt(void)
+{
+    asm
+      {
+        cmp dword ptr [draw_blaster], 1
+        je blaster
+        mov eax, dword ptr [ebx+0x1948+SLOT_BELT*4] ; replaced code
+        ret
+        blaster:
+        mov eax, dword ptr [ebx+0x1948+SLOT_MISSILE*4]
+        add dword ptr [draw_blaster], 1 ; now it == 2
+        push 0x43d043 ; missile draw code
+        ret 4
+      }
+}
+
+// After drawing the blaster out of order, return to the belt code.
+static void __declspec(naked) return_from_drawing_blaster(void)
+{
+    asm
+      {
+        cmp dword ptr [draw_blaster], 2
+        je belt
+        mov eax, dword ptr [eax+0x1948+SLOT_CLOAK*4] ; replaced code
+        ret
+        belt:
+        mov ebx, eax
+        mov eax, dword ptr [ebx+0x1948+SLOT_BELT*4]
+        and dword ptr [draw_blaster], 0
+        push 0x43d8b7 ; belt draw code
+        ret 4
+      }
+}
+
+// Female dolls require adjusting blaster location.
+static void __declspec(naked) adjust_female_blaster(void)
+{
+    asm
+      {
+        cmp dword ptr [draw_blaster], 2
+        jne quit
+        mov eax, dword ptr [esp+36] ; player
+        cmp byte ptr [eax+184], 1 ; sex
+        jne quit
+        sub ebx, 15
+        sub ecx, 10
+        quit:
+        ret
+      }
+}
+
+// Allow equipping a blaster in the missile slot with a wetsuit on.
+static void __declspec(naked) missile_wetsuit_blaster(void)
+{
+    asm
+      {
+        mov eax, dword ptr [MOUSE_ITEM]
+        cmp eax, BLASTER
+        je quit
+        cmp eax, BLASTER_RIFLE
+        je quit
+        cmp edi, 3 ; replaced code
+        jne quit ; replaced jump
+        cmp byte ptr [0x6be244], 0 ; replaced code
+        quit:
+        ret
+      }
+}
+
+// Override items.txt blaster equip offsets when in a wetsuit.
+static void __declspec(naked) adjust_wetsuit_blaster(void)
+{
+    asm
+      {
+        cmp ecx, BLASTER
+        jne rifle
+        add edi, 2
+        sub edx, 12
+        ret
+        rifle:
+        sub edi, 20
+        sub edx, 42
+        ret
+      }
+}
+
+// Print "always" in the to-hit field with a wand equipped.
+// It's not strictly true with blades or debuffs, but it's good enough.
+// Also prints "N/A" when no ranged weapon present.
+// TODO: check charges here and in print damage function
+static void __declspec(naked) print_wand_to_hit(void)
+{
+    asm
+      {
+        mov ecx, edi
+        mov eax, dword ptr [ecx+0x1948+SLOT_MISSILE*4]
+        test eax, eax
+        jnz have_missile
+        no_missile:
+        push dword ptr [new_strings+22*4]
+        jmp print
+        have_missile:
+        lea eax, [eax+eax*8]
+        test byte ptr [ecx+0x214+eax*4-36+20], 2 ; broken bit
+        jnz no_missile
+        mov eax, dword ptr [ecx+0x214+eax*4-36]
+        cmp eax, FIRST_WAND
+        jb not_wand
+        cmp eax, LAST_WAND
+        ja not_wand
+        push dword ptr [new_strings+21*4]
+        print:
+        push dword ptr [GLOBAL_TXT+203*4]
+        push 0x4e2e18 ; "%s %s" format string
+        push esi
+        call dword ptr ds:sprintf
+        add esp, 16
+        not_wand:
+        mov edx, dword ptr [0x5c3468] ; replaced code
+        ret
+      }
+}
+
+// Ditto, but in the quick reference screen.
+static void __declspec(naked) print_wand_to_hit_ref(void)
+{
+    asm
+      {
+        mov ecx, ebp
+        mov eax, dword ptr [ecx+0x1948+SLOT_MISSILE*4]
+        test eax, eax
+        jnz have_missile
+        push dword ptr [new_strings+22*4]
+        jmp print
+        have_missile:
+        lea eax, [eax+eax*8]
+        mov eax, dword ptr [ecx+0x214+eax*4-36]
+        cmp eax, FIRST_WAND
+        jb not_wand
+        cmp eax, LAST_WAND
+        ja not_wand
+        push dword ptr [new_strings+21*4]
+        print:
+        push esi
+        call dword ptr ds:strcpy_ptr
+        add esp, 8
+        not_wand:
+        mov edx, dword ptr [0x5c3468] ; replaced code
+        ret
+      }
+}
+
+// Wands, books and scrolls have a spell number written in the mod1 field,
+// prefixed by S.  It was ignored, but no harm in actually parsing the number.
+static void __declspec(naked) parse_sxx_items_txt_chunk(void)
+{
+    asm
+      {
+        jne quit
+        inc ebx
+        nop
+        nop
+        nop
+        quit:
+      }
+}
+
+// Instead of using a compiled-in table, let's read wand spells from items.txt.
+static void __declspec(naked) get_parsed_wand_spell(void)
+{
+    asm
+      {
+        lea eax, [eax+eax*2]
+        shl eax, 4
+        movzx ecx, byte ptr [ITEMS_TXT_ADDR+eax+30] ; mod1
+        ret
+      }
+}
+
+// Put blasters and wands in the missile weapon slot.
+// TODO: fix wand recovery being displayed incorrectly
+static inline void ranged_blasters(void)
+{
+    // actual shooting
+    patch_dword(0x42ed08, 0x1950); // check missile slot for wands and blasters
+    erase_code(0x439633, 4); // extraneous blaster damage function params
+    patch_dword(0x439641, 0x48d1e4 - 0x439645); // melee -> ranged damage
+    hook_call(0x48d24d, check_missile_skill, 7);
+    hook_call(0x48d2ab, check_missile_skill_2, 6);
+    hook_call(0x4282e6, blaster_ranged_recovery, 5);
+    // displaying the damage range
+    patch_dword(0x48d382, 0x1950); // check missile slot for blasters
+    patch_byte(0x48d39d, 31); // ranged damage min stat
+    patch_byte(0x48d3a6, 32); // ranged damage max stat
+    // missiles in melee
+    erase_code(0x43019a, 1); // set ebx to 0 in quick cast
+    hook_call(0x43019b, missile_on_quick_cast, 5);
+    hook_call(0x42241a, missile_on_shift_click, 7);
+    hook_call(0x422559, melee_on_normal_click, 5);
+    erase_code(0x42ee31, 2); // unnecessary jump
+    hook_call(0x42ee33, allow_melee_with_blasters, 5);
+    hook_call(0x42eee9, allow_bows_in_melee, 5);
+    // drawing small blasters
+    hook_call(0x43d035, postpone_drawing_blaster, 8);
+    hook_call(0x43d8b1, draw_blaster_behind_belt, 6);
+    hook_call(0x43d1f7, return_from_drawing_blaster, 6);
+    hook_call(0x43d090, adjust_female_blaster, 6);
+    // blasters and wetsuits
+    hook_call(0x4690d1, missile_wetsuit_blaster, 16);
+    patch_dword(0x43ce6c, 0x1950); // draw missile weapon in a wetsuit
+    hook_call(0x43cea9, adjust_wetsuit_blaster, 7);
+    erase_code(0x43ceb0, 9);
+    erase_code(0x43cebf, 2);
+    // use wands from missile slot
+    patch_dword(0x42ee6d, dword(0x42ee6d) + 4); // main hand -> missile slot
+    patch_dword(0x42ee89, 0x1950);
+    patch_dword(0x42ee9b, 0x1950);
+    patch_dword(0x42eeb7, 0x1950);
+    patch_dword(0x42f02f, 0x1950);
+    patch_dword(0x42f055, 0x1950);
+    patch_dword(0x42f067, 0x1950);
+    patch_dword(0x42f085, 0x1950);
+    patch_byte(0x469863, 2); // equip wands in missile slot
+    patch_byte(0x4e8354, 2); // ditto
+    // status screen
+    patch_dword(0x48d40b, 0x1950); // check for wand in missile slot
+    hook_call(0x418cc3, print_wand_to_hit, 6);
+    hook_call(0x41a910, print_wand_to_hit_ref, 6);
+    // replace some wand spells
+    patch_bytes(0x457772, parse_sxx_items_txt_chunk, 6);
+    hook_call(0x42ee7b, get_parsed_wand_spell, 7);
+    hook_call(0x42f047, get_parsed_wand_spell, 7);
+}
+
+// Make sure to disable ranged attack with an empty wand equipped.
+static void __declspec(naked) empty_wand_chunk(void)
+{
+    asm
+      {
+        mov dword ptr [ebp-16], edi ; unset bow var
+      }
+}
+
+// Color equipped empty wands red, as if broken.
+static void __declspec(naked) red_empty_wands(void)
+{
+    asm
+      {
+        and ecx, 0xf0 ; replaced code
+        jnz quit
+        cmp dword ptr [edi], FIRST_WAND
+        jb not_it
+        cmp dword ptr [edi], LAST_WAND
+        ja not_it
+        cmp dword ptr [edi+16], ecx ; charges vs. 0
+        jnz not_it
+        or al, 2 ; broken bit (for display only)
+        not_it:
+        test ecx, ecx ; zf = 1
+        quit:
+        ret
+      }
+}
+
+// Displays charges; the string is colored red.
+// TODO: may be nicer to call rgb_color() instead of hardcoding item color
+static const char red_charges[] = "\f63683%s: %u/%u";
+
+// Display current and max wand charges, even if it's empty.
+static void __declspec(naked) display_wand_charges(void)
+{
+    asm
+      {
+        cmp byte ptr [edi+28], 12 ; wand
+        je wand
+        xor eax, eax ; set zf
+        ret
+        wand:
+        pop edx
+        movzx eax, byte ptr [ecx+25] ; max charges
+        push eax
+        mov eax, dword ptr [ecx+16] ; replaced code
+        test eax, eax
+        jnz quit
+        push eax
+        push dword ptr [GLOBAL_TXT+464*4]
+        mov eax, offset red_charges
+        push eax
+        add edx, 14 ; skip over pushes
+        quit:
+        jmp edx
+      }
+}
+
+// Make the wand price depend both on current and maximum charges.
+// Called from potion_price() above.
+static void __declspec(naked) wand_price(void)
+{
+    asm
+      {
+        movzx ecx, byte ptr [ITEMS_TXT_ADDR+eax+32] ; mod2 (default charges)
+        shl ecx, 1
+        movzx eax, byte ptr [esi+25] ; max charges
+        add eax, dword ptr [esi+16] ; charges
+        add eax, 2 ; even totally spent wands cost something
+        mul edi
+        div ecx
+        mov edi, eax
+        test ecx, ecx ; clear zf
+        ret
+      }
+}
+
+// Create wands with some charges spent already.
+static void __declspec(naked) preused_wands(void)
+{
+    asm
+      {
+        mov ebx, dword ptr [esi+16] ; charges
+        mov byte ptr [esi+25], bl ; max charges
+        shr ebx, 1 ; up to 50%
+        jz quit
+        call dword ptr ds:random
+        xor edx, edx
+        div ebx
+        inc edx
+        sub dword ptr [esi+16], edx
+        quit:
+        ret
+      }
+}
+
+// Same, but in the "add item" inventory command.
+// We can reuse the above code here.
+static void __declspec(naked) preused_wands_2(void)
+{
+    asm
+      {
+        lea esi, [ebp-44]
+        jmp preused_wands
+      }
+}
+
+// Same, but for stolen wands.  Also fixes a bug wherein
+// stolen wands had rubbish values for max charges.
+static void __declspec(naked) preused_wands_3(void)
+{
+    asm
+      {
+        lea eax, [eax+edx+1] ; replaced code
+        mov dword ptr [ebp-52+16], eax ; replaced code
+        push esi
+        push ebx
+        lea esi, [ebp-52]
+        call preused_wands
+        pop ebx
+        pop esi
+        ret
+      }
+}
+
+// More wand init code, not sure when it's called though.
+static void __declspec(naked) preused_wands_4(void)
+{
+    asm
+      {
+        push ebx
+        lea esi, [esp+24]
+        call preused_wands
+        pop ebx
+        ret
+      }
+}
+
+// This wand init code governs looting monsters with preset wands,
+// notably Mr. Malwick (and possibly no-one else).
+static void __declspec(naked) preused_wands_5(void)
+{
+    asm
+      {
+        push esi
+        push ebx
+        lea esi, [ebp-44]
+        call preused_wands
+        pop ebx
+        pop esi
+        ret
+      }
+}
+
+// Shops are the exception: wands are always fully charged there.
+static void __declspec(naked) charge_shop_wands_common(void)
+{
+    asm
+      {
+        mov dword ptr [ecx+20], 1 ; replaced code (item flags)
+        cmp dword ptr [ecx], FIRST_WAND
+        jb quit
+        cmp dword ptr [ecx], LAST_WAND
+        ja quit
+        movzx edx, byte ptr [ecx+25] ; max charges
+        mov dword ptr [ecx+16], edx ; charges
+        quit:
+        ret
+      }
+}
+
+// Standard shop items hook.
+static void __declspec(naked) charge_shop_wands_standard(void)
+{
+    asm
+      {
+        lea ecx, [0xad45b4+ecx*4]
+        jmp charge_shop_wands_common
+      }
+}
+
+// Special shop items hook.
+static void __declspec(naked) charge_shop_wands_special(void)
+{
+    asm
+      {
+        lea ecx, [0xad9f24+eax*4]
+        jmp charge_shop_wands_common
+      }
+}
+
+static char recharge_buffer[100];
+static const float shop_recharge_multiplier = 0.2; // from 30% to 80%
+
+// Wand recharge dialog: print cost and resulting number of charges.
+// TODO: may be nicer to call rgb_color() instead of hardcoding item color
+static void __declspec(naked) shop_recharge_dialog(void)
+{
+    asm
+      {
+        lea esi, [edi+0x214+eax*4-36] ; replaced code
+        cmp dword ptr [esi], FIRST_WAND
+        jb not_wand
+        cmp dword ptr [esi], LAST_WAND
+        jbe wand
+        not_wand:
+        test byte ptr [esi+20], 2 ; replaced code
+        ret
+        wand:
+        mov edx, dword ptr [0x507a40]
+        imul edx, dword ptr [edx+28], 52
+        fld dword ptr [0x5912d8+edx] ; store price multiplier
+        fmul dword ptr [shop_recharge_multiplier]
+        movzx eax, byte ptr [esi+25] ; max charges
+        push eax
+        fimul dword ptr [esp]
+        fisttp dword ptr [esp]
+        pop ebx ; == charges after recharge
+        cmp ebx, 0
+        jbe worn_out
+        cmp ebx, dword ptr [esi+16] ; current charges
+        jg rechargeable
+        xor ebx, ebx ; set zf
+        ret
+        rechargeable:
+        push dword ptr [0x5912d8+edx]
+        mov ecx, edi
+        call dword ptr ds:identify_price
+        shl eax, 2 ; 4x as expensive as identification
+        push eax
+        push ebx
+        worn_out:
+        mov ecx, esi
+        call dword ptr ds:item_name
+        push eax
+        cmp ebx, 0
+        cmova eax, dword ptr [new_strings+24*4]
+        cmovbe eax, dword ptr [new_strings+23*4]
+        push eax
+        mov eax, offset recharge_buffer
+        push eax
+        call dword ptr ds:sprintf
+        add esp, 12
+        cmp ebx, 0
+        jbe no_adjust
+        add esp, 8
+        no_adjust:
+        mov eax, offset recharge_buffer
+        xor ebx, ebx
+        push 0x4b5453
+        ret 4
+      }
+}
+
+// We need to store the number of charges after shop recharge for later.
+static int new_charges;
+
+// Actually clicking on the wand: check if we should recharge it,
+// and calculate price and new charges if so.
+static void __declspec(naked) prepare_shop_recharge(void)
+{
+    asm
+      {
+        cmp dword ptr [esi], FIRST_WAND
+        jb not_wand
+        cmp dword ptr [esi], LAST_WAND
+        jbe wand
+        not_wand:
+        fstp st(0) ; discard store price multiplier
+        mov dword ptr [ebp-8], eax ; replaced code
+        test byte ptr [esi+20], 2 ; replaced code
+        ret
+        wand:
+        fld st(0)
+        fmul dword ptr [shop_recharge_multiplier]
+        movzx eax, byte ptr [esi+25] ; max charges
+        push eax
+        fimul dword ptr [esp]
+        fisttp dword ptr [esp]
+        pop eax ; == charges after recharge
+        cmp eax, 0
+        jbe cannot_recharge
+        cmp eax, dword ptr [esi+16] ; current charges
+        jg recharge
+        cannot_recharge:
+        fstp st(0) ; discard store price multiplier
+        xor eax, eax ; set zf
+        ret
+        recharge:
+        mov dword ptr [new_charges], eax
+        mov ecx, edi
+        sub esp, 4
+        fstp dword ptr [esp] ; store price multiplier
+        call dword ptr ds:identify_price
+        shl eax, 2 ; 4x as expensive as identification
+        mov dword ptr [ebp-8], eax ; store the price
+        ret ; zf should be unset now
+      }
+}
+
+// After passing all the checks, actually recharge the wand.
+static void __declspec(naked) perform_shop_recharge(void)
+{
+    asm
+      {
+        cmp dword ptr [esi], FIRST_WAND
+        jb not_wand
+        cmp dword ptr [esi], LAST_WAND
+        ja not_wand
+        mov eax, dword ptr [new_charges]
+        mov dword ptr [esi+16], eax ; charges
+        mov byte ptr [esi+25], al ; max charges
+        not_wand:
+        mov eax, dword ptr [esi+20] ; replaced code
+        mov ecx, edi ; replaced code
+        ret
+      }
+}
+
+// Make wands break instead of disappear when they run out of charges;
+// also, let magical shops recharge wands for a price.
+static inline void wand_charges(void)
+{
+    patch_bytes(0x42ed4f, empty_wand_chunk, 3);
+    // Remove the code that destroys empty wands.
+    erase_code(0x42ed52, 5); // when wand was already empty
+    erase_code(0x42eeae, 14); // shooting at a monster
+    erase_code(0x42f07d, 12); // shooting at nothing
+    hook_call(0x43d0aa, red_empty_wands, 6);
+    hook_call(0x41de08, display_wand_charges, 5);
+    patch_pointer(0x41de17, "%s: %u/%u"); // new format
+    patch_byte(0x41de29, 20); // call fixup
+    hook_call(0x456a78, preused_wands, 6);
+    hook_call(0x44b357, preused_wands_2, 6);
+    hook_call(0x48da1a, preused_wands_3, 7);
+    hook_call(0x415c93, preused_wands_4, 8);
+    hook_call(0x426b36, preused_wands_5, 6);
+    hook_call(0x4b8ebd, charge_shop_wands_standard, 11);
+    hook_call(0x4b9038, charge_shop_wands_special, 11);
+    hook_call(0x4b540c, shop_recharge_dialog, 11);
+    patch_byte(0x4bdbc1, 0x14); // fstp -> fst (preserve store pricing)
+    hook_call(0x4bdbd0, prepare_shop_recharge, 7);
+    hook_call(0x4bdc0c, perform_shop_recharge, 5);
+    // Related bug (?) fix: repairing an item also identified it for free.
+    erase_code(0x4bdc15, 2);
+}
+
+// Print the damage in the stun message,
+// and don't show it at all if the monster is dead.
+static void __declspec(naked) stun_message(void)
+{
+    asm
+      {
+        cmp word ptr [esi+40], bx ; check if mon hp > 0
+        jg message
+        push 0x439cba ; skip over message code
+        ret 8
+        message:
+        pop ecx
+        push dword ptr [ebp-12] ; damage
+        lea eax, [edi+168] ; replaced code
+        jmp ecx
+      }
+}
+
+// Same, but for paralysis and MM7Patch's halved armor.
+static void __declspec(naked) paralysis_message(void)
+{
+    asm
+      {
+        cmp word ptr [esi+40], 0 ; mon hp
+        jg message
+        push 0x439d6e ; skip over message code
+        ret 12
+        message:
+        pop eax
+        pop ecx ; player name
+        push dword ptr [ebp-12] ; damage
+        push ecx
+        cmp dword ptr [ebp-52], 2 ; check if halved armor
+        jne okay
+        mov ecx, dword ptr [0x439d57] ; mm7patch`s format string
+        mov edx, dword ptr [new_strings+27*4] ; new message
+        mov dword ptr [ecx], edx
+        okay:
+        mov edi, 0x5c5c30 ; replaced code
+        jmp eax
+      }
+}
+
+// Also: last_hit_player defined above.
+// If both of those remain the same, combine the damage messages.
+static int last_hit_spell;
+// Accumulated damage to the monster(s).
+static int total_damage;
+// If only one monster is damaged, points to it, otherwise zero.
+static void *only_target;
+// Whether said monster was killed.
+static char killed_only_target;
+
+// Display the message for damaging several monsters with the same attack.
+static char *__stdcall multihit_message(struct player *player, void *monster,
+                                        int damage, int kill)
+{
+    static void *hit_monsters[100];
+    static int hit_count, dead_count;
+
+    if (only_target)
+      {
+        hit_count = 1;
+        dead_count = killed_only_target;
+        hit_monsters[0] = only_target;
+        only_target = 0;
+      }
+    for (int i = 0; i <= hit_count && i < 100; i++)
+        if (i == hit_count)
+          {
+            hit_monsters[i] = monster;
+            hit_count++;
+            break;
+          }
+        else if (hit_monsters[i] == monster)
+            break;
+    dead_count += kill;
+    total_damage += damage;
+
+    static char buffer[100];
+    if (dead_count)
+        sprintf(buffer, new_strings[29], player->name, total_damage, hit_count,
+                dead_count);
+    else
+        sprintf(buffer, new_strings[28], player->name, total_damage,
+                hit_count);
+    return buffer;
+}
+
+// Check if we should display the combined message.
+static void __declspec(naked) multihit_message_check(void)
+{
+    asm
+      {
+        cmp dword ptr [0x6be1f8], 0 ; replaced code
+        jnz message
+        ret
+        message:
+        mov eax, dword ptr [ebp-12] ; damage
+        mov dword ptr [ebp-16], eax ; unused at this point
+        mov ecx, ebx
+        cmp dword ptr [esp], 0x439b5b ; if called from kill message code
+        cmove ecx, dword ptr [stored_projectile] ; then restore proj
+        sete dl ; and set the kill flag
+        test ecx, ecx
+        jnz have_proj
+        mov dword ptr [last_hit_player], ecx ; don`t stack melee messages
+        inc ecx ; clear zf
+        ret
+        have_proj:
+        mov eax, dword ptr [ecx+88] ; owner
+        cmp eax, dword ptr [last_hit_player]
+        je check_spell
+        mov dword ptr [last_hit_player], eax
+        mov eax, dword ptr [ecx+72] ; spell id
+        reset_spell:
+        mov dword ptr [last_hit_spell], eax
+        mov eax, dword ptr [ebp-12] ; damage
+        mov dword ptr [total_damage], eax
+        mov dword ptr [only_target], esi
+        mov byte ptr [killed_only_target], dl
+        ret ; zf == 0 here
+        check_spell:
+        mov eax, dword ptr [ecx+72] ; spell id
+        cmp eax, dword ptr [last_hit_spell]
+        jne reset_spell
+        cmp dword ptr [only_target], esi
+        jne multihit
+        mov eax, dword ptr [ebp-12] ; damage
+        add eax, dword ptr [total_damage]
+        mov dword ptr [total_damage], eax
+        mov dword ptr [ebp-16], eax
+        ret ; zf should be unset now
+        multihit:
+        movzx edx, dl ; kill flag
+        push edx
+        push dword ptr [ebp-12] ; damage
+        push esi ; monster
+        push edi ; player
+        call multihit_message
+        mov ecx, eax ; message
+        push 0x439bf7 ; show status text
+        ret 4
+      }
+}
+
+// Condense consecutive damage messages for AOE spells and the like
+// into a single message for each cast.
+static inline void damage_messages(void)
+{
+    hook_call(0x439c93, stun_message, 6);
+    patch_byte(0x439cac, 20); // call fixup
+    hook_call(0x439d50, paralysis_message, 5);
+    patch_byte(0x439d63, 20); // call fixup
+    hook_call(0x439b56, multihit_message_check, 6);
+    patch_byte(0x439b77, -16); // total damage  == [ebp-16]
+    hook_call(0x439bb3, multihit_message_check, 7);
+    patch_byte(0x439bc5, -16); // total damage  == [ebp-16]
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
@@ -1036,15 +8397,30 @@ BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
         spells_txt();
         monsters_txt();
         skip_monster_res();
-        spell_scholls();
         elemental_weapons();
         fire_poison();
         condition_resistances();
         undead_immunities();
+        global_txt();
+        new_potions();
+        temp_enchants();
         misc_items();
+        throw_potions();
         misc_spells();
         zombie_stuff();
         new_monster_spells();
+        reputation();
+        expand_global_evt();
+        hp_sp_burnout();
+        misc_rules();
+        cure_spells();
+        debuff_spells();
+        spcitems_buffer();
+        new_enchants();
+        new_artifacts();
+        ranged_blasters();
+        wand_charges();
+        damage_messages();
       }
     return TRUE;
 }

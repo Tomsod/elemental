@@ -4685,15 +4685,12 @@ static void __fastcall cast_new_spells(int monster, void *vector, int spell,
         if (target == TGT_PARTY)
           {
             struct player *target_player;
-            int count = 1;
+            int count = 0;
             for (int i = 0; i < 4; i++)
                 if (is_undead(&PARTY[i]) && player_active(&PARTY[i])
-                    && !(random() % count)) // randomly choose one player
-                  {
+                    && !(random() % ++count)) // randomly choose one player
                     target_player = &PARTY[i];
-                    count++;
-                  }
-            if (count > 1)
+            if (count)
               {
                 int mastery = skill_mastery(skill);
                 skill &= SKILL_MASK;

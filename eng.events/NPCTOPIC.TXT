@@ -573,7 +573,7 @@
 572	Challenges
 573	Before you go…
 574	Dragon Scale Armor
-575	Make Armor for 4000 Gold
+575	Make Plate for 4000 Gold
 576	Make Shield for 2000 Gold					
 577	Sell Scales for 2500 Gold					
 578	Is it done yet?					

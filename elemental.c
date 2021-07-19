@@ -559,6 +559,9 @@ struct __attribute__((packed)) spcitem
 // vanilla
 #define MBUFF_FEAR 4
 
+// new NPC greeting count (starting from 1)
+#define GREET_COUNT 207
+
 static int __cdecl (*uncased_strcmp)(const char *left, const char *right)
     = (funcptr_t) 0x4caaf0;
 static int __thiscall (*get_player_resistance)(const void *player, int stat)
@@ -8386,6 +8389,17 @@ static inline void damage_messages(void)
     patch_byte(0x439bc5, -16); // total damage  == [ebp-16]
 }
 
+// I want to add a couple new greetings, and the array has to be expanded.
+static inline void npc_greetings(void)
+{
+    static void *npc_greet[2+GREET_COUNT*2];
+    patch_word(0x476e38, 0xb890); // nop; mov eax
+    patch_pointer(0x476e3a, npc_greet + 2); // 0th greeting is skipped
+    patch_dword(0x476e45, GREET_COUNT);
+    patch_pointer(0x4455dc, npc_greet);
+    patch_pointer(0x4b2ba4, npc_greet);
+}
+
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
                     LPVOID const reserved)
 {
@@ -8418,6 +8432,7 @@ BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
         ranged_blasters();
         wand_charges();
         damage_messages();
+        npc_greetings();
       }
     return TRUE;
 }

@@ -2613,6 +2613,11 @@ static void __declspec(naked) pure_potions_power(void)
         inc ecx
         might:
         mov edx, dword ptr [MOUSE_ITEM+4] ; potion power
+        test edx, edx ; 0 power potions have no permanent effect
+        jnz has_power
+        push 0x4687a8 ; skip set-drunk-bit code
+        ret 4
+        has_power:
         add dx, word ptr [esi+188+ecx*4] ; base attribute
         test dh, dh ; can`t raise higher than 255
         jz not_above_limit

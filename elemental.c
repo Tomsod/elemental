@@ -447,7 +447,7 @@ struct __attribute((packed)) spell_info
     uint16_t delay_expert;
     SKIP(2);
     uint16_t delay_gm;
-    SKIP(1);
+    uint8_t damage_fixed;
     uint8_t damage_dice;
 };
 
@@ -471,6 +471,7 @@ enum spells
     SPL_BERSERK = 62,
     SPL_CURE_WEAKNESS = 67,
     SPL_HEAL = 68,
+    SPL_FLYING_FIST = 76,
     SPL_DESTROY_UNDEAD = 79,
     SPL_PARALYZE = 81,
     SPL_VAMPIRIC_WEAPON = 91,
@@ -4344,6 +4345,9 @@ static inline void misc_spells(void)
     SPELL_INFO[SPL_SPECTRAL_WEAPON].delay_expert = 100;
     // BTW, GM Vampiric Weapon for some reason had a larger delay?  Fixed here:
     SPELL_INFO[SPL_VAMPIRIC_WEAPON].delay_gm = 90;
+    // Another MM8 idea: buff Flying Fist a little.
+    SPELL_INFO[SPL_FLYING_FIST].damage_fixed = 20;
+    SPELL_INFO[SPL_FLYING_FIST].damage_dice = 10;
 }
 
 // For consistency with players, monsters revived with Reanimate now have

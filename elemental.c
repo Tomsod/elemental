@@ -103,9 +103,13 @@ enum spcitems_txt
 {
     SPC_CARNAGE = 3,
     SPC_FROST = 5,
+    SPC_ICE = 6,
     SPC_SPARKS = 7,
+    SPC_LIGHTNING = 8,
     SPC_FLAME = 11,
+    SPC_INFERNOS = 12,
     SPC_POISON = 13,
+    SPC_VENOM = 14,
     SPC_VAMPIRIC = 16,
     SPC_DRAGON_SLAYING = 40,
     SPC_DARKNESS = 41,
@@ -1980,6 +1984,7 @@ static void __declspec(naked) weapon_potions(void)
         shock:
         inc edi
         fire:
+        inc ebx ; buff elemental enchants a little
         xor eax, eax
         push eax
         push eax
@@ -2030,13 +2035,13 @@ static void __declspec(naked) potion_aura(void)
         mov eax, dword ptr [ebp-12] ; replaced code
         or al, 8 ; temp bonus bit
         mov cl, 16
-        cmp ebx, SPC_FLAME
+        cmp ebx, SPC_INFERNOS
         je red
-        cmp ebx, SPC_SPARKS
+        cmp ebx, SPC_LIGHTNING
         je purple
-        cmp ebx, SPC_FROST
+        cmp ebx, SPC_ICE
         je blue
-        cmp ebx, SPC_POISON
+        cmp ebx, SPC_VENOM
         je green
         cmp ebx, SPC_SWIFT
         je green

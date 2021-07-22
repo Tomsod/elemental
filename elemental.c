@@ -240,7 +240,10 @@ enum items
     LAST_WAND = 159,
     FIRST_REAGENT = 200,
     LAST_REAGENT = 214, // not counting gray
+    FIRST_GRAY_REAGENT = 215,
+    LAST_GRAY_REAGENT = 219,
     POTION_BOTTLE = 220,
+    CATALYST = 221,
     FIRST_POTION = 222,
     FIRST_COMPLEX_POTION = 225,
     FIRST_LAYERED_POTION = 228,
@@ -2226,8 +2229,12 @@ static int recursive_brew(struct player *player, int potion,
 {
     if (potion < FIRST_COMPLEX_POTION)
       {
-        // red, blue, or yellow potion
-        int first_reagent = (potion - FIRST_POTION) * 5 + FIRST_REAGENT;
+        // gray, red, blue, or yellow potion
+        int first_reagent;
+        if (potion == CATALYST)
+            first_reagent = FIRST_GRAY_REAGENT;
+        else
+            first_reagent = (potion - FIRST_POTION) * 5 + FIRST_REAGENT;
         for (int i = 1; i <= PLAYER_MAX_ITEMS; i++)
           {
             if (!(unused_items[i>>5] & (1 << (i & 31))))
@@ -2424,7 +2431,8 @@ static void __thiscall brew_if_possible(struct player *player, int potion)
             if (id == POTION_BOTTLE)
                 bottles++;
             else if (id >= FIRST_POTION && id <= LAST_POTION
-                     || id >= FIRST_REAGENT && id <= LAST_REAGENT)
+                     || id >= FIRST_REAGENT && (id <= LAST_REAGENT
+                     || potion == CATALYST && id <= LAST_GRAY_REAGENT))
                 usable[item>>5] |= 1 << (item & 31);
           }
       }
@@ -2515,7 +2523,7 @@ static void __declspec(naked) autobrew(void)
         ret
         ctrl:
         mov eax, dword ptr [esi]
-        cmp eax, FIRST_POTION
+        cmp eax, CATALYST
         jb quit
         cmp eax, LAST_POTION
         jbe brewable

@@ -544,6 +544,15 @@ enum profession
 // New max size of global.evt itself (was 46080 bytes before).
 #define GLOBAL_EVT_SIZE 48000
 
+// I could've used a malloc, but this is simpler.
+#define MAX_STATRATE_COUNT 50
+struct statrate
+{
+    int value;
+    int bonus;
+    char *rating;
+};
+
 // Data from parsing spcitems.txt.
 struct __attribute__((packed)) spcitem
 {
@@ -5784,26 +5793,34 @@ static void __declspec(naked) bank_interest_2(void)
       }
 }
 
-#define STATRATE_COUNT 29
-static char *statrates[STATRATE_COUNT];
+static struct statrate statrates[MAX_STATRATE_COUNT];
+static int statrate_count;
 
 // Parse statrate.txt, which contains skill rating titles.
+// Also it's now used for storing rebalanced stat thresholds.
 static void parse_statrate(void)
 {
     char *file = load_from_lod(EVENTS_LOD, "statrate.txt", FALSE);
     if (strtok(file, "\r\n")) // skip first line
-        for (int i = 0; i < STATRATE_COUNT; i++)
+      {
+        int i;
+        for (i = 0; i < MAX_STATRATE_COUNT; i++)
           {
             char *line = strtok(0, "\r\n");
             if (!line)
                 break;
-            // titles are in the third (and last) field of every line
+            // field order: value bonus rating
+            statrates[i].value = atoi(line);
+            line = strchr(line, '\t');
+            if (!line)
+                continue;
+            statrates[i].bonus = atoi(++line);
             line = strchr(line, '\t');
             if (line)
-                line = strchr(line + 1, '\t');
-            if (line)
-                statrates[i] = line + 1;
+                statrates[i].rating = line + 1;
           }
+        statrate_count = i;
+      }
 }
 
 // Display skill bonus and base skill value in the tooltip.
@@ -5847,15 +5864,14 @@ static char *__stdcall stat_hint(char *description, int stat)
             return description;
       }
     int bonus = get_effective_stat(total);
-    int rating = bonus;
-    if (rating > 25)
-        rating = 22;
-    else if (rating > 20)
-        rating = 21;
-    rating += 6;
+    int rating;
+    for (rating = 0; rating < statrate_count; rating++)
+        if (statrates[rating].bonus == bonus)
+            break;
     strcpy(buffer, description);
     sprintf(buffer + strlen(buffer), "\n\n%s: %s (%+d)\n%s: %d",
-            new_strings[25], statrates[rating], bonus, new_strings[26], base);
+            new_strings[25], statrates[rating].rating, bonus,
+            new_strings[26], base);
     return buffer;
 }
 
@@ -5872,6 +5888,15 @@ static void __declspec(naked) stat_hint_hook(void)
         mov ebx, eax
         ret
       }
+}
+
+// Our replacement for get_effective_stat().
+static int __stdcall new_stat_thresholds(int stat)
+{
+    for (int i = statrate_count - 1; i > 0; i--)
+        if (stat >= statrates[i].value)
+            return statrates[i].bonus;
+    return statrates[0].bonus;
 }
 
 // Give the two-handed swords and axes doubled quality bonus to damage.
@@ -6271,6 +6296,7 @@ static inline void misc_rules(void)
     hook_call(0x4b1bd9, bank_interest, 5);
     hook_call(0x4940b1, bank_interest_2, 5);
     hook_call(0x4180ae, stat_hint_hook, 6);
+    hook_jump(0x48ea13, new_stat_thresholds);
     hook_call(0x48ce6a, th_weapons_damage, 7);
     hook_call(0x41dd47, th_weapons_description, 6);
     hook_call(0x48ebee, th_weapons_min_damage, 7);

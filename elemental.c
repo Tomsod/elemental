@@ -494,7 +494,9 @@ enum spells
 
 struct __attribute__((packed)) map_monster
 {
-    SKIP(77);
+    SKIP(36);
+    uint32_t bits;
+    SKIP(37);
     uint8_t spell1;
     SKIP(7);
     uint8_t holy_resistance;
@@ -4645,6 +4647,11 @@ static int __thiscall consider_new_spells(void *this,
         if (target != TGT_PARTY)
             return 0;
 
+        // I *think* this is the line-of-sight bit,
+        // although it's inconsistent on peaceful monsters.
+        if (!(monster->bits & 0x200000))
+            return 0;
+
         for (int i = 0; i < 4; i++)
             if (is_undead(&PARTY[i]) && player_active(&PARTY[i])
                 && !PARTY[i].conditions[COND_AFRAID])
@@ -4655,6 +4662,8 @@ static int __thiscall consider_new_spells(void *this,
       {
         if (target == TGT_PARTY)
           {
+            if (!(monster->bits & 0x200000)) // has line of sight
+                return 0;
             for (int i = 0; i < 4; i++)
                 if (is_undead(&PARTY[i]) && player_active(&PARTY[i]))
                     return 1;

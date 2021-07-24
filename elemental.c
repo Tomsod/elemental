@@ -596,6 +596,8 @@ static funcptr_t add_buff = (funcptr_t) 0x458519;
 static funcptr_t elem_damage = (funcptr_t) 0x439e16;
 static funcptr_t monster_resists = (funcptr_t) 0x427522;
 static funcptr_t monster_in_group = (funcptr_t) 0x438bce;
+static void __thiscall (*expire_temp_bonus)(struct item *item, long time)
+    = (funcptr_t) 0x458299;
 static funcptr_t is_artifact = (funcptr_t) 0x456d98;
 static int __thiscall (*get_skill)(void *player, int skill)
     = (funcptr_t) 0x48f87a;
@@ -1689,7 +1691,23 @@ static void __declspec(naked) temp_swiftness(void)
       }
 }
 
+// Make sure there are no lingering temp enchants
+// before checking for undead slaying / spectral / etc.
+static void __declspec(naked) expire_weapon(void)
+{
+    asm
+      {
+        lea ebx, [edi+0x1f0+eax*4]
+        mov ecx, ebx
+        push dword ptr [0xacce68] ; current time, high dword
+        push dword ptr [0xacce64] ; current time, low dword
+        call dword ptr ds:expire_temp_bonus
+        ret
+      }
+}
+
 // Store temp enchant in eax for the next chunk.
+// Also here: fix "of David" not being checked for.
 static void __declspec(naked) temp_bane_bow_1(void)
 {
     asm
@@ -1701,34 +1719,49 @@ static void __declspec(naked) temp_bane_bow_1(void)
         mov eax, dword ptr [ebx+8]
         no_temp:
         mov ebx, dword ptr [ebx+12]
+        cmp ebx, SPC_DAVID
+        jne not_david
+        mov edx, MG_TITAN
+        not_david:
         cmp ebx, SPC_UNDEAD_SLAYING
         ret
       }
 }
 
 // Check monster bane twice for both possible enchants.
+// Also lower Undead Slaying extra damage to 150%.
 static void __declspec(naked) temp_bane_bow_2(void)
 {
     asm
       {
-        mov ebx, eax
+        mov edi, eax
+        cmp edx, MG_UNDEAD
+        sete bl
         call dword ptr ds:monster_in_group
-        cmp ebx, SPC_UNDEAD_SLAYING
+        and ebx, eax
+        cmp edi, SPC_UNDEAD_SLAYING
         je undead
-        cmp ebx, SPC_DRAGON_SLAYING
-        je dragon
-        ret
-        dragon:
+        cmp edi, SPC_DRAGON_SLAYING
+        jne quit
         mov edx, MG_DRAGON
         jmp temp
         undead:
         mov edx, MG_UNDEAD
+        test eax, eax
+        setz bh
         temp:
         mov ecx, dword ptr [ebp+8]
         push eax
         call dword ptr ds:monster_in_group
         pop ecx
+        and bh, al
         or eax, ecx
+        quit:
+        mov ecx, esi
+        test ebx, ebx
+        jz not_undead
+        shr ecx, 1
+        not_undead:
         ret
       }
 }
@@ -1751,10 +1784,12 @@ static void __declspec(naked) temp_bane_melee_1(void)
 
 // Check bane twice for melee weapons.  Also fixes Gibbet.
 // We also check for backstab damage here.
+// Also, ensures that Undead Slaying only adds +50% damage.
 static void __declspec(naked) temp_bane_melee_2(void)
 {
     asm
       {
+        push 0 ; undead flag
         cmp ebp, CORSAIR
         je backstab
         cmp ebp, OLD_NICK
@@ -1768,7 +1803,12 @@ static void __declspec(naked) temp_bane_melee_2(void)
         mov eax, 1 ; return true
         jnz quit
         no_backstab:
+        cmp edx, MG_UNDEAD
+        jne not_undead
+        inc dword ptr [esp] ; undead flag
+        not_undead:
         call dword ptr ds:monster_in_group
+        and dword ptr [esp], eax ; reset flag if not undead
         cmp ebp, GIBBET
         je dragon
         cmp dword ptr [ebx+4], TEMP_ENCH_MARKER
@@ -1779,17 +1819,27 @@ static void __declspec(naked) temp_bane_melee_2(void)
         cmp ecx, SPC_DRAGON_SLAYING
         je dragon
         quit:
+        pop edx
+        mov ecx, esi
+        test edx, edx
+        jle dont_halve
+        shr ecx, 1
+        dont_halve:
         ret
         dragon:
         mov edx, MG_DRAGON
         jmp temp
         undead:
+        test eax, eax
+        jnz quit
         mov edx, MG_UNDEAD
+        add dword ptr [esp], 2
         temp:
-        mov ecx, dword ptr [esp+48]
+        mov ecx, dword ptr [esp+52]
         push eax
         call dword ptr ds:monster_in_group
         pop ecx
+        sub dword ptr [esp], eax
         or eax, ecx
         cmp ebp, GIBBET
         jne quit
@@ -2110,14 +2160,21 @@ static inline void temp_enchants(void)
     patch_byte(0x439983, 0x01); // mov -> add
     hook_call(0x4399bc, temp_elem_damage, 5); // melee weapon(s)
     hook_call(0x48e4b4, temp_swiftness, 6);
+    patch_word(0x48d20e, 0xdf89); // mov edi, ebx
+    hook_call(0x48d210, expire_weapon, 5);
     hook_call(0x48d260, temp_bane_bow_1, 6);
     patch_byte(0x48d28b, 11); // redirect a jump to always reach the below hook
     hook_call(0x48d297, temp_bane_bow_2, 5);
+    patch_word(0x48d2a0, 0xce01); // add esi, ecx
     // melee bane code is repeated for either hand
+    hook_call(0x48ce11, expire_weapon, 7);
     hook_call(0x48ceb6, temp_bane_melee_1, 7);
     hook_call(0x48cecf, temp_bane_melee_2, 5);
+    patch_word(0x48ced8, 0xce01); // add esi, ecx
+    hook_call(0x48cf42, expire_weapon, 7);
     hook_call(0x48cfe1, temp_bane_melee_1, 7);
     hook_call(0x48cffa, temp_bane_melee_2, 5);
+    patch_word(0x48d003, 0xce01); // add esi, ecx
     hook_call(0x41e025, display_temp_enchant, 7);
     patch_dword(0x41dfe5, 4); // one more cycle
     hook_call(0x41de8d, temp_enchant_height, 7);

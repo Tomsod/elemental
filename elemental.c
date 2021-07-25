@@ -169,6 +169,8 @@ struct __attribute__((packed)) item
     uint64_t temp_ench_time;
 };
 
+#define IFLAGS_ID 1
+
 struct __attribute__((packed)) spell_buff
 {
     uint64_t expire_time;
@@ -2581,12 +2583,16 @@ static void __thiscall brew_if_possible(struct player *player, int potion)
           }
       }
 
-    // the bottles aren't created pre-ID'd, but I'm willing to let it slide
-    // also this function would fail if there were no place for a bottle,
+    // this function would fail if there were no place for a bottle,
     // but this shouldn't ever happen as bottles come from used potions
     for (int i = 0; i > delete_bottles; i--)
-        put_in_backpack(player, -1, POTION_BOTTLE);
-    struct item brewn_potion = { .id = potion, .flags = 1, // identified
+      {
+        int slot = put_in_backpack(player, -1, POTION_BOTTLE);
+        if (slot)
+            player->items[slot-1] = (struct item) { .id = POTION_BOTTLE,
+                                                    .flags = IFLAGS_ID };
+      }
+    struct item brewn_potion = { .id = potion, .flags = IFLAGS_ID,
                                  .bonus = buffer[best_brew].power };
     add_mouse_item(MOUSE_THIS, &brewn_potion);
         show_face_animation(player, ANIM_MIX_POTION, 0); // successful brew
@@ -3125,11 +3131,10 @@ static void __thiscall aim_potions_refund(struct dialog_param *this)
         return;
       }
     int slot = put_in_backpack(&PARTY[this->player], -1, item_id);
-    if (!slot)
-        return;
-    struct item *potion = &PARTY[this->player].items[slot-1];
-    potion->bonus = this->skill;
-    potion->flags = 1; // identified
+    if (slot)
+        PARTY[this->player].items[slot-1] = (struct item) { .id = item_id,
+                                                          .bonus = this->skill,
+                                                          .flags = IFLAGS_ID };
     return;
 }
 

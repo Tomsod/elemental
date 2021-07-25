@@ -1574,6 +1574,7 @@ static inline void new_potions(void)
     hook_call(0x41d654, immunity_strings, 7);
     patch_byte(0x4b8fd4, LAST_RECIPE - FIRST_RECIPE + 1); // sell new recipes
     patch_dword(0x490f1f, LAST_RECIPE); // allow selling new recipes
+    patch_dword(0x4bda2b, LAST_RECIPE); // ditto
 }
 
 // We now store a temporary enchantment in the bonus strength field,

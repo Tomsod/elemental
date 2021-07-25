@@ -186,7 +186,9 @@ struct __attribute__((packed)) player
     uint64_t conditions[20];
     SKIP(8);
     char name[16];
-    SKIP(4);
+    SKIP(1);
+    uint8_t class;
+    SKIP(2);
     uint16_t might_base;
     SKIP(2);
     uint16_t intellect_base;
@@ -200,10 +202,18 @@ struct __attribute__((packed)) player
     uint16_t accuracy_base;
     SKIP(2);
     uint16_t luck_base;
-    SKIP(318);
+    SKIP(290);
+    uint32_t black_potions[7];
     struct item items[PLAYER_MAX_ITEMS];
     uint32_t inventory[14*9];
-    SKIP(44);
+    uint16_t fire_res_base;
+    uint16_t shock_res_base;
+    uint16_t cold_res_base;
+    uint16_t poison_res_base;
+    SKIP(6);
+    uint16_t mind_res_base;
+    uint16_t magic_res_base;
+    SKIP(26);
     struct spell_buff spell_buffs[24];
     SKIP(540);
 };
@@ -553,6 +563,14 @@ enum profession
 // New max size of global.evt itself (was 46080 bytes before).
 #define GLOBAL_EVT_SIZE 48000
 
+enum race
+{
+    RACE_HUMAN = 0,
+    RACE_ELF = 1,
+    RACE_GOBLIN = 2,
+    RACE_DWARF = 3,
+};
+
 // I could've used a malloc, but this is simpler.
 #define MAX_STATRATE_COUNT 50
 struct statrate
@@ -637,6 +655,7 @@ static void __fastcall (*spend_gold)(int amount) = (funcptr_t) 0x492bae;
 static void __thiscall (*init_item)(void *item) = (funcptr_t) 0x402f07;
 static int __thiscall (*get_attack_delay)(void *player, int ranged)
     = (funcptr_t) 0x48e19b;
+static int __thiscall (*get_race)(void *player) = (funcptr_t) 0x490101;
 static int __thiscall (*get_might)(void *player) = (funcptr_t) 0x48c922;
 static int __thiscall (*get_intellect)(void *player) = (funcptr_t) 0x48c9a8;
 static int __thiscall (*get_personality)(void *player) = (funcptr_t) 0x48ca25;
@@ -1311,7 +1330,7 @@ static inline void undead_immunities(void)
     erase_code(0x419053, 51); // old body immunity code
 }
 
-#define NEW_STRING_COUNT 32
+#define NEW_STRING_COUNT 34
 static char *new_strings[NEW_STRING_COUNT];
 
 // We need a few localizable strings, which we'll add to global.txt.
@@ -5786,16 +5805,98 @@ static void __stdcall display_melee_recovery(char *buffer)
     number[1] = recovery % 10 + '0';
 }
 
-// Hook for the above.
+static char *__stdcall resistance_hint(char *description, int resistance)
+{
+    static char buffer[400];
+    struct player *current = &PARTY[dword(0x507a6c)-1];
+    int element;
+    int base;
+    int race = get_race(current);
+    int base_immune = 0;
+
+    switch (resistance)
+      {
+        case 19:
+            element = FIRE;
+            base = current->fire_res_base;
+            if (race == RACE_GOBLIN)
+                base += 5;
+            break;
+        case 20:
+            element = ELECTRICITY;
+            base = current->shock_res_base;
+            if (race == RACE_GOBLIN)
+                base += 5;
+            break;
+        case 21:
+            element = COLD;
+            base = current->cold_res_base;
+            if (race == RACE_DWARF)
+                base += 5;
+            break;
+        case 22:
+            element = POISON;
+            base = current->poison_res_base;
+            if (race == RACE_DWARF)
+                base += 5;
+            base_immune = current->class == CLASS_LICH;
+            break;
+        case 23:
+            element = MIND;
+            base = current->mind_res_base;
+            if (race == RACE_ELF)
+                base += 10;
+            base_immune = current->class == CLASS_LICH;
+            break;
+        case 24:
+            element = MAGIC;
+            base = current->magic_res_base;
+            if (race == RACE_HUMAN)
+                base += 5;
+            break;
+        default:
+            return description;
+      }
+    int total = get_player_resistance(current, resistance - 9);
+    if (total)
+        total += get_effective_stat(get_luck(current));
+    strcpy(buffer, description);
+    if (total > 0 && !is_immune(current, element))
+      {
+        // the math is complicated, but it should be correct
+        double chance = total / 2.0 / (total + 30);
+        double square = chance * chance;
+        double percent = (chance + square) * (square + 1) * 100;
+        sprintf(buffer + strlen(buffer), "\n\n%s: %.1f%%",
+                new_strings[33], percent);
+      }
+    else if (!base_immune)
+        strcat(buffer, "\n");
+    if (!base_immune)
+        sprintf(buffer + strlen(buffer), "\n%s: %d", new_strings[26], base);
+    return buffer;
+}
+
+// Hook for the above.  Also deals with resistance messages.
+// TODO: could also call stat_hint()
 static void __declspec(naked) display_melee_recovery_hook(void)
 {
     asm
       {
         cmp edi, 15 ; screen area id
-        jne not_it
+        jne not_recovery
         push ebx
         call display_melee_recovery
-        not_it:
+        not_recovery:
+        cmp edi, 19 ; fire
+        jb not_resistance
+        cmp edi, 24 ; body
+        ja not_resistance
+        push edi
+        push ebx
+        call resistance_hint
+        mov ebx, eax
+        not_resistance:
         mov ecx, dword ptr [ebp-4] ; replaced code
         test ecx, ecx ; replaced code
         ret
@@ -5907,37 +6008,44 @@ static char *__stdcall stat_hint(char *description, int stat)
 {
     static char buffer[400];
     struct player *current = &PARTY[dword(0x507a6c)-1];
-    int total, base;
+    int total, base, potion;
 
     switch (stat)
       {
         case STAT_MIGHT:
             total = get_might(current);
             base = current->might_base;
+            potion = 6;
             break;
         case STAT_INTELLECT:
             total = get_intellect(current);
             base = current->intellect_base;
+            potion = 2;
             break;
         case STAT_PERSONALITY:
             total = get_personality(current);
             base = current->personality_base;
+            potion = 4;
             break;
         case STAT_ENDURANCE:
             total = get_endurance(current);
             base = current->endurance_base;
+            potion = 3;
             break;
         case STAT_ACCURACY:
             total = get_accuracy(current);
             base = current->accuracy_base;
+            potion = 5;
             break;
         case STAT_SPEED:
             total = get_speed(current);
             base = current->speed_base;
+            potion = 1;
             break;
         case STAT_LUCK:
             total = get_luck(current);
             base = current->luck_base;
+            potion = 0;
             break;
         default:
             return description;
@@ -5951,6 +6059,11 @@ static char *__stdcall stat_hint(char *description, int stat)
     sprintf(buffer + strlen(buffer), "\n\n%s: %s (%+d)\n%s: %d",
             new_strings[25], statrates[rating].rating, bonus,
             new_strings[26], base);
+    if (current->black_potions[potion])
+      {
+        strcat(buffer, "\n");
+        strcat(buffer, new_strings[32]);
+      }
     return buffer;
 }
 

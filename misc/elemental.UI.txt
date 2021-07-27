@@ -1,0 +1,36 @@
+Command	X	Y	Width	Height	NewX	NewY	Click	Draw	Condition	Format	NewWidth	NewHeight	Canvas	NewCanvas	Comment
+erase canvas													SpLeft
+
+STAGE Read
+
+SCREEN					ScreenW	ScreenH			ReadRightSide						READ RIGHT SIDE
+
+; Spells Top
+	474	244	160	29				+						SpLeft
+	484	255	1	1			+	-			160	29		SpLeft
+icon UI-SpMskL							-	and						SpLeft
+if empty	5												Game.PartyBuffs
+icon %sSpBgL	1		22		1		-	+		ui				SpLeft
+if empty	6												Game.PartyBuffs	
+icon %sSpBgL	23		22		23		-	+		ui				SpLeft
+if empty	0												Game.PartyBuffs	
+icon %sSpBgL	47		22		47		-	+		ui				SpLeft
+if empty	17												Game.PartyBuffs	
+icon %sSpBgL	68		22		68		-	+		ui				SpLeft
+if empty	12												Game.PartyBuffs	
+icon %sSpBgL	90		22		90		-	+		ui				SpLeft
+if empty	4												Game.PartyBuffs	
+icon %sSpBgL	109		30		109		-	+		ui				SpLeft
+if empty	1												Game.PartyBuffs	
+icon %sSpBgL	140				140		-	+		ui				SpLeft
+if
+
+STAGE before DrawView
+
+SCREEN															RECOVER
+			0	0					NoRecover					SpLeft
+recover													SpLeft
+
+STAGE before DrawViewUI
+SCREEN					ScreenW	ScreenH			MainMenuLike=0						DRAW VIEW
+							+						SpLeft

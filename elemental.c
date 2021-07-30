@@ -476,6 +476,7 @@ enum spells
 {
     SPL_TORCH_LIGHT = 1,
     SPL_FIRE_BOLT = 2,
+    SPL_FIREBALL = 6,
     SPL_IMMOLATION = 8,
     SPL_WIZARD_EYE = 12,
     SPL_FEATHER_FALL = 13,
@@ -8570,7 +8571,7 @@ static void __declspec(naked) multihit_message_check(void)
         jnz have_proj
         mov dword ptr [last_hit_player], ecx ; don`t stack melee messages
         inc ecx ; clear zf
-        ret
+        jmp record_hit ; will only be used for splitter`s fireball
         have_proj:
         mov eax, dword ptr [ecx+88] ; owner
         cmp eax, dword ptr [last_hit_player]
@@ -8579,6 +8580,7 @@ static void __declspec(naked) multihit_message_check(void)
         mov eax, dword ptr [ecx+72] ; spell id
         reset_spell:
         mov dword ptr [last_hit_spell], eax
+        record_hit:
         mov eax, dword ptr [ebp-12] ; damage
         mov dword ptr [total_damage], eax
         mov dword ptr [only_target], esi
@@ -8594,6 +8596,7 @@ static void __declspec(naked) multihit_message_check(void)
         add eax, dword ptr [total_damage]
         mov dword ptr [total_damage], eax
         mov dword ptr [ebp-16], eax
+        mov byte ptr [killed_only_target], dl
         ret ; zf should be unset now
         multihit:
         movzx edx, dl ; kill flag
@@ -8605,6 +8608,21 @@ static void __declspec(naked) multihit_message_check(void)
         mov ecx, eax ; message
         push 0x439bf7 ; show status text
         ret 4
+      }
+}
+
+// Also combine Splitter's hit message with message from
+// the following fireball.  This will suppresss
+// the halved armor message, but nothing is perfect.
+static void __declspec(naked) splitter_fireball_message(void)
+{
+    asm
+      {
+        lea eax, [ebx*8-8+TGT_PARTY]
+        mov dword ptr [last_hit_player], eax
+        mov dword ptr [last_hit_spell], SPL_FIREBALL
+        movsx eax, word ptr [edi+138] ; replaced code
+        ret
       }
 }
 
@@ -8620,6 +8638,7 @@ static inline void damage_messages(void)
     patch_byte(0x439b77, -16); // total damage  == [ebp-16]
     hook_call(0x439bb3, multihit_message_check, 7);
     patch_byte(0x439bc5, -16); // total damage  == [ebp-16]
+    hook_call(0x42ef8a, splitter_fireball_message, 7);
 }
 
 // I want to add a couple new greetings, and the array has to be expanded.

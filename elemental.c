@@ -476,10 +476,13 @@ enum spells
 {
     SPL_TORCH_LIGHT = 1,
     SPL_FIRE_BOLT = 2,
+    SPL_FIRE_AURA = 4,
     SPL_FIREBALL = 6,
     SPL_IMMOLATION = 8,
     SPL_WIZARD_EYE = 12,
     SPL_FEATHER_FALL = 13,
+    SPL_RECHARGE_ITEM = 28,
+    SPL_ENCHANT_ITEM = 30,
     SPL_ICE_BLAST = 32,
     SPL_STUN = 34,
     SPL_SLOW = 35,
@@ -4326,6 +4329,37 @@ static void __declspec(naked) scroll_spell_id(void)
       }
 }
 
+// Item-targeting spells sometimes got confused when targeting the first item
+// in the PC's inventory, as its ID of 0 was mistaken for no chosen target,
+// and with software 3D the game sometimes attempted to target a nearby
+// monster instead, which resulted in a wrong item being chosen.
+static void __declspec(naked) zero_item_spells(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ebx+12] ; replaced code
+        cmp eax, esi ; replaced code
+        jnz quit
+        cmp word ptr [ebx], SPL_FIRE_AURA
+        je item
+        cmp word ptr [ebx], SPL_RECHARGE_ITEM
+        je item
+        cmp word ptr [ebx], SPL_ENCHANT_ITEM
+        je item
+        cmp word ptr [ebx], SPL_SPECTRAL_WEAPON
+        je item
+        cmp word ptr [ebx], SPL_VAMPIRIC_WEAPON
+        jne not_item
+        item:
+        cmp ebx, esi ; clear zf
+        quit:
+        ret
+        not_item:
+        xor eax, eax ; set zf
+        ret
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -4455,6 +4489,7 @@ static inline void misc_spells(void)
     // Another MM8 idea: buff Flying Fist a little.
     SPELL_INFO[SPL_FLYING_FIST].damage_fixed = 20;
     SPELL_INFO[SPL_FLYING_FIST].damage_dice = 10;
+    hook_call(0x427e6a, zero_item_spells, 5);
 }
 
 // For consistency with players, monsters revived with Reanimate now have

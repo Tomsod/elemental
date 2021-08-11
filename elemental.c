@@ -4455,11 +4455,17 @@ static inline void misc_spells(void)
     hook_call(0x428037, switch_off_spells_for_free, 6);
     hook_call(0x429937, switch_off_immolation, 6);
     // Nerf Day of Gods from x3/x4/x5 to x2/x3/x4.
-    patch_byte(0x42d440, 6); // E jump -> cnanged GM code
+    patch_byte(0x42d440, 6); // E jump -> changed GM code
     patch_byte(0x42d443, 36); // M jump -> E
     patch_word(0x42d445, 0x0f74); // GM check: jnz E -> jz M
     patch_dword(0x42d449, 7200); // new duration constant for GM
     patch_byte(0x42d452, 0x3f); // GM power: x5 -> x2
+    // Same for DoG cast from pedestals.
+    patch_byte(0x449664, 6); // E jump -> changed GM code
+    patch_byte(0x449667, 30); // M jump -> E
+    patch_word(0x449669, 0x0c74); // GM check: jnz E -> jz M
+    patch_dword(0x44966d, 7200); // new duration constant for GM
+    patch_byte(0x449673, 0); // GM power: x5 -> x2
     // Make Hour of Power duration more consistent.
     patch_dword(0x42d8bd, 48); // GM duration multiplier for most spells
     patch_dword(0x42d8c4, 16); // GM duration multiplier for haste

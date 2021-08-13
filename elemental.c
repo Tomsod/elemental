@@ -2955,6 +2955,20 @@ static void __declspec(naked) lamp_stat_name(void)
       }
 }
 
+// The function to generate a random item of specified tlvl
+// had a off-by-one error that resulted in a small chance
+// for a first (and worst) item in the class to be generated
+// at any tlvl.  This was most apparent in shops.
+static void __declspec(naked) fix_random_treasure(void)
+{
+    asm
+      {
+        idiv dword ptr [ebp-8] ; replaced code
+        lea ebx, [edx+1] ; add one
+        ret
+      }
+}
+
 // Misc item tweaks.
 static inline void misc_items(void)
 {
@@ -3001,6 +3015,7 @@ static inline void misc_items(void)
     patch_dword(0x468eb2, 0x4683ba);
     patch_dword(0x468eb6, 0x4683a8);
     patch_dword(0x468eba, 0x468396);
+    hook_call(0x45685f, fix_random_treasure, 5);
 }
 
 static uint32_t potion_damage;

@@ -360,6 +360,7 @@ enum skills
 {
     SKILL_SWORD = 1,
     SKILL_AXE = 3,
+    SKILL_SPEAR = 4,
     SKILL_BOW = 5,
     SKILL_BLASTER = 7,
     SKILL_IDENTIFY_ITEM = 21,
@@ -6526,6 +6527,43 @@ static void __declspec(naked) print_version(void)
       }
 }
 
+// Set the 2H flag for already equipped spear (if applicable).
+// This will prevent equipping anything in the left hand.
+static void __declspec(naked) th_spear_worn(void)
+{
+    asm
+      {
+        je th ; zf == actual 2h weapon
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_SPEAR
+        jne quit
+        mov ecx, ebx
+        push SKILL_SPEAR
+        call dword ptr ds:get_skill
+        cmp eax, SKILL_MASTER
+        jae quit
+        th:
+        inc dword ptr [ebp-16] ; 2h flag
+        quit:
+        ret
+      }
+}
+
+// Same for a spear held in cursor.
+// The necessary checks are already present here.
+// This will allow replacing a single offhand weapon with it.
+static void __declspec(naked) th_spear_mouse(void)
+{
+    asm
+      {
+        cmp eax, MASTER
+        jae quit
+        mov dword ptr [ebp-12], 1 ; two-handed weapon
+        quit:
+        push 0x469062
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -6577,6 +6615,12 @@ static inline void misc_rules(void)
     // Let mace paralysis be physical-elemental (was earth/poison).
     patch_byte(0x439cd3, PHYSICAL);
     hook_call(0x415745, print_version, 6);
+    // Treat equipped spears below Master as 2H weapons
+    // instead of refusing to swap them for swords etc. outright.
+    hook_call(0x468fdc, th_spear_worn, 5);
+    hook_jump(0x46901f, th_spear_mouse);
+    // old checks for sword, shield, dagger replacing spear
+    erase_code(0x469034, 46);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

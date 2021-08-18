@@ -7720,11 +7720,11 @@ static void __declspec(naked) display_worn_rdsm(void)
       }
 }
 
-// Something related to worn armor display.
+// Graphics info for worn RDSM.
 static uint32_t rdsm_display_vars[12];
 
 // Insert RDSM into body armor display loop.
-static void __declspec(naked) display_worn_rdsm_2(void)
+static void __declspec(naked) display_worn_rdsm_loop(void)
 {
     asm
       {
@@ -7741,75 +7741,151 @@ static void __declspec(naked) display_worn_rdsm_2(void)
       }
 }
 
-// Another body armor display check (two of them actually).
-static void __declspec(naked) display_worn_rdsm_3(void)
+// Substitute our coordinates for worn RDSM (w/o right arm).
+static void __declspec(naked) display_worn_rdsm_body(void)
 {
     asm
       {
         cmp ecx, RED_DRAGON_SCALE_MAIL
-        jne not_it
-        mov ecx, STEEL_CHAIN_MAIL ; temporary
-        not_it:
+        je rdsm
         sub eax, GOVERNOR_S_ARMOR ; replaced code
         ret
-      }
-}
-
-// Now we provide a prevoiusly stored value to the display code.
-static void __declspec(naked) display_worn_rdsm_4(void)
-{
-    asm
-      {
-        mov ebx, dword ptr [esp+32] ; worn body armor
-        cmp dword ptr [ebx], RED_DRAGON_SCALE_MAIL
-        jne not_it
+        rdsm:
         mov eax, dword ptr [esp+40] ; body type
-        lea eax, [eax+eax*2]
+        lea ecx, [eax+eax*2]
         mov ebx, offset rdsm_display_vars
-        mov ebx, dword ptr [ebx+eax*4]
-        ret
-        not_it:
-        mov ebx, dword ptr [0x511110+eax*4] ; replaced code
-        ret
+        mov ebx, dword ptr [ebx+ecx*4] ; also put gfx info
+        dec eax
+        jz female
+        dec eax
+        jz dwarf
+        dec eax
+        jz femdwarf
+        ; male
+        mov eax, 491
+        mov ecx, 101
+        jmp quit
+        female:
+        mov eax, 496
+        mov ecx, 107
+        jmp quit
+        dwarf:
+        mov eax, 488
+        mov ecx, 137
+        jmp quit
+        femdwarf:
+        mov eax, 497
+        mov ecx, 140
+        quit:
+        mov dword ptr [esp+24], eax
+        push 0x43d49a ; code after setting coords
+        ret 4
       }
 }
 
-// Another place which needs the new value.
-static void __declspec(naked) display_worn_rdsm_5(void)
+#define RDSM_INDEX 18
+
+// Pass the check for displaying armor left arm.
+static void __declspec(naked) display_worn_rdsm_arm(void)
 {
     asm
       {
-        mov ebx, dword ptr [esp+52] ; worn body armor (offset)
-        cmp dword ptr [ebx+0x1f0], RED_DRAGON_SCALE_MAIL
-        jne not_it
-        mov ebx, dword ptr [esp+44] ; body type
-        lea ebx, [ebx+ebx*2]
-        shl ebx, 2
-        add ebx, offset rdsm_display_vars - 0x511110
+        cmp ecx, RED_DRAGON_SCALE_MAIL
+        je rdsm
+        sub eax, GOVERNOR_S_ARMOR ; replaced code
         ret
-        not_it:
-        lea ebx, [edi+edi*2]
-        shl ebx, 2
-        ret
+        rdsm:
+        mov edi, RDSM_INDEX ; unused index
+        push 0x43db65 ; code after choosing index
+        ret 4
       }
 }
 
-// The last bit of display code which needs the new var.
-static void __declspec(naked) display_worn_rdsm_6(void)
+// Supply graphics info and coordinates for RDSM left arm
+// when the PC is holding a two-handed weapon.
+// There's a check for whether the gfx are present which we skip.
+static void __declspec(naked) display_worn_rdsm_arm_2h(void)
 {
     asm
       {
-        mov ebx, dword ptr [esp+52] ; worn body armor (offset)
-        cmp dword ptr [ebx+0x1f0], RED_DRAGON_SCALE_MAIL
-        jne not_it
-        mov eax, dword ptr [esp+44] ; body type
-        lea eax, [eax+eax*2]
+        cmp edi, RDSM_INDEX
+        je rdsm
+        imul eax, eax, 17 ; replaced code
+        add edi, eax ; replaced code
+        ret
+        rdsm:
+        lea ecx, [eax+eax*2]
+        mov ebx, offset rdsm_display_vars + 8
+        mov ebx, dword ptr [ebx+ecx*4] ; gfx info
+        dec eax
+        jz female
+        dec eax
+        jz dwarf
+        dec eax
+        jz femdwarf
+        ; male
+        mov ecx, 530
+        mov eax, 105
+        jmp quit
+        female:
+        mov ecx, 541
+        mov eax, 108
+        jmp quit
+        dwarf:
+        mov ecx, 529
+        mov eax, 137
+        jmp quit
+        femdwarf:
+        mov ecx, 533
+        mov eax, 143
+        quit:
+        mov dword ptr [esp+28], ecx
+        push 0x43dc10 ; code after setting coords
+        ret 8
+      }
+}
+
+// Ditto, but for left arm in its default position.
+static void __declspec(naked) display_worn_rdsm_arm_idle(void)
+{
+    asm
+      {
+        cmp edi, RDSM_INDEX
+        je rdsm
+        imul eax, eax, 17 ; replaced code
+        add edi, eax ; replaced code
+        ret
+        rdsm:
+        lea ecx, [eax+eax*2]
         mov ebx, offset rdsm_display_vars + 4
-        mov ebx, dword ptr [ebx+eax*4]
-        ret
-        not_it:
-        mov ebx, dword ptr [0x511114+eax*4] ; replaced code
-        ret
+        mov ebx, dword ptr [ebx+ecx*4] ; gfx info
+        mov edx, dword ptr [esp+52] ; replaced code (worn item)
+        mov edx, dword ptr [edx+0x1f0+20] ; replaced code (item bits)
+        dec eax
+        jz female
+        dec eax
+        jz dwarf
+        dec eax
+        jz femdwarf
+        ; male
+        mov eax, 582
+        mov ecx, 104
+        jmp quit
+        female:
+        mov eax, 580
+        mov ecx, 106
+        jmp quit
+        dwarf:
+        mov eax, 577
+        mov ecx, 135
+        jmp quit
+        femdwarf:
+        mov eax, 593
+        mov ecx, 144
+        quit:
+        mov dword ptr [esp+28], ecx
+        push 0x43dd7d ; code after setting coords
+        ret 8
       }
 }
 
@@ -7835,12 +7911,11 @@ static inline void new_artifacts(void)
     // rdsm is lightweight
     hook_call(0x43c170, check_for_worn_rdsm, 5);
     hook_call(0x43c952, display_worn_rdsm, 6);
-    hook_call(0x43c52c, display_worn_rdsm_2, 6);
-    hook_call(0x43d42f, display_worn_rdsm_3, 5);
-    hook_call(0x43db2b, display_worn_rdsm_3, 5);
-    hook_call(0x43d493, display_worn_rdsm_4, 7);
-    hook_call(0x43dbaf, display_worn_rdsm_5, 6);
-    hook_call(0x43dd42, display_worn_rdsm_6, 7);
+    hook_call(0x43c52c, display_worn_rdsm_loop, 6);
+    hook_call(0x43d42f, display_worn_rdsm_body, 5);
+    hook_call(0x43db2b, display_worn_rdsm_arm, 5);
+    hook_call(0x43dba8, display_worn_rdsm_arm_2h, 5);
+    hook_call(0x43dd38, display_worn_rdsm_arm_idle, 5);
 }
 
 // When calculating missile damage, take note of the weapon's skill.

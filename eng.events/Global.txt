@@ -708,6 +708,6 @@ Global Text
 705	%s inflicts %lu total damage to %lu monsters
 706	%s inflicts %lu total damage to %lu monsters, killing %lu
 707	Hunter
-708	Elemental Mod ver. 2.0
+708	Elemental Mod ver. 2.1
 709	Black potion used
 710	Average damage reduction

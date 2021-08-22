@@ -711,3 +711,4 @@ Global Text
 708	Elemental Mod ver. 2.1
 709	Black potion used
 710	Average damage reduction
+711	accounting for race

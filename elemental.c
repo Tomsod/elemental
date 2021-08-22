@@ -191,20 +191,26 @@ struct __attribute__((packed)) player
     SKIP(1);
     uint8_t class;
     SKIP(2);
-    uint16_t might_base;
-    SKIP(2);
-    uint16_t intellect_base;
-    SKIP(2);
-    uint16_t personality_base;
-    SKIP(2);
-    uint16_t endurance_base;
-    SKIP(2);
-    uint16_t speed_base;
-    SKIP(2);
-    uint16_t accuracy_base;
-    SKIP(2);
-    uint16_t luck_base;
-    SKIP(290);
+    union {
+        struct {
+            uint16_t might_base;
+            uint16_t might_bonus;
+            uint16_t intellect_base;
+            uint16_t intellect_bonus;
+            uint16_t personality_base;
+            uint16_t personality_bonus;
+            uint16_t endurance_base;
+            uint16_t endurance_bonus;
+            uint16_t speed_base;
+            uint16_t speed_bonus;
+            uint16_t accuracy_base;
+            uint16_t accuracy_bonus;
+            uint16_t luck_base;
+            uint16_t luck_bonus;
+        };
+        uint16_t stats[7][2];
+    };
+    SKIP(288);
     uint32_t black_potions[7];
     struct item items[PLAYER_MAX_ITEMS];
     uint32_t inventory[14*9];
@@ -606,6 +612,10 @@ struct __attribute__((packed)) spcitem
 // new NPC greeting count (starting from 1)
 #define GREET_COUNT 207
 
+// exposed by MMExtension in "Class Starting Stats.txt"
+#define RACE_STATS_ADDR 0x4ed658
+#define RACE_STATS ((uint8_t (*)[7][4]) RACE_STATS_ADDR)
+
 static int __cdecl (*uncased_strcmp)(const char *left, const char *right)
     = (funcptr_t) 0x4caaf0;
 static int __thiscall (*get_player_resistance)(const void *player, int stat)
@@ -730,6 +740,7 @@ static int __fastcall (*player_has_item)(int item, void *player,
 static int __thiscall (*identify_price)(void *player, float shop_multiplier)
     = (funcptr_t) 0x4b80dc;
 static char *__thiscall (*item_name)(struct item *item) = (funcptr_t) 0x4564c5;
+static int (*new_game_get_bonus)(void) = (funcptr_t) 0x49090b;
 
 //---------------------------------------------------------------------------//
 
@@ -1337,7 +1348,7 @@ static inline void undead_immunities(void)
     erase_code(0x419053, 51); // old body immunity code
 }
 
-#define NEW_STRING_COUNT 34
+#define NEW_STRING_COUNT 35
 static char *new_strings[NEW_STRING_COUNT];
 
 // We need a few localizable strings, which we'll add to global.txt.
@@ -6123,6 +6134,10 @@ static char *__stdcall stat_hint(char *description, int stat)
     sprintf(buffer + strlen(buffer), "\n\n%s: %s (%+d)\n%s: %d",
             new_strings[25], statrates[rating].rating, bonus,
             new_strings[26], base);
+    int race = get_race(current);
+    int adj = base * RACE_STATS[race][stat][3] / RACE_STATS[race][stat][2];
+    if (adj != base)
+        sprintf(buffer + strlen(buffer), " (%d %s)", adj, new_strings[34]);
     if (current->black_potions[potion])
       {
         strcat(buffer, "\n");
@@ -8827,6 +8842,176 @@ static inline void npc_greetings(void)
     patch_pointer(0x4b2ba4, npc_greet);
 }
 
+// Our implementation of stat-changing routines for the new game screen.
+// Normally all stats are internally adjusted by 1, but if it results
+// in no change to the visible value, we need to skip an extra point.
+static void new_game_adjust_stat(struct player *player, int stat, int step)
+{
+    uint16_t *value;
+    switch (stat)
+      {
+// I know what I'm doing!
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+        case STAT_MIGHT:
+            value = &player->might_base;
+            break;
+        case STAT_INTELLECT:
+            value = &player->intellect_base;
+            break;
+        case STAT_PERSONALITY:
+            value = &player->personality_base;
+            break;
+        case STAT_ENDURANCE:
+            value = &player->endurance_base;
+            break;
+        case STAT_ACCURACY:
+            value = &player->accuracy_base;
+            break;
+        case STAT_SPEED:
+            value = &player->speed_base;
+            break;
+        case STAT_LUCK:
+            value = &player->luck_base;
+            break;
+        default:
+            return;
+#pragma GCC diagnostic pop
+      }
+    int race = get_race(player);
+    int mul = RACE_STATS[race][stat][3], div = RACE_STATS[race][stat][2];
+    int new = *value + step;
+    if (mul < div)
+      {
+        while (new * mul / div == (new - 1) * mul / div)
+            new += step;
+      }
+    if (step > 0 && new <= RACE_STATS[race][stat][1]
+                 && new - *value <= new_game_get_bonus()
+        || step < 0 && new >= RACE_STATS[race][stat][0] - 2)
+        *value = new;
+}
+
+// Hook for the minus (decrease) button.
+static void __thiscall new_game_decrease_stat(struct player *player, int stat)
+{
+    new_game_adjust_stat(player, stat, -1);
+}
+
+// Ditto, but for the plus (increase) button.
+static void __thiscall new_game_increase_stat(struct player *player, int stat)
+{
+    new_game_adjust_stat(player, stat, 1);
+}
+
+// Apply the racial modifiers to PC's stats.
+static void __declspec(naked) racial_stat(void)
+{
+    asm
+      {
+        push eax
+        mov ecx, esi
+        call dword ptr ds:get_race
+        mov edx, dword ptr [esp+8]
+        imul eax, eax, 7
+        add eax, edx
+        movzx ecx, byte ptr [RACE_STATS_ADDR+eax*4+2] ; denominator
+        movzx eax, byte ptr [RACE_STATS_ADDR+eax*4+3] ; multiplier
+        cmp edx, 4
+        jb no_swap
+        ; player stats are slightly out of order
+        xor edx, 1 ; 5 -> 4, 4 -> 5, 6 -> 7
+        cmp edx, 6
+        adc edx, -1 ; 7 -> 6
+        no_swap:
+        movzx edx, word ptr [esi+0xbc+edx*4] ; base stat
+        imul edx
+        idiv ecx
+        pop ecx
+        ret 4
+      }
+}
+
+// New values for RACE_STATS.
+static const uint8_t race_stat_values[4][7][4] = {
+    11, 25,  1, 1, 11, 25,  1, 1, 11, 25,  1, 1,  9, 25,  1, 1,
+    11, 25,  1, 1, 11, 25,  1, 1, 10, 21,  5, 6, // human
+    10, 22, 10, 7, 10, 22,  5, 7, 11, 25,  1, 1, 10, 22, 10, 7,
+    10, 22,  5, 7, 11, 25,  1, 1,  9, 20,  1, 1, // elf
+    10, 22,  5, 7, 10, 22, 10, 7, 10, 22, 10, 7, 11, 25,  1, 1,
+    11, 25,  1, 1, 10, 22,  5, 7,  9, 20,  1, 1, // goblin
+    10, 22,  5, 7, 11, 25,  1, 1, 11, 25,  1, 1, 10, 22,  5, 7,
+    10, 22, 10, 7, 10, 22, 10, 7,  9, 20,  1, 1, // dwarf
+};
+
+// Handmade to appear as close as possible to the vanilla party,
+// while utilizing exactly 50 bonus points.
+static const int default_party_stats[4][7] = {
+      { 22, 8,  8, 13, 10, 13,  7 },
+      { 13, 9,  9, 13, 13, 13, 10 },
+      { 8,  9, 20, 16, 19, 10,  7 },
+      { 8, 22,  9, 19, 13,  9,  7 }
+};
+
+// Initialize the default Zoltan/Roderick/etc. party with adjusted stats.
+static void default_party(void)
+{
+    for (int p = 0; p < 4; p++)
+        for (int s = 0; s < 7; s++)
+            PARTY[p].stats[s][0] = default_party_stats[p][s];
+}
+
+// Hook for the above.
+static void __declspec(naked) default_party_hook(void)
+{
+    asm
+      {
+        mov edi, 220 ; replaced code
+        jmp default_party
+      }
+}
+
+// Let's make PC races more meaningful.
+static inline void racial_traits(void)
+{
+    hook_call(0x435a36, new_game_decrease_stat, 5);
+    hook_call(0x435a83, new_game_increase_stat, 5);
+    erase_code(0x4909bc, 6); // make bonus ignore racial multipliers
+    // hooks for all 14 stat functions; we need to push the stat for the hook
+    patch_word(0x48c847, 0x006a); // 0x6a is push
+    hook_call(0x48c849, racial_stat, 5);
+    patch_word(0x48c85e, 0x016a);
+    hook_call(0x48c860, racial_stat, 5);
+    patch_word(0x48c875, 0x026a);
+    hook_call(0x48c877, racial_stat, 5);
+    patch_word(0x48c88c, 0x036a);
+    hook_call(0x48c88e, racial_stat, 5);
+    patch_word(0x48c8a3, 0x046a);
+    hook_call(0x48c8a5, racial_stat, 5);
+    patch_word(0x48c8ba, 0x056a);
+    hook_call(0x48c8bc, racial_stat, 5);
+    patch_word(0x48c8d1, 0x066a);
+    hook_call(0x48c8d3, racial_stat, 5);
+    // total might is special as we need to preserve ecx instead of eax
+    patch_byte(0x48c978, 0xc1); // add ecx, eax -> add eax, ecx
+    patch_word(0x48c979, 0x006a);
+    hook_call(0x48c97b, racial_stat, 5);
+    patch_word(0x48c9f8, 0x016a);
+    hook_call(0x48c9fa, racial_stat, 5);
+    patch_word(0x48ca75, 0x026a);
+    hook_call(0x48ca77, racial_stat, 5);
+    patch_word(0x48caf2, 0x036a);
+    hook_call(0x48caf4, racial_stat, 5);
+    patch_word(0x48cb6f, 0x046a);
+    hook_call(0x48cb71, racial_stat, 5);
+    patch_word(0x48cbec, 0x056a);
+    hook_call(0x48cbee, racial_stat, 5);
+    patch_word(0x48cca7, 0x066a);
+    hook_call(0x48cca9, racial_stat, 5);
+    memcpy(RACE_STATS, race_stat_values, sizeof(race_stat_values));
+    hook_call(0x4915a4, default_party_hook, 7);
+}
+
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
                     LPVOID const reserved)
 {
@@ -8860,6 +9045,7 @@ BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
         wand_charges();
         damage_messages();
         npc_greetings();
+        racial_traits();
       }
     return TRUE;
 }

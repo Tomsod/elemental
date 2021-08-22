@@ -141,6 +141,8 @@ enum player_stats
     STAT_ACCURACY = 4,
     STAT_SPEED = 5,
     STAT_LUCK = 6,
+    STAT_HP = 7,
+    STAT_SP = 8,
     STAT_FIRE_RES = 10,
     STAT_POISON_RES = 13,
     STAT_MELEE_DAMAGE_BASE = 26,
@@ -223,7 +225,11 @@ struct __attribute__((packed)) player
     uint16_t magic_res_base;
     SKIP(26);
     struct spell_buff spell_buffs[24];
-    SKIP(540);
+    SKIP(376);
+    int8_t hp_bonus;
+    SKIP(1);
+    int8_t sp_bonus;
+    SKIP(161);
 };
 
 enum player_buffs
@@ -616,6 +622,13 @@ struct __attribute__((packed)) spcitem
 #define RACE_STATS_ADDR 0x4ed658
 #define RACE_STATS ((uint8_t (*)[7][4]) RACE_STATS_ADDR)
 
+#define CLASS_HP_FACTORS ((uint8_t *) 0x4ed610)
+#define CLASS_STARTING_HP ((uint8_t *) 0x4ed5f8)
+#define CLASS_SP_FACTORS ((uint8_t *) 0x4ed634)
+#define CLASS_STARTING_SP ((uint8_t *) 0x4ed604)
+// this is actually a switchtable, and the first 5 entries are garbage
+#define CLASS_SP_STATS ((uint8_t *) 0x48e62a)
+
 static int __cdecl (*uncased_strcmp)(const char *left, const char *right)
     = (funcptr_t) 0x4caaf0;
 static int __thiscall (*get_player_resistance)(const void *player, int stat)
@@ -741,6 +754,14 @@ static int __thiscall (*identify_price)(void *player, float shop_multiplier)
     = (funcptr_t) 0x4b80dc;
 static char *__thiscall (*item_name)(struct item *item) = (funcptr_t) 0x4564c5;
 static int (*new_game_get_bonus)(void) = (funcptr_t) 0x49090b;
+static int __thiscall (*get_level)(void *player) = (funcptr_t) 0x48c8f3;
+static int __thiscall (*get_bodybuilding_bonus)(void *player)
+    = (funcptr_t) 0x491075;
+static int __thiscall(*get_meditation_bonus)(void *player)
+    = (funcptr_t) 0x4910a0;
+static int __thiscall (*get_stat_bonus_from_items)(void *player, int stat,
+                                                   int ignore_offhand)
+    = (funcptr_t) 0x48eaa6;
 
 //---------------------------------------------------------------------------//
 
@@ -8971,6 +8992,95 @@ static void __declspec(naked) default_party_hook(void)
       }
 }
 
+// Our rewrite of get_full_hp().  Now Endurance and Bodybuilding
+// increase HP by 5% per point of effect, provided the level
+// is high enough.  Also, race affects HP factor.
+static int __thiscall get_new_full_hp(struct player *player)
+{
+    int level = get_level(player);
+    int bonus = get_effective_stat(get_endurance(player))
+              + get_bodybuilding_bonus(player);
+    int base = CLASS_HP_FACTORS[player->class];
+    int race = get_race(player);
+    if (race == RACE_ELF)
+        base--;
+    else if (race != RACE_HUMAN)
+        base++;
+    int total = CLASS_STARTING_HP[player->class>>2];
+    if (level <= 20)
+        total += base * (level + bonus);
+    else
+        total += base * level * (bonus + 20) / 20;
+    total += get_stat_bonus_from_items(player, STAT_HP, 0);
+    total += player->hp_bonus;
+    if (total <= 1)
+        return 1;
+    return total;
+}
+
+// Ditto, but for get_full_sp(), spellcasting stats, and Meditation.
+// NB: goblins get one less SP per 2 levels, so we operate in half-points.
+static int __thiscall get_new_full_sp(struct player *player)
+{
+    int stat = CLASS_SP_STATS[player->class];
+    if (player->class < 5 || stat == 3)
+        return 0;
+    int level = get_level(player);
+    int bonus = get_meditation_bonus(player);
+    if (stat != 1)
+        bonus += get_effective_stat(get_intellect(player));
+    if (stat != 0)
+        bonus += get_effective_stat(get_personality(player));
+    int base = CLASS_SP_FACTORS[player->class] * 2;
+    int race = get_race(player);
+    if (race == RACE_ELF)
+        base += 2;
+    else if (race == RACE_GOBLIN)
+        base--;
+    int total = (base * level + 1) / 2; // round up for goblins
+    if (level <= 20)
+        total += base * bonus / 2;
+    else
+        total *= (bonus + 20) / 20;
+    total += CLASS_STARTING_SP[player->class>>2];
+    total += get_stat_bonus_from_items(player, STAT_SP, 0);
+    total += player->sp_bonus;
+    if (total <= 0)
+        return 0;
+    return total;
+}
+
+// Instead of HP/SP boni, let humans gain an extra skill point on level up.
+static void __declspec(naked) human_skill_point(void)
+{
+    asm
+      {
+        add dword ptr [ebx+0x1938], eax ; replaced code
+        call dword ptr ds:get_race
+        cmp eax, RACE_HUMAN
+        jne not_human
+        inc dword ptr [ebx+0x1938]
+        not_human:
+        mov ecx, ebx ; restore
+        ret
+      }
+}
+
+// Also correct the level-up message.
+static void __declspec(naked) human_skill_point_message(void)
+{
+    asm
+      {
+        lea ecx, [ebx-168]
+        call dword ptr ds:get_race
+        cmp eax, RACE_HUMAN
+        jne not_human
+        inc dword ptr [esp+20] ; skill points count
+        not_human:
+        jmp dword ptr ds:sprintf ; replaced call
+      }
+}
+
 // Let's make PC races more meaningful.
 static inline void racial_traits(void)
 {
@@ -9010,6 +9120,10 @@ static inline void racial_traits(void)
     hook_call(0x48cca9, racial_stat, 5);
     memcpy(RACE_STATS, race_stat_values, sizeof(race_stat_values));
     hook_call(0x4915a4, default_party_hook, 7);
+    hook_jump(0x48e4f0, get_new_full_hp);
+    hook_jump(0x48e55d, get_new_full_sp);
+    hook_call(0x4b4b5c, human_skill_point, 6);
+    hook_call(0x4b4c26, human_skill_point_message, 5);
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

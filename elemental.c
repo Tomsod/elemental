@@ -79,6 +79,17 @@ static void erase_code(uintptr_t address, int length)
     VirtualProtect((LPVOID) address, length, OldProtect, &OldProtect);
 }
 
+// Some tricks to sidestep clang bugs.
+#ifdef __clang__
+#define STATIC
+#define FIX(token) static const int _##token
+#define REF(token) _##token
+#else
+#define STATIC static
+#define FIX(token)
+#define REF(token) token
+#endif
+
 //---------------------------------------------------------------------------//
 
 enum elements
@@ -150,6 +161,7 @@ enum player_stats
     STAT_FIRE_POISON_RES = 47,
 };
 
+#define CLASS_MONK 8
 #define CLASS_LICH 35
 
 #define SKIP(bytes) char JOIN(unknown_, __COUNTER__)[bytes]
@@ -370,11 +382,15 @@ enum skill
 
 enum skills
 {
+    SKILL_STAFF = 0,
     SKILL_SWORD = 1,
+    SKILL_DAGGER = 2,
     SKILL_AXE = 3,
     SKILL_SPEAR = 4,
     SKILL_BOW = 5,
     SKILL_BLASTER = 7,
+    SKILL_CHAIN = 10,
+    SKILL_AIR = 13,
     SKILL_IDENTIFY_ITEM = 21,
     SKILL_MERCHANT = 22,
     SKILL_REPAIR = 23,
@@ -387,6 +403,7 @@ enum skills
     SKILL_ALCHEMY = 35,
     SKILL_LEARNING = 36,
     SKILL_NONE = 37, // used by clubs
+    SKILL_COUNT = 37,
 };
 
 #define AUTONOTES ((uint8_t *) 0xacd636)
@@ -629,14 +646,19 @@ struct __attribute__((packed)) spcitem
 // this is actually a switchtable, and the first 5 entries are garbage
 #define CLASS_SP_STATS ((uint8_t *) 0x48e62a)
 
+#define STARTING_SKILLS 0x4ed6c8
+// exposed as "Class Skills.txt"
+#define CLASS_SKILLS_ADDR 0x4ed818
+#define CLASS_SKILLS ((uint8_t (*)[SKILL_COUNT]) CLASS_SKILLS_ADDR)
+
 static int __cdecl (*uncased_strcmp)(const char *left, const char *right)
     = (funcptr_t) 0x4caaf0;
 static int __thiscall (*get_player_resistance)(const void *player, int stat)
     = (funcptr_t) 0x48e7c8;
 static int __thiscall (*has_item_in_slot)(void *player, int item, int slot)
     = (funcptr_t) 0x48d6ef;
-// Not 100% sure what this one does.
-static funcptr_t rgb_color = (funcptr_t) 0x40df03;
+static int __fastcall (*rgb_color)(int red, int green, int blue)
+    = (funcptr_t) 0x40df03;
 static int __cdecl (*sprintf)(char *str, const char *format, ...)
     = (funcptr_t) 0x4cad70;
 static funcptr_t ftol = (funcptr_t) 0x4ca74c;
@@ -762,6 +784,7 @@ static int __thiscall(*get_meditation_bonus)(void *player)
 static int __thiscall (*get_stat_bonus_from_items)(void *player, int stat,
                                                    int ignore_offhand)
     = (funcptr_t) 0x48eaa6;
+static funcptr_t get_text_width = (funcptr_t) 0x44c52e;
 
 //---------------------------------------------------------------------------//
 
@@ -1369,8 +1392,9 @@ static inline void undead_immunities(void)
     erase_code(0x419053, 51); // old body immunity code
 }
 
-#define NEW_STRING_COUNT 35
-static char *new_strings[NEW_STRING_COUNT];
+#define NEW_STRING_COUNT 39
+STATIC char *new_strings[NEW_STRING_COUNT];
+FIX(new_strings);
 
 // We need a few localizable strings, which we'll add to global.txt.
 static void __declspec(naked) read_global_txt(void)
@@ -9081,6 +9105,891 @@ static void __declspec(naked) human_skill_point_message(void)
       }
 }
 
+// Replace the starting weapon skill with the racial skill
+// when initializing a character.  Monks are exempt.
+// Humans just get an extra Learning instead.
+static void __declspec(naked) init_racial_skill(void)
+{
+    asm
+      {
+        mov dl, byte ptr [STARTING_SKILLS+eax+edi] ; replaced, sorta
+        mov ecx, esi
+        call dword ptr ds:get_race
+        cmp eax, RACE_HUMAN
+        je human
+        cmp edi, SKILL_BLASTER
+        jae skip
+        cmp byte ptr [esi+0xb9], CLASS_MONK
+        je skip
+        cmp eax, RACE_ELF
+        je elf
+        cmp eax, RACE_GOBLIN
+        je goblin
+        cmp eax, RACE_DWARF
+        je dwarf
+        skip:
+        cmp dl, 2
+        ret
+        elf:
+        cmp edi, SKILL_BOW
+        ret
+        goblin:
+        cmp edi, SKILL_SWORD
+        ret
+        dwarf:
+        cmp edi, SKILL_AXE
+        ret
+        human:
+        cmp edi, SKILL_LEARNING
+        jne skip
+        ret
+      }
+}
+
+// Substitute the racial skill when determining
+// the first two skills to display.
+static void __declspec(naked) check_racial_skill(void)
+{
+    asm
+      {
+        cmp eax, SKILL_BLASTER
+        jae skip
+        cmp byte ptr [ecx+0xb9], CLASS_MONK
+        je skip
+        push ecx
+        push eax
+        call dword ptr ds:get_race
+        mov ecx, eax
+        pop eax
+        cmp ecx, RACE_ELF
+        je elf
+        cmp ecx, RACE_GOBLIN
+        je goblin
+        cmp ecx, RACE_DWARF
+        je dwarf
+        pop ecx
+        skip:
+        cmp byte ptr [STARTING_SKILLS+ebx+eax], 2 ; replaced code
+        ret
+        elf:
+        cmp eax, SKILL_BOW
+        jmp quit
+        goblin:
+        cmp eax, SKILL_SWORD
+        jmp quit
+        dwarf:
+        cmp eax, SKILL_AXE
+        quit:
+        pop ecx
+        ret
+      }
+}
+
+// Extra pick that replaces Learning for humans.
+STATIC const int added_picks[9] = { SKILL_NONE, SKILL_NONE, SKILL_NONE,
+                                    SKILL_NONE, SKILL_CHAIN, SKILL_NONE,
+                                    SKILL_STAFF, SKILL_AIR, SKILL_NONE };
+FIX(added_picks);
+
+// Substitute the racial skill with the default weapon skill
+// when displaying picked optional skills.  Also don't display Learning
+// (twice) for humans, but do display the extra pick.
+static void __declspec(naked) exclude_racial_skill(void)
+{
+    asm
+      {
+        push edx
+        push ecx
+        push eax
+        call dword ptr ds:get_race
+        mov edx, eax
+        pop eax
+        pop ecx
+        cmp edx, RACE_HUMAN
+        jne nonhuman
+        cmp eax, SKILL_LEARNING
+        je invert ; this will clear zf
+        movzx edx, byte ptr [ecx+0xb9]
+        cmp eax, dword ptr [REF(added_picks)+edx]
+        je quit
+        skip:
+        cmp byte ptr [STARTING_SKILLS+ebx+eax], 1 ; replaced code, basically
+        jmp quit
+        nonhuman:
+        cmp eax, SKILL_BLASTER
+        jae skip
+        cmp byte ptr [ecx+0xb9], CLASS_MONK
+        je monk
+        cmp byte ptr [STARTING_SKILLS+ebx+eax], 1 ; replaced code, again
+        jae race
+        jmp quit
+        monk:
+        cmp byte ptr [STARTING_SKILLS+ebx+eax], 1 ; also replaced code
+        jb race
+        jmp quit
+        race:
+        cmp edx, RACE_GOBLIN
+        je goblin
+        cmp edx, RACE_DWARF
+        je dwarf
+        ; elf
+        cmp eax, SKILL_BOW
+        jmp racial
+        goblin:
+        cmp eax, SKILL_SWORD
+        jmp racial
+        dwarf:
+        cmp eax, SKILL_AXE
+        racial:
+        setne dl
+        cmp byte ptr [ecx+0xb9], CLASS_MONK
+        jne invert
+        test edx, edx
+        jmp quit
+        invert:
+        cmp edx, 1
+        quit:
+        pop edx
+        ret
+      }
+}
+
+// Store class ID and racial skill for the hook below.
+static void __declspec(naked) preserve_racial_skill(void)
+{
+    asm
+      {
+        movzx esi, byte ptr [ecx+0xb9] ; replaced code, sort of
+        call dword ptr ds:get_race
+        mov ecx, esi
+        cmp eax, RACE_ELF
+        je elf
+        cmp eax, RACE_GOBLIN
+        je goblin
+        cmp eax, RACE_DWARF
+        je dwarf
+        mov ebx, SKILL_LEARNING
+        ret
+        elf:
+        mov ebx, SKILL_BOW
+        ret
+        goblin:
+        mov ebx, SKILL_SWORD
+        ret
+        dwarf:
+        mov ebx, SKILL_AXE
+        ret
+      }
+}
+
+// Which skill picks to replace with the class' default weapon.
+STATIC const int excluded_picks[9] = { SKILL_NONE, SKILL_PERCEPTION,
+                                       SKILL_SWORD, SKILL_DAGGER, SKILL_NONE,
+                                       SKILL_NONE, SKILL_REPAIR,
+                                       SKILL_PERCEPTION, SKILL_MERCHANT };
+FIX(excluded_picks);
+
+// In the available skill picks, remove racial skill, add the default
+// weapon skill if the former replaces it, and remove the least useful
+// skill if there's not enough space.  For humans, possibly add an extra
+// pick instead (if Learning is removed).
+static void __declspec(naked) substitute_racial_skill(void)
+{
+    asm
+      {
+        cmp ebx, SKILL_LEARNING
+        je human
+        cmp esi, CLASS_MONK
+        je monk
+        cmp eax, ebx
+        je not_it
+        cmp eax, dword ptr [REF(excluded_picks)+esi]
+        je substitute
+        cmp eax, SKILL_BLASTER
+        jae skip
+        cmp byte ptr [ecx], 0
+        ja show
+        jmp not_it
+        monk:
+        cmp eax, ebx
+        je show
+        cmp eax, dword ptr [REF(excluded_picks)+esi]
+        je not_it
+        skip:
+        cmp byte ptr [ecx], 1
+        je show
+        not_it:
+        dec edx ; revert inc in the code below
+        test ecx, ecx ; clear zf
+        ret
+        substitute:
+        push ebx
+        add ebx, ecx
+        sub ebx, eax
+        cmp byte ptr [ebx], 0
+        pop ebx
+        jz not_it
+        show:
+        cmp edx, edi ; replaced code
+        ret
+        human:
+        cmp eax, ebx
+        je not_it
+        cmp eax, dword ptr [REF(added_picks)+esi]
+        jne skip
+        jmp show
+      }
+}
+
+// Defined below.
+static void __thiscall shift_human_buttons(int player);
+static void __thiscall unshift_human_buttons(int player);
+
+// To make init_racial_skill() work properly when resetting the party,
+// we need to set the faces (and thus, races) before it's called.
+static void __declspec(naked) reset_races(void)
+{
+    asm
+      {
+        mov byte ptr [PARTY_ADDR+0xba], 17
+        mov byte ptr [PARTY_ADDR+0x1b3+0xba], 3
+        mov byte ptr [PARTY_ADDR+0x1b3c*2+0xba], 14
+        mov byte ptr [PARTY_ADDR+0x1b3c*3+0xba], 10
+        cmp dword ptr [0x507a4c], 0
+        jz too_early
+        xor ecx, ecx
+        call unshift_human_buttons
+        inc ecx
+        call shift_human_buttons ; second one is human
+        inc ecx
+        call unshift_human_buttons
+        inc ecx
+        call unshift_human_buttons
+        too_early:
+        mov byte ptr [esi+0x708], 15 ; replaced code
+        ret
+      }
+}
+
+// When changing PC race, take care to add/remove racial skills as needed.
+// Also remove the picks that become unavailable.
+static void __declspec(naked) change_racial_skill(void)
+{
+    asm
+      {
+        mov ecx, edi
+        call dword ptr ds:get_race
+        mov byte ptr [edi+0xba], dl
+        mov edx, eax
+        mov ecx, edi
+        call dword ptr ds:get_race
+        cmp eax, edx
+        je quit
+        cmp edx, RACE_ELF
+        je was_elf
+        cmp edx, RACE_DWARF
+        je was_dwarf
+        cmp edx, RACE_GOBLIN
+        je was_goblin
+        mov word ptr [edi+0x108+SKILL_LEARNING*2], 0
+        mov ecx, dword ptr [esp+20] ; player id
+        push eax
+        call unshift_human_buttons
+        pop eax
+        movzx ecx, byte ptr [edi+0xb9]
+        mov edx, dword ptr [REF(added_picks)+ecx]
+        cmp edx, SKILL_NONE
+        je no_extra
+        mov word ptr [edi+0x108+edx*2], 0
+        no_extra:
+        cmp byte ptr [edi+0xb9], CLASS_MONK
+        je new_race
+        shr ecx, 2
+        imul ecx, ecx, SKILL_COUNT
+        or edx, -1
+        was_human_loop:
+        inc edx
+        cmp byte ptr [STARTING_SKILLS+ecx+edx], 2
+        jne was_human_loop
+        mov word ptr [edi+0x108+edx*2], 0
+        jmp new_race
+        was_elf:
+        mov word ptr [edi+0x108+SKILL_BOW*2], 0
+        jmp new_race
+        was_goblin:
+        cmp byte ptr [edi+0xb9], CLASS_MONK ; monks know sword
+        je new_race
+        mov word ptr [edi+0x108+SKILL_SWORD*2], 0
+        jmp new_race
+        was_dwarf:
+        mov word ptr [edi+0x108+SKILL_AXE*2], 0
+        new_race:
+        cmp eax, RACE_ELF
+        je elf
+        cmp eax, RACE_GOBLIN
+        je goblin
+        cmp eax, RACE_DWARF
+        je dwarf
+        mov word ptr [edi+0x108+SKILL_LEARNING*2], 1
+        mov ecx, dword ptr [esp+20] ; player id
+        call shift_human_buttons
+        cmp byte ptr [edi+0xb9], CLASS_MONK
+        je quit
+        movzx ecx, byte ptr [edi+0xb9]
+        shr ecx, 2
+        imul ecx, ecx, SKILL_COUNT
+        or edx, -1
+        human_loop:
+        inc edx
+        cmp byte ptr [STARTING_SKILLS+ecx+edx], 2
+        jne human_loop
+        mov word ptr [edi+0x108+edx*2], 1
+        jmp quit
+        elf:
+        mov edx, SKILL_BOW
+        jmp got_skill
+        goblin:
+        mov edx, SKILL_SWORD
+        jmp got_skill
+        dwarf:
+        mov edx, SKILL_AXE
+        got_skill:
+        movzx ecx, byte ptr [edi+0xb9]
+        shr ecx, 2
+        imul ecx, ecx, SKILL_COUNT
+        cmp byte ptr [STARTING_SKILLS+ecx+edx], 0
+        jne not_removed
+        movzx ecx, byte ptr [edi+0xb9]
+        mov ecx, dword ptr [REF(excluded_picks)+ecx]
+        mov word ptr [edi+0x108+ecx*2], 0
+        not_removed:
+        cmp byte ptr [edi+0xb9], CLASS_MONK
+        je quit
+        mov word ptr [edi+0x108+edx*2], 1
+        quit:
+        movzx eax, byte ptr [edi+0xba]
+        ret
+      }
+}
+
+// Ditto, but for the code that cycles portraits leftwards.
+static void __declspec(naked) decrement_race(void)
+{
+    asm
+      {
+        mov dl, byte ptr [eax]
+        mov edi, ebx
+        dec dl
+        jns skills
+        mov dl, 19
+        skills:
+        jmp change_racial_skill
+      }
+}
+
+// Shift a human PC's mandatory skills up to make place for Learning.
+static void __declspec(naked) shift_human_skills_up(void)
+{
+    asm
+      {
+        push ecx
+        mov ecx, edi
+        call dword ptr ds:get_race
+        pop ecx
+        cmp eax, RACE_HUMAN
+        jne not_human
+        mov eax, ebp
+        shr eax, 1
+        sub eax, 3
+        sub dword ptr [esp+8], eax
+        not_human:
+        jmp dword ptr ds:print_string
+      }
+}
+
+// And likewise shift the optional skills down.
+static void __declspec(naked) shift_human_skills_down(void)
+{
+    asm
+      {
+        push ecx
+        mov ecx, edi
+        call dword ptr ds:get_race
+        pop ecx
+        cmp eax, RACE_HUMAN
+        jne not_human
+        mov eax, ebp
+        shr eax, 1
+        add eax, 3
+        add dword ptr [esp+8], eax
+        not_human:
+        jmp dword ptr ds:print_string
+      }
+}
+
+// We need to restore the PC pointer for the last one.
+static void __declspec(naked) shift_last_human_skill(void)
+{
+    asm
+      {
+        mov edi, [esp+56]
+        sub edi, 168
+        jmp shift_human_skills_down
+      }
+}
+
+static char learning_buffer[100];
+
+// Print the human racial skill, Learning, as the third mandatory skill.
+static void __declspec(naked) print_human_racial_skill(void)
+{
+    asm
+      {
+        mov ecx, edi
+        call dword ptr ds:get_race
+        cmp eax, RACE_HUMAN
+        jne quit
+        mov edx, dword ptr [0xae3150+SKILL_LEARNING*4] ; skill name
+        push edx
+        push dword ptr [0x5c347c] ; font
+        mov ecx, 150
+        call dword ptr ds:get_text_width
+        push eax
+        push 0x4ee7a8 ; format string
+        mov eax, offset learning_buffer
+        push eax
+        call dword ptr ds:sprintf
+        add esp, 16
+        push ebx
+        push ebx
+        push ebx
+        mov eax, offset learning_buffer
+        push eax
+        push dword ptr [esp+56] ; white color
+        lea eax, [ebp+ebp*2+311*2+6]
+        shr eax, 1
+        push eax
+        mov eax, dword ptr [esp+60] ; x coord
+        sub eax, 24
+        push eax
+        mov edx, dword ptr [0x5c347c] ; font
+        mov ecx, dword ptr [0x507a4c] ; dialog
+        call dword ptr ds:print_string
+        quit:
+        mov eax, dword ptr [esp+60] ; replaced code
+        ret 16
+      }
+}
+
+// Adjust the button areas of the picked human skills.
+// This mostly affects mouse clicks.
+static void __thiscall __declspec(naked) shift_human_buttons(int player)
+{
+    asm
+      {
+        mov edx, dword ptr [0x507a4c] ; dialog
+        mov edx, dword ptr [edx+76]
+        test edx, edx
+        jz quit
+        loop:
+        cmp dword ptr [edx+32], 72
+        jl next
+        cmp dword ptr [edx+32], 75
+        jg next
+        cmp dword ptr [edx+36], ecx
+        jne next
+        cmp dword ptr [edx+40], 0
+        jne next
+        mov eax, dword ptr [edx+12]
+        shr eax, 1
+        cmp dword ptr [edx+32], 73
+        jg down
+        neg eax
+        down:
+        add eax, 3
+        add dword ptr [edx+4], eax
+        add dword ptr [edx+20], eax
+        mov dword ptr [edx+40], 1
+        next:
+        mov edx, dword ptr [edx+52]
+        test edx, edx
+        jnz loop
+        quit:
+        ret
+      }
+}
+
+// Same, but in reverse.
+static void __thiscall __declspec(naked) unshift_human_buttons(int player)
+{
+    asm
+      {
+        mov edx, dword ptr [0x507a4c] ; dialog
+        mov edx, dword ptr [edx+76]
+        test edx, edx
+        jz quit
+        loop:
+        cmp dword ptr [edx+32], 72
+        jl next
+        cmp dword ptr [edx+32], 75
+        jg next
+        cmp dword ptr [edx+36], ecx
+        jne next
+        cmp dword ptr [edx+40], 1
+        jne next
+        mov eax, dword ptr [edx+12]
+        shr eax, 1
+        cmp dword ptr [edx+32], 73
+        jg down
+        neg eax
+        down:
+        add eax, 3
+        sub dword ptr [edx+4], eax
+        sub dword ptr [edx+20], eax
+        mov dword ptr [edx+40], 0
+        next:
+        mov edx, dword ptr [edx+52]
+        test edx, edx
+        jnz loop
+        quit:
+        ret
+      }
+}
+
+// Hook to shift buttons as soon as they're created.
+static void __declspec(naked) shift_created_human_buttons(void)
+{
+    asm
+      {
+        mov ecx, 1
+        call shift_human_buttons
+        lea eax, [ebx+ebx*2] ; replaced code
+        ret 96
+      }
+}
+
+// Provide skill hint for humans' bonus Learning.
+static void __declspec(naked) human_skill_hint(void)
+{
+    asm
+      {
+        cmp ecx, dword ptr [esi+4] ; replaced code
+        jl not_it
+        cmp ecx, dword ptr [esi+20] ; replaced code
+        jle quit
+        cmp dword ptr [esi+32], 73
+        jne not_it
+        cmp dword ptr [esi+40], 1
+        jne not_it
+        mov eax, ecx
+        sub eax, dword ptr [esi+12]
+        cmp eax, dword ptr [esi+20]
+        jg quit
+        mov eax, SKILL_LEARNING
+        push 0x4173a5 ; skill hint code
+        ret 4
+        not_it:
+        cmp esi, 0 ; set greater
+        quit:
+        ret
+      }
+}
+
+// Determine maximal currently possible skill rank, accounting for
+// racial skills.  These are generally one rank higher, although
+// higher ranks may remain promotion-locked.
+static int __cdecl get_max_skill_level(int class, int race, int skill)
+{
+    int level = CLASS_SKILLS[class][skill];
+    if (level == GM)
+        return GM;
+    int racial_skill;
+    switch (race)
+      {
+        case RACE_HUMAN:
+            racial_skill = SKILL_LEARNING;
+            break;
+        case RACE_ELF:
+            racial_skill = SKILL_BOW;
+            break;
+        case RACE_GOBLIN:
+            racial_skill = SKILL_SWORD;
+            break;
+        case RACE_DWARF:
+            racial_skill = SKILL_AXE;
+            break;
+      }
+    if (skill != racial_skill)
+        return level;
+    int stage = class & 3;
+    if (stage == 1 && CLASS_SKILLS[class+1][skill] == GM
+                   && CLASS_SKILLS[class+2][skill] == GM)
+        return GM;
+    if (level == MASTER)
+        return stage > 1 ? GM : MASTER;
+    if (level == EXPERT)
+        return stage ? MASTER : EXPERT;
+    return level || stage ? EXPERT : NORMAL;
+}
+
+// Colorize skill ranks more informatively (also respect racial skills).
+static int __fastcall get_skill_color(struct player *player,
+                                      int skill, int rank)
+{
+    int class = player->class;
+    int race = get_race(player);
+    if (get_max_skill_level(class, race, skill) >= rank)
+        return rgb_color(255, 255, 255); // white
+    int stage = class & 3;
+    if (!stage && get_max_skill_level(class + 1, race, skill) >= rank)
+        return rgb_color(255, 255, 0); // yellow
+    if (stage < 2)
+      {
+        int good = get_max_skill_level(class - stage + 2, race, skill) >= rank;
+        int evil = get_max_skill_level(class - stage + 3, race, skill) >= rank;
+        if (good && evil)
+            return rgb_color(0, 255, 0); // green
+        if (good)
+            return rgb_color(0, 255, 255); // blue
+        if (evil)
+            return rgb_color(255, 0, 255); // purple
+      }
+    return rgb_color(255, 0, 0); // red
+}
+
+// Replace the max skill table check with our race-inclusive function.
+static void __declspec(naked) teacher_skill_check(void)
+{
+    asm
+      {
+        push ecx
+        mov edx, eax
+        mov ecx, esi
+        call dword ptr ds:get_race
+        push eax
+        push edx
+        call get_max_skill_level
+        add esp, 8
+        pop ecx
+        ret
+      }
+}
+
+// Another check, this time for all promotion levels of the class.
+// TODO: maybe adjust "cannot learn" messages to mention race
+static void __declspec(naked) teacher_skill_promotion_check(void)
+{
+    asm
+      {
+        push ecx
+        mov ecx, esi
+        call dword ptr ds:get_race
+        push eax
+        mov eax, ebx
+        and eax, -4
+        push eax
+        call get_max_skill_level
+        cmp eax, dword ptr [ebp-8]
+        setge al
+        mov dword ptr [ebp-32], eax
+        inc dword ptr [esp]
+        call get_max_skill_level
+        cmp eax, dword ptr [ebp-8]
+        setge al
+        mov dword ptr [ebp-28], eax
+        inc dword ptr [esp]
+        call get_max_skill_level
+        cmp eax, dword ptr [ebp-8]
+        setge al
+        mov dword ptr [ebp-24], eax
+        inc dword ptr [esp]
+        call get_max_skill_level
+        cmp eax, dword ptr [ebp-8]
+        setge al
+        mov dword ptr [ebp-20], eax
+        add esp, 12
+        mov eax, ebx
+        and eax, -4
+        mov edi, 1
+        ret
+      }
+}
+
+// Check if a skill can be learned.  Racial skills always can be,
+// although only Monks don't have them pre-learned.
+static void __declspec(naked) learn_skill_check(void)
+{
+    asm
+      {
+        cmp byte ptr [CLASS_SKILLS_ADDR+ecx+eax], 0 ; replaced code
+        jnz quit
+        cmp eax, SKILL_LEARNING
+        je human
+        cmp eax, SKILL_BOW
+        je elf
+        cmp eax, SKILL_SWORD
+        je goblin
+        cmp eax, SKILL_AXE
+        je dwarf
+        xor edx, edx ; set zf
+        quit:
+        ret
+        human:
+        mov edx, RACE_HUMAN
+        jmp check
+        elf:
+        mov edx, RACE_ELF
+        jmp check
+        goblin:
+        mov edx, RACE_GOBLIN
+        jmp check
+        dwarf:
+        mov edx, RACE_DWARF
+        check:
+        push eax
+        mov ecx, ebx
+        call dword ptr ds:get_race
+        cmp eax, edx
+        pop eax
+        sete dl ; invert zf
+        test edx, edx
+        ret
+      }
+}
+
+// Same, but registers are different here.
+static void __declspec(naked) learn_skill_check_2(void)
+{
+    asm
+      {
+        mov ebx, dword ptr [ebp-12] ; player
+        call learn_skill_check
+        mov ebx, 0 ; restore
+        ret
+      }
+}
+
+// Another variation.
+static void __declspec(naked) learn_skill_check_3(void)
+{
+    asm
+      {
+        mov ebx, esi ; player
+        call learn_skill_check
+        mov ebx, 0 ; restore
+        ret
+      }
+}
+
+// There's a lot of them.
+static void __declspec(naked) learn_skill_check_4(void)
+{
+    asm
+      {
+        mov ebx, dword ptr [ebp-24] ; player
+        call learn_skill_check
+        mov ebx, 0 ; restore
+        ret
+      }
+}
+
+// There's a lot of duplicate code!
+static void __declspec(naked) learn_skill_check_5(void)
+{
+    asm
+      {
+        mov ebx, dword ptr [ebp-16] ; player
+        call learn_skill_check
+        mov ebx, 0 ; restore
+        ret
+      }
+}
+
+// Apparently there's a separate function for each type of building.
+static void __declspec(naked) learn_skill_check_6(void)
+{
+    asm
+      {
+        mov ebx, dword ptr [ebp-20] ; player
+        call learn_skill_check
+        mov ebx, 0 ; restore
+        ret
+      }
+}
+
+// This one is for actually buying, and it differs a lot.
+static void __declspec(naked) learn_skill_check_7(void)
+{
+    asm
+      {
+        push ecx
+        mov ecx, eax
+        mov eax, esi
+        mov ebx, edi
+        call learn_skill_check
+        pop ecx
+        ret
+      }
+}
+
+// This one doesn't even convert dialog parameter to skill.
+static void __declspec(naked) learn_skill_check_8(void)
+{
+    asm
+      {
+        mov ebx, ecx
+        mov ecx, edx
+        sub eax, 36
+        call learn_skill_check
+        mov ecx, ebx
+        mov ebx, 0
+        lea eax, [eax+36]
+        ret
+      }
+}
+
+// Another location related to buying.
+static void __declspec(naked) learn_skill_check_9(void)
+{
+    asm
+      {
+        push ecx
+        push ebx
+        mov ebx, edi
+        mov ecx, edx
+        sub eax, 36
+        call learn_skill_check
+        lea eax, [eax+36]
+        pop ebx
+        pop ecx
+        ret
+      }
+}
+
+// Describe PC's chosen race as well as class.
+static void __declspec(naked) race_hint(void)
+{
+    asm
+      {
+        imul eax, eax, 0x1b3c ; replaced code
+        mov edx, dword ptr [esi+8] ; PC area width
+        shr edx, 1
+        add edx, dword ptr [esi] ; PC area left
+        cmp edx, dword ptr [ebp-8] ; mouse x
+        jg race
+        ret
+        race:
+        push ecx
+        lea ecx, [ebx+eax]
+        lea edi, [ecx+0xa8] ; PC name
+        call dword ptr ds:get_race
+        mov eax, dword ptr [REF(new_strings)+35*4+eax*4]
+        pop ecx ; restore
+        push 0x4174f0
+        ret 4
+      }
+}
+
 // Let's make PC races more meaningful.
 static inline void racial_traits(void)
 {
@@ -9124,6 +10033,53 @@ static inline void racial_traits(void)
     hook_jump(0x48e55d, get_new_full_sp);
     hook_call(0x4b4b5c, human_skill_point, 6);
     hook_call(0x4b4c26, human_skill_point_message, 5);
+    hook_call(0x490301, init_racial_skill, 8);
+    hook_call(0x490465, check_racial_skill, 8);
+    hook_call(0x49042f, exclude_racial_skill, 8);
+    hook_call(0x4903e3, preserve_racial_skill, 7);
+    hook_call(0x4903fd, substitute_racial_skill, 7);
+    patch_dword(0x491506, 0x4152); // default party cleric axe skill
+    patch_dword(0x491591, 0x5c92); // default party sorcerer bow skill
+    hook_call(0x4917df, reset_races, 7);
+    hook_call(0x435f38, change_racial_skill, 5);
+    hook_call(0x435fd9, decrement_race, 10);
+    hook_call(0x49628c, shift_human_skills_up, 5);
+    hook_call(0x4962e6, shift_human_skills_up, 5);
+    hook_call(0x49634f, shift_human_skills_down, 5);
+    hook_call(0x4963b4, shift_last_human_skill, 5);
+    hook_call(0x49631c, print_human_racial_skill, 7);
+    hook_call(0x497096, shift_created_human_buttons, 6);
+    hook_call(0x417279, human_skill_hint, 12);
+    // For most calls, we can restore player from ebx.
+    patch_word(0x417a7d, 0xd989); // mov ecx, ebx
+    hook_jump(0x417a7f, get_skill_color);
+    // But shortly before the last call ebx is overwritten,
+    // so we need to set ecx in advance.
+    patch_dword(0x417ee2, 0x3ebd989); // mov ecx, ebx; jmp $+3
+    patch_dword(0x417ef4, dword(0x417ef4) + 2); // call address
+    erase_code(0x4b253f, 3); // don't multiply class
+    hook_call(0x4b254a, teacher_skill_check, 8);
+    hook_call(0x4b2569, teacher_skill_promotion_check, 5);
+    erase_code(0x4b256e, 55); // unused now
+    hook_call(0x4b4836, learn_skill_check, 8);
+    hook_call(0x4b492a, learn_skill_check, 8);
+    hook_call(0x4b550c, learn_skill_check_2, 7);
+    hook_call(0x4b55ff, learn_skill_check_2, 7);
+    hook_call(0x4b70fe, learn_skill_check_3, 7);
+    hook_call(0x4b71fb, learn_skill_check_3, 7);
+    hook_call(0x4b83b7, learn_skill_check_4, 7);
+    hook_call(0x4b84b0, learn_skill_check_4, 7);
+    hook_call(0x4b9638, learn_skill_check_5, 7);
+    hook_call(0x4b972b, learn_skill_check_5, 7);
+    hook_call(0x4b9d52, learn_skill_check_6, 7);
+    hook_call(0x4b9e45, learn_skill_check_6, 7);
+    hook_call(0x4bae54, learn_skill_check, 8);
+    hook_call(0x4baf48, learn_skill_check, 8);
+    hook_call(0x4be1bb, learn_skill_check_7, 8);
+    hook_call(0x4b617e, learn_skill_check_8, 7);
+    hook_call(0x4b6298, learn_skill_check_8, 7);
+    hook_call(0x4bd485, learn_skill_check_9, 8);
+    hook_call(0x417372, race_hint, 6);
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

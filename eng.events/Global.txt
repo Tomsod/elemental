@@ -712,3 +712,7 @@ Global Text
 709	Black potion used
 710	Average damage reduction
 711	accounting for race
+712	"Humans are the most generic race of Antagarich, posessing no exceptional advantages.  Despite this, they're prolific across the continent.  Some say fortune favors them.  Humans have no racial weapon, but they're quick learners and can become proficient at any skill."
+713	"Elves are smart and agile, but physically frail.  However, they have greater aptitude for magic than any other race.  Every Elf has some level of training with bows."
+714	"Goblins are strong and swift, but none too bright.  They can take a lot of punishment, but their magic capacity is stunted.  Goblins fight with whatever is handy, but most tribes prefer long blades of some kind."
+715	"Dwarves are strong and tough, but slow and clumsy.  They have the greatest health pool of any race.  Dwarves are very fond of axes, and even their Clerics are allowed to use an axe in combat."

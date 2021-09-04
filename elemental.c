@@ -1381,7 +1381,7 @@ static inline void undead_immunities(void)
     patch_dword(0x44a758, dword(0x44a758) + 10); // earth -> magic
     patch_dword(0x44a769, dword(0x44a769) - 2); // mind -> holy
     patch_word(0x44a76d, 20); // 200 res -> 20 res
-    erase_code(0x44a76f, 9); // remove body
+    // body res at 0x44a76f is overwritten in racial_traits() below
 
     hook_call(0x418d8e, display_fire_immunity, 6);
     hook_call(0x418e0f, display_elec_immunity, 6);
@@ -10041,6 +10041,48 @@ static void __declspec(naked) base_racial_resistances(void)
       }
 }
 
+// Save the PC's race on lichification
+// (as we cannot determine it from portrait anymore).
+static void __declspec(naked) preserve_lich_race(void)
+{
+    asm
+      {
+        call dword ptr ds:get_race
+        mov word ptr [esi+0x177c], ax ; unused field
+        mov ecx, esi ; restore
+        ret
+      }
+}
+
+// Provide the preserved race value for liches.
+static void __declspec(naked) get_lich_race(void)
+{
+    asm
+      {
+        movsx eax, byte ptr [ecx+0xba] ; replaced code, almost
+        cmp eax, 19
+        jg lich
+        mov ecx, eax
+        ret
+        lich:
+        movzx eax, word ptr [ecx+0x177c]
+        pop ecx ; skip a stack frame
+        ret
+      }
+}
+
+// There can be dwarf liches now, but liches still don't have a dwarf body.
+// So we restore original behavior when race is checked for paperdolls.
+static void __declspec(naked) get_lich_paperdoll(void)
+{
+    asm
+      {
+        movsx ecx, byte ptr [ecx+0xba]
+        push 0x490108
+        ret
+      }
+}
+
 // Let's make PC races more meaningful.
 static inline void racial_traits(void)
 {
@@ -10134,6 +10176,13 @@ static inline void racial_traits(void)
     hook_call(0x48e8a3, racial_resistances, 5);
     patch_word(0x48e87f, 0x15eb); // dwarf poison res used different var
     hook_call(0x48e79d, base_racial_resistances, 5);
+    hook_call(0x44a76f, preserve_lich_race, 9);
+    hook_call(0x490101, get_lich_race, 7);
+    hook_call(0x43bd5f, get_lich_paperdoll, 5);
+    hook_call(0x43cccc, get_lich_paperdoll, 5);
+    hook_call(0x43eda1, get_lich_paperdoll, 5);
+    hook_call(0x43edeb, get_lich_paperdoll, 5);
+    hook_call(0x43ef6e, get_lich_paperdoll, 5);
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

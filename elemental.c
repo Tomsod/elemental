@@ -224,7 +224,9 @@ struct __attribute__((packed)) player
         };
         uint16_t stats[7][2];
     };
-    SKIP(288);
+    SKIP(2);
+    uint16_t level_base;
+    SKIP(284);
     uint32_t black_potions[7];
     struct item items[PLAYER_MAX_ITEMS];
     uint32_t inventory[14*9];
@@ -785,6 +787,7 @@ static int __thiscall (*get_stat_bonus_from_items)(void *player, int stat,
                                                    int ignore_offhand)
     = (funcptr_t) 0x48eaa6;
 static funcptr_t get_text_width = (funcptr_t) 0x44c52e;
+static int __thiscall (*get_base_level)(void *player) = (funcptr_t) 0x48c8dc;
 
 //---------------------------------------------------------------------------//
 
@@ -1201,7 +1204,6 @@ static void __declspec(naked) holy_is_not_magic(void)
         cmp ebp, STAT_HOLY_RES
         jne not_holy
         mov edi, HOLY
-        mov ebx, 4
         not_holy:
         test ebx, ebx
         ret
@@ -1217,7 +1219,6 @@ static void __declspec(naked) holy_is_not_magic_base(void)
         cmp dword ptr [esp+20], STAT_HOLY_RES
         jne not_holy
         mov edi, HOLY
-        mov eax, 4
         not_holy:
         test eax, eax
         ret
@@ -5932,6 +5933,7 @@ static char *__stdcall resistance_hint(char *description, int resistance)
     int element;
     int base;
     int race = get_race(current);
+    int racial_bonus = 0;
     int base_immune = 0;
 
     switch (resistance)
@@ -5940,39 +5942,39 @@ static char *__stdcall resistance_hint(char *description, int resistance)
             element = FIRE;
             base = current->fire_res_base;
             if (race == RACE_GOBLIN)
-                base += 5;
+                racial_bonus = 5 + current->level_base / 2;
             break;
         case 20:
             element = ELECTRICITY;
             base = current->shock_res_base;
             if (race == RACE_GOBLIN)
-                base += 5;
+                racial_bonus = 5 + current->level_base / 2;
             break;
         case 21:
             element = COLD;
             base = current->cold_res_base;
             if (race == RACE_DWARF)
-                base += 5;
+                racial_bonus = 5 + current->level_base / 2;
             break;
         case 22:
             element = POISON;
             base = current->poison_res_base;
             if (race == RACE_DWARF)
-                base += 5;
+                racial_bonus = 5 + current->level_base / 2;
             base_immune = current->class == CLASS_LICH;
             break;
         case 23:
             element = MIND;
             base = current->mind_res_base;
             if (race == RACE_ELF)
-                base += 10;
+                racial_bonus = 9 + current->level_base;
             base_immune = current->class == CLASS_LICH;
             break;
         case 24:
             element = MAGIC;
             base = current->magic_res_base;
             if (race == RACE_HUMAN)
-                base += 5;
+                racial_bonus = 5 + current->level_base / 2;
             break;
         default:
             return description;
@@ -5993,7 +5995,12 @@ static char *__stdcall resistance_hint(char *description, int resistance)
     else if (!base_immune)
         strcat(buffer, "\n");
     if (!base_immune)
+      {
         sprintf(buffer + strlen(buffer), "\n%s: %d", new_strings[26], base);
+        if (racial_bonus)
+            sprintf(buffer + strlen(buffer), " (%d %s)",
+                    base + racial_bonus, new_strings[34]);
+      }
     return buffer;
 }
 
@@ -9990,6 +9997,50 @@ static void __declspec(naked) race_hint(void)
       }
 }
 
+// Let the racial resistance bonus increase with level.
+static void __declspec(naked) racial_resistances(void)
+{
+    asm
+      {
+        cmp dword ptr [esp+28], 0
+        jz no_bonus
+        call dword ptr ds:get_base_level
+        cmp dword ptr [esp+28], 10
+        jae big_bonus
+        shr eax, 1
+        jmp add_bonus
+        big_bonus:
+        dec eax
+        add_bonus:
+        add dword ptr [esp+28], eax
+        mov ecx, esi ; restore
+        no_bonus:
+        jmp dword ptr ds:get_stat_bonus_from_items ; replaced call
+      }
+}
+
+// Ditto, but for base resistances.
+static void __declspec(naked) base_racial_resistances(void)
+{
+    asm
+      {
+        test esi, esi
+        jz no_bonus
+        call dword ptr ds:get_base_level
+        cmp esi, 10
+        jae big_bonus
+        shr eax, 1
+        jmp add_bonus
+        big_bonus:
+        dec eax
+        add_bonus:
+        add esi, eax
+        mov ecx, ebx ; restore
+        no_bonus:
+        jmp dword ptr ds:get_stat_bonus_from_items ; replaced call
+      }
+}
+
 // Let's make PC races more meaningful.
 static inline void racial_traits(void)
 {
@@ -10080,6 +10131,9 @@ static inline void racial_traits(void)
     hook_call(0x4b6298, learn_skill_check_8, 7);
     hook_call(0x4bd485, learn_skill_check_9, 8);
     hook_call(0x417372, race_hint, 6);
+    hook_call(0x48e8a3, racial_resistances, 5);
+    patch_word(0x48e87f, 0x15eb); // dwarf poison res used different var
+    hook_call(0x48e79d, base_racial_resistances, 5);
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

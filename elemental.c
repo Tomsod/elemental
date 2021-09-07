@@ -9072,7 +9072,7 @@ static int __thiscall get_new_full_sp(struct player *player)
     if (level <= 20)
         total += base * bonus / 2;
     else
-        total *= (bonus + 20) / 20;
+        total = total * (bonus + 20) / 20;
     total += CLASS_STARTING_SP[player->class>>2];
     total += get_stat_bonus_from_items(player, STAT_SP, 0);
     total += player->sp_bonus;

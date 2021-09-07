@@ -1,4 +1,4 @@
-First of all, may gratitude goes to GrayFace.  Without his pioneering work,
+First of all, my gratitude goes to GrayFace.  Without his pioneering work,
 this mod would not happen.  While my mod does not use MMExtension,
 I do utilize it while testing, and the documented structs are ever so useful.
 

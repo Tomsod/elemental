@@ -161,8 +161,15 @@ enum player_stats
     STAT_FIRE_POISON_RES = 47,
 };
 
-#define CLASS_MONK 8
-#define CLASS_LICH 35
+enum class
+{
+    CLASS_CHAMPION = 2,
+    CLASS_BLACK_KNIGHT = 3,
+    CLASS_MONK = 8,
+    CLASS_SNIPER = 19,
+    CLASS_LICH = 35,
+    CLASS_COUNT = 36,
+};
 
 #define SKIP(bytes) char JOIN(unknown_, __COUNTER__)[bytes]
 #define JOIN(a, b) JOIN2(a, b)
@@ -393,6 +400,7 @@ enum skills
     SKILL_BLASTER = 7,
     SKILL_CHAIN = 10,
     SKILL_AIR = 13,
+    SKILL_DARK = 20,
     SKILL_IDENTIFY_ITEM = 21,
     SKILL_MERCHANT = 22,
     SKILL_REPAIR = 23,
@@ -788,6 +796,7 @@ static int __thiscall (*get_stat_bonus_from_items)(void *player, int stat,
     = (funcptr_t) 0x48eaa6;
 static funcptr_t get_text_width = (funcptr_t) 0x44c52e;
 static int __thiscall (*get_base_level)(void *player) = (funcptr_t) 0x48c8dc;
+static int __thiscall (*is_bare_fisted)(void *player) = (funcptr_t) 0x48d65c;
 
 //---------------------------------------------------------------------------//
 
@@ -4774,6 +4783,20 @@ static void __declspec(naked) undead_slaying_element(void)
       }
 }
 
+// Since the damage can now be split in halves, we need to
+// add them together, and relocate an above comparison.
+// Also here: zero the extra damage var (will be used for Hammerhands).
+static void __declspec(naked) add_damage_half(void)
+{
+    asm
+      {
+        add dword ptr [ebp-20], eax ; was mov
+        mov dword ptr [ebp-12], 0
+        test ebx, ebx ; was above
+        ret
+      }
+}
+
 // Tweaks of zombie players and monsters.
 static inline void zombie_stuff(void)
 {
@@ -4783,7 +4806,7 @@ static inline void zombie_stuff(void)
     patch_bytes(0x42bce1, turn_undead_chunk, 7);
     patch_bytes(0x4b75e3, zombificable_chunk, 22);
     hook_call(0x4398c3, undead_slaying_element, 5);
-    patch_byte(0x4398d3, 0x01); // mov -> add (to weapon damage)
+    hook_call(0x4398d1, add_damage_half, 5);
 }
 
 // Calls the original function.
@@ -5738,8 +5761,7 @@ static inline void hp_sp_burnout(void)
     // SP regeneration no longer erases SP above maximum.
     patch_bytes(0x493dac, mp_regen_chunk, 2); // regular regen
     erase_code(0x493dae, 7);
-    patch_bytes(0x493e8f, mp_regen_chunk, 2); // lich jar regen
-    erase_code(0x493e91, 7);
+    // lich jar regen is completely removed in class_changes() below
     // Instead, extra SP quickly burns out.
     // We jump over the old undead code here (which drains hp and sp
     // if above 50% or so), but it's incorporated in the new code.
@@ -7285,6 +7307,7 @@ static void __declspec(naked) cursed_monster_resists_damage(void)
 }
 
 // Implement cursed weapons; the debuff is inflicted with a 20% chance.
+// Black Knights treat all melee weapons (or even fists) as cursed.
 // TODO: should it make a sound?
 static void __declspec(naked) cursed_weapon(void)
 {
@@ -7297,6 +7320,8 @@ static void __declspec(naked) cursed_weapon(void)
         mov eax, dword ptr [edi+0x1950] ; bow slot
         jmp check
         melee:
+        cmp byte ptr [edi+0xb9], CLASS_BLACK_KNIGHT
+        je cursed
         mov eax, dword ptr [edi+0x194c] ; main hand
         test eax, eax
         jz offhand
@@ -8211,6 +8236,7 @@ static void __declspec(naked) adjust_wetsuit_blaster(void)
 // Print "always" in the to-hit field with a wand equipped.
 // It's not strictly true with blades or debuffs, but it's good enough.
 // Also prints "N/A" when no ranged weapon present.
+// Also prints "always" for Snipers with a bow equipped.
 // TODO: check charges here and in print damage function
 static void __declspec(naked) print_wand_to_hit(void)
 {
@@ -8228,10 +8254,15 @@ static void __declspec(naked) print_wand_to_hit(void)
         test byte ptr [ecx+0x214+eax*4-36+20], 2 ; broken bit
         jnz no_missile
         mov eax, dword ptr [ecx+0x214+eax*4-36]
-        cmp eax, FIRST_WAND
-        jb not_wand
-        cmp eax, LAST_WAND
-        ja not_wand
+        lea eax, [eax+eax*2]
+        shl eax, 4
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+28], 12 ; wand
+        je always
+        cmp byte ptr [ecx+0xb9], CLASS_SNIPER
+        jne not_always
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_BOW
+        jne not_always
+        always:
         push dword ptr [new_strings+21*4]
         print:
         push dword ptr [GLOBAL_TXT+203*4]
@@ -8239,7 +8270,7 @@ static void __declspec(naked) print_wand_to_hit(void)
         push esi
         call dword ptr ds:sprintf
         add esp, 16
-        not_wand:
+        not_always:
         mov edx, dword ptr [0x5c3468] ; replaced code
         ret
       }
@@ -8254,21 +8285,29 @@ static void __declspec(naked) print_wand_to_hit_ref(void)
         mov eax, dword ptr [ecx+0x1948+SLOT_MISSILE*4]
         test eax, eax
         jnz have_missile
+        no_missile:
         push dword ptr [new_strings+22*4]
         jmp print
         have_missile:
         lea eax, [eax+eax*8]
+        test byte ptr [ecx+0x214+eax*4-36+20], 2 ; broken bit
+        jnz no_missile
         mov eax, dword ptr [ecx+0x214+eax*4-36]
-        cmp eax, FIRST_WAND
-        jb not_wand
-        cmp eax, LAST_WAND
-        ja not_wand
+        lea eax, [eax+eax*2]
+        shl eax, 4
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+28], 12 ; wand
+        je always
+        cmp byte ptr [ecx+0xb9], CLASS_SNIPER
+        jne not_always
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_BOW
+        jne not_always
+        always:
         push dword ptr [new_strings+21*4]
         print:
         push esi
         call dword ptr ds:strcpy_ptr
         add esp, 8
-        not_wand:
+        not_always:
         mov edx, dword ptr [0x5c3468] ; replaced code
         ret
       }
@@ -10185,6 +10224,199 @@ static inline void racial_traits(void)
     hook_call(0x43ef6e, get_lich_paperdoll, 5);
 }
 
+// Implement Champion special ability, Leadership: for each Champion
+// in the party, everyone's weapon and armor skills get a +2 bonus.
+static void __declspec(naked) champion_leadership(void)
+{
+    asm
+      {
+        mov esi, eax
+        cmp byte ptr [PARTY_ADDR+0xb9], CLASS_CHAMPION
+        setz al
+        add esi, eax
+        cmp byte ptr [PARTY_ADDR+0x1b3c+0xb9], CLASS_CHAMPION
+        setz al
+        add esi, eax
+        cmp byte ptr [PARTY_ADDR+0x1b3c*2+0xb9], CLASS_CHAMPION
+        setz al
+        add esi, eax
+        cmp byte ptr [PARTY_ADDR+0x1b3c*3+0xb9], CLASS_CHAMPION
+        setz al
+        add esi, eax
+        shl esi, 1
+        ret
+      }
+}
+
+// Implement Sniper special ability: 100% chance to hit with a bow.
+static void __declspec(naked) sniper_accuracy(void)
+{
+    asm
+      {
+        test ebx, ebx
+        jz not_it
+        cmp dword ptr [ebx+72], SPL_ARROW
+        jne not_it
+        cmp byte ptr [edi+0xb9], CLASS_SNIPER
+        jne not_it
+        mov eax, 1
+        ret
+        not_it:
+        push 0x4272ac ; replaced call
+        ret
+      }
+}
+
+// Let Warlock's familiar also boost Dark magic (and Light, but it's not used).
+static void __declspec(naked) warlock_dark_bonus(void)
+{
+    asm
+      {
+        jg extra
+        ret
+        extra:
+        cmp edi, SKILL_DARK
+        jg skip
+        push 0x48f8f5 ; warlock check
+        ret 4
+        skip:
+        push 0x48fb1e ; replaced jump
+        ret 4
+      }
+}
+
+// New Lich bonus: drain life with unarmed (or GM Staff) attacks.
+// Also here: apply Hammerhands bonus to GM Staff attacks.
+static void __declspec(naked) lich_vampiric_touch(void)
+{
+    asm
+      {
+        call dword ptr ds:is_bare_fisted ; replaced call
+        test eax, eax
+        jnz vamp
+        mov ecx, dword ptr [edi+0x194c] ; mainhand item
+        test ecx, ecx
+        jz skip
+        lea ecx, [ecx+ecx*8]
+        lea ecx, [edi+0x214+ecx*4-36]
+        mov ecx, dword ptr [ecx] ; id
+        lea ecx, [ecx+ecx*2]
+        shl ecx, 4
+        cmp byte ptr [ITEMS_TXT_ADDR+ecx+29], SKILL_STAFF
+        jne skip
+        push SKILL_STAFF
+        mov ecx, edi
+        call dword ptr ds:get_skill
+        shr eax, 8 ; test for GM
+        jz skip
+        vamp:
+        cmp byte ptr [edi+0xb9], CLASS_LICH
+        jne skip ; hammerhands flag is set here
+        mov eax, dword ptr [ebp-20] ; damage
+        xor edx, edx
+        mov ecx, 5
+        div ecx
+        add dword ptr [edi+0x193c], eax ; HP (overheal is ok)
+        mov eax, 1 ; hammerhands applies as well
+        skip:
+        ret
+      }
+}
+
+// Make light and dark promotions more distinct.
+static inline void class_changes(void)
+{
+    // yeah, it's not very readable, but I *really*
+    // don't want to depend on MMExtension
+    static const uint8_t skills[CLASS_COUNT][SKILL_COUNT] = {
+          {2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 2, 2, 2, 0, 2, 1, 0, 1, 2, 2, 0, 2, 0, 0, 1},
+          {2, 3, 2, 3, 3, 2, 3, 1, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 2, 3, 3, 0, 2, 1, 0, 1, 2, 2, 0, 3, 0, 0, 1},
+          {2, 4, 2, 3, 4, 3, 3, 1, 4, 3, 3, 4, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 2, 4, 4, 0, 2, 1, 0, 1, 2, 2, 0, 4, 0, 0, 1},
+          {2, 4, 2, 3, 4, 2, 3, 1, 4, 3, 3, 4, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 2, 4, 4, 0, 2, 1, 0, 2, 2, 2, 0, 4, 1, 0, 1},
+          {0, 2, 2, 0, 0, 2, 2, 2, 1, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 2, 2, 1, 2, 0, 2, 0, 0, 2, 2, 2, 0, 2, 2, 2, 2},
+          {0, 3, 3, 0, 0, 2, 2, 3, 1, 3, 2, 0, 2, 2, 0, 0, 0, 0, 0,
+            0, 0, 3, 3, 1, 2, 0, 3, 0, 0, 3, 3, 2, 0, 3, 3, 3, 2},
+          {0, 3, 4, 0, 0, 2, 2, 4, 1, 4, 2, 0, 2, 3, 0, 0, 0, 0, 0,
+            0, 0, 4, 3, 1, 2, 0, 4, 0, 0, 4, 3, 2, 0, 3, 4, 3, 2},
+          {0, 3, 4, 0, 0, 2, 2, 4, 1, 4, 2, 0, 3, 2, 0, 0, 0, 0, 0,
+            0, 0, 3, 3, 1, 2, 0, 3, 0, 0, 4, 3, 2, 0, 3, 4, 4, 2},
+          {2, 2, 2, 0, 2, 1, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 2, 0, 2, 1, 0, 1, 2, 2, 2, 2, 1, 0, 2},
+          {3, 2, 2, 0, 2, 1, 0, 1, 0, 3, 0, 0, 0, 0, 0, 0, 0, 2, 2,
+            0, 0, 0, 0, 0, 3, 0, 2, 1, 0, 2, 3, 3, 2, 3, 1, 0, 3},
+          {4, 2, 2, 0, 2, 1, 0, 1, 0, 4, 0, 0, 0, 0, 0, 0, 0, 3, 3,
+            0, 0, 0, 0, 0, 4, 0, 2, 1, 0, 2, 4, 4, 2, 3, 1, 0, 4},
+          {4, 2, 2, 0, 2, 1, 0, 1, 0, 4, 0, 0, 0, 0, 0, 0, 0, 2, 2,
+            0, 0, 0, 0, 0, 4, 0, 2, 1, 0, 3, 4, 4, 2, 3, 2, 0, 4},
+          {1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 2, 1, 1,
+            0, 0, 0, 2, 2, 2, 2, 1, 2, 0, 0, 0, 1, 0, 2, 0, 0, 1},
+          {1, 3, 2, 2, 2, 2, 3, 2, 3, 2, 2, 3, 0, 0, 0, 0, 3, 2, 2,
+            0, 0, 0, 3, 3, 3, 2, 1, 3, 0, 0, 0, 1, 0, 2, 0, 0, 1},
+          {1, 3, 2, 2, 2, 2, 4, 2, 4, 2, 2, 3, 0, 0, 0, 0, 4, 3, 3,
+            3, 0, 0, 4, 4, 3, 2, 1, 4, 0, 0, 0, 1, 0, 2, 0, 0, 1},
+          {1, 3, 2, 2, 2, 2, 4, 2, 4, 2, 2, 3, 0, 0, 0, 0, 4, 3, 3,
+            0, 2, 0, 3, 4, 3, 2, 1, 4, 0, 0, 0, 1, 0, 3, 2, 0, 1},
+          {1, 2, 2, 2, 2, 2, 0, 2, 0, 2, 2, 0, 1, 2, 1, 1, 0, 0, 0,
+            0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 1, 2, 1, 0, 2, 0, 0, 2},
+          {1, 2, 2, 2, 3, 3, 0, 3, 0, 3, 3, 0, 2, 3, 2, 2, 0, 0, 0,
+            0, 0, 0, 2, 2, 2, 2, 3, 0, 0, 1, 2, 1, 0, 2, 0, 0, 3},
+          {1, 2, 2, 2, 3, 4, 0, 4, 0, 3, 4, 0, 3, 4, 4, 3, 0, 0, 0,
+            2, 0, 0, 2, 2, 2, 2, 4, 0, 0, 2, 2, 1, 0, 2, 0, 0, 3},
+          {1, 2, 2, 2, 3, 4, 0, 4, 0, 3, 4, 0, 4, 4, 3, 3, 0, 0, 0,
+            0, 2, 0, 2, 2, 2, 2, 4, 0, 0, 2, 2, 1, 0, 2, 0, 0, 3},
+          {1, 2, 2, 2, 2, 2, 0, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 1, 1, 1, 2, 1, 2, 2, 0, 2, 2, 1, 2, 2, 2, 1, 2},
+          {1, 2, 2, 3, 3, 3, 0, 3, 2, 3, 3, 0, 0, 0, 2, 3, 2, 2, 0,
+            0, 0, 1, 1, 1, 2, 1, 3, 2, 0, 2, 2, 1, 3, 2, 2, 1, 2},
+          {1, 2, 2, 4, 3, 3, 0, 3, 2, 3, 3, 0, 0, 0, 3, 4, 3, 2, 0,
+            0, 0, 2, 2, 2, 2, 1, 4, 2, 0, 2, 2, 1, 4, 3, 2, 2, 2},
+          {1, 2, 2, 4, 3, 3, 0, 3, 2, 3, 3, 0, 0, 0, 2, 4, 3, 3, 0,
+            0, 0, 1, 1, 1, 2, 1, 4, 2, 0, 3, 2, 1, 4, 3, 3, 1, 2},
+          {2, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 1, 0, 0, 0, 0, 2, 2, 2,
+            0, 0, 0, 2, 2, 1, 2, 2, 2, 0, 0, 0, 0, 2, 0, 0, 2, 2},
+          {2, 0, 0, 0, 0, 0, 3, 2, 3, 2, 2, 1, 0, 0, 0, 0, 3, 3, 3,
+            0, 0, 0, 3, 3, 1, 3, 2, 3, 0, 0, 0, 0, 2, 0, 0, 2, 3},
+          {2, 0, 0, 0, 0, 0, 4, 2, 3, 2, 2, 2, 0, 0, 0, 0, 4, 4, 4,
+            4, 0, 0, 4, 3, 1, 3, 2, 3, 0, 0, 0, 0, 2, 0, 0, 2, 3},
+          {2, 0, 0, 0, 0, 0, 3, 2, 3, 2, 2, 1, 0, 0, 0, 0, 4, 4, 4,
+            0, 4, 0, 4, 3, 1, 4, 2, 3, 0, 0, 0, 0, 2, 0, 0, 3, 3},
+          {1, 0, 2, 0, 0, 0, 2, 2, 2, 2, 0, 0, 2, 2, 2, 2, 2, 2, 2,
+            0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 0, 1, 0, 2, 1, 0, 2, 2},
+          {1, 0, 3, 0, 0, 0, 2, 3, 2, 2, 0, 0, 2, 3, 3, 3, 2, 3, 3,
+            0, 0, 2, 2, 0, 0, 3, 2, 0, 0, 0, 1, 0, 2, 1, 0, 3, 3},
+          {1, 0, 3, 0, 0, 0, 2, 3, 2, 2, 0, 0, 2, 4, 4, 3, 3, 3, 4,
+            0, 0, 2, 2, 0, 0, 4, 2, 0, 0, 0, 1, 0, 2, 1, 0, 4, 3},
+          {1, 0, 3, 0, 0, 0, 2, 3, 2, 2, 0, 0, 3, 3, 3, 4, 2, 4, 3,
+            0, 3, 2, 2, 0, 0, 4, 2, 0, 0, 0, 1, 0, 2, 1, 0, 4, 3},
+          {3, 0, 2, 0, 0, 0, 0, 2, 0, 2, 0, 0, 2, 2, 2, 2, 0, 0, 0,
+            0, 0, 3, 1, 2, 0, 3, 2, 1, 0, 0, 1, 0, 3, 0, 0, 3, 3},
+          {3, 0, 2, 0, 0, 0, 0, 3, 0, 2, 0, 0, 3, 3, 3, 3, 0, 0, 0,
+            0, 0, 3, 1, 2, 0, 3, 2, 1, 0, 0, 1, 0, 3, 0, 0, 3, 3},
+          {3, 0, 3, 0, 0, 0, 0, 4, 0, 2, 0, 0, 4, 4, 4, 4, 0, 0, 0,
+            4, 0, 4, 1, 2, 0, 3, 2, 1, 0, 0, 1, 0, 4, 0, 0, 3, 4},
+          {4, 0, 2, 0, 0, 0, 0, 4, 0, 2, 0, 0, 4, 4, 4, 4, 0, 0, 0,
+            0, 4, 4, 1, 2, 0, 4, 2, 1, 0, 0, 1, 1, 3, 0, 0, 3, 3}
+    };
+    patch_bytes(0x4ed818, skills, CLASS_COUNT * SKILL_COUNT);
+    // Black Knight ability is in cursed_weapon() above.
+    hook_call(0x48f944, champion_leadership, 8);
+    patch_dword(0x48f94d, dword(0x48f94d) + 3); // jump address
+    hook_call(0x439885, sniper_accuracy, 5);
+    // The to-hit display is in print_wand_to_hit() above.
+    hook_call(0x48f8c3, warlock_dark_bonus, 6);
+    erase_code(0x493e76, 34); // liches no longer regen SP
+    hook_call(0x4398da, lich_vampiric_touch, 5);
+    // While we're here, prevent Hammerhands from interacting with
+    // Vampiric weapons (also see add_damage_half() above).
+    patch_byte(0x43990c, -12); // add to total damage
+    patch_byte(0x439914, 0x01); // mov -> add
+}
+
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
                     LPVOID const reserved)
 {
@@ -10219,6 +10451,7 @@ BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
         damage_messages();
         npc_greetings();
         racial_traits();
+        class_changes();
       }
     return TRUE;
 }

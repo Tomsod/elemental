@@ -10393,8 +10393,8 @@ static inline void class_changes(void)
             0, 0, 2, 2, 0, 0, 4, 2, 0, 0, 0, 1, 0, 2, 1, 0, 4, 3},
           {1, 0, 3, 0, 0, 0, 2, 3, 2, 2, 0, 0, 3, 3, 3, 4, 2, 4, 3,
             0, 3, 2, 2, 0, 0, 4, 2, 0, 0, 0, 1, 0, 2, 1, 0, 4, 3},
-          {3, 0, 2, 0, 0, 0, 0, 2, 0, 2, 0, 0, 2, 2, 2, 2, 0, 0, 0,
-            0, 0, 3, 1, 2, 0, 3, 2, 1, 0, 0, 1, 0, 3, 0, 0, 3, 3},
+          {2, 0, 2, 0, 0, 0, 0, 2, 0, 2, 0, 0, 2, 2, 2, 2, 0, 0, 0,
+            0, 0, 2, 1, 2, 0, 2, 2, 1, 0, 0, 1, 0, 2, 0, 0, 2, 2},
           {3, 0, 2, 0, 0, 0, 0, 3, 0, 2, 0, 0, 3, 3, 3, 3, 0, 0, 0,
             0, 0, 3, 1, 2, 0, 3, 2, 1, 0, 0, 1, 0, 3, 0, 0, 3, 3},
           {3, 0, 3, 0, 0, 0, 0, 4, 0, 2, 0, 0, 4, 4, 4, 4, 0, 0, 0,
@@ -10415,6 +10415,8 @@ static inline void class_changes(void)
     // Vampiric weapons (also see add_damage_half() above).
     patch_byte(0x43990c, -12); // add to total damage
     patch_byte(0x439914, 0x01); // mov -> add
+    // Enable class hints on the stats screen.
+    patch_dword(0x418088, dword(0x418088) + 8);
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

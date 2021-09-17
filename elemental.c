@@ -9023,6 +9023,24 @@ static void __declspec(naked) racial_stat(void)
       }
 }
 
+// Also account for race when checking a base stat in gamescript.
+static void __declspec(naked) evt_cmp_base_stat(void)
+{
+    asm
+      {
+        cmp eax, 32
+        jge base_stat
+        ret
+        base_stat:
+        sub eax, 32
+        push eax
+        call racial_stat
+        mov edi, eax
+        push 0x44a3de ; the compare code
+        ret 4
+      }
+}
+
 // New values for RACE_STATS.
 static const uint8_t race_stat_values[4][7][4] = {
     11, 25,  1, 1, 11, 25,  1, 1, 11, 25,  1, 1,  9, 25,  1, 1,
@@ -10159,6 +10177,7 @@ static inline void racial_traits(void)
     hook_call(0x48cbee, racial_stat, 5);
     patch_word(0x48cca7, 0x066a);
     hook_call(0x48cca9, racial_stat, 5);
+    hook_call(0x449c01, evt_cmp_base_stat, 6);
     memcpy(RACE_STATS, race_stat_values, sizeof(race_stat_values));
     hook_call(0x4915a4, default_party_hook, 7);
     hook_jump(0x48e4f0, get_new_full_hp);

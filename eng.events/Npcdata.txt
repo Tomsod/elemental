@@ -74,20 +74,20 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 72	Fake Loren	72	0	0	0	0	0	148	0	0	0	0	0	0	0	
 73	Messenger	51	0	0	0	0	0	97	0	0	0	0	0	0	0	Artifact Battle
 74	Judge Grey	938	0	0	0	189	0	98	0	138	139	140	0	0	0	
-75	Ambassador Wright	44	0	0	0	0	0	99	0	0	0	0	0	0	0	Wizard Ambassador
-76	Ambassador Scale	74	0	0	0	0	0	100	0	0	0	0	0	0	0	Necro Ambassador
+75	Ambassador Wright	44	0	0	0	0	0	99	0	579	581	0	0	0	0	Wizard Ambassador
+76	Ambassador Scale	74	0	0	0	0	0	100	0	580	582	0	0	0	0	Necro Ambassador
 77	Judge Fairweather	919	0	0	0	0	0	104	0	143	0	0	0	0	0	good arbiter (144/139)
 78	Judge Sleen	907	0	0	0	0	0	101	0	141	0	0	0	0	0	evil arbiter (142/139)
-79	Gavin Magnus	958	0	0	0	182	0	107	0	145	259	0	0	0	0	Wizard Boss	
+79	Gavin Magnus	958	0	0	0	182	0	209	0	583	259	0	0	0	0	Wizard Boss	
 80	Resurectra	804	0	0	0	0	0	110	0	147	149	0	0	0	0	Good MM3 Boss	7
 81	Crag Hack	801	0	0	0	0	0	114	0	151	0	0	0	0	0	Good MM3	7
 82	Sir Caneghem	800	0	0	0	0	0	117	0	153	0	0	0	0	0	Good MM3	7
-83	Robert the Wise	807	0	0	0	0	0	120	0	155	0	0	0	0	0	Good MM3	7
+83	Robert the Wise	807	0	0	0	0	0	120	0	155	589	0	0	0	0	Good MM3	7
 84	Kastore	805	0	0	0	0	0	122	0	157	159	0	0	0	0	Evil MM3 Boss	8
 85	Maximus	802	0	0	0	0	0	126	0	161	0	0	0	0	0	Evil MM3	8
 86	Dark Shade	803	0	0	0	0	0	129	0	163	0	0	0	0	0	Evil MM3	8
-87	Tolberti	806	0	0	0	0	0	132	0	165	0	0	0	0	0	Evil MM3	8
-88	Archibald Ironfist	947	0	0	0	180	0	134	0	167	262	0	0	0	0	Necro Boss	
+87	Tolberti	806	0	0	0	0	0	132	0	165	590	0	0	0	0	Evil MM3	8
+88	Archibald Ironfist	947	0	0	0	180	0	211	0	584	262	0	0	0	0	Necro Boss	
 89	Temple of Light	960	0	0	0	80	0	0	0	173	0	0	0	0	0	Dungeon Entrance	
 90	Temple of Dark	960	0	0	0	81	0	0	0	174	0	0	0	0	0	Dungeon Entrance	
 91	Messenger	34	0	0	0	0	0	150	0	0	0	0	0	0	0	Arbiter death	

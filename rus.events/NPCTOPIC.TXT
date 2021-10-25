@@ -571,10 +571,21 @@
 570	Предатель!
 571	Святилище
 572	Состязания
-573	Пока вы не ушли...
-574	Броня из драконьей чешуи
-575	Сделать латы за 4000 золотых
-576	Сделать щит за 2000 золотых					
-577	Продать чешую за 2500 золотых					
-578	Еще не готово?					
-579						
+573	Пока вы не ушли...	Lantern quest holy water hint
+574	Броня из драконьей чешуи	RDSM crafter
+575	Сделать латы за 4000 золотых	RDSM crafter
+576	Сделать щит за 2000 золотых	RDSM crafter
+577	Продать чешую за 2500 золотых	RDSM crafter
+578	Еще не готово?	RDSM crafter
+579	Приглашение...	Good ambassador (probatory access)
+580	Приглашение...	Evil ambassador (probatory access)
+581	Арбитр	Good ambassador (new judge)
+582	Арбитр	Evil ambassador (new judge)
+583	Вступить в союз с Бракадой	Gavin Magnus (probatory access)
+584	Вступить в союз с Дейей	Archibald (probatory access)
+585	Согласиться	Gavin Magnus (double-cross offer)
+586	Отказаться	Gavin Magnus (double-cross offer)
+587	Согласиться	Archibald (double-cross offer)
+588	Отказаться	Archibald (double-cross offer)
+589	Древнее оружие	Robert the Wise (loyalty bonus)
+590	Древнее оружие	Tolberti (loyalty bonus)

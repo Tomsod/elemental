@@ -353,18 +353,18 @@ Q Bit	Quest Note Text	Notes	Owner
 352		RDSM being made	0	0
 353		RDSS being made	0	0
 354		Red dragon scales used up	0	0
-355	0	0	0	0
-356	0	0	0	0
-357	0	0	0	0
-358	0	0	0	0
-359	0	0	0	0
-360	0	0	0	0
-361	0	0	0	0
-362	0	0	0	0
-363	0	0	0	0
-364	0	0	0	0
-365	0	0	0	0
-366	0	0	0	0
+355		Trumpet messenger to appear early	0	0
+356		Probatory access to Celeste and the Pit	0	0
+357		Talked to Gavin Magnus	0	0
+358		Talked to Archibald	0	0
+359		Just rejected the double-cross offer	0	0
+360		Humans won the war	0	0
+361		Elves won the war	0	0
+362		Harmondale is independent (double taxes)	0	0
+363		Judge Grey to die early	0	0
+364		Altar pieces quest betrayal flag	0	0
+365		Rejected the double-cross offer (free blaster)	0	0
+366		Extra advisors to appear	0	0
 367	0	0	0	0
 368	0	0	0	0
 369	0	0	0	0

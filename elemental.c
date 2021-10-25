@@ -450,6 +450,8 @@ enum gender
 // Number of barrels in the Wall of Mist.
 #define WOM_BARREL_CNT 15
 
+#define QBIT_LIGHT_PATH 99
+#define QBIT_DARK_PATH 100
 // my addition
 #define QBIT_REFILL_WOM_BARRELS 350
 
@@ -605,9 +607,9 @@ enum profession
 };
 
 // New max number of global.evt comands (was 4400 before).
-#define GLOBAL_EVT_LINES 4850
+#define GLOBAL_EVT_LINES 5050
 // New max size of global.evt itself (was 46080 bytes before).
-#define GLOBAL_EVT_SIZE 48000
+#define GLOBAL_EVT_SIZE 50000
 
 enum race
 {
@@ -643,7 +645,11 @@ struct __attribute__((packed)) spcitem
 #define MBUFF_FEAR 4
 
 // new NPC greeting count (starting from 1)
-#define GREET_COUNT 207
+#define GREET_COUNT 220
+// new NPC topic count
+#define TOPIC_COUNT 590
+// count of added NPC text entries
+#define NEW_TEXT_COUNT 2
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658
@@ -699,8 +705,7 @@ static void __thiscall (*make_sound)(void *this, int sound, int object,
                                      int volume, int playback_rate)
     = (funcptr_t) 0x4aa29b;
 #define SOUND_THIS ((void *) 0xf78f58)
-// It might also be Set instead of Add.
-static void __thiscall (*evt_add)(void *player, int what, int amount)
+static void __thiscall (*evt_set)(void *player, int what, int amount)
     = (funcptr_t) 0x44a5ee;
 static int __thiscall (*exists_in_lod)(void *lod, char *filename)
     = (funcptr_t) 0x461659;
@@ -797,6 +802,7 @@ static int __thiscall (*get_stat_bonus_from_items)(void *player, int stat,
 static funcptr_t get_text_width = (funcptr_t) 0x44c52e;
 static int __thiscall (*get_base_level)(void *player) = (funcptr_t) 0x48c8dc;
 static int __thiscall (*is_bare_fisted)(void *player) = (funcptr_t) 0x48d65c;
+static funcptr_t reset_interface = (funcptr_t) 0x422698;
 
 //---------------------------------------------------------------------------//
 
@@ -2709,7 +2715,7 @@ static void __thiscall read_recipe(void *player, int id)
     int potion = ITEMS_TXT[id].mod2 + 200;
     struct recipe *this = &recipes[potion-FIRST_COMPLEX_POTION];
     for (int i = 0; i < this->count; i++)
-        evt_add(player, EVT_AUTONOTES, this->variants[i].note);
+        evt_set(player, EVT_AUTONOTES, this->variants[i].note);
 }
 
 // Hook for the above.
@@ -8922,8 +8928,61 @@ static inline void damage_messages(void)
     hook_call(0x42ef8a, splitter_fireball_message, 7);
 }
 
+// Storage for the new NPC text entries.
+STATIC char *new_npc_text[NEW_TEXT_COUNT];
+FIX(new_npc_text);
+
+// Provide the address of the above buffer to the parsing function.
+static void __declspec(naked) write_new_npc_text(void)
+{
+    asm
+      {
+        cmp dword ptr [esp+28], offset new_npc_text
+        jae new
+        add dword ptr [esp+28], 8 ; replaced code
+        cmp dword ptr [esp+28], 0x722d94 ; also replaced code
+        jl quit
+        mov dword ptr [esp+28], offset new_npc_text
+        cmp ebx, esp ; set flags
+        quit:
+        ret
+        new:
+        add dword ptr [esp+28], 4
+        cmp dword ptr [esp+28], offset new_npc_text + NEW_TEXT_COUNT * 4
+        ret
+      }
+}
+
+// Provide the new entries when needed.
+static void __declspec(naked) display_new_npc_text(void)
+{
+    asm
+      {
+        cmp eax, 789 ; old buffer size
+        ja new
+        mov eax, dword ptr [0x7214e4+eax*8] ; replaced code
+        ret
+        new:
+        mov eax, dword ptr [REF(new_npc_text)+eax*4-790*4]
+        ret
+      }
+}
+
+// Same, but in different register.
+static void __declspec(naked) display_new_npc_text_2(void)
+{
+    asm
+      {
+        call display_new_npc_text
+        mov ecx, eax
+        ret
+      }
+}
+
 // I want to add a couple new greetings, and the array has to be expanded.
-static inline void npc_greetings(void)
+// Also here: parse more NPC topics.  (This doesn't need new memory.)
+// Finally, I also expand the NPC text (replies) array here.
+static inline void npc_dialog(void)
 {
     static void *npc_greet[2+GREET_COUNT*2];
     patch_word(0x476e38, 0xb890); // nop; mov eax
@@ -8931,6 +8990,11 @@ static inline void npc_greetings(void)
     patch_dword(0x476e45, GREET_COUNT);
     patch_pointer(0x4455dc, npc_greet);
     patch_pointer(0x4b2ba4, npc_greet);
+    patch_dword(0x476b17, 0x7214e8 + TOPIC_COUNT * 8); // more NPC topics
+    hook_call(0x476a43, write_new_npc_text, 13);
+    hook_call(0x447bee, display_new_npc_text, 7);
+    hook_call(0x447c0d, display_new_npc_text_2, 7);
+    hook_call(0x447c65, display_new_npc_text, 7);
 }
 
 // Our implementation of stat-changing routines for the new game screen.
@@ -10342,6 +10406,29 @@ static void __declspec(naked) lich_vampiric_touch(void)
       }
 }
 
+// In vanilla the interface only changed color after the arbiter movie.
+// As there are now other ways to choose a path, let's set it along with qbit.
+static void __declspec(naked) set_light_dark_path(void)
+{
+    asm
+      {
+        xor ecx, ecx
+        cmp esi, QBIT_LIGHT_PATH - 1
+        je light
+        cmp esi, QBIT_DARK_PATH - 1
+        jne skip
+        mov ecx, 2 ; dark
+        light:
+        mov dword ptr [0xacd6c0], ecx ; alignment
+        mov edx, 1
+        call dword ptr ds:reset_interface
+        skip:
+        mov eax, esi ; replaced code
+        mov ecx, 8 ; also replaced code
+        ret
+      }
+}
+
 // Make light and dark promotions more distinct.
 static inline void class_changes(void)
 {
@@ -10436,6 +10523,7 @@ static inline void class_changes(void)
     patch_byte(0x439914, 0x01); // mov -> add
     // Enable class hints on the stats screen.
     patch_dword(0x418088, dword(0x418088) + 8);
+    hook_call(0x44a8c8, set_light_dark_path, 5);
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
@@ -10470,7 +10558,7 @@ BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
         ranged_blasters();
         wand_charges();
         damage_messages();
-        npc_greetings();
+        npc_dialog();
         racial_traits();
         class_changes();
       }

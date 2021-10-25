@@ -571,10 +571,21 @@
 570	Traitor!
 571	Shrine
 572	Challenges
-573	Before you go…
-574	Dragon Scale Armor
-575	Make Plate for 4000 Gold
-576	Make Shield for 2000 Gold					
-577	Sell Scales for 2500 Gold					
-578	Is it done yet?					
-579						
+573	Before you go…	Lantern quest holy water hint
+574	Dragon Scale Armor	RDSM crafter
+575	Make Plate for 4000 Gold	RDSM crafter
+576	Make Shield for 2000 Gold	RDSM crafter
+577	Sell Scales for 2500 Gold	RDSM crafter
+578	Is it done yet?	RDSM crafter
+579	An invitation…	Good ambassador (probatory access)
+580	An invitation…	Evil ambassador (probatory access)
+581	Arbiter	Good ambassador (new judge)
+582	Arbiter	Evil ambassador (new judge)
+583	Ally with Bracada	Gavin Magnus (probatory access)
+584	Ally with Deyja	Archibald (probatory access)
+585	Accept Offer	Gavin Magnus (double-cross offer)
+586	Reject Offer	Gavin Magnus (double-cross offer)
+587	Accept Offer	Archibald (double-cross offer)
+588	Reject Offer	Archibald (double-cross offer)
+589	Ancient Weapon	Robert the Wise (loyalty bonus)
+590	Ancient Weapon	Tolberti (loyalty bonus)

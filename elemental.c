@@ -608,9 +608,9 @@ enum profession
 };
 
 // New max number of global.evt comands (was 4400 before).
-#define GLOBAL_EVT_LINES 5050
+#define GLOBAL_EVT_LINES 5250
 // New max size of global.evt itself (was 46080 bytes before).
-#define GLOBAL_EVT_SIZE 50000
+#define GLOBAL_EVT_SIZE 52000
 
 enum race
 {
@@ -648,9 +648,9 @@ struct __attribute__((packed)) spcitem
 // new NPC greeting count (starting from 1)
 #define GREET_COUNT 220
 // new NPC topic count
-#define TOPIC_COUNT 590
+#define TOPIC_COUNT 592
 // count of added NPC text entries
-#define NEW_TEXT_COUNT 2
+#define NEW_TEXT_COUNT 6
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658
@@ -10430,6 +10430,36 @@ static void __declspec(naked) set_light_dark_path(void)
       }
 }
 
+// A rewritten check for whether aligned relics can be equipped.
+// Now, for fully promoted PCs, alignment of the class is checked,
+// rather than the overall path choice.  For unpromoted characters
+// it's still the latter, except ones who already took an aligned
+// promotion quest: it will prevent equipping relics cross-aligned
+// to the upcoming promotion, but not allow coaligned relics by itself.
+// The exception is to prevent the situation when a PC can no longer use
+// an equipped item after a promotion (we could force-remove it, but...)
+static int __fastcall equip_aligned_relic(struct player *player, int align)
+{
+    // Promotion quests sorted by alignment and class.
+    static const int quests[2][9] = { {33, 19, 28, 24, 30, 39, 42, 54, 47},
+                                      {35, 21, 29, 26, 32, 38, 44, 55, 48} };
+    switch (player->class % 4)
+      {
+        case 3:
+            return align == QBIT_DARK_PATH;
+        case 2:
+            return align == QBIT_LIGHT_PATH;
+        case 1:
+            if (check_qbit(QBITS,
+                           quests[align==QBIT_LIGHT_PATH][player->class/4]))
+                return 0;
+            /* else fallthrough */
+        case 0:
+        default:
+            return check_qbit(QBITS, align);
+      }
+}
+
 // Make light and dark promotions more distinct.
 static inline void class_changes(void)
 {
@@ -10528,6 +10558,7 @@ static inline void class_changes(void)
     // Make Masters a little bit more magic-capable.
     CLASS_HP_FACTORS[CLASS_MASTER] = 7;
     CLASS_SP_FACTORS[CLASS_MASTER] = 2;
+    hook_call(0x492c8d, equip_aligned_relic, 10);
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

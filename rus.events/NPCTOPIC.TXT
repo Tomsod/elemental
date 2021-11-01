@@ -589,3 +589,5 @@
 588	Отказаться	Archibald (double-cross offer)
 589	Древнее оружие	Robert the Wise (loyalty bonus)
 590	Древнее оружие	Tolberti (loyalty bonus)
+591	Предложение Арчибальда	Gavin Magnus (loyalty bonus)
+592	Предложение Гэвина Магнуса	Archibald (loyalty bonus)

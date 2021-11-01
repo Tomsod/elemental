@@ -589,3 +589,5 @@
 588	Reject Offer	Archibald (double-cross offer)
 589	Ancient Weapon	Robert the Wise (loyalty bonus)
 590	Ancient Weapon	Tolberti (loyalty bonus)
+591	Archibald's Offer	Gavin Magnus (loyalty bonus)
+592	Gavin Magnus's Offer	Archibald (loyalty bonus)

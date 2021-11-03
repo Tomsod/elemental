@@ -5531,6 +5531,7 @@ static inline void expand_global_evt(void)
 // If a PC's health is above maximum, cancel all health regeneration
 // and decrease excess HP by 25% instead.  Zombies and jar-less liches
 // are considered to only have half their normal maximum HP.
+// Also here: let GM Bodybuilding grant regeneration.
 static void __declspec(naked) hp_burnout(void)
 {
     asm
@@ -5549,11 +5550,22 @@ static void __declspec(naked) hp_burnout(void)
         push 0x493d93 ; skip hp regen code
         ret 4
         no_burnout:
+        mov ecx, esi
+        push SKILL_BODYBUILDING
+        call dword ptr ds:get_skill
+        cmp eax, SKILL_GM
+        jb no_bb_regen
+        and eax, SKILL_MASK
+        xor edx, edx
+        mov ecx, 5
+        div ecx
+        add ebx, eax
+        no_bb_regen:
         test ebx, ebx
-        jz no_item_regen
+        jz no_regen
         mov eax, dword ptr [esi+112] ; replaced code
         ret
-        no_item_regen:
+        no_regen:
         push 0x493d1e ; replaced jump
         ret 4
       }
@@ -5570,6 +5582,7 @@ static void __declspec(naked) mp_regen_chunk(void)
 
 // Like with HP above, decrease excess SP by 25% instead of regeneration.
 // Jar-less liches have halved maximum, zombies can hold no SP.
+// Also here: handle SP regen from GM Meditation.
 static void __declspec(naked) sp_burnout(void)
 {
     asm
@@ -5584,12 +5597,28 @@ static void __declspec(naked) sp_burnout(void)
         shr eax, 1 ; jar-less liches have half sp
         compare_sp:
         sub eax, dword ptr [esi+6464] ; current sp
-        jge quit
+        jg meditation_regen
+        je quit
         sar eax, 2 ; 25%, rounded up
         add dword ptr [esi+6464], eax ; burnout
         quit:
         push 0x493f3a ; skip old lich/zombie code
         ret
+        meditation_regen:
+        mov edi, eax
+        mov ecx, esi
+        push SKILL_MEDITATION
+        call dword ptr ds:get_skill
+        cmp eax, SKILL_GM
+        jb quit
+        and eax, SKILL_MASK
+        xor edx, edx
+        mov ecx, 6
+        div ecx
+        cmp eax, edi
+        cmova eax, edi
+        add dword ptr [esi+6464], eax
+        jmp quit
       }
 }
 
@@ -10561,6 +10590,16 @@ static inline void class_changes(void)
     hook_call(0x492c8d, equip_aligned_relic, 10);
 }
 
+// Tweak various skill effects.
+static inline void skill_changes(void)
+{
+    // bodybuilding regen bonus is calculated in hp_burnout() above
+    patch_word(0x493cdd, 0x9e01); // inc -> add ebx (= bonus)
+    patch_byte(0x491087, 3); // remove previous GM bonus
+    // meditation SP regen is in sp_burnout() above
+    patch_byte(0x4910b2, 3); // remove old GM bonus
+}
+
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
                     LPVOID const reserved)
 {
@@ -10596,6 +10635,7 @@ BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
         npc_dialog();
         racial_traits();
         class_changes();
+        skill_changes();
       }
     return TRUE;
 }

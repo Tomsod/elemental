@@ -804,6 +804,8 @@ static funcptr_t get_text_width = (funcptr_t) 0x44c52e;
 static int __thiscall (*get_base_level)(void *player) = (funcptr_t) 0x48c8dc;
 static int __thiscall (*is_bare_fisted)(void *player) = (funcptr_t) 0x48d65c;
 static funcptr_t reset_interface = (funcptr_t) 0x422698;
+static int __thiscall(*get_perception_bonus)(void *player)
+    = (funcptr_t) 0x491252;
 
 //---------------------------------------------------------------------------//
 
@@ -6509,7 +6511,6 @@ static int __stdcall check_skill(int player, int skill, int level, int mastery)
     switch (skill)
       {
         // skills that are 100% at GM
-        case SKILL_PERCEPTION:
         case SKILL_IDENTIFY_ITEM:
         case SKILL_REPAIR:
         case SKILL_DISARM_TRAPS:
@@ -6521,9 +6522,14 @@ static int __stdcall check_skill(int player, int skill, int level, int mastery)
                 break;
               }
             /* else fall through */
-        // skills that are x1/2/3/5 dep. on mastery
+        // these two cap at x3 now
         case SKILL_BODYBUILDING:
         case SKILL_MEDITATION:
+            if (current_mastery == GM)
+                current_mastery = MASTER;
+            /* fall through */
+        // skills that are x1/2/3/5 dep. on mastery
+        case SKILL_PERCEPTION:
         case SKILL_LEARNING:
         case SKILL_STEALING:
             if (current_mastery == GM)
@@ -10590,6 +10596,51 @@ static inline void class_changes(void)
     hook_call(0x492c8d, equip_aligned_relic, 10);
 }
 
+// Let the Perception skill increase gold looted from monsters.
+static void __declspec(naked) perception_bonus_gold(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [0x507a6c] ; current player
+        dec ecx
+        jl no_player
+        mov ecx, dword ptr [0xa74f48+ecx*4] ; player pointers
+        call dword ptr ds:get_perception_bonus
+        mov edx, dword ptr [ebp-4] ; gold
+        mov ecx, 50
+        add eax, ecx
+        mul edx
+        div ecx
+        mov dword ptr [ebp-4], eax
+        no_player:
+        mov ecx, dword ptr [ebp-4] ; replaced code
+        xor edx, edx ; replaced code
+        ret
+      }
+}
+
+// Also let it increase item drop odds.
+static void __declspec(naked) perception_extra_item(void)
+{
+    asm
+      {
+        xor esi, esi
+        mov ecx, dword ptr [0x507a6c] ; current player
+        dec ecx
+        jl no_player
+        mov ecx, dword ptr [0xa74f48+ecx*4] ; player pointers
+        call dword ptr ds:get_perception_bonus
+        lea esi, [eax+eax]
+        no_player:
+        call dword ptr ds:random
+        xor edx, edx
+        lea ecx, [esi+100]
+        div ecx
+        sub edx, esi
+        ret
+      }
+}
+
 // Tweak various skill effects.
 static inline void skill_changes(void)
 {
@@ -10598,6 +10649,9 @@ static inline void skill_changes(void)
     patch_byte(0x491087, 3); // remove previous GM bonus
     // meditation SP regen is in sp_burnout() above
     patch_byte(0x4910b2, 3); // remove old GM bonus
+    hook_call(0x426a82, perception_bonus_gold, 5);
+    hook_call(0x426c02, perception_extra_item, 11);
+    erase_code(0x491276, 12); // remove 100% chance on GM
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

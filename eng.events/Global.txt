@@ -90,7 +90,7 @@ Global Text
 87	Fire
 88	Identify Monster
 89	Armsmaster
-90	Stealing
+90	Thievery
 91	Friday
 92	Full
 93	Game Options

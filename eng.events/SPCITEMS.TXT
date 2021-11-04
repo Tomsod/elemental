@@ -62,7 +62,7 @@ Adds 10-20 points of Fire damage and +25 Might.	of The Dragon	10	10	10	0	0	0	0	0
 Increased Value.	Antique	10	10	10	10	10	10	0	0	10	0	10	10	X 10	B	Gold value increased
 Increased Weapon speed.	Swift	25	25	25	0	0	0	0	0	0	0	0	0	X 2	B	(-20) pts on weapon speed
 +3 Unarmed and Dodging skills.	Monks'	0	0	0	0	0	0	10	5	15	10	5	5	1500	C	+3 to Dodging and Unarmed skill
-+3 Stealing and Disarm skills.	Thieves'	0	0	0	0	0	0	5	5	20	5	15	5	1500	B	+3 to Stealing and Disarm skill
++3 Thievery and Disarm skills.	Thieves'	0	0	0	0	0	0	5	5	20	5	15	5	1500	B	+3 to Stealing and Disarm skill
 +3 ID Item and ID Monster skills.	of Identifying	0	0	0	0	0	0	5	5	0	5	10	15	1500	A	+3 to ID Monster and ID Item skill
 Double Damage vs. Elves.	Elf Slaying	20	20	20	0	0	0	0	0	0	0	0	0	x2	A	"x2 damage on all Elf Archers, Elf Spearmen, Elf peasants (male and female)."
 Additional Damage to Undead, and can hit Ghosts.	Undead Slaying	20	20	20	0	0	0	0	0	0	0	0	0	x2	B	"x1.5 Holy damage on Liches, Vampires, Zombies, Skeletons, Ghosts, and Wights"

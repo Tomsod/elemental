@@ -19,7 +19,7 @@ Poison Resistance	of Poison Resistance	10	10	5	0	10	15	5	10	10
 Mind Resistance	of Mind Resistance	10	10	5	0	10	15	5	10	10					
 Magic Resistance	of Magic Resistance	10	10	5	0	10	15	5	10	10					
 Alchemy skill	of Alchemy	0	0	0	5	5	0	5	10	15					
-Stealing skill	of Stealing	0	0	0	5	5	20	5	15	5					
+Thievery skill	of Thievery	0	0	0	5	5	20	5	15	5					
 Disarm skill	of Disarming	0	0	0	5	5	20	5	15	5					
 ID Item skill	of Items	0	0	0	5	5	0	5	10	15					
 ID Monster skill	of Monsters	0	0	0	5	5	0	5	10	15					

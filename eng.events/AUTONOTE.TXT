@@ -184,8 +184,8 @@ Note bit	Autonote Text	Category
 183	"The Grandmaster of the Identify Monster Skill, Raven the Hunter, can be found in a small village to the south of Harmondale."	teacher
 184	"The Master tutor of the Armsmaster Skill, Paula Brightspear, lives in the elven territory of Avlee.  Her home is in the city in the northeast."	teacher
 185	"The Grandmaster of the Armsmaster Skill, Lasiter the Slayer, makes his home in the eastern region of Eeofol."	teacher
-186	"The Master tutor of the Stealing Skill, Leane Shadowrunner, makes her home in the goblin village in the eastern region of the Deyja."	teacher
-187	"The Grandmaster teacher of the art of Stealing, Everil Nightwalker, can be found in the swampy delta of the southern region of Tatalia."	teacher
+186	"The Master tutor of the Thievery Skill, Leane Shadowrunner, makes her home in the goblin village in the eastern region of the Deyja."	teacher
+187	"The Grandmaster teacher of the art of Thievery, Everil Nightwalker, can be found in the swampy delta of the southern region of Tatalia."	teacher
 188	"The Master of Alchemy, Elzbet Winterspoon, can be found in the western region of Nighon."	teacher
 189	"The Grandmaster instructor of Alchemy, Lucid Apple, can be found in the elven territory of Avlee.  His home is on an island somewhere in the central bay."	teacher
 190	"The Master of Learning, Dorothy Senjac, can be found in the southeast region of Nighon."	teacher

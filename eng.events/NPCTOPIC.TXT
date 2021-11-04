@@ -300,9 +300,9 @@
 299	Armsmaster Expert
 300	Armsmaster Master
 301	Armsmaster Grandmaster
-302	Stealing Expert
-303	Stealing Master
-304	Stealing Grandmaster		
+302	Thievery Expert
+303	Thievery Master
+304	Thievery Grandmaster		
 305	Alchemy Expert		
 306	Alchemy Master		
 307	Alchemy Grandmaster		

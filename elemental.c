@@ -410,7 +410,7 @@ enum skills
     SKILL_PERCEPTION = 26,
     SKILL_DISARM_TRAPS = 29,
     SKILL_IDENTIFY_MONSTER = 32,
-    SKILL_STEALING = 34,
+    SKILL_THIEVERY = 34,
     SKILL_ALCHEMY = 35,
     SKILL_LEARNING = 36,
     SKILL_NONE = 37, // used by clubs
@@ -1891,6 +1891,11 @@ static void __declspec(naked) temp_bane_melee_2(void)
 {
     asm
       {
+        test byte ptr [esp+40], 4 ; 1st param, double damage flag
+        jz check_bane
+        xor eax, eax ; double damage doesn`t stack
+        ret
+        check_bane:
         push 0 ; undead flag
         cmp ebp, CORSAIR
         je backstab
@@ -1901,7 +1906,7 @@ static void __declspec(naked) temp_bane_melee_2(void)
         cmp eax, SPC_ASSASSINS
         jne no_backstab
         backstab:
-        test dword ptr [esp+40], 2 ; 1st param, backstab bit
+        test byte ptr [esp+44], 2 ; 1st param, backstab bit
         mov eax, 1 ; return true
         jnz quit
         no_backstab:
@@ -6531,7 +6536,7 @@ static int __stdcall check_skill(int player, int skill, int level, int mastery)
         // skills that are x1/2/3/5 dep. on mastery
         case SKILL_PERCEPTION:
         case SKILL_LEARNING:
-        case SKILL_STEALING:
+        case SKILL_THIEVERY:
             if (current_mastery == GM)
                 current_mastery++;
             current_skill *= current_mastery;
@@ -7478,7 +7483,8 @@ static void __declspec(naked) soul_stealing_weapon(void)
 }
 
 // If the monster can be backstabbed, add 2 to the first parameter
-// of melee damage function.
+// of melee damage function.  If skill-based backstab triggers,
+// add 4 instead.
 static void __declspec(naked) check_backstab(void)
 {
     asm
@@ -7488,6 +7494,33 @@ static void __declspec(naked) check_backstab(void)
         test dh, 6 ; we want no more than +/-512 mod 2048 difference
         jnp quit ; PF == 1 will match 0x000 and 0x110 only
         add dword ptr [esp+4], 2 ; backstab flag
+        push SKILL_THIEVERY
+        call dword ptr ds:get_skill
+        mov edx, eax
+        and edx, SKILL_MASK
+        jz no_thievery
+        mov ecx, edx
+        cmp eax, SKILL_EXPERT
+        jb roll
+        add edx, ecx
+        cmp eax, SKILL_MASTER
+        jb roll
+        add edx, ecx
+        cmp eax, SKILL_GM
+        jb roll
+        lea edx, [edx+ecx*2]
+        roll:
+        push edx
+        call dword ptr ds:random
+        xor edx, edx
+        mov ecx, 100
+        div ecx
+        pop ecx
+        cmp edx, ecx
+        jae no_thievery
+        add dword ptr [esp+4], 2 ; 4 = double total damage flag
+        no_thievery:
+        mov ecx, edi ; restore
         quit:
         mov dword ptr [ebp-8], 4 ; replaced code
         ret
@@ -7501,7 +7534,7 @@ static void __declspec(naked) melee_might_check_chunk(void)
 {
     asm
       {
-        and dword ptr [esp+36], 1
+        test byte ptr [esp+36], 1
       }
 }
 
@@ -10641,6 +10674,22 @@ static void __declspec(naked) perception_extra_item(void)
       }
 }
 
+// Double total melee damage if the flag is set.
+// Currently used by Thievery backstab.
+static void __declspec(naked) double_total_damage(void)
+{
+    asm
+      {
+        add esi, eax ; replaced code, sorta
+        add esi, ebx ; ditto
+        test byte ptr [esp+40], 4
+        jz no_double
+        add esi, esi
+        no_double:
+        ret
+      }
+}
+
 // Tweak various skill effects.
 static inline void skill_changes(void)
 {
@@ -10652,6 +10701,8 @@ static inline void skill_changes(void)
     hook_call(0x426a82, perception_bonus_gold, 5);
     hook_call(0x426c02, perception_extra_item, 11);
     erase_code(0x491276, 12); // remove 100% chance on GM
+    // thievery backstab is checked in check_backstab() above
+    hook_call(0x48d087, double_total_damage, 5);
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

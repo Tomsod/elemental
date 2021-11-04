@@ -10690,6 +10690,30 @@ static void __declspec(naked) double_total_damage(void)
       }
 }
 
+// Let potions be brewable even without the requisite Alchemy skill,
+// but with a possibility of explosion (up to 83% for black).
+static void __declspec(naked) lenient_alchemy(void)
+{
+    asm
+      {
+        push eax
+        call dword ptr ds:random
+        xor edx, edx
+        mov ecx, 6
+        div ecx
+        dec edx
+        pop eax
+        cmp eax, edx
+        cmovl eax, edx
+        cmp edx, ebx ; ebx == 0
+        jbe quit
+        inc dword ptr [ebp-44] ; alchemy flag
+        quit:
+        mov ecx, dword ptr [MOUSE_ITEM] ; replaced code
+        ret
+      }
+}
+
 // Tweak various skill effects.
 static inline void skill_changes(void)
 {
@@ -10703,6 +10727,7 @@ static inline void skill_changes(void)
     erase_code(0x491276, 12); // remove 100% chance on GM
     // thievery backstab is checked in check_backstab() above
     hook_call(0x48d087, double_total_damage, 5);
+    hook_call(0x4162ac, lenient_alchemy, 6);
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

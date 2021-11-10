@@ -569,7 +569,7 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 567	null	_artifact567	0	0	0	0	0	0	0	_artifact567	0	0	0	0	0	Description here.
 568	null	_artifact568	0	0	0	0	0	0	0	_artifact568	0	0	0	0	0	Description here.
 569	null	_artifact569	0	0	0	0	0	0	0	_artifact569	0	0	0	0	0	Description here.
-570	item007	The DeathBlade	666	Weapon2	Sword	4d5	2	Special	6	Two-Handed Sword	2	of Vigor	50	0	0	For testing… remove before final release.
+570	item007	The DeathBlade	666	Weapon2	Sword	4d5	200	Special	0	Two-Handed Sword	2	of Darkness	0	16	142	For testing only!
 571	null	_artifact571	0	0	0	0	0	0	0	_artifact571	0	0	0	0	0	Description here.
 572	null	_artifact572	0	0	0	0	0	0	0	_artifact572	0	0	0	0	0	Description here.
 573	null	_artifact573	0	0	0	0	0	0	0	_artifact573	0	0	0	0	0	Description here.

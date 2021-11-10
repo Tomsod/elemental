@@ -546,6 +546,7 @@ enum spells
     SPL_ARMAGEDDON = 98,
     LAST_REAL_SPELL = 99,
     SPL_ARROW = 100, // pseudo-spell for bows
+    SPL_BLASTER = 102, // ditto for blasters
     SPL_FATE = 103, // was 47
     // new pseudo-spells
     SPL_FLAMING_POTION = 104,
@@ -559,11 +560,24 @@ struct __attribute__((packed)) map_monster
 {
     SKIP(36);
     uint32_t bits;
-    SKIP(37);
+    uint16_t hp;
+    SKIP(35);
     uint8_t spell1;
     SKIP(7);
     uint8_t holy_resistance;
-    SKIP(126);
+    SKIP(22);
+    uint32_t max_hp;
+    SKIP(26);
+    uint16_t height;
+    SKIP(2);
+    int16_t x;
+    int16_t y;
+    int16_t z;
+    SKIP(28);
+    uint16_t ai_state;
+    SKIP(5);
+    uint8_t eradicated_flag; // was padding
+    SKIP(28);
     struct spell_buff spell_buffs[22];
     SKIP(272);
 };
@@ -644,6 +658,8 @@ struct __attribute__((packed)) spcitem
 #define MBUFF_CURSED 0
 // vanilla
 #define MBUFF_FEAR 4
+// also used for eradication in the mod
+#define MBUFF_MASS_DISTORTION 10
 
 // new NPC greeting count (starting from 1)
 #define GREET_COUNT 220
@@ -667,6 +683,22 @@ struct __attribute__((packed)) spcitem
 // exposed as "Class Skills.txt"
 #define CLASS_SKILLS_ADDR 0x4ed818
 #define CLASS_SKILLS ((uint8_t (*)[SKILL_COUNT]) CLASS_SKILLS_ADDR)
+
+// Projectiles, items on the ground, etc.
+struct __attribute__((packed)) map_object
+{
+    uint16_t type;
+    uint16_t index;
+    uint32_t x;
+    uint32_t y;
+    uint32_t z;
+    SKIP(20);
+    struct item item;
+    uint32_t spell_type;
+    SKIP(36);
+};
+
+#define AI_REMOVED 11
 
 static int __cdecl (*uncased_strcmp)(const char *left, const char *right)
     = (funcptr_t) 0x4caaf0;
@@ -795,7 +827,7 @@ static int (*new_game_get_bonus)(void) = (funcptr_t) 0x49090b;
 static int __thiscall (*get_level)(void *player) = (funcptr_t) 0x48c8f3;
 static int __thiscall (*get_bodybuilding_bonus)(void *player)
     = (funcptr_t) 0x491075;
-static int __thiscall(*get_meditation_bonus)(void *player)
+static int __thiscall (*get_meditation_bonus)(void *player)
     = (funcptr_t) 0x4910a0;
 static int __thiscall (*get_stat_bonus_from_items)(void *player, int stat,
                                                    int ignore_offhand)
@@ -804,8 +836,14 @@ static funcptr_t get_text_width = (funcptr_t) 0x44c52e;
 static int __thiscall (*get_base_level)(void *player) = (funcptr_t) 0x48c8dc;
 static int __thiscall (*is_bare_fisted)(void *player) = (funcptr_t) 0x48d65c;
 static funcptr_t reset_interface = (funcptr_t) 0x422698;
-static int __thiscall(*get_perception_bonus)(void *player)
+static int __thiscall (*get_perception_bonus)(void *player)
     = (funcptr_t) 0x491252;
+static int __thiscall (*find_objlist_item)(void *this, int id)
+    = (funcptr_t) 0x42eb1e;
+#define OBJLIST_THIS ((void *) 0x680630)
+static int __thiscall (*launch_object)(struct map_object *object,
+                                       int direction, int speed, int player)
+    = (funcptr_t) 0x42f5c9;
 
 //---------------------------------------------------------------------------//
 
@@ -1763,12 +1801,27 @@ static void __declspec(naked) temp_elem_damage(void)
       }
 }
 
+// Defined below.
+static void __stdcall blaster_eradicate(struct player *, struct map_monster *,
+                                        struct map_object *);
+
 // The projectile damage code needs an extra instruction.
+// Also here: check for blaster eradication.
 static void __declspec(naked) bow_temp_damage(void)
 {
     asm
       {
         and dword ptr [ebp-12], 0
+        push eax
+        push ecx
+        push edx
+        push ebx
+        push esi
+        push edi
+        call blaster_eradicate
+        pop edx
+        pop ecx
+        pop eax
         jmp temp_elem_damage
       }
 }
@@ -8426,6 +8479,7 @@ static inline void ranged_blasters(void)
     hook_call(0x48d24d, check_missile_skill, 7);
     hook_call(0x48d2ab, check_missile_skill_2, 6);
     hook_call(0x4282e6, blaster_ranged_recovery, 5);
+    patch_dword(0x4283ac, 0x1950); // attach missile weapon to blaster proj
     // displaying the damage range
     patch_dword(0x48d382, 0x1950); // check missile slot for blasters
     patch_byte(0x48d39d, 31); // ranged damage min stat
@@ -10714,6 +10768,161 @@ static void __declspec(naked) lenient_alchemy(void)
       }
 }
 
+// Length of blaster eradication animation.
+#define ERAD_TIME 64
+// The animation for the central explosion (temporary).
+#define BERZERK 6060
+
+// Let a GM blaster shot have a small chance to eradicate the target,
+// killing it without leaving a corpse.  For testing purposes,
+// blasters of Carnage (unobtainable) always trigger this effect.
+// Called from bow_temp_damage() above.
+static void __stdcall blaster_eradicate(struct player *player,
+                                        struct map_monster *monster,
+                                        struct map_object *projectile)
+{
+    if (projectile->spell_type != SPL_BLASTER)
+        return;
+    int skill = get_skill(player, SKILL_BLASTER);
+    if (skill > SKILL_GM && (skill & SKILL_MASK) > random() % 200
+        && monster->hp <= random() % monster->max_hp
+        && monster_resists_condition(monster, MAGIC)
+        || projectile->item.bonus2 == SPC_CARNAGE)
+      {
+        monster->spell_buffs[MBUFF_MASS_DISTORTION].expire_time
+        // same var as for actual mdist, seems to be some anim timer
+            = dword(0x50ba5c) + ERAD_TIME;
+        monster->eradicated_flag = 1;
+        monster->hp = 0;
+        struct map_object anim = { BERZERK,
+                                   find_objlist_item(OBJLIST_THIS, BERZERK),
+                                   monster->x, monster->y,
+                                   monster->z + monster->height / 2 };
+        launch_object(&anim, 0, 0, 0);
+      }
+}
+
+// Debuffs are usually removed from a dying monster.  Prevent this
+// for Mass Distortion, which is more of a visual effect, and which
+// is reused by the mod for the eradication death animation.
+static void __declspec(naked) preserve_mdist_on_death(void)
+{
+    asm
+      {
+        cmp ebx, 12 ; counter
+        je skip
+        jmp dword ptr ds:remove_buff ; replaced call
+        skip:
+        ret
+      }
+}
+
+// Animate the blaster eradication by shrinking the monster into nothingness.
+// It's probably the best SFX possible here without rewriting the engine.
+static void __thiscall draw_eradication(struct map_monster *monster,
+                                        uint32_t *sprite_params)
+{
+    double scale = (monster->spell_buffs[MBUFF_MASS_DISTORTION].expire_time
+                   - dword(0x50ba5c) /* anim timer */) / (double) ERAD_TIME;
+    sprite_params[0] = sprite_params[0] * scale; // sprite width
+    sprite_params[1] = sprite_params[1] * scale; // sprite height
+}
+
+// Hook for the above.
+static void __declspec(naked) draw_erad_hook(void)
+{
+    asm
+      {
+        cmp byte ptr [ecx+183], 0 ; eradicated flag
+        jnz draw
+        cmp dword ptr [ecx+372], eax ; replaced code
+        ret
+        draw:
+        push esi
+        call draw_eradication
+        xor eax, eax ; set zf
+        ret
+      }
+}
+
+// Same, but for ouside maps.
+static void __declspec(naked) draw_erad_hook_out(void)
+{
+    asm
+      {
+        cmp byte ptr [edi+37], 0 ; eradicated flag
+        jnz draw
+        cmp dword ptr [edi+226], edx ; replaced code
+        ret
+        draw:
+        push ecx ; preserve
+        lea ecx, [edi-146]
+        push esi
+        call draw_eradication
+        xor eax, eax ; set zf
+        pop ecx
+        ret
+      }
+}
+
+// To have the monster appear to shink inwards, we also need to adjust
+// its Z-coord for drawing purposes.  This is done a bit earlier.
+// Also here: remove the corpse (has to be here, before the LOS check).
+static int __thiscall get_erad_mon_z(struct map_monster *monster)
+{
+    if (monster->spell_buffs[MBUFF_MASS_DISTORTION].expire_time <= 0
+        || !monster->eradicated_flag)
+        return 0;
+    int time = monster->spell_buffs[MBUFF_MASS_DISTORTION].expire_time
+               - dword(0x50ba5c); // anim timer
+    if (time <= 0)
+        monster->ai_state = AI_REMOVED; // no corpse
+    return (1.0 - time / (double) ERAD_TIME) * 0.8 * monster->height;
+}
+
+// Hook for the above.
+static void __declspec(naked) erad_z_hook(void)
+{
+    asm
+      {
+        lea ecx, [edi-36]
+        call get_erad_mon_z
+        add dword ptr [esp+12], eax
+        push 0x43668c ; replaced call
+        ret
+      }
+}
+
+// Same, but for outside maps.
+static void __declspec(naked) erad_z_hook_out(void)
+{
+    asm
+      {
+        lea ecx, [edi-146]
+        push eax ; preserve
+        call get_erad_mon_z
+        add esi, eax
+        pop eax
+        cmp dword ptr [0x507b74], 0 ; replaced code
+        ret
+      }
+}
+
+// Prevent the monster from being affected by gravity etc.
+// during the eradication animation.
+static void __declspec(naked) erad_stop_moving(void)
+{
+    asm
+      {
+        cmp byte ptr [esi+183], 1 ; eradicated flag
+        jz quit
+        mov ax, word ptr [esi+176] ; replaced code
+        cmp ax, AI_REMOVED ; replaced code
+        quit:
+        ret
+      }
+}
+
 // Tweak various skill effects.
 static inline void skill_changes(void)
 {
@@ -10728,6 +10937,13 @@ static inline void skill_changes(void)
     // thievery backstab is checked in check_backstab() above
     hook_call(0x48d087, double_total_damage, 5);
     hook_call(0x4162ac, lenient_alchemy, 6);
+    hook_call(0x402e18, preserve_mdist_on_death, 5);
+    hook_call(0x4401df, draw_erad_hook, 6);
+    hook_call(0x47b9ee, draw_erad_hook_out, 6);
+    hook_call(0x43ffe1, erad_z_hook, 5);
+    hook_call(0x47b66d, erad_z_hook_out, 7);
+    hook_call(0x470707, erad_stop_moving, 11);
+    patch_byte(0x48fd08, 3); // remove old blaster GM bonus
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

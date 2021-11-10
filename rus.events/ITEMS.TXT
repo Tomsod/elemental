@@ -569,7 +569,7 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 567	null	_artifact567	0	0	0	0	0	0	0	_artifact567	0	0	0	0	0	Описание здесь.		
 568	null	_artifact568	0	0	0	0	0	0	0	_artifact568	0	0	0	0	0	Описание здесь.		
 569	null	_artifact569	0	0	0	0	0	0	0	_artifact569	0	0	0	0	0	Описание здесь.		
-570	item007	Лезвие Смерти	666	Weapon2	Sword	4d5	2	Special	6	Двуручный меч	2	Бодрости	50	0	0	Для тестирования… удалён перед финальным выпуском.		
+570	item007	Лезвие Смерти	666	Weapon2	Sword	4d5	200	Special	0	Двуручный меч	2	Темноты	0	16	142	Только для тестирования!
 571	null	_artifact571	0	0	0	0	0	0	0	_artifact571	0	0	0	0	0	Описание здесь.		
 572	null	_artifact572	0	0	0	0	0	0	0	_artifact572	0	0	0	0	0	Описание здесь.		
 573	null	_artifact573	0	0	0	0	0	0	0	_artifact573	0	0	0	0	0	Описание здесь.		

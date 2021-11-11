@@ -1625,7 +1625,8 @@ static void __declspec(naked) mix_new_potions_1(void)
       }
 }
 
-// Ditto.
+// Ditto, but substitute Pure Might instead if mixing two different
+// new potions.  Otherwise they wouldn't explode (nor mix at all).
 static void __declspec(naked) mix_new_potions_2(void)
 {
     asm
@@ -1634,6 +1635,13 @@ static void __declspec(naked) mix_new_potions_2(void)
         jg quit
         cmp edx, LAST_OLD_POTION
         jng quit
+        cmp edx, dword ptr [MOUSE_ITEM]
+        je okay
+        cmp ecx, LAST_OLD_POTION
+        jne okay
+        mov edx, LAST_OLD_POTION - 1
+        ret ; zf is set
+        okay:
         mov edx, LAST_OLD_POTION
         cmp edx, edx
         quit:

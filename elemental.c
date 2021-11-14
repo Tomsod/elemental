@@ -844,6 +844,7 @@ static int __thiscall (*find_objlist_item)(void *this, int id)
 static int __thiscall (*launch_object)(struct map_object *object,
                                        int direction, int speed, int player)
     = (funcptr_t) 0x42f5c9;
+static int __thiscall (*item_value)(struct item *item) = (funcptr_t) 0x45646e;
 
 //---------------------------------------------------------------------------//
 
@@ -1449,7 +1450,7 @@ static inline void undead_immunities(void)
     erase_code(0x419053, 51); // old body immunity code
 }
 
-#define NEW_STRING_COUNT 39
+#define NEW_STRING_COUNT 40
 STATIC char *new_strings[NEW_STRING_COUNT];
 FIX(new_strings);
 
@@ -2041,7 +2042,8 @@ static void __declspec(naked) display_temp_enchant(void)
 }
 
 // New buffer for enchantment data.  Mostly used in spcitems_buffer() below.
-static struct spcitem spcitems[SPC_COUNT];
+STATIC struct spcitem spcitems[SPC_COUNT];
+FIX(spcitems);
 
 // Adjust description screen height to fit the new line.
 // Also compose the line itself while we're at it.
@@ -10931,6 +10933,195 @@ static void __declspec(naked) erad_stop_moving(void)
       }
 }
 
+// Make enchanted items more difficult to ID and repair.
+static void __declspec(naked) raise_ench_item_difficulty(void)
+{
+    asm
+      {
+        xor eax, eax
+        mov ecx, dword ptr [esp+24] ; item
+        cmp dword ptr [ecx+4], 0
+        jz no_std
+        cmp dword ptr [ecx+4], TEMP_ENCH_MARKER
+        je no_std
+        mov eax, dword ptr [ecx+8]
+        add eax, eax
+        mov ecx, 5
+        jmp divide
+        no_std:
+        mov edx, dword ptr [ecx+12]
+        test edx, edx
+        jz no_ench
+        imul edx, edx, 28
+        mov eax, dword ptr [REF(spcitems)+edx-8] ; value
+        cmp eax, 10
+        ja spc
+        add eax, eax
+        jmp no_ench
+        spc:
+        mov ecx, 250
+        divide:
+        xor edx, edx
+        div ecx
+        no_ench:
+        movzx edx, byte ptr [esi+46] ; replaced code, almost
+        add eax, edx
+        cmp edi, eax ; replaced code
+        ret
+      }
+}
+
+// Don't count enchantment cost when trying to sell an un-ID'd item.
+// For wands, cap the cost at base item cost.
+// This will also ignore variable potion cost, but those are always ID'd.
+static void __declspec(naked) unid_item_sell_price(void)
+{
+    asm
+      {
+        test byte ptr [ecx+20], IFLAGS_ID
+        jz unid
+        call dword ptr ds:item_value
+        ret
+        unid:
+        mov edx, dword ptr [ecx]
+        lea eax, [edx+edx*2]
+        shl eax, 4
+        mov eax, dword ptr [ITEMS_TXT_ADDR+eax+16] ; base value
+        cmp edx, FIRST_WAND
+        jb quit
+        cmp edx, LAST_WAND
+        ja quit
+        push eax
+        call dword ptr ds:item_value
+        pop edx
+        cmp eax, edx
+        cmovg eax, edx
+        quit:
+        ret
+
+      }
+}
+
+// Forbid reading an unidentified scroll.
+static void __declspec(naked) read_unid_scroll(void)
+{
+    asm
+      {
+        test byte ptr [MOUSE_ITEM+20], IFLAGS_ID
+        jz unid
+        mov eax, [MOUSE_ITEM] ; replaced code
+        ret
+        unid:
+        mov ecx, dword ptr [new_strings+39*4]
+        mov edx, 2
+        call dword ptr ds:show_status_text
+        push 0
+        push ANIM_ID_FAIL
+        mov ecx, esi
+        call dword ptr ds:show_face_animation
+        push 0x468e87
+        ret 4
+      }
+}
+
+// Same, but for spellbooks.
+static void __declspec(naked) read_unid_book(void)
+{
+    asm
+      {
+        test byte ptr [MOUSE_ITEM+20], IFLAGS_ID
+        jz unid
+        lea edi, [edx-400] ; replaced code
+        ret
+        unid:
+        mov ecx, dword ptr [new_strings+39*4]
+        mov edx, 2
+        call dword ptr ds:show_status_text
+        push 0
+        push ANIM_ID_FAIL
+        mov ecx, esi
+        call dword ptr ds:show_face_animation
+        push 0x468e87
+        ret 4
+      }
+}
+
+// Now that blasters have value, we need to explicitly forbid enchanting them.
+static void __declspec(naked) cant_enchant_blasters(void)
+{
+    asm
+      {
+        cmp eax, BLASTER_RIFLE
+        jg ok
+        cmp eax, BLASTER - 1
+        ret
+        ok:
+        cmp eax, LAST_PREFIX ; replaced code
+        ret
+      }
+}
+
+// Prevent hired smiths from fixing blasters.  Too advanced for them!
+static void __declspec(naked) npcs_cant_repair_blasters(void)
+{
+    asm
+      {
+        cmp eax, BLASTER
+        jz skip
+        cmp eax, BLASTER_RIFLE
+        jz skip
+        push 0x476399 ; hireling check func
+        ret
+        skip:
+        xor eax, eax
+        ret
+      }
+}
+
+// Most shops (except for Celeste and Pit ones) also cannot fix blasters now.
+static void __declspec(naked) shops_cant_repair_blasters(void)
+{
+    asm
+      {
+        cmp dword ptr [ecx], BLASTER
+        je blaster
+        cmp dword ptr [ecx], BLASTER_RIFLE
+        jne ok
+        blaster:
+        cmp edx, 5 ; celeste shop
+        je ok
+        cmp edx, 6 ; pit shop
+        je ok
+        xor eax, eax
+        ret
+        ok:
+        push 0x4bda12 ; replaced call
+        ret
+      }
+}
+
+// Also change the shk message.
+static void __declspec(naked) shops_cant_repair_blasters_msg(void)
+{
+    asm
+      {
+        cmp dword ptr [ebx], BLASTER
+        je blaster
+        cmp dword ptr [ebx], BLASTER_RIFLE
+        je blaster
+        ok:
+        cmp esi, 2 ; replaced code
+        ret
+        blaster:
+        cmp dword ptr [ebp+16], 5 ; celeste shop
+        je ok
+        cmp dword ptr [ebp+16], 6 ; pit shop
+        je ok
+        cmp esi, -1 ; set flags
+        ret
+      }
+}
+
 // Tweak various skill effects.
 static inline void skill_changes(void)
 {
@@ -10952,6 +11143,21 @@ static inline void skill_changes(void)
     hook_call(0x47b66d, erad_z_hook_out, 7);
     hook_call(0x470707, erad_stop_moving, 11);
     patch_byte(0x48fd08, 3); // remove old blaster GM bonus
+    hook_call(0x491135, raise_ench_item_difficulty, 6);
+    hook_call(0x4911d7, raise_ench_item_difficulty, 6);
+    hook_call(0x490fea, unid_item_sell_price, 5);
+    hook_call(0x491038, unid_item_sell_price, 5);
+    hook_call(0x49581c, unid_item_sell_price, 5);
+    hook_call(0x495869, unid_item_sell_price, 5);
+    hook_call(0x4958c6, unid_item_sell_price, 5);
+    hook_call(0x495911, unid_item_sell_price, 5);
+    hook_call(0x4be266, unid_item_sell_price, 5);
+    hook_call(0x468649, read_unid_scroll, 5);
+    hook_call(0x4684ed, read_unid_book, 6);
+    hook_call(0x42ab66, cant_enchant_blasters, 5);
+    hook_call(0x491191, npcs_cant_repair_blasters, 5);
+    hook_call(0x4bdbe6, shops_cant_repair_blasters, 5);
+    hook_call(0x490f91, shops_cant_repair_blasters_msg, 11);
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

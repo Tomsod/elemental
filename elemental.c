@@ -192,6 +192,7 @@ struct __attribute__((packed)) item
 };
 
 #define IFLAGS_ID 1
+#define IFLAGS_BROKEN 2
 
 struct __attribute__((packed)) spell_buff
 {
@@ -201,6 +202,44 @@ struct __attribute__((packed)) spell_buff
     uint16_t overlay_id;
     uint8_t caster;
     uint8_t bits;
+};
+
+enum skill
+{
+    SKILL_MASK = 63,
+    SKILL_EXPERT = 64,
+    SKILL_MASTER = 128,
+    SKILL_GM = 256,
+};
+
+enum skills
+{
+    SKILL_STAFF = 0,
+    SKILL_SWORD = 1,
+    SKILL_DAGGER = 2,
+    SKILL_AXE = 3,
+    SKILL_SPEAR = 4,
+    SKILL_BOW = 5,
+    SKILL_BLASTER = 7,
+    SKILL_SHIELD = 8,
+    SKILL_LEATHER = 9,
+    SKILL_CHAIN = 10,
+    SKILL_PLATE = 11,
+    SKILL_AIR = 13,
+    SKILL_DARK = 20,
+    SKILL_IDENTIFY_ITEM = 21,
+    SKILL_MERCHANT = 22,
+    SKILL_REPAIR = 23,
+    SKILL_BODYBUILDING = 24,
+    SKILL_MEDITATION = 25,
+    SKILL_PERCEPTION = 26,
+    SKILL_DISARM_TRAPS = 29,
+    SKILL_IDENTIFY_MONSTER = 32,
+    SKILL_THIEVERY = 34,
+    SKILL_ALCHEMY = 35,
+    SKILL_LEARNING = 36,
+    SKILL_NONE = 37, // used by clubs
+    SKILL_COUNT = 37,
 };
 
 #define PLAYER_MAX_ITEMS 138
@@ -234,7 +273,9 @@ struct __attribute__((packed)) player
     };
     SKIP(2);
     uint16_t level_base;
-    SKIP(284);
+    SKIP(44);
+    uint16_t skills[SKILL_COUNT];
+    SKIP(166);
     uint32_t black_potions[7];
     struct item items[PLAYER_MAX_ITEMS];
     uint32_t inventory[14*9];
@@ -247,7 +288,11 @@ struct __attribute__((packed)) player
     uint16_t magic_res_base;
     SKIP(26);
     struct spell_buff spell_buffs[24];
-    SKIP(376);
+    SKIP(32);
+    int32_t sp;
+    SKIP(4);
+    uint32_t equipment[16];
+    SKIP(272);
     int8_t hp_bonus;
     SKIP(1);
     int8_t sp_bonus;
@@ -372,7 +417,8 @@ struct __attribute__((packed)) items_txt_item
     SKIP(4);
     char *name;
     char *generic_name;
-    SKIP(18);
+    SKIP(17);
+    uint8_t skill;
     uint8_t mod1_dice_count;
     SKIP(1);
     uint8_t mod2;
@@ -381,41 +427,6 @@ struct __attribute__((packed)) items_txt_item
 
 #define ITEMS_TXT_ADDR 0x5d2864
 #define ITEMS_TXT ((struct items_txt_item *) ITEMS_TXT_ADDR)
-
-enum skill
-{
-    SKILL_MASK = 63,
-    SKILL_EXPERT = 64,
-    SKILL_MASTER = 128,
-    SKILL_GM = 256,
-};
-
-enum skills
-{
-    SKILL_STAFF = 0,
-    SKILL_SWORD = 1,
-    SKILL_DAGGER = 2,
-    SKILL_AXE = 3,
-    SKILL_SPEAR = 4,
-    SKILL_BOW = 5,
-    SKILL_BLASTER = 7,
-    SKILL_CHAIN = 10,
-    SKILL_AIR = 13,
-    SKILL_DARK = 20,
-    SKILL_IDENTIFY_ITEM = 21,
-    SKILL_MERCHANT = 22,
-    SKILL_REPAIR = 23,
-    SKILL_BODYBUILDING = 24,
-    SKILL_MEDITATION = 25,
-    SKILL_PERCEPTION = 26,
-    SKILL_DISARM_TRAPS = 29,
-    SKILL_IDENTIFY_MONSTER = 32,
-    SKILL_THIEVERY = 34,
-    SKILL_ALCHEMY = 35,
-    SKILL_LEARNING = 36,
-    SKILL_NONE = 37, // used by clubs
-    SKILL_COUNT = 37,
-};
 
 #define AUTONOTES ((uint8_t *) 0xacd636)
 
@@ -538,7 +549,9 @@ enum spells
     SPL_CURE_WEAKNESS = 67,
     SPL_HEAL = 68,
     SPL_FLYING_FIST = 76,
+    SPL_LIGHT_BOLT = 78,
     SPL_DESTROY_UNDEAD = 79,
+    SPL_DISPEL_MAGIC = 80,
     SPL_PARALYZE = 81,
     SPL_VAMPIRIC_WEAPON = 91,
     SPL_SHRINKING_RAY = 92,
@@ -845,6 +858,7 @@ static int __thiscall (*launch_object)(struct map_object *object,
                                        int direction, int speed, int player)
     = (funcptr_t) 0x42f5c9;
 static int __thiscall (*item_value)(struct item *item) = (funcptr_t) 0x45646e;
+static int __thiscall (*get_ac)(void *player) = (funcptr_t) 0x48e687;
 
 //---------------------------------------------------------------------------//
 
@@ -1450,7 +1464,7 @@ static inline void undead_immunities(void)
     erase_code(0x419053, 51); // old body immunity code
 }
 
-#define NEW_STRING_COUNT 40
+#define NEW_STRING_COUNT 41
 STATIC char *new_strings[NEW_STRING_COUNT];
 FIX(new_strings);
 
@@ -3527,7 +3541,9 @@ static void __declspec(naked) damage_potions_monster(void)
       }
 }
 
-// Ditto, for players.
+static void absorb_other_spell(void); // defined below
+
+// Ditto, for players.  Also here: jump to M Leather effect handler.
 static void __declspec(naked) damage_potions_player(void)
 {
     asm
@@ -3557,8 +3573,7 @@ static void __declspec(naked) damage_potions_player(void)
         push 0x43a95a
         ret 4
         ordinary:
-        push 0x48e4f0 ; replaced function call
-        ret
+        jmp absorb_other_spell
       }
 }
 
@@ -4997,6 +5012,9 @@ static void __fastcall __declspec(naked) monster_casts_spell(int monster,
       }
 }
 
+//Defined below.
+static int __thiscall absorb_spell(struct player *player, int spell);
+
 // Turn undead scares all undead PCs, with no chance to resist.
 // Destroy undead damages one undead PC or monster with Holy.
 // We also handle the Cursed monster debuff here.
@@ -5015,7 +5033,8 @@ static void __fastcall cast_new_spells(int monster, void *vector, int spell,
       {
         // we must be targeting the party
         for (int i = 0; i < 4; i++)
-            if (is_undead(&PARTY[i]) && player_active(&PARTY[i]))
+            if (is_undead(&PARTY[i]) && player_active(&PARTY[i])
+                && !absorb_spell(&PARTY[i], spell))
                 inflict_condition(&PARTY[i], COND_AFRAID, 0);
         make_sound(SOUND_THIS, spell_sound, 0, 0, -1, 0, 0, 0, 0);
       }
@@ -5030,7 +5049,7 @@ static void __fastcall cast_new_spells(int monster, void *vector, int spell,
                 if (is_undead(&PARTY[i]) && player_active(&PARTY[i])
                     && !(random() % ++count)) // randomly choose one player
                     target_player = &PARTY[i];
-            if (count)
+            if (count && !absorb_spell(target_player, spell))
               {
                 int mastery = skill_mastery(skill);
                 skill &= SKILL_MASK;
@@ -7706,6 +7725,11 @@ static void __declspec(naked) dispel_immunity(void)
         push 0
         push KELEBRIM
         call dword ptr ds:has_item_in_slot
+        dec eax ; set flags
+        jz immune
+        mov ecx, dword ptr [esi]
+        push SPL_DISPEL_MAGIC
+        call absorb_spell
         dec eax ; set flags
         immune:
         lea ebx, [ebx+eax] ; ebx-- if no immunity
@@ -10600,11 +10624,11 @@ static inline void class_changes(void)
     static const uint8_t skills[CLASS_COUNT][SKILL_COUNT] = {
           {2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 2, 2, 2, 0, 2, 1, 0, 1, 2, 2, 0, 2, 0, 0, 1},
-          {2, 3, 2, 3, 3, 2, 3, 1, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0,
+          {2, 3, 2, 3, 3, 2, 3, 1, 3, 2, 3, 3, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 2, 3, 3, 0, 2, 1, 0, 1, 2, 2, 0, 3, 0, 0, 1},
-          {2, 4, 2, 3, 4, 3, 3, 1, 4, 3, 3, 4, 0, 0, 0, 0, 0, 0, 0,
+          {2, 4, 2, 3, 4, 3, 3, 1, 4, 2, 3, 4, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 2, 4, 4, 0, 2, 1, 0, 1, 2, 2, 0, 4, 0, 0, 1},
-          {2, 4, 2, 3, 4, 2, 3, 1, 4, 3, 3, 4, 0, 0, 0, 0, 0, 0, 0,
+          {2, 4, 2, 3, 4, 2, 3, 1, 4, 2, 3, 4, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 2, 4, 4, 0, 2, 1, 0, 2, 2, 2, 0, 4, 1, 0, 1},
           {0, 2, 2, 0, 0, 2, 2, 2, 1, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 2, 2, 1, 2, 0, 2, 0, 0, 2, 2, 2, 0, 2, 2, 2, 2},
@@ -10656,17 +10680,17 @@ static inline void class_changes(void)
             0, 4, 0, 4, 3, 1, 4, 2, 3, 0, 0, 0, 0, 2, 0, 0, 3, 3},
           {1, 0, 2, 0, 0, 0, 2, 2, 2, 2, 0, 0, 2, 2, 2, 2, 2, 2, 2,
             0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 0, 1, 0, 2, 1, 0, 2, 2},
-          {1, 0, 3, 0, 0, 0, 2, 3, 2, 2, 0, 0, 2, 3, 3, 3, 2, 3, 3,
+          {1, 0, 3, 0, 0, 0, 2, 3, 2, 3, 0, 0, 2, 3, 3, 3, 2, 3, 3,
             0, 0, 2, 2, 0, 0, 3, 2, 0, 0, 0, 1, 0, 3, 1, 0, 3, 3},
-          {1, 0, 3, 0, 0, 0, 2, 3, 2, 2, 0, 0, 2, 4, 4, 3, 3, 3, 4,
+          {1, 0, 3, 0, 0, 0, 2, 3, 2, 3, 0, 0, 2, 4, 4, 3, 3, 3, 4,
             0, 0, 2, 2, 0, 0, 4, 2, 0, 0, 0, 1, 0, 4, 1, 0, 4, 3},
-          {1, 0, 3, 0, 0, 0, 2, 3, 2, 2, 0, 0, 3, 3, 3, 4, 2, 4, 3,
+          {1, 0, 3, 0, 0, 0, 2, 3, 2, 3, 0, 0, 3, 3, 3, 4, 2, 4, 3,
             0, 3, 2, 2, 0, 0, 4, 2, 0, 0, 0, 1, 0, 3, 1, 0, 4, 3},
           {2, 0, 2, 0, 0, 0, 0, 2, 0, 2, 0, 0, 2, 2, 2, 2, 0, 0, 0,
             0, 0, 2, 1, 2, 0, 2, 2, 1, 0, 0, 1, 0, 2, 0, 0, 2, 2},
           {3, 0, 2, 0, 0, 0, 0, 3, 0, 2, 0, 0, 3, 3, 3, 3, 0, 0, 0,
             0, 0, 3, 1, 2, 0, 3, 2, 1, 0, 0, 1, 0, 3, 0, 0, 3, 3},
-          {3, 0, 3, 0, 0, 0, 0, 4, 0, 2, 0, 0, 4, 4, 4, 4, 0, 0, 0,
+          {3, 0, 3, 0, 0, 0, 0, 4, 0, 3, 0, 0, 4, 4, 4, 4, 0, 0, 0,
             4, 0, 4, 1, 2, 0, 3, 2, 1, 0, 0, 1, 0, 3, 0, 0, 3, 4},
           {4, 0, 2, 0, 0, 0, 0, 4, 0, 2, 0, 0, 4, 4, 4, 4, 0, 0, 0,
             0, 4, 3, 1, 2, 0, 4, 2, 1, 0, 0, 1, 1, 3, 0, 0, 3, 3}
@@ -11122,6 +11146,168 @@ static void __declspec(naked) shops_cant_repair_blasters_msg(void)
       }
 }
 
+// Let the GM Shield skill reduce physical damage by 25%.
+// This function also reimplements M Plate and GM Chain.
+// Both of them stack additively with Shield.
+static int __thiscall resist_phys_damage(struct player *player, int damage)
+{
+    int factor = 12;
+    int body = player->equipment[SLOT_BODY_ARMOR];
+    if (body)
+      {
+        struct item *armor = &player->items[body-1];
+        if (!(armor->flags & IFLAGS_BROKEN))
+          {
+            if (ITEMS_TXT[armor->id].skill == SKILL_PLATE
+                && player->skills[SKILL_PLATE] >= SKILL_MASTER)
+                factor = 6;
+            else if (ITEMS_TXT[armor->id].skill == SKILL_CHAIN
+                     && player->skills[SKILL_CHAIN] >= SKILL_GM)
+                factor = 8;
+          }
+      }
+    int offhand = player->equipment[SLOT_OFFHAND];
+    if (offhand && player->skills[SKILL_SHIELD] >= SKILL_GM)
+      {
+        struct item *shield = &player->items[offhand-1];
+        if (!(shield->flags & IFLAGS_BROKEN)
+            && ITEMS_TXT[shield->id].skill == SKILL_SHIELD)
+            factor -= 3;
+      }
+    return damage * factor / 12;
+}
+
+// Hook for the above.
+static void __declspec(naked) resist_phys_damage_hook(void)
+{
+    asm
+      {
+        mov ecx, esi
+        push dword ptr [ebp-4]
+        call resist_phys_damage
+        ret
+      }
+}
+
+// Implement M Shield bonus: whenever another party member is attacked,
+// there's a chance to substitute the shield-wearer's AC if it's higher.
+static int __thiscall maybe_cover_ally(struct player *player)
+{
+    int ac = get_ac(player);
+    for (int i = 0; i < 4; i++)
+      {
+        if (PARTY + i == player)
+            continue;
+        int offhand = PARTY[i].equipment[SLOT_OFFHAND];
+        int skill = get_skill(&PARTY[i], SKILL_SHIELD);
+        if (offhand && skill >= SKILL_MASTER)
+          {
+            struct item *shield = &PARTY[i].items[offhand-1];
+            if (!(shield->flags & IFLAGS_BROKEN)
+                && ITEMS_TXT[shield->id].skill == SKILL_SHIELD
+                && (skill & SKILL_MASK) > random() % 100)
+              {
+                int new_ac = get_ac(&PARTY[i]);
+                if (new_ac > ac)
+                    ac = new_ac;
+              }
+          }
+      }
+    return ac;
+}
+
+// Hook for the above.
+static void __declspec(naked) maybe_cover_ally_hook(void)
+{
+    asm
+      {
+        call maybe_cover_ally
+        pop ecx
+        push eax
+        jmp ecx
+      }
+}
+
+// Retrieve the calculated AC instead of a second call.
+static void __declspec(naked) recall_covered_ac_chunk(void)
+{
+    asm
+      {
+        pop eax
+        jmp quit
+        nop
+        nop
+        quit:
+      }
+}
+
+// New Master Leather perk: chance to absorb enemy spells, restoring SP.
+// Only works if SP won't overflow the natural limit.
+static int __thiscall absorb_spell(struct player *player, int spell)
+{
+    if (spell == SPL_LIGHT_BOLT)
+        return 0; // can't be blocked by anything
+    int body = player->equipment[SLOT_BODY_ARMOR];
+    if (!body)
+        return 0;
+    struct item *armor = &player->items[body-1];
+    if (armor->flags & IFLAGS_BROKEN
+        || ITEMS_TXT[armor->id].skill != SKILL_LEATHER)
+        return 0;
+    int skill = get_skill(player, SKILL_LEATHER);
+    if (skill < SKILL_MASTER || (skill & SKILL_MASK) <= random() % 100)
+        return 0;
+    // TODO: support variable cost
+    int new_sp = player->sp + SPELL_INFO[spell].cost_gm;
+    if (new_sp <= get_full_sp(player))
+      {
+        player->sp = new_sp;
+        static char message[128];
+        sprintf(message, new_strings[40], player->name);
+        show_status_text(message, 2);
+        return 1;
+      }
+    return 0;
+}
+
+// Hook for monster spells.
+static void __declspec(naked) absorb_monster_spell(void)
+{
+    asm
+      {
+        jnz spell
+        ret
+        spell:
+        mov ecx, edi
+        push dword ptr [ebx+72] ; spell id
+        call absorb_spell
+        test eax, eax
+        jz hit
+        push 0x43a99a ; skip hit code
+        ret 4
+        hit:
+        push 0x43a5ac ; replaced jump
+        ret 4
+      }
+}
+
+// Hook for non-monster spells.
+static void __declspec(naked) absorb_other_spell(void)
+{
+    asm
+      {
+        push dword ptr [ebx+72] ; spell id
+        call absorb_spell
+        test eax, eax
+        jz hit
+        push 0x43a99a ; skip hit code
+        ret 4
+        hit:
+        mov ecx, dword ptr [ebp+12] ; restore
+        jmp dword ptr ds:get_full_hp ; replaced call
+      }
+}
+
 // Tweak various skill effects.
 static inline void skill_changes(void)
 {
@@ -11158,6 +11344,15 @@ static inline void skill_changes(void)
     hook_call(0x491191, npcs_cant_repair_blasters, 5);
     hook_call(0x4bdbe6, shops_cant_repair_blasters, 5);
     hook_call(0x490f91, shops_cant_repair_blasters_msg, 11);
+    hook_call(0x48d5a3, resist_phys_damage_hook, 5);
+    erase_code(0x48d5a8, 94); // old plate/chain code
+    erase_code(0x43a57d, 35); // old GM shield bonus
+    hook_call(0x4274c9, maybe_cover_ally_hook, 5);
+    patch_bytes(0x4274e5, recall_covered_ac_chunk, 5);
+    hook_call(0x43a4cf, absorb_monster_spell, 6);
+    // absorb_other_spell() called from damage_potions_player()
+    // Also see cast_new_spells() and dispel_immunity() above.
+    patch_byte(0x49002c, 0x4d); // remove old leather & shield M boni
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

@@ -234,6 +234,8 @@ enum skills
     SKILL_MEDITATION = 25,
     SKILL_PERCEPTION = 26,
     SKILL_DISARM_TRAPS = 29,
+    SKILL_DODGING = 30,
+    SKILL_UNARMED = 31,
     SKILL_IDENTIFY_MONSTER = 32,
     SKILL_THIEVERY = 34,
     SKILL_ALCHEMY = 35,
@@ -440,6 +442,7 @@ enum face_animations
 
 #define SOUND_BUZZ 27
 #define SOUND_SPELL_FAIL 209
+#define SOUND_DIE 18100
 
 #define EVT_AUTONOTES 223
 // my additions
@@ -479,8 +482,8 @@ struct __attribute__((packed)) dialog_param
 
 enum objlist
 {
-    OBJ_FIRE = 510, // generic elemental projectile
     OBJ_FIREARROW = 550,
+    OBJ_LASER = 555,
     OBJ_ACID_BURST = 3060,
     OBJ_FLAMING_POTION = 12000,
     OBJ_FLAMING_EXPLOSION = 12001,
@@ -578,7 +581,9 @@ struct __attribute__((packed)) map_monster
     uint8_t spell1;
     SKIP(7);
     uint8_t holy_resistance;
-    SKIP(22);
+    SKIP(10);
+    uint16_t id;
+    SKIP(10);
     uint32_t max_hp;
     SKIP(26);
     uint16_t height;
@@ -859,6 +864,8 @@ static int __thiscall (*launch_object)(struct map_object *object,
     = (funcptr_t) 0x42f5c9;
 static int __thiscall (*item_value)(struct item *item) = (funcptr_t) 0x45646e;
 static int __thiscall (*get_ac)(void *player) = (funcptr_t) 0x48e687;
+static int __stdcall (*monster_hits_player)(void *monster, void *player)
+    = (funcptr_t) 0x427464;
 
 //---------------------------------------------------------------------------//
 
@@ -5927,14 +5934,15 @@ static inline void hp_sp_burnout(void)
 }
 
 // Recognize fire arrows as valid projectiles for the Shield spell.
+// Also overwrite the old arrow-only jump to GM Unarmed dodge.
 static void __declspec(naked) shield_fire_arrow(void)
 {
     asm
       {
         jz quit
-        cmp ax, OBJ_FIRE ; replaced code
-        jz quit
         cmp ax, OBJ_FIREARROW
+        jz quit
+        cmp ax, OBJ_LASER ; replaced code
         quit:
         ret
       }
@@ -6786,7 +6794,7 @@ static void __declspec(naked) th_spear_mouse(void)
 static inline void misc_rules(void)
 {
     // Now that archers have fire arrows, we need to handle them properly.
-    hook_call(0x43a499, shield_fire_arrow, 6);
+    hook_call(0x43a48f, shield_fire_arrow, 10);
     hook_call(0x41d2c9, days_minutes_buff, 5);
     hook_call(0x41d307, seconds_buff, 6);
     // Make temple donation rewards stronger.
@@ -10525,15 +10533,19 @@ static void __declspec(naked) warlock_dark_bonus(void)
       }
 }
 
+// Defined below.
+static int __stdcall maybe_instakill(struct player *, struct map_monster *);
+
 // New Lich bonus: drain life with unarmed (or GM Staff) attacks.
-// Also here: apply Hammerhands bonus to GM Staff attacks.
+// Also here: apply Hammerhands bonus to GM Staff attacks,
+// and check for the new GM Unarmed perk.
 static void __declspec(naked) lich_vampiric_touch(void)
 {
     asm
       {
         call dword ptr ds:is_bare_fisted ; replaced call
         test eax, eax
-        jnz vamp
+        jnz unarmed
         mov ecx, dword ptr [edi+0x194c] ; mainhand item
         test ecx, ecx
         jz skip
@@ -10549,14 +10561,19 @@ static void __declspec(naked) lich_vampiric_touch(void)
         call dword ptr ds:get_skill
         shr eax, 8 ; test for GM
         jz skip
-        vamp:
+        unarmed:
+        push esi
+        push edi
+        call maybe_instakill
+        or dword ptr [ebp-32], eax ; force a hit even if 0 damage
         cmp byte ptr [edi+0xb9], CLASS_LICH
-        jne skip ; hammerhands flag is set here
+        jne not_lich
         mov eax, dword ptr [ebp-20] ; damage
         xor edx, edx
         mov ecx, 5
         div ecx
         add dword ptr [edi+0x193c], eax ; HP (overheal is ok)
+        not_lich:
         mov eax, 1 ; hammerhands applies as well
         skip:
         ret
@@ -11308,6 +11325,84 @@ static void __declspec(naked) absorb_other_spell(void)
       }
 }
 
+// Move GM Dodging bonus (dodging in leather) to GM Leather.
+static void __declspec(naked) leather_dodging(void)
+{
+    asm
+      {
+        push SKILL_LEATHER
+        call dword ptr ds:get_skill
+        mov ecx, eax
+        call dword ptr ds:skill_mastery
+        mov edx, eax
+        mov ecx, esi
+        call dword ptr ds:skill_mastery
+        ret
+      }
+}
+
+// Reimplement the Monk dodging logic.  As it's now a Dodging perk
+// instead of Unarmed, check that no heavy armor or shield is worn.
+// TODO: should we check for broken items?
+static int __thiscall maybe_dodge(struct player *player)
+{
+    int dodging = get_skill(player, SKILL_DODGING);
+    if (dodging <= SKILL_GM || (dodging & SKILL_MASK) <= random() % 100)
+        return 0;
+    int shield = player->equipment[SLOT_OFFHAND];
+    if (shield && ITEMS_TXT[player->items[shield-1].id].skill == SKILL_SHIELD)
+        return 0;
+    int body = player->equipment[SLOT_BODY_ARMOR];
+    if (!body)
+        return 1;
+    int skill = ITEMS_TXT[player->items[body-1].id].skill;
+    // TODO: "none" checks for wetsuits; replace this with a robe check later
+    return skill == SKILL_LEATHER && player->skills[SKILL_LEATHER] >= SKILL_GM
+           || skill >= SKILL_NONE;
+}
+
+// Hook for the above.
+static void __declspec(naked) maybe_dodge_hook(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [esp+8] ; player
+        call maybe_dodge
+        test eax, eax
+        jnz dodge
+        jmp dword ptr ds:monster_hits_player ; replaced call
+        dodge:
+        mov edi, dword ptr [esp+8] ; player
+        push 0x43a630 ; dodge code
+        ret 12
+      }
+}
+
+// Implement the new Unarmed GM bonus: small chance to instakill on hit.
+// Called from lich_vampiric_touch() above.
+static int __stdcall maybe_instakill(struct player *player,
+                                     struct map_monster *monster)
+{
+    // monsters this doesn't work on: undead, elementals,
+    // golems, gargoyles, droids, trees, and implicitly oozes
+    if (monster->holy_resistance < IMMUNE)
+        return 0;
+    int id = monster->id;
+    if (id >= 34 && id <= 48 || id >= 64 && id <= 66 || id >= 79 && id <= 81
+        || id >= 190 && id <= 192 || id >= 253 && id <= 255)
+        return 0;
+    int skill = get_skill(player, SKILL_UNARMED);
+    if (skill > SKILL_GM && (skill & SKILL_MASK) > random() % 200
+        && monster->hp <= random() % monster->max_hp
+        && monster_resists_condition(monster, PHYSICAL))
+      {
+        monster->hp = 0;
+        make_sound(SOUND_THIS, SOUND_DIE, 0, 0, -1, 0, 0, 0, 0);
+        return 1;
+      }
+    return 0;
+}
+
 // Tweak various skill effects.
 static inline void skill_changes(void)
 {
@@ -11353,6 +11448,12 @@ static inline void skill_changes(void)
     // absorb_other_spell() called from damage_potions_player()
     // Also see cast_new_spells() and dispel_immunity() above.
     patch_byte(0x49002c, 0x4d); // remove old leather & shield M boni
+    patch_dword(0x490097, 0xf08bce8b); // swap instructions
+    hook_call(0x49009b, leather_dodging, 5);
+    patch_byte(0x4900ab, 0xfa); // eax -> edx
+    erase_code(0x48e7f9, 75); // old Leather GM bonus
+    hook_call(0x43a03f, maybe_dodge_hook, 5);
+    hook_call(0x43a4dc, maybe_dodge_hook, 5);
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

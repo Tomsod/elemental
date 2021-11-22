@@ -26,9 +26,9 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 22	Дьявол-работник	Devil A	30	180	25	1200	0	1	N	Med	Suicidal	2	200	60	0	Disease2	Phys	2D6+8	Fire	0	0	0	0	20	"Fireball,E,6"	0	0	Imm	20	10	20	Imm	Imm	20	20	0
 23	Дьявол-воин	Devil B	50	400	35	3000	0	1	N	Med	Aggress	2	250	50	0	Disease3	Phys	2D6+14	Fire	0	0	0	0	20	"Fireball,E,8"	15	"Meteor Shower,M,8"	Imm	30	15	30	Imm	Imm	30	30	0
 24	Капитан дьяволов	Devil C	70	700	45	5600	0	1	N	Short	Aggress	2	300	40	0	DrainSP	Phys	2D6+20	Fire	0	0	0	0	20	"Incinerate,M,12"	15	"Meteor Shower,M,12"	Imm	40	20	40	Imm	Imm	40	40	0
-25	Зеленый дракон	Dragon A	80	880	60	7200	125D20+L6	1	Y	Long	Aggress	4	240	70	2	0	Elec	12D8	Air	0	0	0	0	0	0	0	0	50	Imm	50	Imm	50	Imm	30	50	0
-26	Синий дракон	Dragon B	90	1080	80	9000	150D20+L6	1	Y	Med	Aggress	4	260	65	3	0	Cold	14D8	Water	0	0	0	0	0	0	0	0	30	50	Imm	Imm	50	Imm	30	50	0
-27	Красный дракон	Dragon C	100	1300	100	11000	200D20+L6	1	Y	Short	Aggress	4	300	60	4	BrkArmor	Fire	16D8	Fire	0	0	0	0	0	0	0	0	Imm	70	40	Imm	70	Imm	40	70	0
+25	Зеленый дракон	Dragon A	80	880	60	7200	80%125D20+L6	1	Y	Long	Aggress	4	240	70	2	0	Elec	12D8	Air	0	0	0	0	0	0	0	0	50	Imm	50	Imm	50	Imm	30	50	0
+26	Синий дракон	Dragon B	90	1080	80	9000	80%150D20+L6	1	Y	Med	Aggress	4	260	65	3	0	Cold	14D8	Water	0	0	0	0	0	0	0	0	30	50	Imm	Imm	50	Imm	30	50	0
+27	Красный дракон	Dragon C	100	1300	100	11000	80%200D20+L6	1	Y	Short	Aggress	4	300	60	4	BrkArmor	Fire	16D8	Fire	0	0	0	0	0	0	0	0	Imm	70	40	Imm	70	Imm	40	70	0
 28	Стрекозавр	Dragonfly A	2	6	4	24	3D6	1	Y	Free	Normal	3	400	50	0	0	Phys	2D2	0	0	0	0	0	0	0	0	0	10	0	0	0	0	Imm	0	0	0
 29	Огненный стрекозавр	Dragonfly B	4	13	8	56	7D6	1	Y	Free	Normal	3	350	50	0	0	Phys	3D2+1	0	0	0	0	0	10	"Fire Bolt,N,2"	0	0	20	0	0	0	0	Imm	0	0	0
 30	Королева стрекозавров	Dragonfly C	8	30	12	144	10D6	1	Y	Free	Normal	3	300	50	0	0	Phys	4D2+2	0	0	0	0	0	15	"Fire Bolt,N,4"	0	0	30	0	0	0	0	Imm	0	0	0
@@ -89,9 +89,9 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 85	Гарпия	Harpy A	14	61	12	336	4D10	1	Y	Long	Aggress	3	250	90	X	Drunk	Phys	2D7+2	0	0	0	0	0	0	0	0	0	5	5	5	0	5	Imm	0	5	0
 86	Гарпия-ведьма	Harpy B	17	79	14	459	6D10	1	Y	Long	Aggress	3	300	90	X	Cursex2	Phys	2D7+5	0	0	0	0	0	0	0	0	0	5	5	5	0	5	Imm	0	10	0
 87	Королева гарпий	Harpy C	19	93	16	551	20%10D10+L2Ring	1	Y	Long	Suicidal	3	350	80	X	Agex3	Phys	2D7+10	0	0	0	0	0	0	0	0	0	10	10	10	5	10	Imm	5	15	0
-88	Огненная гидра	Hydra A	45	337	22	2475	50D10+L3	1	N	Med	Aggress	2	220	80	0	0	Fire	15D5	Fire	0	0	0	0	0	0	0	0	40	20	10	20	10	Imm	10	20	0
-89	Воздушная гидра	Hydra B	55	467	44	3575	100D10+L4	1	N	Med	Aggress	2	240	80	0	0	Elec	20D5	Air	0	0	0	0	0	0	0	0	30	50	30	30	20	Imm	20	30	0
-90	Гидра Хаоса	Hydra C	65	617	66	4875	200D10+L5	1	N	Short	Aggress	2	260	80	0	BrkArmor	Ener	20D5	Ener	0	0	0	0	0	0	0	0	40	40	40	40	30	Imm	50	40	0
+88	Огненная гидра	Hydra A	45	337	22	2475	80%50D10+L3	1	N	Med	Aggress	2	220	80	0	0	Fire	15D5	Fire	0	0	0	0	0	0	0	0	40	20	10	20	10	Imm	10	20	0
+89	Воздушная гидра	Hydra B	55	467	44	3575	80%100D10+L4	1	N	Med	Aggress	2	240	80	0	0	Elec	20D5	Air	0	0	0	0	0	0	0	0	30	50	30	30	20	Imm	20	30	0
+90	Гидра Хаоса	Hydra C	65	617	66	4875	80%200D10+L5	1	N	Short	Aggress	2	260	80	0	BrkArmor	Ener	20D5	Ener	0	0	0	0	0	0	0	0	40	40	40	40	30	Imm	50	40	0
 91	Лич	Lich A	20	100	15	600	10%10D20+L3Misc	0	N	Med	Aggress	4	180	90	DC	0	Fire	3D8+6	Fire	0	0	0	0	20	"Toxic Cloud,E,4"	0	0	20	20	20	Imm	Imm	10	30	20	0
 92	Могучий лич	Lich B	30	180	20	1200	10%15D20+L4Misc	0	N	Med	Aggress	4	200	80	DC	0	Elec	4D8+12	Air	0	0	0	0	20	"Shrapmetal,M,8"	0	0	25	25	25	Imm	Imm	15	35	25	0
 93	Король личей	Lich C	40	280	25	2000	30%30D20+L5Misc	0	N	Short	Suicidal	4	220	70	DC	Insane	Magic	5D8+20	Dark	0	0	0	0	30	"Dragon Breath,M,12"	50	"Pain Reflection,M,12"	30	30	30	Imm	Imm	20	40	30	0
@@ -213,8 +213,8 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 209	Разбойник	Thief B	12	50	14	264	10%4D10+L1	1	N	Med	Normal	2	260	60	P	Stealx2	Phys	3D4+6	0	0	0	0	0	0	0	0	0	0	0	0	0	0	Imm	0	0	0
 210	Мастер Вор	Thief C	18	86	20	504	20%5D10+L2	1	N	Med	Aggress	2	270	60	P	Stealx2	Phys	3D4+12	0	0	0	0	0	0	0	0	0	0	0	0	0	0	Imm	0	0	0
 211	Титан	Titan A	65	617	60	4875	40%100D20+L5	1	N	Short	Aggress	4	200	70	O	BrkArmor	Elec	2D20+60	Air	0	0	0	0	20	"Psychic Shock,M,8"	10	"Sparks,M,8"	30	Imm	30	30	Imm	Imm	20	30	0
-212	Грозовой титан	Titan B	75	787	70	6375	150D20L5	1	N	Short	Aggress	4	200	70	O	Brkweapon	Elec	2D20+80	Air	0	0	0	0	20	"Psychic Shock,M,12"	10	"Sparks,M,12"	50	Imm	50	50	Imm	Imm	30	50	0
-213	Кровавый титан	Titan C	95	1187	80	9975	200D20+L6	1	N	Short	Aggress	4	200	70	O	Dead	Elec	2D20+120	Air	0	0	0	0	20	"Psychic Shock,G,16"	10	"Sparks,G,16"	80	Imm	80	80	Imm	Imm	50	80	0
+212	Грозовой титан	Titan B	75	787	70	6375	80%150D20L5	1	N	Short	Aggress	4	200	70	O	Brkweapon	Elec	2D20+80	Air	0	0	0	0	20	"Psychic Shock,M,12"	10	"Sparks,M,12"	50	Imm	50	50	Imm	Imm	30	50	0
+213	Кровавый титан	Titan C	95	1187	80	9975	80%200D20+L6	1	N	Short	Aggress	4	200	70	O	Dead	Elec	2D20+120	Air	0	0	0	0	20	"Psychic Shock,G,16"	10	"Sparks,G,16"	80	Imm	80	80	Imm	Imm	50	80	0
 214	Троглодит-работник	Troglodyte A	9	35	5	171	10%5D5+L1	1	N	Long	Normal	2	220	100	0	0	Phys	2D4	0	0	0	0	0	0	0	0	0	5	10	10	10	0	Imm	0	5	0
 215	Троглодит-солдат	Troglodyte B	14	61	9	336	10%8D5+L2	1	N	Med	Normal	2	240	90	0	0	Phys	2D4+2	0	0	0	0	0	0	0	0	0	10	20	20	20	0	Imm	5	10	0
 216	Королева троглодитов	Troglodyte C	19	93	14	551	25%14D5+L3	1	N	Med	Aggress	2	260	80	0	Poison1	Phys	2D4+6	0	0	0	0	0	0	0	0	0	15	30	30	30	0	Imm	10	15	0

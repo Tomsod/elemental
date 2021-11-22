@@ -10762,19 +10762,21 @@ static void __declspec(naked) perception_extra_item(void)
 {
     asm
       {
-        xor esi, esi
+        xor edx, edx
+        mov ecx, 5000
+        div ecx
+        mov esi, edx
+        xor eax, eax
         mov ecx, dword ptr [0x507a6c] ; current player
         dec ecx
         jl no_player
         mov ecx, dword ptr [0xa74f48+ecx*4] ; player pointers
         call dword ptr ds:get_perception_bonus
-        lea esi, [eax+eax]
         no_player:
-        call dword ptr ds:random
-        xor edx, edx
-        lea ecx, [esi+100]
-        div ecx
-        sub edx, esi
+        movzx edx, byte ptr [ebx+53] ; base chance
+        add eax, 50
+        mul edx
+        cmp esi, eax
         ret
       }
 }
@@ -11403,6 +11405,21 @@ static int __stdcall maybe_instakill(struct player *player,
     return 0;
 }
 
+// Buff axes slightly by doubling the skill recovery bonus.
+// NB: this overwrites some nop's from MM7Patch.
+static void __declspec(naked) double_axe_recovery(void)
+{
+    asm
+      {
+        and eax, SKILL_MASK ; replaced code
+        cmp byte ptr [edi+29], SKILL_AXE
+        jne quit
+        add eax, eax
+        quit:
+        ret
+      }
+}
+
 // Tweak various skill effects.
 static inline void skill_changes(void)
 {
@@ -11412,7 +11429,7 @@ static inline void skill_changes(void)
     // meditation SP regen is in sp_burnout() above
     patch_byte(0x4910b2, 3); // remove old GM bonus
     hook_call(0x426a82, perception_bonus_gold, 5);
-    hook_call(0x426c02, perception_extra_item, 11);
+    hook_call(0x426c07, perception_extra_item, 12);
     erase_code(0x491276, 12); // remove 100% chance on GM
     // thievery backstab is checked in check_backstab() above
     hook_call(0x48d087, double_total_damage, 5);
@@ -11454,6 +11471,7 @@ static inline void skill_changes(void)
     erase_code(0x48e7f9, 75); // old Leather GM bonus
     hook_call(0x43a03f, maybe_dodge_hook, 5);
     hook_call(0x43a4dc, maybe_dodge_hook, 5);
+    hook_call(0x48e43b, double_axe_recovery, 5);
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

@@ -866,6 +866,8 @@ static int __thiscall (*item_value)(struct item *item) = (funcptr_t) 0x45646e;
 static int __thiscall (*get_ac)(void *player) = (funcptr_t) 0x48e687;
 static int __stdcall (*monster_hits_player)(void *monster, void *player)
     = (funcptr_t) 0x427464;
+static int __fastcall (*monster_attack_damage)(void *monster, int attack)
+    = (funcptr_t) 0x43b403;
 
 //---------------------------------------------------------------------------//
 
@@ -7062,7 +7064,7 @@ static inline void cure_spells(void)
 
 // Let the magic skill affect the chance of debuffs working.
 // Shrinking Ray requires special handling here.
-// Also handles Cursed monsters.
+// Also handles Cursed monsters and GM ID Monster bonus.
 static void __declspec(naked) pierce_debuff_resistance(void)
 {
     asm
@@ -7094,6 +7096,10 @@ static void __declspec(naked) pierce_debuff_resistance(void)
         jz not_cursed
         add esi, 10 ; effectively lowers res by 25% before skill bonus
         not_cursed:
+        cmp byte ptr [edi+182], GM
+        jb no_id_bonus
+        add esi, 5 ; less than curse, but still something
+        no_id_bonus:
         add esi, 30 ; standard difficulty check
         cdq ; replaced code
         add ecx, esi
@@ -7425,21 +7431,36 @@ static void __declspec(naked) cursed_monster_hits_monster(void)
       }
 }
 
-// In addition, resistances of a cursed monster are considered 25% lower.
+// In addition, resistances of a cursed monster are considered 25% lower
+// (10 resistance penetration).  Also here: GM ID Monster adds 5 more.
 static void __declspec(naked) cursed_monster_resists_damage(void)
 {
     asm
       {
         add eax, edx ; replaced code
-        lea esi, [eax+30] ; replaced code
+        mov esi, 30
         mov ecx, dword ptr [ebp+8] ; monster
         mov edx, dword ptr [ecx+212+MBUFF_CURSED*16]
         or edx, dword ptr [ecx+212+MBUFF_CURSED*16+4]
-        jz quit
-        shr eax, 2
-        sub esi, eax ; reduce by 25%
-        quit:
+        jz not_cursed
+        add esi, 10
+        not_cursed:
+        cmp byte ptr [ecx+182], GM
+        jb no_bonus
+        add esi, 5
+        no_bonus:
+        mov dword ptr [ebp+12], esi ; unused at this point
+        add esi, eax
         ret
+      }
+}
+
+// Replace the roll difficulty of 30 with our modified value.
+static void __declspec(naked) mon_res_roll_chunk(void)
+{
+    asm
+      {
+        cmp edx, dword ptr [ebp+12]
       }
 }
 
@@ -7851,6 +7872,10 @@ static inline void new_enchants(void)
     hook_call(0x427464, cursed_monster_hits_player, 5);
     hook_call(0x427373, cursed_monster_hits_monster, 5);
     hook_call(0x4275a0, cursed_monster_resists_damage, 5);
+    patch_bytes(0x4275ad, mon_res_roll_chunk, 3);
+    patch_bytes(0x4275bd, mon_res_roll_chunk, 3);
+    patch_bytes(0x4275cd, mon_res_roll_chunk, 3);
+    patch_bytes(0x4275dd, mon_res_roll_chunk, 3);
     // condition resistance is handled in pierce_debuff_resistance() above
     hook_call(0x439bf2, cursed_weapon, 5);
     // For symmetry, indirectly penalize cursed players' resistances
@@ -11235,7 +11260,7 @@ static int __thiscall maybe_cover_ally(struct player *player)
     return ac;
 }
 
-// Hook for the above.
+// Hook for the above.  Also applies the Expert ID Monster bonus.
 static void __declspec(naked) maybe_cover_ally_hook(void)
 {
     asm
@@ -11243,6 +11268,10 @@ static void __declspec(naked) maybe_cover_ally_hook(void)
         call maybe_cover_ally
         pop ecx
         push eax
+        cmp byte ptr [esi+182], EXPERT
+        jb no_bonus
+        add dword ptr [esp], 5
+        no_bonus:
         jmp ecx
       }
 }
@@ -11420,6 +11449,86 @@ static void __declspec(naked) double_axe_recovery(void)
       }
 }
 
+// Skip the ID fail/success message if the monster is already ID'd.
+static void __declspec(naked) monster_already_id(void)
+{
+    asm
+      {
+        call dword ptr ds:skill_mastery ; replaced call
+        mov ecx, dword ptr [ebp-20] ; monster
+        cmp al, byte ptr [ecx+182] ; stored id level
+        ja quit
+        and dword ptr [ebp-24], 0 ; stored skill
+        quit:
+        ret
+      }
+}
+
+// Set ID flags according to the stored ID level and then update it.
+static void __declspec(naked) sync_monster_id(void)
+{
+    asm
+      {
+        mov dword ptr [ebp-32], PARTY_ADDR ; replaced code
+        mov ecx, dword ptr [ebp-20] ; monster
+        movzx edx, byte ptr [ecx+182] ; stored id level
+        test edx, edx
+        jz zero
+        dec edx
+        jz one
+        dec edx
+        jz two
+        dec edx
+        jz three
+        mov dword ptr [ebp-56], edi ; edi == 1
+        three:
+        mov dword ptr [ebp-36], edi
+        two:
+        mov dword ptr [ebp-40], edi
+        one:
+        mov dword ptr [ebp-28], edi
+        zero:
+        mov eax, dword ptr [ebp-28]
+        add eax, dword ptr [ebp-40]
+        add eax, dword ptr [ebp-36]
+        add eax, dword ptr [ebp-56]
+        mov byte ptr [ecx+182], al
+        ret
+      }
+}
+
+// Normal ID Monster bonus: +5 to armor penetration.
+static void __declspec(naked) id_monster_normal(void)
+{
+    asm
+      {
+        cmp byte ptr [ecx+182], bl
+        jz no_id
+        add dword ptr [ebp+20], 5
+        no_id:
+        cmp dword ptr [ecx+344], ebx ; replaced code
+        ret
+      }
+}
+
+// Master ID Monster bonus: monster only deals 90% damage to party.
+// TODO: should this affect energy attacks?
+static void __declspec(naked) id_monster_master(void)
+{
+    asm
+      {
+        call dword ptr ds:monster_attack_damage
+        cmp byte ptr [esi+182], MASTER
+        jb no_bonus
+        mov edx, 9
+        mov ecx, 10
+        mul edx
+        div ecx
+        no_bonus:
+        ret
+      }
+}
+
 // Tweak various skill effects.
 static inline void skill_changes(void)
 {
@@ -11472,6 +11581,14 @@ static inline void skill_changes(void)
     hook_call(0x43a03f, maybe_dodge_hook, 5);
     hook_call(0x43a4dc, maybe_dodge_hook, 5);
     hook_call(0x48e43b, double_axe_recovery, 5);
+    hook_call(0x41eaa8, monster_already_id, 5);
+    hook_call(0x41eb81, sync_monster_id, 7);
+    hook_call(0x4272bc, id_monster_normal, 6);
+    // expert bonus handled in maybe_cover_ally_hook() above
+    hook_call(0x43a0fd, id_monster_master, 5);
+    hook_call(0x43a480, id_monster_master, 5);
+    // gm bonus applied in pierce_debuff_resistance()
+    // and cursed_monster_resists_damage() above
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

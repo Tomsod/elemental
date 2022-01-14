@@ -718,3 +718,8 @@ Global Text
 715	"Dwarves are strong and tough, but slow and clumsy.  They have the greatest health pool of any race.  Dwarves are very fond of axes, and even their Clerics are allowed to use an axe in combat."
 716	"You must identify this item before you can read it!"
 717	%s absorbs the spell
+718	Become a Grandmaster in %s for %s
+719	"You have virtually no practical experience in %s, so you cannot advance it now."
+720	"You have only little experience in %s.  Practice it more to qualify for training."
+721	"While you have used the %s skill before, it's not yet quite enough for becoming a Grandmaster."
+722	"You only need a little more practice in %s, then you can be taught!"

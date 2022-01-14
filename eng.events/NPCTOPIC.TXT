@@ -591,3 +591,13 @@
 590	Ancient Weapon	Tolberti (loyalty bonus)
 591	Archibald's Offer	Gavin Magnus (loyalty bonus)
 592	Gavin Magnus's Offer	Archibald (loyalty bonus)
+593	Not so fast…	Bow GM mini-quest
+594	Bow Grandmaster	GM mini-quest in progress
+595	Not so fast…	Blaster GM mini-quest
+596	Ancient Weapon Grandmaster	GM mini-quest in progress
+597	Not so fast…	Bodybuilding GM mini-quest
+598	Body Building Grandmaster	GM mini-quest in progress
+599	Not so fast…	Meditation GM mini-quest
+600	Meditation Grandmaster	GM mini-quest in progress
+601	Not so fast…	Alchemy GM mini-quest
+602	Alchemy Grandmaster	GM mini-quest in progress

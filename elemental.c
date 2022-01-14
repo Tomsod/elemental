@@ -95,7 +95,7 @@ static void erase_code(uintptr_t address, int length)
 enum elements
 {
     FIRE = 0,
-    ELECTRICITY = 1,
+    SHOCK = 1,
     COLD = 2,
     POISON = 3,
     PHYSICAL = 4,
@@ -155,7 +155,11 @@ enum player_stats
     STAT_HP = 7,
     STAT_SP = 8,
     STAT_FIRE_RES = 10,
+    STAT_SHOCK_RES = 11,
+    STAT_COLD_RES = 12,
     STAT_POISON_RES = 13,
+    STAT_MIND_RES = 14,
+    STAT_MAGIC_RES = 15,
     STAT_MELEE_DAMAGE_BASE = 26,
     STAT_HOLY_RES = 33,
     STAT_FIRE_POISON_RES = 47,
@@ -193,6 +197,7 @@ struct __attribute__((packed)) item
 
 #define IFLAGS_ID 1
 #define IFLAGS_BROKEN 2
+#define IFLAGS_STOLEN 0x100
 
 struct __attribute__((packed)) spell_buff
 {
@@ -220,12 +225,20 @@ enum skills
     SKILL_AXE = 3,
     SKILL_SPEAR = 4,
     SKILL_BOW = 5,
+    SKILL_MACE = 6,
     SKILL_BLASTER = 7,
     SKILL_SHIELD = 8,
     SKILL_LEATHER = 9,
     SKILL_CHAIN = 10,
     SKILL_PLATE = 11,
+    SKILL_FIRE = 12,
     SKILL_AIR = 13,
+    SKILL_WATER = 14,
+    SKILL_EARTH = 15,
+    SKILL_SPIRIT = 16,
+    SKILL_MIND = 17,
+    SKILL_BODY = 18,
+    SKILL_LIGHT = 19,
     SKILL_DARK = 20,
     SKILL_IDENTIFY_ITEM = 21,
     SKILL_MERCHANT = 22,
@@ -237,6 +250,7 @@ enum skills
     SKILL_DODGING = 30,
     SKILL_UNARMED = 31,
     SKILL_IDENTIFY_MONSTER = 32,
+    SKILL_ARMSMASTER = 33,
     SKILL_THIEVERY = 34,
     SKILL_ALCHEMY = 35,
     SKILL_LEARNING = 36,
@@ -352,6 +366,7 @@ enum items
     SWIFT_POTION = 250,
     FIRST_BLACK_POTION = 262,
     PURE_LUCK = 264,
+    REJUVENATION = 271,
     LAST_OLD_POTION = 271,
     POTION_MAGIC_IMMUNITY = 277,
     POTION_PAIN_REFLECTION = 278,
@@ -444,6 +459,7 @@ enum face_animations
 #define SOUND_SPELL_FAIL 209
 #define SOUND_DIE 18100
 
+#define EVT_QBITS 16
 #define EVT_AUTONOTES 223
 // my additions
 #define EVT_REP_GROUP 400
@@ -462,13 +478,33 @@ enum gender
 
 #define MAP_VARS 0x5e4b10
 
+struct __attribute__((packed)) file_header
+{
+    char name[20]; // could be shorter, I'm guessing here
+    uint32_t size;
+    SKIP(4);
+};
+
 // Number of barrels in the Wall of Mist.
 #define WOM_BARREL_CNT 15
 
 #define QBIT_LIGHT_PATH 99
 #define QBIT_DARK_PATH 100
-// my addition
+#define QBIT_FOUND_OBELISK_TREASURE 178
+#define QBIT_DUMMY 245
+// my additions
 #define QBIT_REFILL_WOM_BARRELS 350
+#define QBIT_BOW_GM_QUEST_ACTIVE 367
+#define QBIT_BOW_GM_QUEST 368
+#define QBIT_BLASTER_GM_QUEST_ACTIVE_LIGHT 369
+#define QBIT_BLASTER_GM_QUEST_ACTIVE_DARK 370
+#define QBIT_BLASTER_GM_QUEST 371
+#define QBIT_BODYBUIDING_GM_QUEST_ACTIVE 372
+#define QBIT_BODYBUIDING_GM_QUEST 373
+#define QBIT_MEDITATION_GM_QUEST_ACTIVE 374
+#define QBIT_MEDITATION_GM_QUEST 375
+#define QBIT_ALCHEMY_GM_QUEST_ACTIVE 376
+#define QBIT_ALCHEMY_GM_QUEST 377
 
 // Not quite sure what this is, but it holds aimed spell data.
 struct __attribute__((packed)) dialog_param
@@ -615,6 +651,7 @@ enum target
 #define PARTY ((struct player *) PARTY_ADDR)
 
 #define COND_AFRAID 3
+#define COND_ERADICATED 16
 
 struct __attribute__((packed)) mapstats_item
 {
@@ -640,9 +677,11 @@ enum profession
 };
 
 // New max number of global.evt comands (was 4400 before).
-#define GLOBAL_EVT_LINES 5250
+#define GLOBAL_EVT_LINES 5300
 // New max size of global.evt itself (was 46080 bytes before).
-#define GLOBAL_EVT_SIZE 52000
+#define GLOBAL_EVT_SIZE 53000
+
+#define CURRENT_PLAYER 0x507a6c
 
 enum race
 {
@@ -682,9 +721,9 @@ struct __attribute__((packed)) spcitem
 // new NPC greeting count (starting from 1)
 #define GREET_COUNT 220
 // new NPC topic count
-#define TOPIC_COUNT 592
+#define TOPIC_COUNT 602
 // count of added NPC text entries
-#define NEW_TEXT_COUNT 6
+#define NEW_TEXT_COUNT 21
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658
@@ -710,7 +749,9 @@ struct __attribute__((packed)) map_object
     uint32_t x;
     uint32_t y;
     uint32_t z;
-    SKIP(20);
+    SKIP(14);
+    uint16_t age;
+    SKIP(4);
     struct item item;
     uint32_t spell_type;
     SKIP(36);
@@ -718,9 +759,34 @@ struct __attribute__((packed)) map_object
 
 #define AI_REMOVED 11
 
+#define COLOR_FORMAT ((char *) 0x4e2d60)
+enum colors
+{
+    CLR_WHITE,
+    CLR_ITEM,
+    CLR_RED,
+    CLR_YELLOW,
+    CLR_GREEN,
+    CLR_BLUE,
+    CLR_PURPLE,
+    CLR_COUNT
+};
+static int colors[CLR_COUNT];
+
+#define SKILL_NAMES_ADDR 0xae3150
+#define SKILL_NAMES ((char **) SKILL_NAMES_ADDR)
+
+struct __attribute__((packed)) npc_topic_text
+{
+    char *topic;
+    char *text;
+};
+#define NPC_TOPIC_TEXT_ADDR 0x7214e8
+#define NPC_TOPIC_TEXT ((struct npc_topic_text *) NPC_TOPIC_TEXT_ADDR - 1)
+
 static int __cdecl (*uncased_strcmp)(const char *left, const char *right)
     = (funcptr_t) 0x4caaf0;
-static int __thiscall (*get_player_resistance)(const void *player, int stat)
+static int __thiscall (*get_resistance)(const void *player, int stat)
     = (funcptr_t) 0x48e7c8;
 static int __thiscall (*has_item_in_slot)(void *player, int item, int slot)
     = (funcptr_t) 0x48d6ef;
@@ -781,6 +847,7 @@ static int __thiscall (*get_endurance)(void *player) = (funcptr_t) 0x48caa2;
 static int __thiscall (*get_accuracy)(void *player) = (funcptr_t) 0x48cb1f;
 static int __thiscall (*get_speed)(void *player) = (funcptr_t) 0x48cb9c;
 static int __thiscall (*get_luck)(void *player) = (funcptr_t) 0x48cc19;
+static funcptr_t save_game = (funcptr_t) 0x45f4a2;
 static void (*change_weather)(void) = (funcptr_t) 0x48946d;
 static int __fastcall (*is_hostile_to)(void *monster, void *target)
     = (funcptr_t) 0x40104c;
@@ -868,6 +935,13 @@ static int __stdcall (*monster_hits_player)(void *monster, void *player)
     = (funcptr_t) 0x427464;
 static int __fastcall (*monster_attack_damage)(void *monster, int attack)
     = (funcptr_t) 0x43b403;
+static int __thiscall (*get_base_resistance)(const void *player, int stat)
+    = (funcptr_t) 0x48e737;
+static int __thiscall (*get_base_ac)(void *player) = (funcptr_t) 0x48e64e;
+static void __fastcall (*process_event)(int event, int unknown, int unknown2)
+    = (funcptr_t) 0x44686d;
+static void __thiscall (*evt_sub)(void *player, int what, int amount)
+    = (funcptr_t) 0x44b9f0;
 
 //---------------------------------------------------------------------------//
 
@@ -878,7 +952,7 @@ static const char *const elements[] = {"fire", "elec", "cold", "pois", "phys",
 // Patch spells.txt parsing, specifically possible spell elements.
 static inline void spells_txt(void)
 {
-    patch_pointer(0x45395c, elements[ELECTRICITY]);
+    patch_pointer(0x45395c, elements[SHOCK]);
     patch_pointer(0x453975, elements[COLD]);
     patch_pointer(0x45398e, elements[POISON]);
     patch_pointer(0x4539a7, elements[HOLY]);
@@ -1079,9 +1153,9 @@ static void __declspec(naked) fire_poison_stat(void)
 static int __thiscall fire_poison_player(const void *player, int stat)
 {
     if (stat != STAT_FIRE_POISON_RES)
-        return get_player_resistance(player, stat);
-    int fire_res = get_player_resistance(player, STAT_FIRE_RES);
-    int poison_res = get_player_resistance(player, STAT_POISON_RES);
+        return get_resistance(player, stat);
+    int fire_res = get_resistance(player, STAT_FIRE_RES);
+    int poison_res = get_resistance(player, STAT_POISON_RES);
     if (fire_res < poison_res)
         return fire_res;
     else
@@ -1223,6 +1297,7 @@ static int __thiscall __declspec(naked) inflict_condition(void *player,
 // Poison, Mind or Magic resistance, so naturally
 // a corresponding immunity will apply to them as well.
 // Update: also put Preservation's new effect here.
+// Also check for Blaster GM quest.
 static int __thiscall condition_immunity(struct player *player, int condition,
                                          int can_resist)
 {
@@ -1244,7 +1319,19 @@ static int __thiscall condition_immunity(struct player *player, int condition,
             && random() & 1)
             return FALSE;
       }
-    return inflict_condition(player, condition, can_resist);
+    int result = inflict_condition(player, condition, can_resist);
+    if (condition == COND_ERADICATED && result
+        && (check_qbit(QBITS, QBIT_BLASTER_GM_QUEST_ACTIVE_LIGHT)
+            || check_qbit(QBITS, QBIT_BLASTER_GM_QUEST_ACTIVE_DARK))
+        && !check_qbit(QBITS, QBIT_BLASTER_GM_QUEST)
+        && player->skills[SKILL_BLASTER] >= SKILL_MASTER)
+      {
+        evt_set(player, EVT_QBITS, QBIT_BLASTER_GM_QUEST);
+        // make the quest book blink
+        evt_set(player, EVT_QBITS, QBIT_DUMMY);
+        evt_sub(player, EVT_QBITS, QBIT_DUMMY);
+      }
+    return result;
 }
 
 // Add another immunity check in the code that handles
@@ -1385,7 +1472,7 @@ static void __declspec(naked) display_elec_immunity(void)
 {
     asm
       {
-        push ELECTRICITY
+        push SHOCK
         push 6
         call display_immunity
         mov edx, dword ptr [0x5c3468]
@@ -1473,7 +1560,7 @@ static inline void undead_immunities(void)
     erase_code(0x419053, 51); // old body immunity code
 }
 
-#define NEW_STRING_COUNT 41
+#define NEW_STRING_COUNT 46
 STATIC char *new_strings[NEW_STRING_COUNT];
 FIX(new_strings);
 
@@ -3056,9 +3143,7 @@ static void save_wom_barrels(void)
 {
     if (uncased_strcmp(CUR_MAP_FILENAME, "d11.blv")) // walls of mist
         return;
-    // name could be shorter, I'm guessing here
-    static const struct { char name[20]; int size; int unknown; } header
-        = { "barrels.bin", 15, 0 };
+    static const struct file_header header = { "barrels.bin", WOM_BARREL_CNT };
     save_file_to_lod(SAVEGAME_LOD, &header, (void *) (MAP_VARS + 75), 0);
 }
 
@@ -3832,6 +3917,7 @@ static void spell_elements(void)
 
 // Defined below.
 static void parse_statrate(void);
+static void set_colors(void);
 
 // Let's ride on the tail of the spells.txt parsing function.
 static void __declspec(naked) spells_txt_tail(void)
@@ -3843,6 +3929,7 @@ static void __declspec(naked) spells_txt_tail(void)
         call spell_elements
         call parse_itemgend
         call parse_statrate
+        call set_colors
         ret
       }
 }
@@ -5133,23 +5220,27 @@ static int reputation_group[REP_STACK_SIZE];
 // Top of the reputation group stack.
 static int reputation_index;
 
+// Defined below.
+static void new_game_training(void);
+static void load_game_training(void);
+static void save_game_training(void);
+
 // Zero out all reputation on a new game.
-static void __declspec(naked) new_game_rep(void)
+static void new_game_rep(void)
+{
+    memset(regional_reputation, 0, REP_GROUP_COUNT * sizeof(int));
+    reputation_group[0] = 0; // will be set on map load
+    reputation_index = 0;
+}
+
+// Hook for the above.  Also handles training values.
+static void __declspec(naked) new_game_hook(void)
 {
     asm
       {
-        mov dword ptr [0xacd4f8], eax ; replaced code
-        xor eax, eax
-        mov dword ptr [reputation_group], eax
-        mov dword ptr [reputation_index], eax
-        push ecx
-        push edi
-        cld
-        mov edi, offset regional_reputation
-        mov ecx, REP_GROUP_COUNT
-        rep stosd
-        pop edi
-        pop ecx
+        call dword ptr ds:save_game ; replaced call
+        call new_game_rep
+        call new_game_training
         ret
       }
 }
@@ -5171,13 +5262,14 @@ static void load_game_rep(void)
 // On a new game it's lowered to the current week, which is also 0.
 static int last_bank_week;
 
-// Hook for the above.
-// Also inits bank interest counter and resets hit messages.
+// Hook for the above.  Also handles training values,
+// inits bank interest counter and resets hit messages.
 static void __declspec(naked) load_game_hook(void)
 {
     asm
       {
         call load_game_rep
+        call load_game_training
         and dword ptr [last_bank_week], 0
         and dword ptr [last_hit_player], 0
         pop eax
@@ -5189,22 +5281,22 @@ static void __declspec(naked) load_game_hook(void)
 // Update and save reputation into the savefile.
 static void save_game_rep(void)
 {
-    // name could be shorter, I'm guessing here
-    static const struct { char name[20]; int size; int unknown; } header
-        = { "reputatn.bin", REP_GROUP_COUNT * sizeof(int), 0 };
+    static const struct file_header header = { "reputatn.bin",
+                                               REP_GROUP_COUNT * sizeof(int) };
     int group = reputation_group[reputation_index];
     if (group) // do not store group 0
         regional_reputation[group] = CURRENT_REP;
     save_file_to_lod(SAVEGAME_LOD, &header, regional_reputation, 0);
 }
 
-// Hook for the above.  Also handles WoM barrels.
+// Hook for the above.  Also handles WoM barrels and training values.
 static void __declspec(naked) save_game_hook(void)
 {
     asm
       {
         call save_game_rep
         call save_wom_barrels
+        call save_game_training
         lea eax, [ebp-68] ; replaced code
         ret 8
       }
@@ -5219,10 +5311,14 @@ static void load_map_rep(void)
     CURRENT_REP = regional_reputation[reputation_group[0]];
 }
 
+// Used below to track the bow GM mini-quest.
+static int bow_kill_player, bow_kill_time;
+
 // Hook for the above.  It's somewhat awkward, but Grayface has
 // already claimed all good places to fit a call into.
 // Also handles WoM barrels, resetting disabled spells, and weather,
 // which was not initialized properly on visiting a new map.
+// Finally, it resets the double-kill-tracking bow quest vars.
 static void __declspec(naked) load_map_hook(void)
 {
     asm
@@ -5233,6 +5329,8 @@ static void __declspec(naked) load_map_hook(void)
         call load_map_rep
         call load_wom_barrels
         call reset_disabled_spells
+        mov dword ptr [bow_kill_player], esi
+        mov dword ptr [bow_kill_time], esi
         cmp dword ptr [0x6be1e0], 2 ; test if outdoors
         jne quit
         cmp dword ptr [0x6a1160], esi ; last visit time, 0 if just refilled
@@ -5558,7 +5656,7 @@ static inline void reputation(void)
 {
     hook_call(0x45403c, parse_mapstats_rep, 7);
     patch_byte(0x454739, 30); // one more column
-    hook_call(0x460a97, new_game_rep, 5);
+    hook_call(0x460a9c, new_game_hook, 5);
     hook_call(0x45f0f2, load_game_hook, 5);
     hook_call(0x45f911, save_game_hook, 5);
     hook_call(0x444011, load_map_hook, 6);
@@ -6071,7 +6169,7 @@ static void __declspec(naked) min_weapon_recovery(void)
 // As such, we need to correct the displayed number if it should be lower.
 static void __stdcall display_melee_recovery(char *buffer)
 {
-    struct player *current = &PARTY[dword(0x507a6c)-1];
+    struct player *current = &PARTY[dword(CURRENT_PLAYER)-1];
     int recovery = get_attack_delay(current, 0);
     if (recovery >= 30)
         return;
@@ -6086,7 +6184,7 @@ static void __stdcall display_melee_recovery(char *buffer)
 static char *__stdcall resistance_hint(char *description, int resistance)
 {
     static char buffer[400];
-    struct player *current = &PARTY[dword(0x507a6c)-1];
+    struct player *current = &PARTY[dword(CURRENT_PLAYER)-1];
     int element;
     int base;
     int race = get_race(current);
@@ -6102,7 +6200,7 @@ static char *__stdcall resistance_hint(char *description, int resistance)
                 racial_bonus = 5 + current->level_base / 2;
             break;
         case 20:
-            element = ELECTRICITY;
+            element = SHOCK;
             base = current->shock_res_base;
             if (race == RACE_GOBLIN)
                 racial_bonus = 5 + current->level_base / 2;
@@ -6136,7 +6234,7 @@ static char *__stdcall resistance_hint(char *description, int resistance)
         default:
             return description;
       }
-    int total = get_player_resistance(current, resistance - 9);
+    int total = get_resistance(current, resistance - 9);
     if (total)
         total += get_effective_stat(get_luck(current));
     strcpy(buffer, description);
@@ -6291,7 +6389,7 @@ static void parse_statrate(void)
 static char *__stdcall stat_hint(char *description, int stat)
 {
     static char buffer[400];
-    struct player *current = &PARTY[dword(0x507a6c)-1];
+    struct player *current = &PARTY[dword(CURRENT_PLAYER)-1];
     int total, base, potion;
 
     switch (stat)
@@ -6596,7 +6694,7 @@ static int __stdcall check_skill(int player, int skill, int level, int mastery)
         return FALSE;
       }
     if (player == 4)
-        player = dword(0x507a6c) - 1;
+        player = dword(CURRENT_PLAYER) - 1;
     if (player < 0 || player > 3)
         player = random() & 3;
 
@@ -7542,16 +7640,25 @@ static void __declspec(naked) cursed_weapon(void)
 // as the murder code overwrites ebx which stored it.
 static int stored_projectile;
 
+//Defined below.
+static void __stdcall kill_checks(struct player *, struct map_monster *,
+                                  struct map_object *);
+
 // Implement soul stealing weapons: when used to kill a monster,
 // they add SP equal to monster's level.  Just like vampiric weapons,
 // overheal is possible, and wielding two such weapons will double SP gain.
 // The new Sacrificial Dagger is also soul stealing.
-// Also here: store the damaging projectile for later use.
+// Also here: store the damaging projectile for later use,
+// and run skill-related on-kill checks.
 static void __declspec(naked) soul_stealing_weapon(void)
 {
     asm
       {
         mov dword ptr [stored_projectile], ebx
+        push ebx
+        push esi
+        push edi
+        call kill_checks
         test ebx, ebx
         jnz quit
         movzx eax, byte ptr [edi+0xb9] ; class
@@ -9150,7 +9257,7 @@ static void __declspec(naked) display_new_npc_text(void)
       {
         cmp eax, 789 ; old buffer size
         ja new
-        mov eax, dword ptr [0x7214e4+eax*8] ; replaced code
+        mov eax, dword ptr [NPC_TOPIC_TEXT_ADDR+eax*8-4] ; replaced code
         ret
         new:
         mov eax, dword ptr [REF(new_npc_text)+eax*4-790*4]
@@ -9180,7 +9287,7 @@ static inline void npc_dialog(void)
     patch_dword(0x476e45, GREET_COUNT);
     patch_pointer(0x4455dc, npc_greet);
     patch_pointer(0x4b2ba4, npc_greet);
-    patch_dword(0x476b17, 0x7214e8 + TOPIC_COUNT * 8); // more NPC topics
+    patch_dword(0x476b17, NPC_TOPIC_TEXT_ADDR + TOPIC_COUNT * 8); // more NPC topics
     hook_call(0x476a43, write_new_npc_text, 13);
     hook_call(0x447bee, display_new_npc_text, 7);
     hook_call(0x447c0d, display_new_npc_text_2, 7);
@@ -9670,7 +9777,7 @@ static void __declspec(naked) reset_races(void)
     asm
       {
         mov byte ptr [PARTY_ADDR+0xba], 17
-        mov byte ptr [PARTY_ADDR+0x1b3+0xba], 3
+        mov byte ptr [PARTY_ADDR+0x1b3c+0xba], 3
         mov byte ptr [PARTY_ADDR+0x1b3c*2+0xba], 14
         mov byte ptr [PARTY_ADDR+0x1b3c*3+0xba], 10
         cmp dword ptr [0x507a4c], 0
@@ -9867,7 +9974,7 @@ static void __declspec(naked) print_human_racial_skill(void)
         call dword ptr ds:get_race
         cmp eax, RACE_HUMAN
         jne quit
-        mov edx, dword ptr [0xae3150+SKILL_LEARNING*4] ; skill name
+        mov edx, dword ptr [SKILL_NAMES_ADDR+SKILL_LEARNING*4]
         push edx
         push dword ptr [0x5c347c] ; font
         mov ecx, 150
@@ -10050,6 +10157,17 @@ static int __cdecl get_max_skill_level(int class, int race, int skill)
     return level || stage ? EXPERT : NORMAL;
 }
 
+static void set_colors(void)
+{
+    colors[CLR_WHITE] = rgb_color(255, 255, 255);
+    colors[CLR_ITEM] = rgb_color(255, 255, 155);
+    colors[CLR_RED] = rgb_color(255, 0, 0);
+    colors[CLR_YELLOW] = rgb_color(255, 255, 0);
+    colors[CLR_GREEN] = rgb_color(0, 255, 0);
+    colors[CLR_BLUE] = rgb_color(0, 255, 255);
+    colors[CLR_PURPLE] = rgb_color(255, 0, 255);
+}
+
 // Colorize skill ranks more informatively (also respect racial skills).
 static int __fastcall get_skill_color(struct player *player,
                                       int skill, int rank)
@@ -10057,22 +10175,22 @@ static int __fastcall get_skill_color(struct player *player,
     int class = player->class;
     int race = get_race(player);
     if (get_max_skill_level(class, race, skill) >= rank)
-        return rgb_color(255, 255, 255); // white
+        return colors[CLR_WHITE];
     int stage = class & 3;
     if (!stage && get_max_skill_level(class + 1, race, skill) >= rank)
-        return rgb_color(255, 255, 0); // yellow
+        return colors[CLR_YELLOW];
     if (stage < 2)
       {
         int good = get_max_skill_level(class - stage + 2, race, skill) >= rank;
         int evil = get_max_skill_level(class - stage + 3, race, skill) >= rank;
         if (good && evil)
-            return rgb_color(0, 255, 0); // green
+            return colors[CLR_GREEN];
         if (good)
-            return rgb_color(0, 255, 255); // blue
+            return colors[CLR_BLUE];
         if (evil)
-            return rgb_color(255, 0, 255); // purple
+            return colors[CLR_PURPLE];
       }
-    return rgb_color(255, 0, 0); // red
+    return colors[CLR_RED];
 }
 
 // Replace the max skill table check with our race-inclusive function.
@@ -10764,7 +10882,7 @@ static void __declspec(naked) perception_bonus_gold(void)
 {
     asm
       {
-        mov ecx, dword ptr [0x507a6c] ; current player
+        mov ecx, dword ptr [CURRENT_PLAYER]
         dec ecx
         jl no_player
         mov ecx, dword ptr [0xa74f48+ecx*4] ; player pointers
@@ -10792,7 +10910,7 @@ static void __declspec(naked) perception_extra_item(void)
         div ecx
         mov esi, edx
         xor eax, eax
-        mov ecx, dword ptr [0x507a6c] ; current player
+        mov ecx, dword ptr [CURRENT_PLAYER]
         dec ecx
         jl no_player
         mov ecx, dword ptr [0xa74f48+ecx*4] ; player pointers
@@ -11001,7 +11119,12 @@ static void __declspec(naked) erad_stop_moving(void)
       }
 }
 
+// Defined below.
+static int training[4][SKILL_COUNT];
+
 // Make enchanted items more difficult to ID and repair.
+// Also here: register id/repair training.
+// NB: the latter will not work right at GM, but we don't need it to!
 static void __declspec(naked) raise_ench_item_difficulty(void)
 {
     asm
@@ -11035,6 +11158,23 @@ static void __declspec(naked) raise_ench_item_difficulty(void)
         movzx edx, byte ptr [esi+46] ; replaced code, almost
         add eax, edx
         cmp edi, eax ; replaced code
+        jl quit
+        mov edx, SKILL_IDENTIFY_ITEM
+        cmp dword ptr [esp], 0x491149 ; can repair func
+        jb id
+        mov edx, SKILL_REPAIR
+        id:
+        mov ecx, dword ptr [CURRENT_PLAYER]
+        dec ecx
+        imul ecx, ecx, SKILL_COUNT
+        add edx, ecx
+#ifdef __clang__
+        mov ecx, offset training ; buggy clang strikes again
+        inc dword ptr [ecx+edx*4] ; (can`t inc training[edx] directly)
+#else
+        inc dword ptr [training+edx*4] ; should also set the flags
+#endif
+        quit:
         ret
       }
 }
@@ -11233,17 +11373,21 @@ static void __declspec(naked) resist_phys_damage_hook(void)
       }
 }
 
+// Used below to determine who gets skill training from the block.
+static struct player *blocker;
+
 // Implement M Shield bonus: whenever another party member is attacked,
 // there's a chance to substitute the shield-wearer's AC if it's higher.
 static int __thiscall maybe_cover_ally(struct player *player)
 {
     int ac = get_ac(player);
+    blocker = player;
     for (int i = 0; i < 4; i++)
       {
         if (PARTY + i == player)
             continue;
         int offhand = PARTY[i].equipment[SLOT_OFFHAND];
-        int skill = get_skill(&PARTY[i], SKILL_SHIELD);
+        int skill = get_skill(PARTY + i, SKILL_SHIELD);
         if (offhand && skill >= SKILL_MASTER)
           {
             struct item *shield = &PARTY[i].items[offhand-1];
@@ -11251,9 +11395,12 @@ static int __thiscall maybe_cover_ally(struct player *player)
                 && ITEMS_TXT[shield->id].skill == SKILL_SHIELD
                 && (skill & SKILL_MASK) > random() % 100)
               {
-                int new_ac = get_ac(&PARTY[i]);
+                int new_ac = get_ac(PARTY + i);
                 if (new_ac > ac)
+                  {
                     ac = new_ac;
+                    blocker = PARTY + i;
+                  }
               }
           }
       }
@@ -11392,6 +11539,9 @@ static int __thiscall maybe_dodge(struct player *player)
            || skill >= SKILL_NONE;
 }
 
+// Defined below.
+static int __stdcall train_armor(void *, void *);
+
 // Hook for the above.
 static void __declspec(naked) maybe_dodge_hook(void)
 {
@@ -11401,7 +11551,7 @@ static void __declspec(naked) maybe_dodge_hook(void)
         call maybe_dodge
         test eax, eax
         jnz dodge
-        jmp dword ptr ds:monster_hits_player ; replaced call
+        jmp train_armor ; includes replaced call
         dodge:
         mov edi, dword ptr [esp+8] ; player
         push 0x43a630 ; dodge code
@@ -11529,6 +11679,572 @@ static void __declspec(naked) id_monster_master(void)
       }
 }
 
+static int *const new_skill_cost = (int *) 0xf8b034;
+static int *const can_learn_skill = (int *) 0xf8b028;
+static int gm_quest;
+
+// Let GM teachers be more creative with their demands.
+static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
+{
+#define DEFAULT ((char *) 0)
+#define REFUSE ((char *) -1)
+#define ACCEPT ((char *) -2)
+    gm_quest = 0;
+    int train_req = 0;
+    static char reply_buffer[200];
+    switch (skill)
+      {
+        case SKILL_STAFF:
+        case SKILL_SWORD:
+        case SKILL_DAGGER:
+        case SKILL_AXE:
+        case SKILL_SPEAR:
+        case SKILL_MACE:
+            train_req = 50;
+            break;
+        case SKILL_BOW:
+            if (check_qbit(QBITS, QBIT_BOW_GM_QUEST))
+                return DEFAULT;
+            gm_quest = 593;
+            break;
+        case SKILL_BLASTER:
+            if (check_qbit(QBITS, QBIT_BLASTER_GM_QUEST))
+                return DEFAULT;
+            gm_quest = 595;
+            break;
+        case SKILL_SHIELD:
+        case SKILL_LEATHER:
+        case SKILL_CHAIN:
+        case SKILL_PLATE:
+            train_req = 100;
+            break;
+        case SKILL_FIRE:
+        case SKILL_AIR:
+        case SKILL_WATER:
+        case SKILL_SPIRIT:
+        case SKILL_MIND:
+        case SKILL_BODY:
+              {
+                int stat, element;
+                switch (skill)
+                  {
+                    case SKILL_FIRE:
+                        stat = STAT_FIRE_RES;
+                        element = FIRE;
+                        break;
+                    case SKILL_AIR:
+                        stat = STAT_SHOCK_RES;
+                        element = SHOCK;
+                        break;
+                    case SKILL_WATER:
+                        stat = STAT_COLD_RES;
+                        element = COLD;
+                        break;
+                    case SKILL_SPIRIT:
+                        stat = STAT_MAGIC_RES;
+                        element = MAGIC;
+                        break;
+                    case SKILL_MIND:
+                        stat = STAT_MIND_RES;
+                        element = MIND;
+                        break;
+                    case SKILL_BODY:
+                        stat = STAT_POISON_RES;
+                        element = POISON;
+                        break;
+                  }
+                // TODO: temporary immunity shouldn't qualify
+                if (get_base_resistance(player, stat) < 50
+                    && !is_immune(player, element))
+                    return REFUSE;
+                if ((player->skills[skill] & SKILL_MASK) < 12)
+                    return REFUSE;
+                return DEFAULT;
+              }
+        case SKILL_EARTH:
+            if (get_base_ac(player) < 100)
+                return REFUSE;
+            if ((player->skills[skill] & SKILL_MASK) < 12)
+                return REFUSE;
+            return DEFAULT;
+        case SKILL_LIGHT:
+        case SKILL_DARK:
+            if ((player->skills[skill] & SKILL_MASK) < 12)
+                return REFUSE;
+            if (check_qbit(QBITS, skill == SKILL_LIGHT ? QBIT_LIGHT_PATH
+                                                       : QBIT_DARK_PATH))
+              {
+                *new_skill_cost = 0;
+                return ACCEPT;
+              }
+            return REFUSE;
+        case SKILL_IDENTIFY_ITEM:
+            train_req = 100;
+            break;
+        case SKILL_MERCHANT:
+            leave_map_rep(); // update rep array
+            for (int i = 2; i <= 11; i++) // don't check emerald island!
+                if (i == 7) // also skip evenmorn (no temple)
+                    continue;
+                else if (regional_reputation[i] > -5)
+                    return REFUSE;
+            *new_skill_cost = 20000;
+            return ACCEPT;
+        case SKILL_REPAIR:
+            train_req = 25;
+            break;
+        case SKILL_BODYBUILDING:
+            if (check_qbit(QBITS, QBIT_BODYBUIDING_GM_QUEST))
+                return DEFAULT;
+            gm_quest = 597;
+            break;
+        case SKILL_MEDITATION:
+            if (check_qbit(QBITS, QBIT_MEDITATION_GM_QUEST))
+                return DEFAULT;
+            gm_quest = 599;
+            break;
+        case SKILL_PERCEPTION:
+            if (check_qbit(QBITS, QBIT_FOUND_OBELISK_TREASURE))
+                return DEFAULT;
+            return REFUSE;
+        case SKILL_DISARM_TRAPS:
+            train_req = 40;
+            break;
+        case SKILL_DODGING:
+        case SKILL_UNARMED:
+            return DEFAULT;
+        case SKILL_IDENTIFY_MONSTER:
+            train_req = 100;
+            break;
+        case SKILL_ARMSMASTER:
+            for (int i = SKILL_STAFF; i <= SKILL_MACE; i++)
+                if (i == SKILL_BOW)
+                    continue;
+                else if (player->skills[i] < SKILL_EXPERT)
+                    return REFUSE;
+            return DEFAULT;
+        case SKILL_THIEVERY:
+            for (int i = 0; i < 14 * 9; i++)
+              {
+                int j = player->inventory[i] - 1;
+                if (j >= 0 && player->items[j].flags & IFLAGS_STOLEN
+                    && item_value(&player->items[j]) >= 3000)
+                  {
+                    *new_skill_cost = ~i;
+                    char name_buffer[100];
+                    sprintf(name_buffer, COLOR_FORMAT, colors[CLR_ITEM],
+                            item_name(&player->items[j]));
+                    sprintf(reply_buffer, new_strings[41],
+                            SKILL_NAMES[skill], name_buffer);
+                    *can_learn_skill = 1;
+                    return reply_buffer;
+                  }
+              }
+            return REFUSE;
+        case SKILL_ALCHEMY:
+            if (check_qbit(QBITS, QBIT_ALCHEMY_GM_QUEST))
+              {
+                *new_skill_cost = 0;
+                return ACCEPT;
+              }
+            gm_quest = 601;
+            break;
+        case SKILL_LEARNING:
+            if (player->level_base < 25)
+                return REFUSE;
+            return DEFAULT;
+      }
+    if (gm_quest)
+      {
+        *can_learn_skill = 1; // not really, but allows clicking
+        return NPC_TOPIC_TEXT[gm_quest].topic;
+      }
+    if (train_req)
+      {
+        char *reply;
+        switch (training[player-PARTY][skill] * 4 / train_req)
+          {
+            case 0:
+                reply = new_strings[42];
+                break;
+            case 1:
+                reply = new_strings[43];
+                break;
+            case 2:
+                reply = new_strings[44];
+                break;
+            case 3:
+                reply = new_strings[45];
+                break;
+            case 4:
+            default:
+                return DEFAULT;
+          }
+        sprintf(reply_buffer, reply, SKILL_NAMES[skill]);
+        return reply_buffer;
+      }
+    return DEFAULT; // shouldn't be reached
+}
+
+// Hook for the above.
+static void __declspec(naked) gm_teaching_conditions_hook(void)
+{
+    asm
+      {
+        push eax
+        push esi
+        call gm_teaching_conditions
+        test eax, eax
+        jg custom
+        inc eax
+        je refuse
+        mov eax, dword ptr [0xf8b02c] ; restore new skill
+        jl quit
+        lea ecx, [eax-7] ; replaced code
+        cmp ecx, 28 ; replaced code
+        quit:
+        ret
+        custom:
+        push 0x4b28cd ; skip to quit (eax is set)
+        ret 4
+        refuse:
+        push 0x4b27f5 ; refuse message
+        ret 4
+      }
+}
+
+// Kludge to keep the quest message when the GM dialogue terminates.
+static int keep_text = 0, suppress_greet = 0;
+
+// Execute some special actions (quest, item cost) when the learn option
+// is actually clicked.  Also avoid the money sound at 0 cost.
+static void __declspec(naked) learn_gm_skill(void)
+{
+    asm
+      {
+        cmp dword ptr [0xf8b030], GM ; new skill level
+        jne ordinary
+        cmp dword ptr [gm_quest], ebx ; ebx == 0
+        jnz quest
+        ordinary:
+        cmp ecx, ebx
+        jz free
+        jg gold
+        mov eax, dword ptr [CURRENT_PLAYER]
+        test eax, eax
+        jz quit
+        not ecx
+        push ecx
+        mov ecx, dword ptr [0xa74f48+eax*4-4] ; player pointers
+        call dword ptr ds:delete_backpack_item
+        xor ecx, ecx ; no gold cost, but make a sound
+        gold:
+        call dword ptr ds:spend_gold
+        free:
+        mov eax, dword ptr [CURRENT_PLAYER]
+        test eax, eax
+        quit:
+        ret
+        quest:
+        xor eax, eax
+        inc eax
+        mov dword ptr [keep_text], eax
+        mov dword ptr [suppress_greet], eax
+        mov dword ptr [0x5c32a0], eax ; use global.evt
+        push eax
+        xor edx, edx
+        mov ecx, dword ptr [gm_quest]
+        call dword ptr ds:process_event
+        mov dword ptr [0x5c32a0], ebx
+        xor eax, eax ; set zf
+        ret
+      }
+}
+
+// Do not erase the last NPC message when exiting dialogue,
+// as long as our flag is set.  (Used directly above.)
+static void __declspec(naked) keep_text_on_exit(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [keep_text]
+        jecxz erase ; can`t alter the flags
+        mov dword ptr [keep_text], edi ; reset the flag
+        ret
+        erase:
+        mov dword ptr [0xf8b068], edi ; current message
+        ret
+      }
+}
+
+// Also don't print a greeting, as it would be overlapped
+// with the quest message otherwise.
+static void __declspec(naked) suppress_greet_after_gm(void)
+{
+    asm
+      {
+        cmp dword ptr [suppress_greet], 1
+        mov dword ptr [suppress_greet], ebx ; reset
+        ret
+      }
+}
+
+// Let the Master in magic schools require a skill of 8, not 7.
+static void __declspec(naked) master_spell_skill(void)
+{
+    asm
+      {
+        jl quit ; replaced jump
+        cmp dword ptr [0xf8b02c], SKILL_FIRE ; new skill
+        jb not_magic
+        cmp dword ptr [0xf8b02c], SKILL_DARK
+        ja not_magic
+        cmp ebx, 8
+        ret
+        not_magic:
+        cmp ebx, 7 ; replaced code
+        quit:
+        ret
+      }
+}
+
+// Set the training values to 0 upon a new game.
+// Called from new_game_hook() above.
+static void new_game_training(void)
+{
+    memset(training, 0, 4 * SKILL_COUNT * sizeof(int));
+}
+
+// Load training values from the savefile.
+// Called from load_game_hook() above.
+static void load_game_training(void)
+{
+    void *file = find_in_lod(SAVEGAME_LOD, "training.bin", 1);
+    if (file)
+        fread(training, sizeof(int), 4 * SKILL_COUNT, file);
+    else // if somehow missing, zero it out
+        new_game_training();
+}
+
+// Save the training values.
+// Called from save_game_hook() above.
+static void save_game_training(void)
+{
+    static const struct file_header header = { "training.bin",
+                                               4 * SKILL_COUNT * sizeof(int) };
+    save_file_to_lod(SAVEGAME_LOD, &header, training, 0);
+}
+
+// Called when killing a monster.  For bow, check for GM quest completion.
+// For melee weapons, advance kill counters.
+// TODO: will also need to track throwing knife kills
+static void __stdcall kill_checks(struct player *player,
+                                  struct map_monster *monster,
+                                  struct map_object *proj)
+{
+    if (proj)
+      {
+        if (proj->spell_type == SPL_ARROW)
+          {
+            int new_player = player - PARTY + 1;
+            // these are the animtime counters for turn-based/normal mode
+            int new_time = dword(dword(0xacd6b4) ? 0x50ba5c : 0x50ba84)
+                           - proj->age;
+            if (new_player == bow_kill_player && new_time == bow_kill_time
+                && check_qbit(QBITS, QBIT_BOW_GM_QUEST_ACTIVE)
+                && !check_qbit(QBITS, QBIT_BOW_GM_QUEST))
+              {
+                evt_set(player, EVT_QBITS, QBIT_BOW_GM_QUEST);
+                // make the quest book blink
+                evt_set(player, EVT_QBITS, QBIT_DUMMY);
+                evt_sub(player, EVT_QBITS, QBIT_DUMMY);
+              }
+            bow_kill_player = new_player;
+            bow_kill_time = new_time;
+          }
+      }
+    else
+      {
+        int slot = SLOT_OFFHAND;
+        int skill = SKILL_NONE;
+        for (int i = 0; i < 2; i++)
+          {
+            int weapon = player->equipment[slot];
+            if (weapon)
+              {
+                struct item *item = &player->items[weapon-1];
+                int new_skill = ITEMS_TXT[item->id].skill;
+                if (new_skill < SKILL_BLASTER && new_skill != skill
+                    && !(item->flags & IFLAGS_BROKEN))
+                  {
+                    skill = new_skill;
+                    training[player-PARTY][skill]++;
+                  }
+              }
+            slot = SLOT_MAIN_HAND;
+          }
+      }
+}
+
+// Trigger the Bodybuilding GM quest completion when appropriate.
+static void bb_quest(void)
+{
+    if (check_qbit(QBITS, QBIT_BODYBUIDING_GM_QUEST_ACTIVE)
+        && !check_qbit(QBITS, QBIT_BODYBUIDING_GM_QUEST))
+      {
+        evt_set(PARTY, EVT_QBITS, QBIT_BODYBUIDING_GM_QUEST);
+        // make the quest book blink, and also sparkles
+        for (int i = 0; i < 4; i++)
+          {
+            evt_set(PARTY + i, EVT_QBITS, QBIT_DUMMY);
+            evt_sub(PARTY + i, EVT_QBITS, QBIT_DUMMY);
+          }
+      }
+}
+
+// Hook for the above.
+static void __declspec(naked) bb_quest_hook(void)
+{
+    asm
+      {
+        cmp byte ptr [0xacd59c], 3
+        jbe quit
+        call bb_quest
+        cmp ebx, edi ; should be greater
+        quit:
+        ret
+      }
+}
+
+// Meditation GM quest: check if we're resting on top of Mt. Nighon.
+static void meditation_quest(void)
+{
+    if (check_qbit(QBITS, QBIT_MEDITATION_GM_QUEST_ACTIVE)
+        && !check_qbit(QBITS, QBIT_MEDITATION_GM_QUEST)
+        && !uncased_strcmp(CUR_MAP_FILENAME, "out10.odm") // nighon
+        && dword(0xacd4f4) >= 7999) // z coord (only the volcano is that high)
+      {
+        evt_set(PARTY, EVT_QBITS, QBIT_MEDITATION_GM_QUEST);
+        // make the quest book blink, and also sparkles
+        for (int i = 0; i < 4; i++)
+          {
+            evt_set(PARTY + i, EVT_QBITS, QBIT_DUMMY);
+            evt_sub(PARTY + i, EVT_QBITS, QBIT_DUMMY);
+          }
+      }
+}
+
+// Hook for the above.
+static void __declspec(naked) meditation_quest_hook(void)
+{
+    asm
+      {
+        call meditation_quest
+        mov dword ptr [0x506d98], 480
+        ret
+      }
+}
+
+// Alchemy GM quest: brew a rejuvenation potion (ID checked in the hook).
+static void __thiscall alchemy_quest(struct player *player)
+{
+    if (check_qbit(QBITS, QBIT_ALCHEMY_GM_QUEST_ACTIVE)
+        && !check_qbit(QBITS, QBIT_ALCHEMY_GM_QUEST))
+      {
+        evt_set(player, EVT_QBITS, QBIT_ALCHEMY_GM_QUEST);
+        // make the quest book blink
+        evt_set(player, EVT_QBITS, QBIT_DUMMY);
+        evt_sub(player, EVT_QBITS, QBIT_DUMMY);
+      }
+}
+
+// Hook for the above.
+static void __declspec(naked) alchemy_quest_hook(void)
+{
+    asm
+      {
+        cmp dword ptr [ebp-4], REJUVENATION
+        jne skip
+        mov ecx, esi
+        call alchemy_quest
+        skip:
+        mov eax, dword ptr [ebp-8] ; replaced code
+        mov ecx, dword ptr [ebp-4] ; replaced code
+        ret
+      }
+}
+
+// A wrapper for monster hit roll,
+// registers armor/shield training on a successfull block.
+static int __stdcall train_armor(void *monster, void *player)
+{
+    int result = monster_hits_player(monster, player);
+    if (!result)
+      {
+        int body = blocker->equipment[SLOT_BODY_ARMOR];
+        if (body)
+          {
+            struct item *armor = &blocker->items[body-1];
+            int skill = ITEMS_TXT[armor->id].skill;
+            if (!(armor->flags & IFLAGS_BROKEN)
+                && skill >= SKILL_LEATHER && skill <= SKILL_PLATE)
+                training[blocker-PARTY][skill]++;
+          }
+        int offhand = blocker->equipment[SLOT_OFFHAND];
+        if (offhand)
+          {
+            struct item *shield = &blocker->items[offhand-1];
+            if (!(shield->flags & IFLAGS_BROKEN)
+                && ITEMS_TXT[shield->id].skill == SKILL_SHIELD)
+                training[blocker-PARTY][SKILL_SHIELD]++;
+          }
+      }
+    return result;
+}
+
+// Increment the training counter on a successful chest disarm.
+static int __declspec(naked) train_disarm(void)
+{
+    asm
+      {
+        mov dword ptr [ebp-4], 1 ; replaced code
+        mov ecx, dword ptr [CURRENT_PLAYER]
+        dec ecx
+        imul ecx, ecx, SKILL_COUNT
+        add ecx, SKILL_DISARM_TRAPS
+#ifdef __clang__
+        mov edx, offset training ; work around clang bugs
+        inc dword ptr [edx+ecx*4]
+#else
+        inc dword ptr [training+ecx*4]
+#endif
+        ret
+      }
+}
+
+// Register a successful ID Monster use.
+static int __declspec(naked) train_id_monster(void)
+{
+    asm
+      {
+        cmp dword ptr [ebp-24], ebx ; zero if monster is already id
+        jz skip
+        mov ecx, dword ptr [CURRENT_PLAYER]
+        dec ecx
+        imul ecx, ecx, SKILL_COUNT
+        add ecx, SKILL_IDENTIFY_MONSTER
+#ifdef __clang__
+        mov edx, offset training ; work around clang bugs
+        inc dword ptr [edx+ecx*4]
+#else
+        inc dword ptr [training+ecx*4]
+#endif
+        skip:
+        cmp dword ptr [0x507a70], ebx ; replaced code
+        ret
+      }
+}
+
 // Tweak various skill effects.
 static inline void skill_changes(void)
 {
@@ -11589,6 +12305,19 @@ static inline void skill_changes(void)
     hook_call(0x43a480, id_monster_master, 5);
     // gm bonus applied in pierce_debuff_resistance()
     // and cursed_monster_resists_damage() above
+    hook_call(0x4b268f, gm_teaching_conditions_hook, 6);
+    hook_call(0x4b218d, learn_gm_skill, 12);
+    hook_call(0x4bd856, keep_text_on_exit, 6);
+    hook_call(0x43260e, suppress_greet_after_gm, 6);
+    hook_call(0x4b273c, master_spell_skill, 9);
+    erase_code(0x46c1b4, 4); // preserve arrow age to determine shot timing
+    // blaster quest completed in condition_immunity() above
+    hook_call(0x4941d0, bb_quest_hook, 7);
+    hook_call(0x4341f6, meditation_quest_hook, 10);
+    hook_call(0x416544, alchemy_quest_hook, 6);
+    // id item and repair training is in raise_ench_item_difficulty() above
+    hook_call(0x42046d, train_disarm, 7);
+    hook_call(0x41eb30, train_id_monster, 6);
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

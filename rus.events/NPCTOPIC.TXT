@@ -591,3 +591,13 @@
 590	Древнее оружие	Tolberti (loyalty bonus)
 591	Предложение Арчибальда	Gavin Magnus (loyalty bonus)
 592	Предложение Гэвина Магнуса	Archibald (loyalty bonus)
+593	Не спешите...	Bow GM mini-quest
+594	Великий магистр лука	GM mini-quest in progress
+595	Не спешите...	Blaster GM mini-quest
+596	Великий магистр древнего оружия	GM mini-quest in progress
+597	Не спешите...	Bodybuilding GM mini-quest
+598	Великий магистр атлетики	GM mini-quest in progress
+599	Не спешите...	Meditation GM mini-quest
+600	Великий магистр медитации	GM mini-quest in progress
+601	Не спешите...	Alchemy GM mini-quest
+602	Великий магистр алхимии	GM mini-quest in progress

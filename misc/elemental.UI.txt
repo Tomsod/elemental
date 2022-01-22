@@ -25,12 +25,12 @@ if empty	1												Game.PartyBuffs
 icon %sSpBgL	140				140		-	+		ui				SpLeft
 if
 
-STAGE before DrawView
+STAGE DrawView
 
 SCREEN															RECOVER
 			0	0					NoRecover					SpLeft
 recover													SpLeft
 
-STAGE before DrawViewUI
+STAGE DrawViewUI
 SCREEN					ScreenW	ScreenH			MainMenuLike=0						DRAW VIEW
 							+						SpLeft

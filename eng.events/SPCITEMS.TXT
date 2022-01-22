@@ -82,9 +82,8 @@ Double Damage to enemies not facing you.	of Backstabbing	20	20	0	0	0	0	0	0	0	0	0
 Reduced Recovery penalty.	Lightweight	0	0	0	20	20	0	0	0	0	0	0	0	1500	B	(-10) to armor recovery penalty
 Increases jump height.	of Leaping	0	0	0	0	0	0	0	0	0	15	0	0	1000	A	+20% to base jump power, cumulative
 Wearer resistant to Dispel Magic.	of Permanence	0	0	0	0	10	10	0	0	0	0	10	10	2000	C	Immunity to enemy Dispel Magic
-Cannot break.	Sturdy	5	5	5	5	5	5	0	5	5	5	0	0	500	A	Cannot be broken by monster attacks etc.
 
-		585	585	580	370	350	325	265	320	240	220	405	390			
+		580	580	575	365	345	320	265	315	235	215	405	390			
 
 Treasure Level	If treasure Level = 3 add all A and B															
 A= 3 to 4	If treasure Level = 4 add all A and B and C

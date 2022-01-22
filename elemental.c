@@ -102,8 +102,8 @@ enum elements
     HOLY = 6,
     MIND = 7,
     MAGIC = 8,
-    ENERGY = 9,
     FIRE_POISON = 10,
+    ENERGY = 12, // conforming to mmpatch
 };
 
 #define IMMUNE 200
@@ -139,8 +139,7 @@ enum spcitems_txt
     SPC_LIGHTWEIGHT = 78,
     SPC_LEAPING = 79,
     SPC_PERMANENCE = 80,
-    SPC_STURDY = 81,
-    SPC_COUNT = 81,
+    SPC_COUNT = 80
 };
 
 enum player_stats
@@ -174,6 +173,48 @@ enum class
     CLASS_SNIPER = 19,
     CLASS_LICH = 35,
     CLASS_COUNT = 36,
+};
+
+enum new_strings
+{
+    STR_HOLY,
+    STR_FIRE_IMM,
+    STR_SHOCK_IMM,
+    STR_COLD_IMM,
+    STR_POISON_IMM,
+    STR_MIND_IMM,
+    STR_MAGIC_IMM,
+    STR_TEMPORARY,
+    STR_ALCH_SKILL,
+    STR_ALCH_REAGENTS,
+    STR_ALCH_RECIPE,
+    STR_ALCH_BOTTLES,
+    STR_BLESS_WATER,
+    STR_ALWAYS,
+    STR_CANNOT_RECHARGE,
+    STR_RECHARGE,
+    STR_RATING,
+    STR_BASE_VALUE,
+    STR_HALVE_ARMOR,
+    STR_DAMAGE_MANY,
+    STR_KILL_MANY,
+    STR_HUNTER,
+    STR_VERSION,
+    STR_BLACK_POTION,
+    STR_AVERAGE_DAMAGE,
+    STR_ACCOUNT_RACE,
+    STR_HUMANS,
+    STR_ELVES,
+    STR_GOBLINS,
+    STR_DWARVES,
+    STR_ID_BEFORE_READ,
+    STR_ABSORB_SPELL,
+    STR_GM_FOR_ITEM,
+    STR_PRACTICE_0,
+    STR_PRACTICE_1,
+    STR_PRACTICE_2,
+    STR_PRACTICE_3,
+    NEW_STRING_COUNT
 };
 
 #define SKIP(bytes) char JOIN(unknown_, __COUNTER__)[bytes]
@@ -784,6 +825,19 @@ struct __attribute__((packed)) npc_topic_text
 #define NPC_TOPIC_TEXT_ADDR 0x7214e8
 #define NPC_TOPIC_TEXT ((struct npc_topic_text *) NPC_TOPIC_TEXT_ADDR - 1)
 
+// TOptions from MM7Patch v2.5.
+struct __attribute__((packed)) patch_options
+{
+    SKIP(196);
+    int fix_unimplemented_spells;
+    SKIP(132);
+    int fix_light_bolt;
+    int armageddon_element;
+    SKIP(16);
+    int keep_empty_wands;
+    SKIP(4);
+};
+
 static int __cdecl (*uncased_strcmp)(const char *left, const char *right)
     = (funcptr_t) 0x4caaf0;
 static int __thiscall (*get_resistance)(const void *player, int stat)
@@ -946,8 +1000,8 @@ static void __thiscall (*evt_sub)(void *player, int what, int amount)
 //---------------------------------------------------------------------------//
 
 static const char *const elements[] = {"fire", "elec", "cold", "pois", "phys",
-                                       0, "holy", "mind", "magic", "ener",
-                                       "firepois"};
+                                       0, "holy", "mind", "magic", 0,
+                                       "firepois", 0, "ener"};
 
 // Patch spells.txt parsing, specifically possible spell elements.
 static inline void spells_txt(void)
@@ -1041,25 +1095,6 @@ static inline void skip_monster_res(void)
     hook_call(0x41f3a3, skip_unknown_monster_res, 6);
 }
 
-// Just (temporarily) change assassins to poison and barbarians to frost.
-static void __declspec(naked) assassins_barbarians(void)
-{
-    asm
-      {
-        mov ebx, dword ptr [ebx+0xc]
-        cmp ebx, SPC_ASSASSINS
-        jne not_assassins
-        mov ebx, SPC_POISON
-        not_assassins:
-        cmp ebx, SPC_BARBARIANS
-        jne not_barbarians
-        mov ebx, SPC_FROST
-        not_barbarians:
-        cmp ebx, SPC_DRAGON
-        ret
-      }
-}
-
 // The original code used the same constant of 8 both for damage and element
 // of the "of venom" modifier, so I couldn't easily patch it in-place.
 // Instead, I rewrote the poison code entirely.  As a bonus, Old Nick's
@@ -1096,11 +1131,9 @@ static void __declspec(naked) poison_chunk(void)
       }
 }
 
-// Fix "of assassins" and "of barbarians" not dealing elemental damage.
-// Also change poisoned weapons' damage from Body to Poison.
+// Change poisoned weapons' damage from Body to Poison.
 static inline void elemental_weapons(void)
 {
-    hook_call(0x439e6b, assassins_barbarians, 6);
     hook_call(0x439f47, poisoned_weapons, 7);
     patch_bytes(0x439f70, poison_chunk, 2);
     patch_dword(0x439f6c, POISON); // was 2 (water) for some reason
@@ -1560,7 +1593,6 @@ static inline void undead_immunities(void)
     erase_code(0x419053, 51); // old body immunity code
 }
 
-#define NEW_STRING_COUNT 46
 STATIC char *new_strings[NEW_STRING_COUNT];
 FIX(new_strings);
 
@@ -1596,9 +1628,6 @@ static void __declspec(naked) new_global_txt_parse_check(void)
       }
 }
 
-// Defined in the temp enchants section below.
-static void replace_duration_strings(void);
-
 // Instead of replacing every instance of e.g. "water" with "cold",
 // overwrite string pointers themselves.  Note that spell school names
 // are stored separately by now and are thus not affected.
@@ -1608,11 +1637,10 @@ static void new_element_names(void)
     dword(GLOBAL_TXT + 6 * 4) = dword(GLOBAL_TXT + 71 * 4); // electricity
     dword(GLOBAL_TXT + 240 * 4) = dword(GLOBAL_TXT + 43 * 4); // cold
     dword(GLOBAL_TXT + 70 * 4) = dword(GLOBAL_TXT + 166 * 4); // poison
-    dword(GLOBAL_TXT + 214 * 4) = (uintptr_t) new_strings[0]; // holy
+    dword(GLOBAL_TXT + 214 * 4) = (uintptr_t) new_strings[STR_HOLY];
     // mind is unchanged
     dword(GLOBAL_TXT + 29 * 4) = dword(GLOBAL_TXT + 138 * 4); // magic
-    dword(GLOBAL_TXT + 133 * 4) = (uintptr_t) new_strings[1]; // energy
-    // dark is not displayed anymore
+    // light and dark are not displayed anymore
 }
 
 // We need to do a few things after global.txt is parsed.
@@ -1621,7 +1649,6 @@ static void __declspec(naked) global_txt_tail(void)
     asm
       {
         mov dword ptr [0x5067f4], eax
-        call replace_duration_strings
         call new_element_names
         ret
       }
@@ -1792,7 +1819,7 @@ static void __declspec(naked) immunity_strings(void)
         shock:
         inc ecx
         fire:
-        mov eax, offset new_strings + 2 * 4
+        mov eax, offset new_strings + STR_FIRE_IMM * 4 ; they go in order
         lea eax, [eax+ecx*4]
         quit:
         movzx ecx, byte ptr [edi-1]
@@ -1981,7 +2008,6 @@ static void __declspec(naked) expire_weapon(void)
 }
 
 // Store temp enchant in eax for the next chunk.
-// Also here: fix "of David" not being checked for.
 static void __declspec(naked) temp_bane_bow_1(void)
 {
     asm
@@ -1992,12 +2018,8 @@ static void __declspec(naked) temp_bane_bow_1(void)
         jne no_temp
         mov eax, dword ptr [ebx+8]
         no_temp:
-        mov ebx, dword ptr [ebx+12]
-        cmp ebx, SPC_DAVID
-        jne not_david
-        mov edx, MG_TITAN
-        not_david:
-        cmp ebx, SPC_UNDEAD_SLAYING
+        mov ebx, dword ptr [ebx+12] ; replaced code
+        cmp ebx, SPC_UNDEAD_SLAYING ; replaced code
         ret
       }
 }
@@ -2056,7 +2078,7 @@ static void __declspec(naked) temp_bane_melee_1(void)
       }
 }
 
-// Check bane twice for melee weapons.  Also fixes Gibbet.
+// Check bane twice for melee weapons.
 // We also check for backstab damage here.
 // Also, ensures that Undead Slaying only adds +50% damage.
 static void __declspec(naked) temp_bane_melee_2(void)
@@ -2088,8 +2110,6 @@ static void __declspec(naked) temp_bane_melee_2(void)
         not_undead:
         call dword ptr ds:monster_in_group
         and dword ptr [esp], eax ; reset flag if not undead
-        cmp ebp, GIBBET
-        je dragon
         cmp dword ptr [ebx+4], TEMP_ENCH_MARKER
         jne quit
         mov ecx, dword ptr [ebx+8]
@@ -2120,11 +2140,7 @@ static void __declspec(naked) temp_bane_melee_2(void)
         pop ecx
         sub dword ptr [esp], eax
         or eax, ecx
-        cmp ebp, GIBBET
-        jne quit
-        inc ebp
-        mov edx, MG_DEMON
-        jmp temp
+        jmp quit
       }
 }
 
@@ -2174,7 +2190,7 @@ static void __declspec(naked) temp_enchant_height(void)
         imul eax, eax, 28
         add eax, offset spcitems - 24
         push dword ptr [eax]
-        push dword ptr [new_strings + 8*4]
+        push dword ptr [new_strings+STR_TEMPORARY*4]
         push 0x4e2e80
         ; for some reason clang crashes if I try to push offsets directly
         mov eax, offset enchant_buffer
@@ -2186,19 +2202,6 @@ static void __declspec(naked) temp_enchant_height(void)
         quit:
         ret
       }
-}
-
-// Temp enchantment duration strings weren't localized.
-// Also here: the "N/A" string for the (lack of) ranged damage.
-static void replace_duration_strings(void)
-{
-    patch_pointer(0x41e0cc, new_strings[9]);
-    patch_pointer(0x41e0f2, new_strings[10]);
-    patch_pointer(0x41e126, new_strings[11]);
-    patch_pointer(0x41e162, new_strings[12]);
-    patch_pointer(0x41e1a6, new_strings[13]);
-    patch_pointer(0x41e1f2, new_strings[14]);
-    patch_pointer(0x48d3cc, new_strings[22]);
 }
 
 // Rules for temporary enchantments: weapons that already
@@ -2479,20 +2482,6 @@ static inline void temp_enchants(void)
     erase_code(0x416953, 3);
 }
 
-// Bug fix: Kelebrim wasn't penalizing earth (now poison) resistance.
-static void __declspec(naked) kelebrim(void)
-{
-    asm
-      {
-        cmp esi, STAT_POISON_RES
-        jne quit
-        sub edi, 30
-        quit:
-        push 0x48f0c3
-        ret
-      }
-}
-
 // Compound buff potions like Bless or Stoneskin always granted the minimal
 // possible bonus (+5, corresponding to the spell skill of 0), irrespective
 // of the potion's power.  Now this bonus is increased by half the power.
@@ -2758,7 +2747,7 @@ static void __thiscall brew_if_possible(struct player *player, int potion)
       {
         // don't have the skill
         show_face_animation(player, ANIM_ID_FAIL, 0);
-        sprintf(message, new_strings[15], player->name,
+        sprintf(message, new_strings[STR_ALCH_SKILL], player->name,
                 ITEMS_TXT[potion].generic_name);
         show_status_text(message, 2);
         return;
@@ -2790,13 +2779,14 @@ static void __thiscall brew_if_possible(struct player *player, int potion)
             // not enough reagents
             show_face_animation(player, ANIM_SHAKE_HEAD, 0);
             make_sound(SOUND_THIS, SOUND_BUZZ, 0, 0, -1, 0, 0, 0, 0);
-            show_status_text(new_strings[16], 2);
+            show_status_text(new_strings[STR_ALCH_REAGENTS], 2);
           }
         else
           {
             // don't know recipe
             show_face_animation(player, ANIM_ID_FAIL, 0);
-            sprintf(message, new_strings[17], ITEMS_TXT[-result].name);
+            sprintf(message, new_strings[STR_ALCH_RECIPE],
+                    ITEMS_TXT[-result].name);
             show_status_text(message, 2);
           }
         return;
@@ -2819,7 +2809,7 @@ static void __thiscall brew_if_possible(struct player *player, int potion)
         // not enough bottles
         show_face_animation(player, ANIM_SHAKE_HEAD, 0);
         make_sound(SOUND_THIS, SOUND_BUZZ, 0, 0, -1, 0, 0, 0, 0);
-        show_status_text(new_strings[18], 2);
+        show_status_text(new_strings[STR_ALCH_BOTTLES], 2);
         return;
       }
 
@@ -3207,24 +3197,9 @@ static void __declspec(naked) lamp_stat_name(void)
       }
 }
 
-// The function to generate a random item of specified tlvl
-// had a off-by-one error that resulted in a small chance
-// for a first (and worst) item in the class to be generated
-// at any tlvl.  This was most apparent in shops.
-static void __declspec(naked) fix_random_treasure(void)
-{
-    asm
-      {
-        idiv dword ptr [ebp-8] ; replaced code
-        lea ebx, [edx+1] ; add one
-        ret
-      }
-}
-
 // Misc item tweaks.
 static inline void misc_items(void)
 {
-    patch_pointer(0x48f698, kelebrim); // jump table
     // phynaxian crown now grants poison instead of water resistance
     patch_byte(0x48f113, STAT_POISON_RES);
     // make blasters ignore resistances like in mm6
@@ -3248,7 +3223,6 @@ static inline void misc_items(void)
     hook_call(0x45647e, potion_price, 6);
     erase_code(0x456624, 3); // do not multiply ench id
     hook_call(0x456633, prefix_hook, 6);
-    patch_byte(0x450a15, 7); // enable white barrels
     hook_call(0x46825f, lamp_quadruple, 5);
     // Change genie lamp rewards alike MM6: first six months are base stats
     // (Int and Per share a month), last six months are resistances.
@@ -3267,7 +3241,6 @@ static inline void misc_items(void)
     patch_dword(0x468eb2, 0x4683ba);
     patch_dword(0x468eb6, 0x4683a8);
     patch_dword(0x468eba, 0x468396);
-    hook_call(0x45685f, fix_random_treasure, 5);
 }
 
 static uint32_t potion_damage;
@@ -3761,7 +3734,7 @@ static void __declspec(naked) bless_water_reply_sizing(void)
         push 10
         fimul dword ptr [esp]
         fistp dword ptr [esp]
-        push dword ptr [new_strings+19*4]
+        push dword ptr [new_strings+STR_BLESS_WATER*4]
         ; for some reason clang crashes if I try to push offsets directly
         mov eax, offset reply_buffer
         push eax
@@ -4525,23 +4498,6 @@ static void __declspec(naked) flight_duration(void)
       }
 }
 
-// Make Water Walk drain power only every 20 minutes, as per description.
-static void __declspec(naked) water_walk_power_drain(void)
-{
-    asm
-      {
-        movzx edi, word ptr [PARTY_BUFFS+16*BUFF_WATER_WALK+8] ; power field
-        add eax, edi
-        xor edx, edx
-        mov edi, 4 ; every 4th 5th min == every 20th min
-        div edi
-        mov word ptr [PARTY_BUFFS+16*BUFF_WATER_WALK+8], dx ; store remainder
-        mov edx, 1 ; restore previous value
-        add ecx, 6464 ; replaced code
-        ret
-      }
-}
-
 // Spectral Weapon spell reuses Fire Aura code, sans enchantment ID.
 static void __declspec(naked) spectral_weapon(void)
 {
@@ -4603,6 +4559,7 @@ static void __declspec(naked) scroll_spell_id(void)
 // in the PC's inventory, as its ID of 0 was mistaken for no chosen target,
 // and with software 3D the game sometimes attempted to target a nearby
 // monster instead, which resulted in a wrong item being chosen.
+// Update: this is fixed in the patch now, but not for Spectral Weapon.
 static void __declspec(naked) zero_item_spells(void)
 {
     asm
@@ -4610,21 +4567,12 @@ static void __declspec(naked) zero_item_spells(void)
         mov eax, dword ptr [ebx+12] ; replaced code
         cmp eax, esi ; replaced code
         jnz quit
-        cmp word ptr [ebx], SPL_FIRE_AURA
-        je item
-        cmp word ptr [ebx], SPL_RECHARGE_ITEM
-        je item
-        cmp word ptr [ebx], SPL_ENCHANT_ITEM
-        je item
         cmp word ptr [ebx], SPL_SPECTRAL_WEAPON
-        je item
-        cmp word ptr [ebx], SPL_VAMPIRIC_WEAPON
-        jne not_item
-        item:
+        jne not_spectral
         cmp ebx, esi ; clear zf
         quit:
         ret
-        not_item:
+        not_spectral:
         xor eax, eax ; set zf
         ret
       }
@@ -4633,26 +4581,9 @@ static void __declspec(naked) zero_item_spells(void)
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
-    // Charm and control undead were buggy: grandmaster control undead had
-    // a very high value for duration (to simulate permanence) and due to
-    // integer overflow it would become negative at a later point; thus,
-    // the control effect was removed the next tick.
-    // The charm spell had largely the same bug, except it also had a bug
-    // wherein expert spell worked as master, master as GM, and GM as expert;
-    // so, it was the master level charm that was broken.
-    // Both bugs are fixed below.
-    patch_dword(0x42e06a, 0xffffff); // control undead overflow
-    patch_dword(0x428ea5, 0xffffff); // charm overflow
-    patch_byte(0x428e8f, MASTER); // charm master
-    patch_byte(0x428e9f, GM); // charm GM
-    // Another bug: in the inter-monster combat, when one monster cast a spell
-    // on another, the spell's element was read from the defending monster's
-    // data.  Fixed below:
-    patch_byte(0x43b2d1, 0x4f);
-    patch_byte(0x43b2e2, 0x4f);
-    // Some mod-specific tweaks for a change: let's swap the effects of
-    // earth (now poison) and body (now magic) resistance spells.
-    // (In MM6 poison res was a Body spell, and magic res was an Earth spell.)
+    // Let's swap the effects of earth (now poison) and body
+    // (now magic) resistance spells.  (In MM6 poison res
+    // was a Body spell, and magic res was an Earth spell.)
     uint32_t poison = dword(0x48f7ec);
     patch_dword(0x48f7ec, dword(0x48f81c));
     patch_dword(0x48f81c, poison);
@@ -4749,7 +4680,6 @@ static inline void misc_spells(void)
     // Nerf Flight a bit.
     patch_dword(0x42a285, 60*10); // reduce M flight duration to 10 min/skill
     hook_call(0x42a294, flight_duration, 5);
-    hook_call(0x493a1e, water_walk_power_drain, 6);
     // Implement the Spectral Weapon spell (replaces Fate).
     patch_pointer(0x42ea21, spectral_weapon);
     patch_byte(0x427ccc, 1); // targets an item
@@ -5373,18 +5303,6 @@ static void __declspec(naked) leave_map_hook(void)
       }
 }
 
-// Bug fix: trigger the LeaveMap event when traveling by horse or boat.
-static void __declspec(naked) leave_horse_boat(void)
-{
-    asm
-      {
-        call dword ptr ds:on_map_leave
-        movzx eax, byte ptr [esi] ; replaced code
-        imul eax, eax, 68 ; replaced code
-        ret
-      }
-}
-
 // Always display zero reputation in unpopulated areas.
 // Technically it still can be changed, but since there are no shops etc.,
 // it can be safely ignored.  It also resets to zero on reload.
@@ -5661,7 +5579,6 @@ static inline void reputation(void)
     hook_call(0x45f911, save_game_hook, 5);
     hook_call(0x444011, load_map_hook, 6);
     hook_call(0x443fc1, leave_map_hook, 8);
-    hook_call(0x4b6a89, leave_horse_boat, 6);
     hook_call(0x41ab0f, show_zero_rep, 5);
     hook_call(0x44a111, evt_cmp_hook, 6);
     hook_call(0x44b85f, evt_add_hook, 5);
@@ -5670,8 +5587,6 @@ static inline void reputation(void)
 
     // Some further reputation tweaks.
     hook_call(0x42ec41, pickpocket_rep, 5);
-    // Related: fix a wrong pickpocket message.
-    patch_pointer(0x48da92, &new_strings[20]);
     // Do not decrease rep on successful shoplift.
     patch_byte(0x4b13bf, 0);
     hook_call(0x401b4e, armageddon_hook, 6);
@@ -6017,11 +5932,6 @@ static inline void hp_sp_burnout(void)
     hook_call(0x4bb83f, healer_or_temple_hp, 6); // healer
     hook_call(0x4bb816, expert_healer_hp, 6);
     hook_call(0x4bb76c, master_healer_hp, 6);
-    // Bug fix: master healer erased armor skills.
-    // A very strange code that was overwriting the armor skill data
-    // with the duration of unused condition 19.
-    // I've no clue what it was supposed to be.
-    erase_code(0x4bb762, 5);
     hook_call(0x4b755e, healer_or_temple_hp, 6); // temple
     hook_call(0x4b7569, temple_sp, 6);
     // Dealing with the gamescript add HP/SP commands below.
@@ -6043,46 +5953,6 @@ static void __declspec(naked) shield_fire_arrow(void)
         cmp ax, OBJ_FIREARROW
         jz quit
         cmp ax, OBJ_LASER ; replaced code
-        quit:
-        ret
-      }
-}
-
-// Bug fix: display minutes in buff duration if it's over a day long
-// but there are no hours to display -- i.e.  "X days Y minutes".
-static void __declspec(naked) days_minutes_buff(void)
-{
-    asm
-      {
-        cmp dword ptr [esp+56], 0 ; replaced code (days)
-        jz quit
-        cmp ebp, 0 ; hours
-        quit:
-        ret
-      }
-}
-
-// Bug fix: do not display seconds in buff duration if at least two
-// of days, hours, or minutes have been printed already.
-static void __declspec(naked) seconds_buff(void)
-{
-    // skip seconds if zf == 0
-    asm
-      {
-        jnz have_seconds
-        cmp eax, 1 ; clear zf
-        ret
-        have_seconds:
-        cmp dword ptr [esp+56], 0 ; days
-        jz no_days
-        cmp ebp, 0 ; hours
-        jnz quit
-        minutes:
-        cmp dword ptr [esp+36], 0 ; minutes
-        ret
-        no_days:
-        cmp ebp, 0 ; hours
-        jnz minutes
         quit:
         ret
       }
@@ -6165,22 +6035,7 @@ static void __declspec(naked) min_weapon_recovery(void)
       }
 }
 
-// MM7Patch has a hardcoded cap of 30 on melee recovery.
-// As such, we need to correct the displayed number if it should be lower.
-static void __stdcall display_melee_recovery(char *buffer)
-{
-    struct player *current = &PARTY[dword(CURRENT_PLAYER)-1];
-    int recovery = get_attack_delay(current, 0);
-    if (recovery >= 30)
-        return;
-    char *number = strstr(buffer, "30");
-    if (!number)
-        return;
-    // don't need printf for this
-    number[0] = recovery / 10 + '0';
-    number[1] = recovery % 10 + '0';
-}
-
+// Provide more detailed info for elemental resistances.
 static char *__stdcall resistance_hint(char *description, int resistance)
 {
     static char buffer[400];
@@ -6245,31 +6100,27 @@ static char *__stdcall resistance_hint(char *description, int resistance)
         double square = chance * chance;
         double percent = (chance + square) * (square + 1) * 100;
         sprintf(buffer + strlen(buffer), "\n\n%s: %.1f%%",
-                new_strings[33], percent);
+                new_strings[STR_AVERAGE_DAMAGE], percent);
       }
     else if (!base_immune)
         strcat(buffer, "\n");
     if (!base_immune)
       {
-        sprintf(buffer + strlen(buffer), "\n%s: %d", new_strings[26], base);
+        sprintf(buffer + strlen(buffer), "\n%s: %d",
+                new_strings[STR_BASE_VALUE], base);
         if (racial_bonus)
             sprintf(buffer + strlen(buffer), " (%d %s)",
-                    base + racial_bonus, new_strings[34]);
+                    base + racial_bonus, new_strings[STR_ACCOUNT_RACE]);
       }
     return buffer;
 }
 
-// Hook for the above.  Also deals with resistance messages.
+// Hook for the above.
 // TODO: could also call stat_hint()
 static void __declspec(naked) display_melee_recovery_hook(void)
 {
     asm
       {
-        cmp edi, 15 ; screen area id
-        jne not_recovery
-        push ebx
-        call display_melee_recovery
-        not_recovery:
         cmp edi, 19 ; fire
         jb not_resistance
         cmp edi, 24 ; body
@@ -6439,16 +6290,17 @@ static char *__stdcall stat_hint(char *description, int stat)
             break;
     strcpy(buffer, description);
     sprintf(buffer + strlen(buffer), "\n\n%s: %s (%+d)\n%s: %d",
-            new_strings[25], statrates[rating].rating, bonus,
-            new_strings[26], base);
+            new_strings[STR_RATING], statrates[rating].rating, bonus,
+            new_strings[STR_BASE_VALUE], base);
     int race = get_race(current);
     int adj = base * RACE_STATS[race][stat][3] / RACE_STATS[race][stat][2];
     if (adj != base)
-        sprintf(buffer + strlen(buffer), " (%d %s)", adj, new_strings[34]);
+        sprintf(buffer + strlen(buffer), " (%d %s)", adj,
+                new_strings[STR_ACCOUNT_RACE]);
     if (current->black_potions[potion])
       {
         strcat(buffer, "\n");
-        strcat(buffer, new_strings[32]);
+        strcat(buffer, new_strings[STR_BLACK_POTION]);
       }
     return buffer;
 }
@@ -6610,40 +6462,6 @@ static void __declspec(naked) rest_encounters(void)
       }
 }
 
-// Allow resting for less than 12 hours in dark region taverns.
-// Previously, it was until next dawn and then 13 more hours,
-// which sometimes amounted to more than 24 hours.
-// Now, it's until 17:00 and then one more hour.
-// TODO: dark training halls have the same bug, but it's less pronounced
-// as they close one hour after dawn anyway.  Still, may want to fix it later.
-static void __declspec(naked) dark_region_taverns(void)
-{
-    asm
-      {
-        cmp eax, 13 * 60 ; will be more if it`s past 17h now
-        jg less
-        add eax, 12 * 60 ; replaced code
-        ret
-        less:
-        sub eax, 12 * 60 ; 24h less
-        ret
-      }
-}
-
-// Give clubs a base recovery of 100.  Dunno why Grayface hadn't fixed it.
-static void __declspec(naked) club_recovery(void)
-{
-    asm
-      {
-        cmp eax, SKILL_NONE
-        jne not_club
-        xor eax, eax ; default (staff) recovery
-        not_club:
-        movzx eax, word ptr [0x4edd80+eax*2] ; replaced code
-        ret
-      }
-}
-
 // Display AC in red if the PC wears a broken item.
 static void __declspec(naked) color_broken_ac(void)
 {
@@ -6787,18 +6605,6 @@ static void __declspec(naked) pickpocket_specitem(void)
       }
 }
 
-// Bug fix: drowning dealt fire damage for some reason.
-// Not sure if it should be cold or physical or energy, but the canonical
-// reason for drowning is that "the water is very cold", so there.
-static void __declspec(naked) drowning_element(void)
-{
-    asm
-      {
-        mov dword ptr [esp+8], COLD
-        jmp dword ptr ds:damage_player ; replaced call
-      }
-}
-
 // When searching for a place to put a new object into, only consider
 // the first (map objects count) objects as existant.
 // Previously all 1000 object slots were checked, and since walk travel
@@ -6841,7 +6647,7 @@ static void __declspec(naked) print_version(void)
         push eax
         push eax
         push eax
-        push dword ptr [new_strings+31*4]
+        push dword ptr [new_strings+STR_VERSION*4]
         push eax
         push 450
         push 10
@@ -6853,31 +6659,10 @@ static void __declspec(naked) print_version(void)
       }
 }
 
-// Set the 2H flag for already equipped spear (if applicable).
-// This will prevent equipping anything in the left hand.
-static void __declspec(naked) th_spear_worn(void)
-{
-    asm
-      {
-        je th ; zf == actual 2h weapon
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_SPEAR
-        jne quit
-        mov ecx, ebx
-        push SKILL_SPEAR
-        call dword ptr ds:get_skill
-        cmp eax, SKILL_MASTER
-        jae quit
-        th:
-        inc dword ptr [ebp-16] ; 2h flag
-        quit:
-        ret
-      }
-}
-
-// Same for a spear held in cursor.
-// The necessary checks are already present here.
-// This will allow replacing a single offhand weapon with it.
-static void __declspec(naked) th_spear_mouse(void)
+// Allow replacing an offhand weapon with a spear (into main hand)
+// if the spear skill is below Master,
+// by treating it as a two-handed weapon.
+static void __declspec(naked) th_spear(void)
 {
     asm
       {
@@ -6895,8 +6680,6 @@ static inline void misc_rules(void)
 {
     // Now that archers have fire arrows, we need to handle them properly.
     hook_call(0x43a48f, shield_fire_arrow, 10);
-    hook_call(0x41d2c9, days_minutes_buff, 5);
-    hook_call(0x41d307, seconds_buff, 6);
     // Make temple donation rewards stronger.
     hook_call(0x4b73a9, temple_wizard_eye_power, 6); // wizard eye (5 rep)
     hook_call(0x4b73cd, temple_other_spells_power, 6); // preservation (10 rep)
@@ -6922,31 +6705,27 @@ static inline void misc_rules(void)
     hook_call(0x48ed95, th_weapons_max_damage, 7);
     hook_call(0x48ecb0, th_weapons_damage_bonus, 7);
     hook_call(0x4506a5, rest_encounters, 13);
-    hook_call(0x433fc7, dark_region_taverns, 5);
-    hook_call(0x48e27c, club_recovery, 8);
     // Upgrade Castle Harmondale (now Nighon) potion shop to item level 5.
     patch_word(0x4f045e, 5);
     patch_word(0x4f069e, 5);
     hook_call(0x41a810, color_broken_ac, 5);
     hook_call(0x4189be, color_broken_ac_2, 5);
     // Localization fix: separate hunter-as-npc and hunter-as-class strings.
-    patch_pointer(0x452fa6, &new_strings[30]);
-    patch_pointer(0x48c310, &new_strings[30]);
+    patch_pointer(0x452fa6, &new_strings[STR_HUNTER]);
+    patch_pointer(0x48c310, &new_strings[STR_HUNTER]);
     patch_pointer(0x4484f3, check_skill_hook);
     hook_call(0x44b360, evt_add_specitem, 5);
     hook_call(0x48dab0, pickpocket_specitem, 6);
-    hook_call(0x49431f, drowning_element, 5);
     patch_bytes(0x42f5f0, check_object_chunk, 6);
     hook_call(0x42fa30, recount_objects, 5);
     // Let mace paralysis be physical-elemental (was earth/poison).
     patch_byte(0x439cd3, PHYSICAL);
     hook_call(0x415745, print_version, 6);
-    // Treat equipped spears below Master as 2H weapons
-    // instead of refusing to swap them for swords etc. outright.
-    hook_call(0x468fdc, th_spear_worn, 5);
-    hook_jump(0x46901f, th_spear_mouse);
-    // old checks for sword, shield, dagger replacing spear
-    erase_code(0x469034, 46);
+    hook_jump(0x46901f, th_spear);
+    // Expand on MM7Patch fix (replacing spear with a sword/dagger)
+    // by allowing to replace it with a shield too.
+    // Also allows the above hook to work properly.
+    erase_code(0x469034, 46); // just nuke all the special spear code
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -7459,8 +7238,6 @@ static void __declspec(naked) new_prefixes(void)
         cmp eax, SPC_SOUL_STEALING
         je quit
         cmp eax, SPC_LIGHTWEIGHT
-        je quit
-        cmp eax, SPC_STURDY
         quit:
         ret ; zf will be checked shortly
       }
@@ -7910,61 +7687,6 @@ static void __declspec(naked) dispel_party_buffs(void)
       }
 }
 
-// Prevent sturdy armor from breaking on unconsciousness.
-static void __declspec(naked) sturdy_body_armor(void)
-{
-    asm
-      {
-        cmp dword ptr [ecx-8], SPC_STURDY
-        je sturdy
-        mov eax, dword ptr [ecx] ; replaced code
-        test ah, 2 ; replaced code
-        ret
-        sturdy:
-        test ecx, ecx ; clear zf
-        ret
-      }
-}
-
-// Also prevent sturdy items from being broken by monsters.
-static void __declspec(naked) mon_breaks_sturdy_item(void)
-{
-    asm
-      {
-        mov ebx, dword ptr [ebp-4] ; replaced code
-        cmp dword ptr [ebx+12], SPC_STURDY
-        je sturdy
-        test byte ptr [ebx+21], 2 ; replaced code
-        ret
-        sturdy:
-        test ebx, ebx ; clear zf
-        ret
-      }
-}
-
-// Sturdy items also shouldn't be broken by alchemical explosions.
-// This also fixes a bug wherein some alchemical explosions
-// (those not from black potions) were checking the hardened bit
-// on the wrong items.  Now hardened items are excluded from
-// the eligible items list, so the wrong check is harmless.
-static void __declspec(naked) alchemy_breaks_items(void)
-{
-    asm
-      {
-        cmp ecx, 134 ; replaced code
-        jg quit
-        cmp dword ptr [eax+12], SPC_STURDY
-        je sturdy
-        test byte ptr [eax+21], 2 ; hardened
-        ; test sets flags perfectly for jg later
-        quit:
-        ret
-        sturdy:
-        cmp eax, 0 ; set flags for jg
-        ret
-      }
-}
-
 // Let's add some new item enchantments.
 static inline void new_enchants(void)
 {
@@ -8004,9 +7726,6 @@ static inline void new_enchants(void)
     erase_code(0x405428, 23); // remove unconditional party buff dispel
     hook_call(0x40548a, dispel_immunity, 5);
     hook_call(0x4054d8, dispel_party_buffs, 5);
-    hook_call(0x48dcad, sturdy_body_armor, 5);
-    hook_call(0x48dff2, mon_breaks_sturdy_item, 7);
-    hook_call(0x41611a, alchemy_breaks_items, 6);
 }
 
 // Let the Elven Chainmail also improve bow skill.
@@ -8022,31 +7741,6 @@ static void __declspec(naked) elven_chainmail_bow_bonus(void)
         jne quit
         add dword ptr [esp+20], 5 ; bonus
         quit:
-        ret
-      }
-}
-
-// Bug fix: let the bow skill boni from artifacts increase damage at GM.
-static void __declspec(naked) bow_skill_bonus_damage(void)
-{
-    asm
-      {
-        mov ecx, dword ptr [ebp-16]
-        push SKILL_BOW
-        call dword ptr ds:get_skill
-        and eax, SKILL_MASK
-        ret
-      }
-}
-
-// Display the modified bow damage.
-static void __declspec(naked) bow_skill_bonus_damage_display(void)
-{
-    asm
-      {
-        mov ecx, esi
-        push SKILL_BOW
-        call dword ptr ds:get_skill
         ret
       }
 }
@@ -8290,9 +7984,6 @@ static inline void new_artifacts(void)
     erase_code(0x48ea64, 12);
     // elven chainmail is lightweight now
     hook_call(0x48f24e, elven_chainmail_bow_bonus, 5);
-    hook_call(0x48d2c0, bow_skill_bonus_damage, 5);
-    hook_call(0x48d15e, bow_skill_bonus_damage_display, 6);
-    hook_call(0x48d1cb, bow_skill_bonus_damage_display, 6);
     hook_call(0x48eee0, sacrificial_dagger_sp_bonus, 5);
     hook_call(0x492c4a, sacrificial_dagger_goblin_only, 5);
     // corsair and old nick can backstab now
@@ -8359,9 +8050,10 @@ static void __declspec(naked) missile_on_quick_cast(void)
 {
     asm
       {
-        mov dword ptr [use_melee_attack], ebx ; == 0 if we fall from quick cast
-        or ebx, 1 ; restore the proper value
-        mov eax, dword ptr [0x50ca50] ; replaced code
+        mov dword ptr [0x50ca54+eax*4], 23 ; replaced code
+        cmp dword ptr [esp+20], 7 ; check if quick spell
+        setne al
+        mov dword ptr [use_melee_attack], eax
         ret
       }
 }
@@ -8390,7 +8082,7 @@ static void __declspec(naked) melee_on_normal_click(void)
     asm
       {
         or dword ptr [use_melee_attack], 1
-        mov eax, dword ptr [0x50ca50] ; replaced code
+        mov dword ptr [0x50ca54+eax*4], 23 ; replaced code
       }
 }
 
@@ -8549,7 +8241,7 @@ static void __declspec(naked) print_wand_to_hit(void)
         test eax, eax
         jnz have_missile
         no_missile:
-        push dword ptr [new_strings+22*4]
+        push dword ptr [0x48d3cc] ; localized by the patch
         jmp print
         have_missile:
         lea eax, [eax+eax*8]
@@ -8565,7 +8257,7 @@ static void __declspec(naked) print_wand_to_hit(void)
         cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_BOW
         jne not_always
         always:
-        push dword ptr [new_strings+21*4]
+        push dword ptr [new_strings+STR_ALWAYS*4]
         print:
         push dword ptr [GLOBAL_TXT+203*4]
         push 0x4e2e18 ; "%s %s" format string
@@ -8588,7 +8280,7 @@ static void __declspec(naked) print_wand_to_hit_ref(void)
         test eax, eax
         jnz have_missile
         no_missile:
-        push dword ptr [new_strings+22*4]
+        push dword ptr [0x48d3cc] ; localized by the patch
         jmp print
         have_missile:
         lea eax, [eax+eax*8]
@@ -8604,7 +8296,7 @@ static void __declspec(naked) print_wand_to_hit_ref(void)
         cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_BOW
         jne not_always
         always:
-        push dword ptr [new_strings+21*4]
+        push dword ptr [new_strings+STR_ALWAYS*4]
         print:
         push esi
         call dword ptr ds:strcpy_ptr
@@ -8659,10 +8351,9 @@ static inline void ranged_blasters(void)
     patch_byte(0x48d39d, 31); // ranged damage min stat
     patch_byte(0x48d3a6, 32); // ranged damage max stat
     // missiles in melee
-    erase_code(0x43019a, 1); // set ebx to 0 in quick cast
-    hook_call(0x43019b, missile_on_quick_cast, 5);
+    hook_call(0x4301a8, missile_on_quick_cast, 11);
     hook_call(0x42241a, missile_on_shift_click, 7);
-    hook_call(0x422559, melee_on_normal_click, 5);
+    hook_call(0x42256a, melee_on_normal_click, 11);
     erase_code(0x42ee31, 2); // unnecessary jump
     hook_call(0x42ee33, allow_melee_with_blasters, 5);
     hook_call(0x42eee9, allow_bows_in_melee, 5);
@@ -8936,8 +8627,8 @@ static void __declspec(naked) shop_recharge_dialog(void)
         call dword ptr ds:item_name
         push eax
         cmp ebx, 0
-        cmova eax, dword ptr [new_strings+24*4]
-        cmovbe eax, dword ptr [new_strings+23*4]
+        cmova eax, dword ptr [new_strings+STR_RECHARGE*4]
+        cmovbe eax, dword ptr [new_strings+STR_CANNOT_RECHARGE*4]
         push eax
         mov eax, offset recharge_buffer
         push eax
@@ -9082,7 +8773,7 @@ static void __declspec(naked) paralysis_message(void)
         cmp dword ptr [ebp-52], 2 ; check if halved armor
         jne okay
         mov ecx, dword ptr [0x439d57] ; mm7patch`s format string
-        mov edx, dword ptr [new_strings+27*4] ; new message
+        mov edx, dword ptr [new_strings+STR_HALVE_ARMOR*4] ; new message
         mov dword ptr [ecx], edx
         okay:
         mov edi, 0x5c5c30 ; replaced code
@@ -9128,11 +8819,11 @@ static char *__stdcall multihit_message(struct player *player, void *monster,
 
     static char buffer[100];
     if (dead_count)
-        sprintf(buffer, new_strings[29], player->name, total_damage, hit_count,
-                dead_count);
+        sprintf(buffer, new_strings[STR_KILL_MANY], player->name, total_damage,
+                hit_count, dead_count);
     else
-        sprintf(buffer, new_strings[28], player->name, total_damage,
-                hit_count);
+        sprintf(buffer, new_strings[STR_DAMAGE_MANY], player->name,
+                total_damage, hit_count);
     return buffer;
 }
 
@@ -10419,7 +10110,7 @@ static void __declspec(naked) race_hint(void)
         lea ecx, [ebx+eax]
         lea edi, [ecx+0xa8] ; PC name
         call dword ptr ds:get_race
-        mov eax, dword ptr [REF(new_strings)+35*4+eax*4]
+        mov eax, dword ptr [REF(new_strings)+STR_HUMANS*4+eax*4]
         pop ecx ; restore
         push 0x4174f0
         ret 4
@@ -10723,6 +10414,18 @@ static void __declspec(naked) lich_vampiric_touch(void)
       }
 }
 
+// Part of Hammerhands fix.  Replaces a mov with add
+// (to total damage, which now contains HH damage),
+// and swaps it with a cmp, as the add would ruin its flags.
+static void __declspec(naked) add_to_damage_chunk(void)
+{
+    asm
+      {
+        add dword ptr [ebp-12], eax
+        cmp dword ptr [ebp-28], 0
+      }
+}
+
 // In vanilla the interface only changed color after the arbiter movie.
 // As there are now other ways to choose a path, let's set it along with qbit.
 static void __declspec(naked) set_light_dark_path(void)
@@ -10867,7 +10570,7 @@ static inline void class_changes(void)
     // While we're here, prevent Hammerhands from interacting with
     // Vampiric weapons (also see add_damage_half() above).
     patch_byte(0x43990c, -12); // add to total damage
-    patch_byte(0x439914, 0x01); // mov -> add
+    patch_bytes(0x439910, add_to_damage_chunk, 7);
     // Enable class hints on the stats screen.
     patch_dword(0x418088, dword(0x418088) + 8);
     hook_call(0x44a8c8, set_light_dark_path, 5);
@@ -11220,7 +10923,7 @@ static void __declspec(naked) read_unid_scroll(void)
         mov eax, [MOUSE_ITEM] ; replaced code
         ret
         unid:
-        mov ecx, dword ptr [new_strings+39*4]
+        mov ecx, dword ptr [new_strings+STR_ID_BEFORE_READ*4]
         mov edx, 2
         call dword ptr ds:show_status_text
         push 0
@@ -11242,7 +10945,7 @@ static void __declspec(naked) read_unid_book(void)
         lea edi, [edx-400] ; replaced code
         ret
         unid:
-        mov ecx, dword ptr [new_strings+39*4]
+        mov ecx, dword ptr [new_strings+STR_ID_BEFORE_READ*4]
         mov edx, 2
         call dword ptr ds:show_status_text
         push 0
@@ -11458,7 +11161,7 @@ static int __thiscall absorb_spell(struct player *player, int spell)
       {
         player->sp = new_sp;
         static char message[128];
-        sprintf(message, new_strings[40], player->name);
+        sprintf(message, new_strings[STR_ABSORB_SPELL], player->name);
         show_status_text(message, 2);
         return 1;
       }
@@ -11834,7 +11537,7 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
                     char name_buffer[100];
                     sprintf(name_buffer, COLOR_FORMAT, colors[CLR_ITEM],
                             item_name(&player->items[j]));
-                    sprintf(reply_buffer, new_strings[41],
+                    sprintf(reply_buffer, new_strings[STR_GM_FOR_ITEM],
                             SKILL_NAMES[skill], name_buffer);
                     *can_learn_skill = 1;
                     return reply_buffer;
@@ -11865,16 +11568,16 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
         switch (training[player-PARTY][skill] * 4 / train_req)
           {
             case 0:
-                reply = new_strings[42];
+                reply = new_strings[STR_PRACTICE_0];
                 break;
             case 1:
-                reply = new_strings[43];
+                reply = new_strings[STR_PRACTICE_1];
                 break;
             case 2:
-                reply = new_strings[44];
+                reply = new_strings[STR_PRACTICE_2];
                 break;
             case 3:
-                reply = new_strings[45];
+                reply = new_strings[STR_PRACTICE_3];
                 break;
             case 4:
             default:
@@ -12320,6 +12023,21 @@ static inline void skill_changes(void)
     hook_call(0x41eb30, train_id_monster, 6);
 }
 
+// Switch off some of MM7Patch's features to ensure compatibility.
+static inline void patch_compatibility(void)
+{
+    HMODULE patch = GetModuleHandle("MM7patch.dll");
+    FARPROC get_options = GetProcAddress(patch, "GetOptions");
+    struct patch_options *options = (void *) get_options();
+    options->fix_unimplemented_spells = FALSE; // conflicts with my hook
+    options->fix_light_bolt = FALSE; // I don't want this!
+    options->armageddon_element = MAGIC; // can't read spells.txt this early
+    options->keep_empty_wands = FALSE; // my implementation is better
+    patch_word(0x453a31, 0x850f); // remove acid burst fix
+    patch_dword(0x453a33, 0xaf); // ditto (I fix it in spells.txt)
+    patch_byte(0x42efc9, 20); // new melee fecovery limit (for the hint)
+}
+
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
                     LPVOID const reserved)
 {
@@ -12356,6 +12074,7 @@ BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
         racial_traits();
         class_changes();
         skill_changes();
+        patch_compatibility();
       }
     return TRUE;
 }

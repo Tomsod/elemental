@@ -800,7 +800,8 @@ struct __attribute__((packed)) map_object
 
 #define AI_REMOVED 11
 
-#define COLOR_FORMAT ((char *) 0x4e2d60)
+#define COLOR_FORMAT_ADDR 0x4e2d60
+#define COLOR_FORMAT ((char *) COLOR_FORMAT_ADDR)
 enum colors
 {
     CLR_WHITE,
@@ -1467,12 +1468,7 @@ static void __declspec(naked) display_immunity(int string, int element)
         test eax, eax
         jz not_immune
         dec eax
-        jz permanent
-        xor ecx, ecx
-        mov edx, 0xff
-        push ecx
-        call dword ptr ds:rgb_color
-        permanent:
+        cmovnz eax, dword ptr [colors+CLR_GREEN*4]
         mov ecx, dword ptr [esp+4]
         push dword ptr [GLOBAL_TXT+625*4]
         push eax
@@ -6477,10 +6473,7 @@ static void __declspec(naked) color_broken_ac(void)
         lea edx, [ebp+0x214+edx*4-36]
         test byte ptr [edx+20], 2 ; broken bit
         jz next
-        mov ecx, 255 ; red
-        xor edx, edx
-        push edx
-        call dword ptr ds:rgb_color
+        mov eax, dword ptr [colors+CLR_RED*4]
         ret
         next:
         loop check_broken
@@ -8419,9 +8412,8 @@ static void __declspec(naked) red_empty_wands(void)
       }
 }
 
-// Displays charges; the string is colored red.
-// TODO: may be nicer to call rgb_color() instead of hardcoding item color
-static const char red_charges[] = "\f63683%s: %u/%u";
+// Displays (zero) charges; the string is colored red.
+static const char red_charges[] = "\f%05d%s: 0/%u";
 
 // Display current and max wand charges, even if it's empty.
 static void __declspec(naked) display_wand_charges(void)
@@ -8439,8 +8431,8 @@ static void __declspec(naked) display_wand_charges(void)
         mov eax, dword ptr [ecx+16] ; replaced code
         test eax, eax
         jnz quit
-        push eax
         push dword ptr [GLOBAL_TXT+464*4]
+        push dword ptr [colors+CLR_RED*4]
         mov eax, offset red_charges
         push eax
         add edx, 14 ; skip over pushes
@@ -8582,11 +8574,10 @@ static void __declspec(naked) charge_shop_wands_special(void)
       }
 }
 
-static char recharge_buffer[100];
+static char recharge_buffer[100], name_buffer[100];
 static const float shop_recharge_multiplier = 0.2; // from 30% to 80%
 
 // Wand recharge dialog: print cost and resulting number of charges.
-// TODO: may be nicer to call rgb_color() instead of hardcoding item color
 static void __declspec(naked) shop_recharge_dialog(void)
 {
     asm
@@ -8625,7 +8616,14 @@ static void __declspec(naked) shop_recharge_dialog(void)
         worn_out:
         mov ecx, esi
         call dword ptr ds:item_name
+        mov ecx, offset name_buffer
+        push ecx ; for the second sprintf
         push eax
+        push dword ptr [colors+CLR_ITEM*4]
+        push COLOR_FORMAT_ADDR
+        push ecx
+        call dword ptr ds:sprintf
+        add esp, 16
         cmp ebx, 0
         cmova eax, dword ptr [new_strings+STR_RECHARGE*4]
         cmovbe eax, dword ptr [new_strings+STR_CANNOT_RECHARGE*4]

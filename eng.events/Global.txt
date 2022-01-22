@@ -691,8 +691,8 @@ Global Text
 688	You don't have enough potion bottles!
 689	Bless Water %d Gold
 690	Always
-691	"Sorry, but I cannot recharge this 65523%s00000.  Its magic is nearly drained."
-692	"I can restore this 65523%s00000 to %d charges for only %d gold."
+691	"Sorry, but I cannot recharge this %s.  Its magic is nearly drained."
+692	"I can restore this %s to %d charges for only %d gold."
 693	Rating
 694	Base Value
 695	%s inflicts %lu points and halves armor of %s

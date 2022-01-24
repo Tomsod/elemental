@@ -413,6 +413,7 @@ enum items
     POTION_PAIN_REFLECTION = 278,
     LAST_POTION = 278,
     HOLY_WATER = 279, // not a potion
+    FIRST_ARTIFACT = 500,
     PUCK = 500,
     CORSAIR = 503,
     GOVERNOR_S_ARMOR = 504,
@@ -425,6 +426,7 @@ enum items
     PHYNAXIAN_CROWN = 523,
     TWILIGHT = 525,
     JUSTICE = 527,
+    LAST_OLD_ARTIFACT = 528,
     HERMES_SANDALS = 529,
     ELFBANE = 531,
     MIND_S_EYE = 532,
@@ -433,6 +435,9 @@ enum items
     SACRIFICIAL_DAGGER = 553,
     RED_DRAGON_SCALE_MAIL = 554,
     RED_DRAGON_SCALE_SHIELD = 555,
+    FIRST_NEW_ARTIFACT = 557,
+    DRAGON_S_WRATH = 557,
+    LAST_ARTIFACT = 557,
     FIRST_RECIPE = 740,
     LAST_RECIPE = 778,
 };
@@ -3002,8 +3007,11 @@ static void __declspec(naked) potion_price(void)
         mov edi, dword ptr [ITEMS_TXT_ADDR+eax+16] ; base value
         cmp byte ptr [ITEMS_TXT_ADDR+eax+28], 14 ; potion or bottle
         je potion
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+28], 12 ; wand
-        je wand_price
+        cmp dword ptr [esi], FIRST_WAND
+        jb not_wand
+        cmp dword ptr [esi], LAST_WAND
+        jbe wand_price
+        not_wand:
         xor edx, edx ; set zf
         ret
         potion:
@@ -5150,6 +5158,9 @@ static int reputation_index;
 static void new_game_training(void);
 static void load_game_training(void);
 static void save_game_training(void);
+static void new_game_artifacts(void);
+static void load_game_artifacts(void);
+static void save_game_artifacts(void);
 
 // Zero out all reputation on a new game.
 static void new_game_rep(void)
@@ -5167,6 +5178,7 @@ static void __declspec(naked) new_game_hook(void)
         call dword ptr ds:save_game ; replaced call
         call new_game_rep
         call new_game_training
+        call new_game_artifacts
         ret
       }
 }
@@ -5196,6 +5208,7 @@ static void __declspec(naked) load_game_hook(void)
       {
         call load_game_rep
         call load_game_training
+        call load_game_artifacts
         and dword ptr [last_bank_week], 0
         and dword ptr [last_hit_player], 0
         pop eax
@@ -5208,7 +5221,7 @@ static void __declspec(naked) load_game_hook(void)
 static void save_game_rep(void)
 {
     static const struct file_header header = { "reputatn.bin",
-                                               REP_GROUP_COUNT * sizeof(int) };
+                                               sizeof(regional_reputation) };
     int group = reputation_group[reputation_index];
     if (group) // do not store group 0
         regional_reputation[group] = CURRENT_REP;
@@ -5223,6 +5236,7 @@ static void __declspec(naked) save_game_hook(void)
         call save_game_rep
         call save_wom_barrels
         call save_game_training
+        call save_game_artifacts
         lea eax, [ebp-68] ; replaced code
         ret 8
       }
@@ -7970,7 +7984,184 @@ static void __declspec(naked) display_worn_rdsm_arm_idle(void)
       }
 }
 
-// Add the new properties to some old artifacts.
+// TODO: maybe unhardcode the constant (it's in items.txt)
+#define MAX_DRAGON_CHARGES 17
+
+// Set the max and current charges for Dragon's Wrath to fixed 17.
+// Also initialise the recharge timer (uses temp ench timer field).
+static void __declspec(naked) set_dragon_charges(void)
+{
+    asm
+      {
+        cmp eax, DRAGON_S_WRATH
+        jne not_it
+        cmp byte ptr [edx+25], MAX_DRAGON_CHARGES ; make sure it`s not inited
+        je not_it
+        mov dword ptr [edx+16], MAX_DRAGON_CHARGES
+        mov byte ptr [edx+25], MAX_DRAGON_CHARGES
+        mov eax, dword ptr [0xacce64] ; current time low
+        mov dword ptr [edx+28], eax
+        mov eax, dword ptr [0xacce68] ; current time high
+        mov dword ptr [edx+32], eax
+        mov eax, dword ptr [edx] ; restore
+        not_it:
+        lea eax, [eax+eax*2] ; replaced code
+        shl eax, 4 ; replaced code
+        ret
+      }
+}
+
+// Consider Dragon's Wrath a wand for status screen purposes.
+static void __declspec(naked) check_dragon_wand(void)
+{
+    asm
+      {
+        cmp esi, DRAGON_S_WRATH
+        je quit
+        cmp esi, LAST_WAND ; replaced code
+        quit:
+        ret
+      }
+}
+
+// 30 minutes in game ticks, used as a division constant.
+static const int half_hour = 30 * 60 * 128 / 30;
+
+// Restore Dragon's Wrath charges at the rate of 2/hour.
+static void __declspec(naked) regen_dragon_charges(void)
+{
+    asm
+      {
+        cmp dword ptr [ecx], DRAGON_S_WRATH
+        je dragon
+        mov eax, dword ptr [ecx+20] ; replaced code
+        test al, 8 ; replaced code
+        ret
+        dragon:
+        mov eax, dword ptr [0xacce64] ; current time low
+        mov edx, dword ptr [0xacce68] ; current time high
+        sub eax, dword ptr [ecx+28]
+        sbb edx, dword ptr [ecx+32]
+        idiv dword ptr [half_hour]
+        cmp eax, 0
+        jle quit
+        cmp dword ptr [ecx+16], MAX_DRAGON_CHARGES
+        jae full
+        add dword ptr [ecx+16], eax
+        cmp dword ptr [ecx+16], MAX_DRAGON_CHARGES
+        jbe full
+        mov dword ptr [ecx+16], MAX_DRAGON_CHARGES
+        full:
+        mov eax, dword ptr [0xacce64]
+        sub eax, edx ; set last charge regen time to remainder
+        mov edx, dword ptr [0xacce68]
+        sbb edx, 0 ; (full half-hours are spent now)
+        mov dword ptr [ecx+28], eax
+        mov dword ptr [ecx+32], edx
+        quit:
+        xor eax, eax ; set zf
+        ret
+      }
+}
+
+// Check if some charges have regenerated before trying to shoot.
+static void __declspec(naked) regen_dragon_shooting(void)
+{
+    asm
+      {
+        lea ecx, [eax+0x1f0] ; item
+        call regen_dragon_charges ; works here too
+        cmp dword ptr [ecx+16], edi ; replaced code, basically
+        mov ecx, dword ptr [ecx] ; just in case
+        ret
+      }
+}
+
+// Disallow casting Recharge Item on Dragon's Wrath.
+static void __declspec(naked) cannot_recharge_dragon(void)
+{
+    asm
+      {
+        cmp dword ptr [ecx], DRAGON_S_WRATH
+        je cant
+        cmp byte ptr [ITEMS_TXT_ADDR+28+eax], 12 ; replaced code
+        ret
+        cant:
+        cmp ecx, esi ; unset zf
+        ret
+      }
+}
+
+// As with many other arrays, we have to replace this one to fit new content.
+// TODO: maybe combine all the new savegame data into a single bin file
+static char artifacts_found[LAST_ARTIFACT-FIRST_ARTIFACT+1];
+
+// Reset the found artifacts array on a new game.
+// Called from new_game_hook() above.
+static void new_game_artifacts(void)
+{
+    memset(artifacts_found, 0, sizeof(artifacts_found));
+}
+
+// Load the found artifacts data.
+// Called from load_game_hook() above.
+static void load_game_artifacts(void)
+{
+    void *file = find_in_lod(SAVEGAME_LOD, "artifact.bin", 1);
+    if (file)
+        fread(artifacts_found, sizeof(char),
+              LAST_ARTIFACT - FIRST_ARTIFACT + 1, file);
+    else // just in case
+        new_game_artifacts();
+}
+
+// Save the found artifacts data.
+// Called from save_game_hook() above.
+static void save_game_artifacts(void)
+{
+    static const struct file_header header = { "artifact.bin",
+                                               sizeof(artifacts_found) };
+    save_file_to_lod(SAVEGAME_LOD, &header, artifacts_found, 0);
+}
+
+// Get a random artifact ID, minding the gap between the new and old ones.
+static void __declspec(naked) random_artifact(void)
+{
+    asm
+      {
+        xor edx, edx
+        mov ecx, LAST_OLD_ARTIFACT - FIRST_ARTIFACT + 1
+        add ecx, LAST_ARTIFACT - FIRST_NEW_ARTIFACT + 1
+        div ecx
+        cmp edx, LAST_OLD_ARTIFACT - FIRST_ARTIFACT
+        jbe quit
+        add edx, FIRST_NEW_ARTIFACT - LAST_OLD_ARTIFACT - 1
+        quit:
+        ret
+      }
+}
+
+// Don't iterate over non-randomly-generated specitems
+// when searching for an artifact to create.
+// NB: this breaks MM7Patch's FixUnmarkedArtifactsMax,
+// but we'll want to replace it anyway
+static void __declspec(naked) jump_over_specitems(void)
+{
+    asm
+      {
+        cmp eax, LAST_OLD_ARTIFACT + 1 ; replaced code
+        jl quit
+        jg new
+        mov eax, FIRST_NEW_ARTIFACT
+        new:
+        cmp eax, LAST_ARTIFACT + 1
+        quit:
+        ret
+      }
+}
+
+// Add the new properties to some old artifacts,
+// and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
 {
     // remove old (and nonfunctional) elven chainmail recovery bonus
@@ -7994,6 +8185,20 @@ static inline void new_artifacts(void)
     hook_call(0x43db2b, display_worn_rdsm_arm, 5);
     hook_call(0x43dba8, display_worn_rdsm_arm_2h, 5);
     hook_call(0x43dd38, display_worn_rdsm_arm_idle, 5);
+    hook_call(0x456d57, set_dragon_charges, 6);
+    hook_call(0x48d425, check_dragon_wand, 6);
+    hook_call(0x458299, regen_dragon_charges, 5);
+    hook_call(0x42ed3f, regen_dragon_shooting, 6);
+    // also regenerates in red_empty_wands() below
+    hook_call(0x42aa15, cannot_recharge_dragon, 7);
+    // Let's replace the generated artifacts array with a bigger one.
+    patch_pointer(0x4568f7, artifacts_found);
+    patch_byte(0x456901, LAST_ARTIFACT - FIRST_ARTIFACT + 1);
+    hook_call(0x456909, random_artifact, 6);
+    patch_pointer(0x456929, artifacts_found);
+    // NB: this function only supports 29 + 11 artifacts by default
+    patch_pointer(0x45061e, artifacts_found - FIRST_ARTIFACT);
+    hook_call(0x45062e, jump_over_specitems, 5);
 }
 
 // When calculating missile damage, take note of the weapon's skill.
@@ -8392,16 +8597,27 @@ static void __declspec(naked) empty_wand_chunk(void)
 }
 
 // Color equipped empty wands red, as if broken.
+// Make sure to check if Dragon's Wrath had regained some charges.
 static void __declspec(naked) red_empty_wands(void)
 {
     asm
       {
         and ecx, 0xf0 ; replaced code
         jnz quit
+        cmp dword ptr [edi], DRAGON_S_WRATH
+        jne not_dragon
+        mov ecx, edi
+        push eax
+        call regen_dragon_charges ; still usable
+        pop eax ; restore
+        xor ecx, ecx
+        jmp wand
+        not_dragon:
         cmp dword ptr [edi], FIRST_WAND
         jb not_it
         cmp dword ptr [edi], LAST_WAND
         ja not_it
+        wand:
         cmp dword ptr [edi+16], ecx ; charges vs. 0
         jnz not_it
         or al, 2 ; broken bit (for display only)
@@ -11713,7 +11929,7 @@ static void __declspec(naked) master_spell_skill(void)
 // Called from new_game_hook() above.
 static void new_game_training(void)
 {
-    memset(training, 0, 4 * SKILL_COUNT * sizeof(int));
+    memset(training, 0, sizeof(training));
 }
 
 // Load training values from the savefile.
@@ -11732,7 +11948,7 @@ static void load_game_training(void)
 static void save_game_training(void)
 {
     static const struct file_header header = { "training.bin",
-                                               4 * SKILL_COUNT * sizeof(int) };
+                                               sizeof(training) };
     save_file_to_lod(SAVEGAME_LOD, &header, training, 0);
 }
 

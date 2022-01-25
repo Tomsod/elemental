@@ -381,6 +381,9 @@ enum skill_mastery
 
 #define MOUSE_ITEM 0xad458c
 
+#define CURRENT_TIME_ADDR 0xacce64
+#define CURRENT_TIME (*(uint64_t *) CURRENT_TIME_ADDR)
+
 enum items
 {
     BLASTER = 64,
@@ -415,6 +418,7 @@ enum items
     HOLY_WATER = 279, // not a potion
     FIRST_ARTIFACT = 500,
     PUCK = 500,
+    IRON_FEATHER = 501,
     CORSAIR = 503,
     GOVERNOR_S_ARMOR = 504,
     SPLITTER = 506,
@@ -437,7 +441,8 @@ enum items
     RED_DRAGON_SCALE_SHIELD = 555,
     FIRST_NEW_ARTIFACT = 557,
     DRAGON_S_WRATH = 557,
-    LAST_ARTIFACT = 557,
+    HEADACHE = 558,
+    LAST_ARTIFACT = 558,
     FIRST_RECIPE = 740,
     LAST_RECIPE = 778,
 };
@@ -757,12 +762,18 @@ struct __attribute__((packed)) spcitem
     SKIP(3); // unused
 };
 
-// my addition
-#define MBUFF_CURSED 0
-// vanilla
-#define MBUFF_FEAR 4
-// also used for eradication in the mod
-#define MBUFF_MASS_DISTORTION 10
+enum monster_buffs
+{
+    MBUFF_CURSED = 0, // my addition
+    MBUFF_CHARM = 1,
+    MBUFF_FEAR = 4,
+    MBUFF_BERSERK = 9,
+    MBUFF_MASS_DISTORTION = 10, // also used for eradication in the mod
+    MBUFF_ENSLAVE = 12,
+};
+
+// Berserk effect animation ID.
+#define BERZERK 6060
 
 // new NPC greeting count (starting from 1)
 #define GREET_COUNT 220
@@ -855,11 +866,13 @@ static int __fastcall (*rgb_color)(int red, int green, int blue)
 static int __cdecl (*sprintf)(char *str, const char *format, ...)
     = (funcptr_t) 0x4cad70;
 static funcptr_t ftol = (funcptr_t) 0x4ca74c;
-static funcptr_t add_buff = (funcptr_t) 0x458519;
+static int __thiscall (*add_buff)(struct spell_buff *buff, long long time,
+                                  int skill, int power, int overlay,
+                                  int caster) = (funcptr_t) 0x458519;
 static funcptr_t elem_damage = (funcptr_t) 0x439e16;
 static funcptr_t monster_resists = (funcptr_t) 0x427522;
 static funcptr_t monster_in_group = (funcptr_t) 0x438bce;
-static void __thiscall (*expire_temp_bonus)(struct item *item, long time)
+static void __thiscall (*expire_temp_bonus)(struct item *item, long long time)
     = (funcptr_t) 0x458299;
 static funcptr_t is_artifact = (funcptr_t) 0x456d98;
 static int __thiscall (*get_skill)(void *player, int skill)
@@ -1671,7 +1684,7 @@ static void __declspec(naked) resistance_replaces_immunity(void)
 {
     asm
       {
-        adc edx, dword ptr [0xacce68]
+        adc edx, dword ptr [CURRENT_TIME_ADDR+4]
         cmp word ptr [ecx+10], IMMUNITY_MARKER
         jne not_immunity
         and dword ptr [ecx], 0
@@ -1737,8 +1750,8 @@ static void __declspec(naked) new_potion_effects(void)
         add esp, 4
         fmul dword ptr [0x4d8470]
         call dword ptr ds:ftol
-        add eax, dword ptr [0xacce64]
-        adc edx, dword ptr [0xacce68]
+        add eax, dword ptr [CURRENT_TIME_ADDR]
+        adc edx, dword ptr [CURRENT_TIME_ADDR+4]
         push edx
         push eax
         call dword ptr ds:add_buff
@@ -2001,8 +2014,8 @@ static void __declspec(naked) expire_weapon(void)
       {
         lea ebx, [edi+0x1f0+eax*4]
         mov ecx, ebx
-        push dword ptr [0xacce68] ; current time, high dword
-        push dword ptr [0xacce64] ; current time, low dword
+        push dword ptr [CURRENT_TIME_ADDR+4]
+        push dword ptr [CURRENT_TIME_ADDR]
         call dword ptr ds:expire_temp_bonus
         ret
       }
@@ -4405,7 +4418,7 @@ static void __declspec(naked) wizard_eye_from_day_of_protection(void)
         cmp word ptr [PARTY_BUFFS+16*BUFF_WIZARD_EYE+10], GM
         je skip
         mov dword ptr [ebp-24], MASTER ; no GM
-        fild qword ptr [0xacce64] ; replaced code
+        fild qword ptr [CURRENT_TIME_ADDR] ; replaced code
         ret
         skip:
         push 0x42deaa ; post-cast code
@@ -7346,8 +7359,12 @@ static void __declspec(naked) mon_res_roll_chunk(void)
       }
 }
 
+// Defined below.
+static void __stdcall headache_berserk(struct map_monster *);
+
 // Implement cursed weapons; the debuff is inflicted with a 20% chance.
-// Black Knights treat all melee weapons (or even fists) as cursed.
+// Black Knights treat all melee weapons as cursed.
+// Headache berserk effect is also triggered here.
 // TODO: should it make a sound?
 static void __declspec(naked) cursed_weapon(void)
 {
@@ -7358,34 +7375,41 @@ static void __declspec(naked) cursed_weapon(void)
         cmp dword ptr [ebx+72], SPL_ARROW
         jne fail
         mov eax, dword ptr [edi+0x1950] ; bow slot
+        xor ecx, ecx
         jmp check
         melee:
-        cmp byte ptr [edi+0xb9], CLASS_BLACK_KNIGHT
-        je cursed
+        mov ecx, 2
         mov eax, dword ptr [edi+0x194c] ; main hand
+        check:
         test eax, eax
         jz offhand
         lea eax, [eax+eax*8]
         lea eax, [edi+0x214+eax*4-36]
         test byte ptr [eax+20], 2 ; broken bit
         jnz offhand
+        cmp dword ptr [eax], HEADACHE
+        jne not_headache
+        push eax
+        push ecx
+        push esi
+        call headache_berserk
+        pop ecx
+        pop eax
+        not_headache:
+        cmp byte ptr [edi+0xb9], CLASS_BLACK_KNIGHT
+        jne not_knight
+        test ecx, ecx
+        jnz cursed
+        not_knight:
         cmp dword ptr [eax+12], SPC_CURSED
         je cursed
         cmp dword ptr [eax+12], SPC_WRAITH
         je cursed
         offhand:
+        dec ecx
+        jle fail
         mov eax, dword ptr [edi+0x1948] ; offhand
-        check:
-        test eax, eax
-        jz fail
-        lea eax, [eax+eax*8]
-        lea eax, [edi+0x214+eax*4-36]
-        test byte ptr [eax+20], 2 ; broken bit
-        jnz fail
-        cmp dword ptr [eax+12], SPC_CURSED
-        je cursed
-        cmp dword ptr [eax+12], SPC_WRAITH
-        jne fail
+        jmp check
         cursed:
         call dword ptr ds:random
         mov ecx, 5 ; 20% chance
@@ -7400,8 +7424,8 @@ static void __declspec(naked) cursed_weapon(void)
         jz fail
         xor ebx, ebx
         mov eax, 128 * 60 * 20 / 30 ; 20 min
-        mov edx, dword ptr [0xacce68] ; current time, high dword
-        add eax, dword ptr [0xacce64] ; current time, low dword
+        mov edx, dword ptr [CURRENT_TIME_ADDR+4]
+        add eax, dword ptr [CURRENT_TIME_ADDR]
         adc edx, ebx
         lea ecx, [esi+212] ; cursed debuff
         push ebx
@@ -7753,16 +7777,28 @@ static void __declspec(naked) elven_chainmail_bow_bonus(void)
 }
 
 // Implement the Sacrificial Dagger SP bonus.
+// Also here: Headache's mental penalty.
 static void __declspec(naked) sacrificial_dagger_sp_bonus(void)
 {
     asm
       {
         cmp eax, SACRIFICIAL_DAGGER
-        jne not_it
-        cmp esi, 8 ; sp stat
-        jne not_it
+        jne not_dagger
+        cmp esi, STAT_SP
+        jne not_dagger
         add edi, 30
-        not_it:
+        not_dagger:
+        cmp eax, HEADACHE
+        jne not_headache
+        cmp esi, STAT_INTELLECT
+        je penalty
+        cmp esi, STAT_PERSONALITY
+        je penalty
+        cmp esi, STAT_MIND_RES
+        jne not_headache
+        penalty:
+        sub edi, 30
+        not_headache:
         sub eax, PUCK ; replaced code
         ret
       }
@@ -7999,9 +8035,9 @@ static void __declspec(naked) set_dragon_charges(void)
         je not_it
         mov dword ptr [edx+16], MAX_DRAGON_CHARGES
         mov byte ptr [edx+25], MAX_DRAGON_CHARGES
-        mov eax, dword ptr [0xacce64] ; current time low
+        mov eax, dword ptr [CURRENT_TIME_ADDR]
         mov dword ptr [edx+28], eax
-        mov eax, dword ptr [0xacce68] ; current time high
+        mov eax, dword ptr [CURRENT_TIME_ADDR+4]
         mov dword ptr [edx+32], eax
         mov eax, dword ptr [edx] ; restore
         not_it:
@@ -8038,8 +8074,8 @@ static void __declspec(naked) regen_dragon_charges(void)
         test al, 8 ; replaced code
         ret
         dragon:
-        mov eax, dword ptr [0xacce64] ; current time low
-        mov edx, dword ptr [0xacce68] ; current time high
+        mov eax, dword ptr [CURRENT_TIME_ADDR]
+        mov edx, dword ptr [CURRENT_TIME_ADDR+4]
         sub eax, dword ptr [ecx+28]
         sbb edx, dword ptr [ecx+32]
         idiv dword ptr [half_hour]
@@ -8052,9 +8088,9 @@ static void __declspec(naked) regen_dragon_charges(void)
         jbe full
         mov dword ptr [ecx+16], MAX_DRAGON_CHARGES
         full:
-        mov eax, dword ptr [0xacce64]
+        mov eax, dword ptr [CURRENT_TIME_ADDR]
         sub eax, edx ; set last charge regen time to remainder
-        mov edx, dword ptr [0xacce68]
+        mov edx, dword ptr [CURRENT_TIME_ADDR+4]
         sbb edx, 0 ; (full half-hours are spent now)
         mov dword ptr [ecx+28], eax
         mov dword ptr [ecx+32], edx
@@ -8160,6 +8196,46 @@ static void __declspec(naked) jump_over_specitems(void)
       }
 }
 
+// Let Headache deal extra Mind damage on hit.
+static void __declspec(naked) headache_mind_damage(void)
+{
+    asm
+      {
+        cmp eax, HEADACHE
+        je headache
+        sub eax, IRON_FEATHER ; replaced code
+        ret
+        headache:
+        mov dword ptr [edi], MIND
+        call dword ptr ds:random
+        xor edx, edx
+        mov ecx, 6
+        div ecx
+        lea eax, [edx+10]
+        push 0x439fe8 ; return from calling func
+        ret 4
+      }
+}
+
+// Headache also has a 20% chance to cause Berserk for 20 minutes.
+// Called from cursed_weapon() above.
+static void __stdcall headache_berserk(struct map_monster *monster)
+{
+    if (random() % 5 || !monster_resists_condition(monster, MIND))
+        return;
+    remove_buff(monster->spell_buffs + MBUFF_CHARM);
+    remove_buff(monster->spell_buffs + MBUFF_ENSLAVE);
+    add_buff(monster->spell_buffs + MBUFF_BERSERK,
+             CURRENT_TIME + 20 * 60 * 128 / 30, EXPERT, 0, 0, 0);
+    struct map_object anim = { BERZERK,
+                               find_objlist_item(OBJLIST_THIS, BERZERK),
+                               monster->x, monster->y,
+                               monster->z + monster->height };
+    launch_object(&anim, 0, 0, 0);
+    make_sound(SOUND_THIS, word(0x4edf30 + SPL_BERSERK * 2),
+               0, 0, -1, 0, 0, 0, 0);
+}
+
 // Add the new properties to some old artifacts,
 // and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
@@ -8199,6 +8275,8 @@ static inline void new_artifacts(void)
     // NB: this function only supports 29 + 11 artifacts by default
     patch_pointer(0x45061e, artifacts_found - FIRST_ARTIFACT);
     hook_call(0x45062e, jump_over_specitems, 5);
+    hook_call(0x439e41, headache_mind_damage, 5);
+    // stat penalty is in sacrificial_dagger_sp_bonus()
 }
 
 // When calculating missile damage, take note of the weapon's skill.
@@ -10883,8 +10961,6 @@ static void __declspec(naked) lenient_alchemy(void)
 
 // Length of blaster eradication animation.
 #define ERAD_TIME 64
-// The animation for the central explosion (temporary).
-#define BERZERK 6060
 
 // Let a GM blaster shot have a small chance to eradicate the target,
 // killing it without leaving a corpse.  For testing purposes,

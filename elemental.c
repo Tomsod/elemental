@@ -442,7 +442,8 @@ enum items
     FIRST_NEW_ARTIFACT = 557,
     DRAGON_S_WRATH = 557,
     HEADACHE = 558,
-    LAST_ARTIFACT = 558,
+    STORM_TRIDENT = 559,
+    LAST_ARTIFACT = 559,
     FIRST_RECIPE = 740,
     LAST_RECIPE = 778,
 };
@@ -625,6 +626,7 @@ enum spells
     SPL_IMMOLATION = 8,
     SPL_WIZARD_EYE = 12,
     SPL_FEATHER_FALL = 13,
+    SPL_LIGHTNING_BOLT = 18,
     SPL_RECHARGE_ITEM = 28,
     SPL_ENCHANT_ITEM = 30,
     SPL_ICE_BLAST = 32,
@@ -1313,6 +1315,9 @@ static int __thiscall is_immune(struct player *player, unsigned int element)
             || has_item_in_slot(player, RED_DRAGON_SCALE_SHIELD, SLOT_OFFHAND))
             return 1;
         break;
+    case SHOCK:
+        if (has_item_in_slot(player, STORM_TRIDENT, SLOT_MAIN_HAND))
+            return 1;
     case COLD:
         if (has_item_in_slot(player, PHYNAXIAN_CROWN, SLOT_HELM))
             return 1;
@@ -4427,7 +4432,7 @@ static void __declspec(naked) wizard_eye_from_day_of_protection(void)
 }
 
 // When re-casting Immolation or GM Wizard Eye to switch them off,
-// do not charge spell points.
+// do not charge spell points.  Same for Storm Trident's free spell.
 static void __declspec(naked) switch_off_spells_for_free(void)
 {
     asm
@@ -4441,12 +4446,21 @@ static void __declspec(naked) switch_off_spells_for_free(void)
         ret ; zf will be checked shortly
         not_immolation:
         cmp word ptr [ebx], SPL_WIZARD_EYE
-        jne set_zf
+        jne not_eye
         cmp dword ptr [ebp-24], GM
-        jne set_zf
+        jne not_eye
         cmp word ptr [PARTY_BUFFS+16*BUFF_WIZARD_EYE+10], GM
-        jne set_zf
+        jne not_eye
         cmp esi, 1 ; clear zf
+        ret
+        not_eye:
+        cmp word ptr [ebx], SPL_LIGHTNING_BOLT
+        jne set_zf
+        mov ecx, dword ptr [ebp-32] ; PC
+        push SLOT_MAIN_HAND
+        push STORM_TRIDENT
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
         ret
         set_zf:
         test esi, esi
@@ -8197,13 +8211,17 @@ static void __declspec(naked) jump_over_specitems(void)
 }
 
 // Let Headache deal extra Mind damage on hit.
+// Also here: Storm Trident has the same bonus damage as Iron Feather.
 static void __declspec(naked) headache_mind_damage(void)
 {
     asm
       {
         cmp eax, HEADACHE
         je headache
+        cmp eax, STORM_TRIDENT
+        je quit
         sub eax, IRON_FEATHER ; replaced code
+        quit:
         ret
         headache:
         mov dword ptr [edi], MIND
@@ -8234,6 +8252,244 @@ static void __stdcall headache_berserk(struct map_monster *monster)
     launch_object(&anim, 0, 0, 0);
     make_sound(SOUND_THIS, word(0x4edf30 + SPL_BERSERK * 2),
                0, 0, -1, 0, 0, 0, 0);
+}
+
+// Use Lightning Bolt graphics in the spellbook if PC has the Storm Trident.
+static void __declspec(naked) check_lightning_image(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ebp-8] ; replaced code
+        cmp byte ptr [eax+edi], 0 ; replaced code
+        jnz quit
+        cmp esi, 1 ; air
+        jne nope
+        cmp edi, 7 ; lightning bolt
+        jne nope
+        mov ecx, dword ptr [CURRENT_PLAYER]
+        mov ecx, dword ptr [0xa74f44+ecx*4] ; PC pointers
+        push SLOT_MAIN_HAND
+        push STORM_TRIDENT
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        ret
+        nope:
+        xor eax, eax ; set zf
+        quit:
+        ret
+      }
+}
+
+// Also make the Lighning Bolt icon clickable.
+static void __declspec(naked) check_lightning_button(void)
+{
+    asm
+      {
+        mov eax, dword ptr [esp+24] ; replaced code
+        cmp byte ptr [eax+ebp], bl ; replaced code
+        jnz quit
+        cmp ebp, 6 ; lightning bolt
+        jne nope
+        cmp byte ptr [edi+0x1a4e], 1 ; air
+        jne nope
+        mov ecx, edi
+        push SLOT_MAIN_HAND
+        push STORM_TRIDENT
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        ret
+        nope:
+        xor eax, eax ; set zf
+        quit:
+        ret
+      }
+}
+
+// Check for Trident-enabled LB on graphics redraw.
+static void __declspec(naked) check_lightning_redraw(void)
+{
+    asm
+      {
+        lea eax, [ebx+0x191+ebp]  ; replaced code
+        cmp byte ptr [eax+esi], 0 ; replaced code
+        jnz quit
+        cmp ebp, 11 ; air
+        jne nope
+        cmp esi, 7 ; lightning bolt
+        jne nope
+        mov ecx, ebx
+        push SLOT_MAIN_HAND
+        push STORM_TRIDENT
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        ret
+        nope:
+        xor eax, eax ; set zf
+        quit:
+        ret
+      }
+}
+
+// The spellbook mouseover spell check.
+static void __declspec(naked) check_lightning_mouseover(void)
+{
+    asm
+      {
+        cmp byte ptr [ecx+0x192+eax], bl ; replaced code
+        jnz quit
+        cmp eax, 6 ; lightning bolt
+        jne nope
+        mov ecx, dword ptr [esp+36] ; player
+        cmp byte ptr [ecx+0x1a4e], 1 ; air
+        jne nope
+        push SLOT_MAIN_HAND
+        push STORM_TRIDENT
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        ret
+        nope:
+        xor eax, eax ; set zf
+        quit:
+        ret
+      }
+}
+
+// Click-on-spell-icon action.
+static void __declspec(naked) check_lightning_click(void)
+{
+    asm
+      {
+        cmp byte ptr [ecx+0x192+eax], bl ; replaced code
+        jnz quit
+        cmp eax, 6 ; lightning bolt
+        jne nope
+        mov ecx, dword ptr [esp+36] ; player
+        cmp byte ptr [ecx+0x1a4e], 1 ; air
+        jne nope
+        push SLOT_MAIN_HAND
+        push STORM_TRIDENT
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        mov eax, dword ptr [esp+24] ; restore
+        ret
+        nope:
+        xor ebx, ebx ; set zf
+        quit:
+        ret
+      }
+}
+
+// Enable the Air spellbook tab if Storm Trident is equipped.
+static void __declspec(naked) check_air_button(void)
+{
+    asm
+      {
+        cmp word ptr [edi+0x122], bx ; replaced code
+        jnz quit
+        mov ecx, edi
+        push SLOT_MAIN_HAND
+        push STORM_TRIDENT
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        quit:
+        ret
+      }
+}
+
+// Actually draw the Air tab under the same conditions.
+static void __declspec(naked) check_air_redraw(void)
+{
+    asm
+      {
+        mov eax, dword ptr [esp+28] ; replaced code
+        cmp word ptr [eax], 0 ; replaced code
+        jnz quit
+        cmp ecx, 1 ; air
+        jne nope
+        mov ecx, ebx
+        push SLOT_MAIN_HAND
+        push STORM_TRIDENT
+        call dword ptr ds:has_item_in_slot
+        mov ecx, dword ptr [esp+20] ; restore
+        test eax, eax
+        ret
+        nope:
+        xor eax, eax ; set zf
+        quit:
+        ret
+      }
+}
+
+// Cast Storm Trident's LB as a quick spell even with no SP.
+static void __declspec(naked) free_quick_lightning(void)
+{
+    asm
+      {
+        cmp eax, dword ptr [esi+0x1940] ; replaced code
+        jle quit
+        cmp ecx, SPL_LIGHTNING_BOLT
+        jne nope
+        mov ecx, esi
+        push SLOT_MAIN_HAND
+        push STORM_TRIDENT
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        jz nope
+        xor eax, eax ; set zf
+        ret
+        nope:
+        cmp esi, 0 ; set flags
+        quit:
+        ret
+      }
+}
+
+// Use Spear skill instead of Air for Storm Trident's LB.
+// Also fail if the spell is unknown and trident isn't equipped.
+static void __declspec(naked) lightning_spear_skill(void)
+{
+    asm
+      {
+        cmp word ptr [ebx+10], si ; not zero if scroll/wand
+        jnz pass
+        mov ecx, dword ptr [ebp-32] ; PC
+        push SLOT_MAIN_HAND
+        push STORM_TRIDENT
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        jnz trident
+        cmp byte ptr [ecx+0x192+SPL_LIGHTNING_BOLT-1], 0
+        jnz pass
+        mov eax, 0x4290c1 ; fail spell
+        jmp eax
+        trident:
+        push SKILL_SPEAR
+        call dword ptr ds:get_skill
+        mov edi, eax
+        and edi, SKILL_MASK
+        mov ecx, eax
+        call dword ptr ds:skill_mastery
+        mov dword ptr [ebp-24], eax
+        pass:
+        mov eax, 0x4289b3 ; attack spells
+        jmp eax
+      }
+}
+
+// Finally, let the Trident grant water walking.
+static void __declspec(naked) storm_trident_water_walking(void)
+{
+    asm
+      {
+        push SLOT_MAIN_HAND
+        push STORM_TRIDENT
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        jz nope
+        ret 4
+        nope:
+        jmp dword ptr ds:has_enchanted_item ; replaced call
+      }
 }
 
 // Add the new properties to some old artifacts,
@@ -8277,6 +8533,19 @@ static inline void new_artifacts(void)
     hook_call(0x45062e, jump_over_specitems, 5);
     hook_call(0x439e41, headache_mind_damage, 5);
     // stat penalty is in sacrificial_dagger_sp_bonus()
+    // The below hooks deal with Storm Trident's free Lightning Bolt spell.
+    hook_call(0x41136e, check_lightning_image, 7);
+    hook_call(0x41166a, check_lightning_button, 7);
+    hook_call(0x412bc6, check_lightning_redraw, 11);
+    hook_call(0x43439c, check_lightning_mouseover, 7);
+    hook_call(0x434648, check_lightning_click, 7);
+    hook_call(0x411734, check_air_button, 7);
+    hook_call(0x412d50, check_air_redraw, 8);
+    // zero cost is in switch_off_spells_for_free() above
+    hook_call(0x43010e, free_quick_lightning, 6);
+    patch_pointer(0x42e9ad, lightning_spear_skill);
+    // shock damage is in headache_mind_damage()
+    hook_call(0x4942d5, storm_trident_water_walking, 5);
 }
 
 // When calculating missile damage, take note of the weapon's skill.

@@ -161,6 +161,8 @@ enum player_stats
     STAT_MAGIC_RES = 15,
     STAT_MELEE_DAMAGE_BASE = 26,
     STAT_HOLY_RES = 33,
+    STAT_FIRE_MAGIC = 34,
+    STAT_DARK_MAGIC = 42,
     STAT_FIRE_POISON_RES = 47,
 };
 
@@ -447,7 +449,8 @@ enum items
     DRAGONS_WRATH = 557,
     HEADACHE = 558,
     STORM_TRIDENT = 559,
-    LAST_ARTIFACT = 559,
+    ELLINGERS_ROBE = 560,
+    LAST_ARTIFACT = 560,
     FIRST_RECIPE = 740,
     LAST_RECIPE = 778,
 };
@@ -714,6 +717,7 @@ enum target
 #define PARTY_ADDR 0xacd804
 #define PARTY ((struct player *) PARTY_ADDR)
 
+#define COND_WEAK 1
 #define COND_AFRAID 3
 #define COND_ERADICATED 16
 
@@ -1369,10 +1373,13 @@ static int __thiscall __declspec(naked) inflict_condition(void *player,
 // Poison, Mind or Magic resistance, so naturally
 // a corresponding immunity will apply to them as well.
 // Update: also put Preservation's new effect here.
-// Also check for Blaster GM quest.
+// Also check for Blaster GM quest and Ellinger's Robe's effects.
 static int __thiscall condition_immunity(struct player *player, int condition,
                                          int can_resist)
 {
+    int robe = has_item_in_slot(player, ELLINGERS_ROBE, SLOT_BODY_ARMOR);
+    if (condition == COND_WEAK && robe) // even if can_resist == 0!
+        return FALSE; // because most sources of weak are coded as such
     if (can_resist)
       {
         int bit = 1 << condition;
@@ -1387,7 +1394,7 @@ static int __thiscall condition_immunity(struct player *player, int condition,
             return FALSE;
         // Preservation now gives a 50% chance to avoid instant death.
         if ((bit & 0x14000) // dead or eradicated
-            && player->spell_buffs[PBUFF_PRESERVATION].expire_time
+            && (player->spell_buffs[PBUFF_PRESERVATION].expire_time || robe)
             && random() & 1)
             return FALSE;
       }
@@ -7855,7 +7862,7 @@ static void __declspec(naked) elven_chainmail_bow_bonus(void)
 }
 
 // Implement the Sacrificial Dagger SP bonus.
-// Also here: Headache's mental penalty.
+// Also here: Headache's mental penalty and Ellinger's Robe magic boost.
 static void __declspec(naked) sacrificial_dagger_sp_bonus(void)
 {
     asm
@@ -7877,6 +7884,14 @@ static void __declspec(naked) sacrificial_dagger_sp_bonus(void)
         penalty:
         sub edi, 30
         not_headache:
+        cmp eax, ELLINGERS_ROBE
+        jne not_robe
+        cmp esi, STAT_FIRE_MAGIC
+        jb not_robe
+        cmp esi, STAT_DARK_MAGIC
+        ja not_robe
+        add edi, 2
+        not_robe:
         sub eax, PUCK ; replaced code
         ret
       }
@@ -7919,6 +7934,10 @@ static char robw_arm2[] = "itemrobwv0a2";
 static const int robw_body_xy[] = { 501, 102, 517, 103, 499, 135, 514, 139, };
 static const int robw_arm1_xy[] = { 589, 104, 577, 105, 587, 137, 592, 145, };
 static const int robw_arm2_xy[] = { 581, 104, 575, 105, 579, 137, 584, 143, };
+static char robe_body[] = "itemrobev0";
+static char robe_arm1[] = "itemrobev0a1";
+static char robe_arm2[] = "itemrobev0a2";
+// xy are the same as robw (it's a recolor)
 
 // Substitute our graphics and coordinates for worn RDSM/robe (w/o right arm).
 static void __declspec(naked) display_worn_rdsm_body(void)
@@ -7933,6 +7952,8 @@ static void __declspec(naked) display_worn_rdsm_body(void)
         je robm
         cmp ecx, WIZARDS_ROBE
         je robw
+        cmp ecx, ELLINGERS_ROBE
+        je robe
         sub eax, GOVERNORS_ARMOR ; replaced code
         ret
         rdsm:
@@ -7949,6 +7970,10 @@ static void __declspec(naked) display_worn_rdsm_body(void)
         jmp coords
         robw:
         mov ecx, offset robw_body
+        jmp robw_xy
+        robe:
+        mov ecx, offset robe_body
+        robw_xy:
         mov edi, offset robw_body_xy
         coords:
         mov ebx, dword ptr [edx+20] ; preserve
@@ -7974,6 +7999,7 @@ static void __declspec(naked) display_worn_rdsm_body(void)
 #define ROBP_INDEX 19
 #define ROBM_INDEX 20
 #define ROBW_INDEX 21
+#define ROBE_INDEX 22
 
 // Pass the check for displaying armor left arm.
 static void __declspec(naked) display_worn_rdsm_arm(void)
@@ -7988,6 +8014,8 @@ static void __declspec(naked) display_worn_rdsm_arm(void)
         je robm
         cmp ecx, WIZARDS_ROBE
         je robw
+        cmp ecx, ELLINGERS_ROBE
+        je robe
         sub eax, GOVERNORS_ARMOR ; replaced code
         ret
         rdsm:
@@ -8001,6 +8029,9 @@ static void __declspec(naked) display_worn_rdsm_arm(void)
         jmp quit
         robw:
         mov edi, ROBW_INDEX
+        jmp quit
+        robe:
+        mov edi, ROBE_INDEX
         quit:
         push 0x43db65 ; code after choosing index
         ret 4
@@ -8022,6 +8053,8 @@ static void __declspec(naked) display_worn_rdsm_arm_2h(void)
         je robm
         cmp edi, ROBW_INDEX
         je robw
+        cmp edi, ROBE_INDEX
+        je robe
         imul eax, eax, 17 ; replaced code
         add edi, eax ; replaced code
         ret
@@ -8039,6 +8072,10 @@ static void __declspec(naked) display_worn_rdsm_arm_2h(void)
         jmp coords
         robw:
         mov edx, offset robw_arm2
+        jmp robw_xy
+        robe:
+        mov edx, offset robe_arm2
+        robw_xy:
         mov ebx, offset robw_arm2_xy
         coords:
         mov ecx, dword ptr [ebx+eax*8]
@@ -8074,6 +8111,8 @@ static void __declspec(naked) display_worn_rdsm_arm_idle(void)
         je robm
         cmp edi, ROBW_INDEX
         je robw
+        cmp edi, ROBE_INDEX
+        je robe
         imul eax, eax, 17 ; replaced code
         add edi, eax ; replaced code
         ret
@@ -8091,6 +8130,10 @@ static void __declspec(naked) display_worn_rdsm_arm_idle(void)
         jmp coords
         robw:
         mov edx, offset robw_arm1
+        jmp robw_xy
+        robe:
+        mov edx, offset robe_arm1
+        robw_xy:
         mov ecx, offset robw_arm1_xy
         coords:
         mov ebx, dword ptr [ecx+eax*8]
@@ -8573,6 +8616,23 @@ static void __declspec(naked) storm_trident_water_walking(void)
       }
 }
 
+// Let Ellinger's Robe bestow the effects of Preservation buff.
+static void __declspec(naked) ellingers_robe_preservation(void)
+{
+    asm
+      {
+        push SLOT_BODY_ARMOR
+        push ELLINGERS_ROBE
+        mov ecx, esi
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        jg quit
+        cmp dword ptr [esi+0x1854], 0 ; replaced code
+        quit:
+        ret
+      }
+}
+
 // Add the new properties to some old artifacts,
 // and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
@@ -8624,6 +8684,11 @@ static inline void new_artifacts(void)
     patch_pointer(0x42e9ad, lightning_spear_skill);
     // shock damage is in headache_mind_damage()
     hook_call(0x4942d5, storm_trident_water_walking, 5);
+    hook_call(0x493e33, ellingers_robe_preservation, 6);
+    hook_call(0x48dc59, ellingers_robe_preservation, 6);
+    hook_call(0x494494, ellingers_robe_preservation, 6);
+    // weakness immunity is in condition_immunity() above
+    // magic bonus is in sacrificial_dagger_sp_bonus()
 }
 
 // When calculating missile damage, take note of the weapon's skill.

@@ -159,9 +159,9 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 157	item139	Mystic Wand of Shrapmetal	3000	WeaponW	Misc	S93	15	3	26	Wand	34	0	0	5	35	"The precious egg of a phoenix was snatched from the fire before it could hatch to make the headstone of this wand.  The rest of the wand is made of steel and plated with gold.  To use this wand, you must equip it in the missile weapon slot."
 158	item139	Mystic Wand of Shrinking	3000	WeaponW	Misc	S92	15	3	26	Wand	34	0	0	5	35	"The precious egg of a phoenix was snatched from the fire before it could hatch to make the headstone of this wand.  The rest of the wand is made of steel and plated with gold.  To use this wand, you must equip it in the missile weapon slot."
 159	item139	Mystic Wand of Incineration	3000	WeaponW	Misc	S11	15	3	26	Wand	34	0	0	5	35	"The precious egg of a phoenix was snatched from the fire before it could hatch to make the headstone of this wand.  The rest of the wand is made of steel and plated with gold.  To use this wand, you must equip it in the missile weapon slot."
-160	null	_item160	0	0	0	0	0	0	0	_item160	0	0	0	0	0	Description here.
-161	null	_item161	0	0	0	0	0	0	0	_item161	0	0	0	0	0	Description here.
-162	null	_item162	0	0	0	0	0	0	0	_item162	0	0	0	0	0	Description here.
+160	itemrobp	Pilgrim's Robe	50	Armor	Misc	1	0	2	1	Robe	29	0	0	0	0	"Simply sewn from rough fabric, such clothing can be commonly seen on pilgrims and other wayfarers.  The robe will protect from cold and weather, but is almost useless in combat.  At least it doesn't slow down the wearer, unlike actual armor."		
+161	itemrobm	Martial Robe	250	Armor	Misc	1	1	2	8	Robe	29	0	0	0	0	"Robes like these are often worn by monks and other martial arts practitioners.  Although the decorated fabric barely protects from blows, it doesn't hinder dodging them, either.  Some robes also have a useful enchantment."		
+162	itemrobw	Wizard's Robe	450	Armor	Misc	1	2	2	16	Robe	29	0	0	0	0	"This fashion is popular among Bracadian wizards.  Such robes have both ceremonial and practical purpose: the clothing is easily enchanted, especially with magic-boosting charms, and many wizards prefer these enchantments to the dubious protection of leather."		
 163	null	_item163	0	0	0	0	0	0	0	_item163	0	0	0	0	0	Description here.
 164	null	_item164	0	0	0	0	0	0	0	_item164	0	0	0	0	0	Description here.
 165	null	_item165	0	0	0	0	0	0	0	_item165	0	0	0	0	0	Description here.

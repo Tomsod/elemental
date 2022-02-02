@@ -71,7 +71,7 @@ static void erase_code(uintptr_t address, int length)
     VirtualProtect((LPVOID) address, length, PAGE_EXECUTE_READWRITE,
                    &OldProtect);
     memset((void *) address, 0x90, length);
-    if (length >= 2)
+    if (length > 10)
       {
         byte(address) = 0xeb;
         byte(address + 1) = length - 2;
@@ -297,6 +297,7 @@ enum skills
     SKILL_LEARNING = 36,
     SKILL_NONE = 37, // used by clubs
     SKILL_COUNT = 37,
+    SKILL_MISC = 38, // used widely in items.txt
 };
 
 #define PLAYER_MAX_ITEMS 138
@@ -388,11 +389,14 @@ enum items
 {
     BLASTER = 64,
     BLASTER_RIFLE = 65,
-    STEEL_CHAIN_MAIL = 72,
     LAST_BODY_ARMOR = 78, // noble plate armor
-    LAST_PREFIX = 134, // can be prefixed (sun amulet)
     FIRST_WAND = 135,
     LAST_WAND = 159,
+    FIRST_ROBE = 160,
+    PILGRIMS_ROBE = 160,
+    MARTIAL_ROBE = 161,
+    WIZARDS_ROBE = 162,
+    LAST_PREFIX = 162, // last enchantable item
     FIRST_REAGENT = 200,
     LAST_REAGENT = 214, // not counting gray
     FIRST_GRAY_REAGENT = 215,
@@ -420,7 +424,7 @@ enum items
     PUCK = 500,
     IRON_FEATHER = 501,
     CORSAIR = 503,
-    GOVERNOR_S_ARMOR = 504,
+    GOVERNORS_ARMOR = 504,
     SPLITTER = 506,
     GHOULSBANE = 507,
     GIBBET = 508,
@@ -433,14 +437,14 @@ enum items
     LAST_OLD_ARTIFACT = 528,
     HERMES_SANDALS = 529,
     ELFBANE = 531,
-    MIND_S_EYE = 532,
+    MINDS_EYE = 532,
     ELVEN_CHAINMAIL = 533,
     FORGE_GAUNTLETS = 534,
     SACRIFICIAL_DAGGER = 553,
     RED_DRAGON_SCALE_MAIL = 554,
     RED_DRAGON_SCALE_SHIELD = 555,
     FIRST_NEW_ARTIFACT = 557,
-    DRAGON_S_WRATH = 557,
+    DRAGONS_WRATH = 557,
     HEADACHE = 558,
     STORM_TRIDENT = 559,
     LAST_ARTIFACT = 559,
@@ -557,6 +561,13 @@ struct __attribute__((packed)) file_header
 #define QBIT_MEDITATION_GM_QUEST 375
 #define QBIT_ALCHEMY_GM_QUEST_ACTIVE 376
 #define QBIT_ALCHEMY_GM_QUEST 377
+
+#define ITEM_TYPE_WEAPON 1
+#define ITEM_TYPE_WEAPON2 2
+#define ITEM_TYPE_ARMOR 4
+#define ITEM_TYPE_HELM 6
+// my addition
+#define ITEM_TYPE_ROBE 47
 
 // Not quite sure what this is, but it holds aimed spell data.
 struct __attribute__((packed)) dialog_param
@@ -761,7 +772,9 @@ struct __attribute__((packed)) spcitem
     uint8_t probability[12]; // for item types 1-12
     uint32_t value;
     uint8_t level; // A-D == 0-3
-    SKIP(3); // unused
+    uint8_t robe_prob; // my addition
+    uint8_t crown_prob; // ditto
+    SKIP(1); // unused
 };
 
 enum monster_buffs
@@ -980,6 +993,8 @@ static int __thiscall (*has_enchanted_item)(void *player, int enchantment)
 static int __fastcall (*player_has_item)(int item, void *player,
                                          int check_mouse)
     = (funcptr_t) 0x43ee38;
+static void *__thiscall (*load_bitmap)(void *lod, char *name, int lod_type)
+    = (funcptr_t) 0x40fb2c;
 static int __thiscall (*identify_price)(void *player, float shop_multiplier)
     = (funcptr_t) 0x4b80dc;
 static char *__thiscall (*item_name)(struct item *item) = (funcptr_t) 0x4564c5;
@@ -1327,7 +1342,7 @@ static int __thiscall is_immune(struct player *player, unsigned int element)
             return 1;
         break;
     case MIND:
-        if (has_item_in_slot(player, MIND_S_EYE, SLOT_HELM))
+        if (has_item_in_slot(player, MINDS_EYE, SLOT_HELM))
             return 1;
         break;
       }
@@ -3219,6 +3234,40 @@ static void __declspec(naked) lamp_stat_name(void)
       }
 }
 
+// Add a random item type that only generates robes (for shops).
+static void __declspec(naked) rnd_robe_type(void)
+{
+    asm
+      {
+        jne quit
+        cmp dword ptr [ebp+12], ITEM_TYPE_ROBE - 1
+        je robe
+        xor eax, eax ; set zf
+        quit:
+        mov dword ptr [ebp+16], 1 ; replaced code
+        ret
+        robe:
+        mov dword ptr [ebp+12], ITEM_TYPE_ARMOR - 1
+        mov dword ptr [ebp+16], FIRST_ROBE ; just skip over all other armor
+        lea eax, [edi+FIRST_ROBE*48+32]
+        mov dword ptr [ebp-4], eax
+        lea eax, [edi+FIRST_ROBE*48+44+ebx]
+        push 0x456826 ; rnd item by equip stat loop
+        ret 4
+      }
+}
+
+// Let Monks (and whoever else gets Dodging) start with a robe.
+static void __declspec(naked) starting_robe(void)
+{
+    asm
+      {
+        push PILGRIMS_ROBE
+        mov eax, 0x49785c ; to the give-item code
+        jmp eax
+      }
+}
+
 // Misc item tweaks.
 static inline void misc_items(void)
 {
@@ -3263,6 +3312,19 @@ static inline void misc_items(void)
     patch_dword(0x468eb2, 0x4683ba);
     patch_dword(0x468eb6, 0x4683a8);
     patch_dword(0x468eba, 0x468396);
+    hook_call(0x4567db, rnd_robe_type, 7);
+    // Let some armor shops sell robes.
+    patch_word(0x4f0328, ITEM_TYPE_ROBE); // ei std
+    patch_word(0x4f0568, ITEM_TYPE_ROBE); // ei spc
+    patch_word(0x4f05a2, ITEM_TYPE_ROBE); // tularean spc
+    patch_word(0x4f05ba, ITEM_TYPE_ROBE); // celeste spc
+    patch_word(0x4f03a0, ITEM_TYPE_ROBE); // nighon std
+    patch_word(0x4f03a2, ITEM_TYPE_ROBE); // nighon std
+    patch_word(0x4f05e0, ITEM_TYPE_ROBE); // nighon spc
+    patch_word(0x4f05e2, ITEM_TYPE_ROBE); // nighon spc
+    patch_word(0x4f03f0, ITEM_TYPE_ROBE); // castle std
+    patch_word(0x4f0630, ITEM_TYPE_ROBE); // castle spc
+    patch_pointer(0x497929, starting_robe);
 }
 
 static uint32_t potion_damage;
@@ -7202,10 +7264,12 @@ static void __declspec(naked) spcitems_level_address_chunk(void)
 }
 
 // Calculate probability address from level address provided earlier.
+// The [ebp-8] is calculated in spc_ench_group() below.
 static void __declspec(naked) spcitems_probability_from_level_chunk(void)
 {
     asm
       {
+        mov eax, dword ptr [ebp-8]
         movzx eax, byte ptr [ecx-16+eax]
       }
 }
@@ -7233,8 +7297,8 @@ static inline void spcitems_buffer(void)
     patch_byte(0x4578e4, SPC_COUNT);
     // random item generator
     patch_bytes(0x456be9, spcitems_level_address_chunk, 6);
-    patch_bytes(0x456c37, spcitems_probability_from_level_chunk, 5);
-    erase_code(0x456c3c, 4);
+    patch_bytes(0x456c2a, spcitems_probability_from_level_chunk, 9);
+    erase_code(0x456c32, 14);
     patch_bytes(0x456c7e, spcitems_probability_address_chunk_2, 6);
     patch_bytes(0x456cbd, spcitems_probability_address_chunk_2, 5);
     // item name
@@ -7823,7 +7887,7 @@ static void __declspec(naked) sacrificial_dagger_goblin_only(void)
 {
     asm
       {
-        mov edx, MIND_S_EYE ; replaced code
+        mov edx, MINDS_EYE ; replaced code
         cmp eax, SACRIFICIAL_DAGGER
         jne not_it
         mov eax, ELFBANE
@@ -7832,103 +7896,84 @@ static void __declspec(naked) sacrificial_dagger_goblin_only(void)
       }
 }
 
-// Set a (previously unused) bit if we should display RDSM.
-static void __declspec(naked) check_for_worn_rdsm(void)
-{
-    asm
-      {
-        push ebp
-        mov ecx, RED_DRAGON_SCALE_MAIL
-        call dword ptr ds:player_has_item
-        or byte ptr [0x511087], al
-        mov edx, edi
-        mov ecx, ELVEN_CHAINMAIL ; replaced code
-        ret
-      }
-}
+// RDSM and robe worn image templates and coordinates.
+static char rdsm_body[] = "itemrdsmv0";
+static char rdsm_arm1[] = "itemrdsmv0a1";
+static char rdsm_arm2[] = "itemrdsmv0a2";
+static const int rdsm_body_xy[] = { 491, 101, 496, 107, 488, 137, 497, 140, };
+static const int rdsm_arm1_xy[] = { 582, 104, 580, 106, 577, 135, 593, 144, };
+static const int rdsm_arm2_xy[] = { 530, 105, 541, 108, 529, 137, 533, 143, };
+static char robp_body[] = "itemrobpv0";
+static char robp_arm1[] = "itemrobpv0a1";
+static const int robp_body_xy[] = { 526, 103, 534, 105, 523, 137, 533, 145, };
+static const int robp_arm1_xy[] = { 582, 104, 577, 107,   0,   0,   0,   0, };
+static char robm_body[] = "itemrobmv0";
+static char robm_arm1[] = "itemrobmv0a1";
+static char robm_arm2[] = "itemrobmv0a2";
+static const int robm_body_xy[] = { 525, 100, 532, 104, 522, 134, 531, 142, };
+static const int robm_arm1_xy[] = { 591, 116, 578, 106, 595, 141, 591, 146, };
+static const int robm_arm2_xy[] = { 581, 105, 577, 108, 595, 141, 595, 145, };
+static char robw_body[] = "itemrobwv0";
+static char robw_arm1[] = "itemrobwv0a1";
+static char robw_arm2[] = "itemrobwv0a2";
+static const int robw_body_xy[] = { 501, 102, 517, 103, 499, 135, 514, 139, };
+static const int robw_arm1_xy[] = { 589, 104, 577, 105, 587, 137, 592, 145, };
+static const int robw_arm2_xy[] = { 581, 104, 575, 105, 579, 137, 584, 143, };
 
-// Count RDSM as proper body armor for the characted doll code.
-static void __declspec(naked) display_worn_rdsm(void)
-{
-    asm
-      {
-        cmp edx, RED_DRAGON_SCALE_MAIL
-        jne not_it
-        cmp byte ptr [0x511087], 0
-        jz not_it
-        ; edx already contains what we need
-        push 0x43cbe7
-        ret 4
-        not_it:
-        lea eax, [edx-504] ; replaced code
-        ret
-      }
-}
-
-// Graphics info for worn RDSM.
-static uint32_t rdsm_display_vars[12];
-
-// Insert RDSM into body armor display loop.
-static void __declspec(naked) display_worn_rdsm_loop(void)
-{
-    asm
-      {
-        cmp eax, LAST_BODY_ARMOR + 1
-        jne quit
-        mov dword ptr [esp+20], RED_DRAGON_SCALE_MAIL
-        lea edx, [edi+edi*2]
-        shl edx, 2
-        add edx, offset rdsm_display_vars - 8
-        mov dword ptr [esp+24], edx
-        cmp eax, LAST_BODY_ARMOR + 2 ; set flags
-        quit:
-        ret
-      }
-}
-
-// Substitute our coordinates for worn RDSM (w/o right arm).
+// Substitute our graphics and coordinates for worn RDSM/robe (w/o right arm).
 static void __declspec(naked) display_worn_rdsm_body(void)
 {
     asm
       {
         cmp ecx, RED_DRAGON_SCALE_MAIL
         je rdsm
-        sub eax, GOVERNOR_S_ARMOR ; replaced code
+        cmp ecx, PILGRIMS_ROBE
+        je robp
+        cmp ecx, MARTIAL_ROBE
+        je robm
+        cmp ecx, WIZARDS_ROBE
+        je robw
+        sub eax, GOVERNORS_ARMOR ; replaced code
         ret
         rdsm:
+        mov ecx, offset rdsm_body
+        mov edi, offset rdsm_body_xy
+        jmp coords
+        robp:
+        mov ecx, offset robp_body
+        mov edi, offset robp_body_xy
+        jmp coords
+        robm:
+        mov ecx, offset robm_body
+        mov edi, offset robm_body_xy
+        jmp coords
+        robw:
+        mov ecx, offset robw_body
+        mov edi, offset robw_body_xy
+        coords:
+        mov ebx, dword ptr [edx+20] ; preserve
         mov eax, dword ptr [esp+40] ; body type
-        lea ecx, [eax+eax*2]
-        mov ebx, offset rdsm_display_vars
-        mov ebx, dword ptr [ebx+ecx*4] ; also put gfx info
-        dec eax
-        jz female
-        dec eax
-        jz dwarf
-        dec eax
-        jz femdwarf
-        ; male
-        mov eax, 491
-        mov ecx, 101
-        jmp quit
-        female:
-        mov eax, 496
-        mov ecx, 107
-        jmp quit
-        dwarf:
-        mov eax, 488
-        mov ecx, 137
-        jmp quit
-        femdwarf:
-        mov eax, 497
-        mov ecx, 140
-        quit:
-        mov dword ptr [esp+24], eax
-        push 0x43d49a ; code after setting coords
+        mov edx, dword ptr [edi+eax*8]
+        mov edi, dword ptr [edi+eax*8+4]
+        mov dword ptr [esp+24], edx
+        mov dword ptr [esp+20], edi
+        add eax, '1'
+        mov byte ptr [ecx+9], al
+        push 2
+        push ecx
+        mov ecx, 0x6d0490 ; icons.lod
+        call dword ptr ds:load_bitmap
+        xchg eax, ebx
+        push 0x43d4a1 ; code after setting coords
         ret 4
       }
 }
 
+// For the left arm code.  The vanilla armors are 0 to 17.
 #define RDSM_INDEX 18
+#define ROBP_INDEX 19
+#define ROBM_INDEX 20
+#define ROBW_INDEX 21
 
 // Pass the check for displaying armor left arm.
 static void __declspec(naked) display_worn_rdsm_arm(void)
@@ -7937,16 +7982,32 @@ static void __declspec(naked) display_worn_rdsm_arm(void)
       {
         cmp ecx, RED_DRAGON_SCALE_MAIL
         je rdsm
-        sub eax, GOVERNOR_S_ARMOR ; replaced code
+        cmp ecx, PILGRIMS_ROBE
+        je robp
+        cmp ecx, MARTIAL_ROBE
+        je robm
+        cmp ecx, WIZARDS_ROBE
+        je robw
+        sub eax, GOVERNORS_ARMOR ; replaced code
         ret
         rdsm:
-        mov edi, RDSM_INDEX ; unused index
+        mov edi, RDSM_INDEX
+        jmp quit
+        robp:
+        mov edi, ROBP_INDEX
+        jmp quit
+        robm:
+        mov edi, ROBM_INDEX
+        jmp quit
+        robw:
+        mov edi, ROBW_INDEX
+        quit:
         push 0x43db65 ; code after choosing index
         ret 4
       }
 }
 
-// Supply graphics info and coordinates for RDSM left arm
+// Supply graphics info and coordinates for RDSM/robe left arm
 // when the PC is holding a two-handed weapon.
 // There's a check for whether the gfx are present which we skip.
 static void __declspec(naked) display_worn_rdsm_arm_2h(void)
@@ -7955,37 +8016,47 @@ static void __declspec(naked) display_worn_rdsm_arm_2h(void)
       {
         cmp edi, RDSM_INDEX
         je rdsm
+        cmp edi, ROBP_INDEX
+        je robp
+        cmp edi, ROBM_INDEX
+        je robm
+        cmp edi, ROBW_INDEX
+        je robw
         imul eax, eax, 17 ; replaced code
         add edi, eax ; replaced code
         ret
         rdsm:
-        lea ecx, [eax+eax*2]
-        mov ebx, offset rdsm_display_vars + 8
-        mov ebx, dword ptr [ebx+ecx*4] ; gfx info
-        dec eax
-        jz female
-        dec eax
-        jz dwarf
-        dec eax
-        jz femdwarf
-        ; male
-        mov ecx, 530
-        mov eax, 105
-        jmp quit
-        female:
-        mov ecx, 541
-        mov eax, 108
-        jmp quit
-        dwarf:
-        mov ecx, 529
-        mov eax, 137
-        jmp quit
-        femdwarf:
-        mov ecx, 533
-        mov eax, 143
-        quit:
+        mov edx, offset rdsm_arm2
+        mov ebx, offset rdsm_arm2_xy
+        jmp coords
+        robp:
+        mov edx, offset robp_arm1 ; currently no arm2
+        mov ebx, offset robp_arm1_xy
+        jmp coords
+        robm:
+        mov edx, offset robm_arm2
+        mov ebx, offset robm_arm2_xy
+        jmp coords
+        robw:
+        mov edx, offset robw_arm2
+        mov ebx, offset robw_arm2_xy
+        coords:
+        mov ecx, dword ptr [ebx+eax*8]
+        test ecx, ecx
+        jz skip
+        mov ebx, dword ptr [ebx+eax*8+4]
         mov dword ptr [esp+28], ecx
+        add eax, '1'
+        mov byte ptr [edx+9], al
+        push 2
+        push edx
+        mov ecx, 0x6d0490 ; icons.lod
+        call dword ptr ds:load_bitmap
+        xchg eax, ebx
         push 0x43dc10 ; code after setting coords
+        ret 8
+        skip:
+        push 0x43deb6 ; skip the arm code
         ret 8
       }
 }
@@ -7997,39 +8068,49 @@ static void __declspec(naked) display_worn_rdsm_arm_idle(void)
       {
         cmp edi, RDSM_INDEX
         je rdsm
+        cmp edi, ROBP_INDEX
+        je robp
+        cmp edi, ROBM_INDEX
+        je robm
+        cmp edi, ROBW_INDEX
+        je robw
         imul eax, eax, 17 ; replaced code
         add edi, eax ; replaced code
         ret
         rdsm:
-        lea ecx, [eax+eax*2]
-        mov ebx, offset rdsm_display_vars + 4
-        mov ebx, dword ptr [ebx+ecx*4] ; gfx info
-        mov edx, dword ptr [esp+52] ; replaced code (worn item)
-        mov edx, dword ptr [edx+0x1f0+20] ; replaced code (item bits)
-        dec eax
-        jz female
-        dec eax
-        jz dwarf
-        dec eax
-        jz femdwarf
-        ; male
-        mov eax, 582
-        mov ecx, 104
-        jmp quit
-        female:
-        mov eax, 580
-        mov ecx, 106
-        jmp quit
-        dwarf:
-        mov eax, 577
-        mov ecx, 135
-        jmp quit
-        femdwarf:
-        mov eax, 593
-        mov ecx, 144
-        quit:
-        mov dword ptr [esp+28], ecx
+        mov edx, offset rdsm_arm1
+        mov ecx, offset rdsm_arm1_xy
+        jmp coords
+        robp:
+        mov edx, offset robp_arm1
+        mov ecx, offset robp_arm1_xy
+        jmp coords
+        robm:
+        mov edx, offset robm_arm1
+        mov ecx, offset robm_arm1_xy
+        jmp coords
+        robw:
+        mov edx, offset robw_arm1
+        mov ecx, offset robw_arm1_xy
+        coords:
+        mov ebx, dword ptr [ecx+eax*8]
+        test ebx, ebx
+        jz skip
+        mov edi, dword ptr [ecx+eax*8+4]
+        add eax, '1'
+        mov byte ptr [edx+9], al
+        push 2
+        push edx
+        mov ecx, 0x6d0490 ; icons.lod
+        call dword ptr ds:load_bitmap
+        xchg eax, ebx
+        mov ecx, edi
+        mov edx, dword ptr [esp+52] ; worn item
+        mov edx, dword ptr [edx+0x1f0+20] ; item bits
         push 0x43dd7d ; code after setting coords
+        ret 8
+        skip:
+        push 0x43deb6 ; skip the arm code
         ret 8
       }
 }
@@ -8043,7 +8124,7 @@ static void __declspec(naked) set_dragon_charges(void)
 {
     asm
       {
-        cmp eax, DRAGON_S_WRATH
+        cmp eax, DRAGONS_WRATH
         jne not_it
         cmp byte ptr [edx+25], MAX_DRAGON_CHARGES ; make sure it`s not inited
         je not_it
@@ -8066,7 +8147,7 @@ static void __declspec(naked) check_dragon_wand(void)
 {
     asm
       {
-        cmp esi, DRAGON_S_WRATH
+        cmp esi, DRAGONS_WRATH
         je quit
         cmp esi, LAST_WAND ; replaced code
         quit:
@@ -8082,7 +8163,7 @@ static void __declspec(naked) regen_dragon_charges(void)
 {
     asm
       {
-        cmp dword ptr [ecx], DRAGON_S_WRATH
+        cmp dword ptr [ecx], DRAGONS_WRATH
         je dragon
         mov eax, dword ptr [ecx+20] ; replaced code
         test al, 8 ; replaced code
@@ -8132,7 +8213,7 @@ static void __declspec(naked) cannot_recharge_dragon(void)
 {
     asm
       {
-        cmp dword ptr [ecx], DRAGON_S_WRATH
+        cmp dword ptr [ecx], DRAGONS_WRATH
         je cant
         cmp byte ptr [ITEMS_TXT_ADDR+28+eax], 12 ; replaced code
         ret
@@ -8510,9 +8591,6 @@ static inline void new_artifacts(void)
     // kelebrim protects from dispel
     // hermes' sandals grant leaping
     // rdsm is lightweight
-    hook_call(0x43c170, check_for_worn_rdsm, 5);
-    hook_call(0x43c952, display_worn_rdsm, 6);
-    hook_call(0x43c52c, display_worn_rdsm_loop, 6);
     hook_call(0x43d42f, display_worn_rdsm_body, 5);
     hook_call(0x43db2b, display_worn_rdsm_arm, 5);
     hook_call(0x43dba8, display_worn_rdsm_arm_2h, 5);
@@ -8951,7 +9029,7 @@ static void __declspec(naked) red_empty_wands(void)
       {
         and ecx, 0xf0 ; replaced code
         jnz quit
-        cmp dword ptr [edi], DRAGON_S_WRATH
+        cmp dword ptr [edi], DRAGONS_WRATH
         jne not_dragon
         mov ecx, edi
         push eax
@@ -11517,6 +11595,7 @@ static void __declspec(naked) read_unid_book(void)
 }
 
 // Now that blasters have value, we need to explicitly forbid enchanting them.
+// Also here: allow enchanting robes.
 static void __declspec(naked) cant_enchant_blasters(void)
 {
     asm
@@ -11526,7 +11605,12 @@ static void __declspec(naked) cant_enchant_blasters(void)
         cmp eax, BLASTER - 1
         ret
         ok:
-        cmp eax, LAST_PREFIX ; replaced code
+        cmp eax, FIRST_ROBE
+        jge new
+        cmp eax, FIRST_WAND - 1 ; replaced code
+        ret
+        new:
+        cmp eax, LAST_PREFIX
         ret
       }
 }
@@ -11796,9 +11880,8 @@ static int __thiscall maybe_dodge(struct player *player)
     if (!body)
         return 1;
     int skill = ITEMS_TXT[player->items[body-1].id].skill;
-    // TODO: "none" checks for wetsuits; replace this with a robe check later
     return skill == SKILL_LEATHER && player->skills[SKILL_LEATHER] >= SKILL_GM
-           || skill >= SKILL_NONE;
+           || skill >= SKILL_NONE; // robes and wetsuits
 }
 
 // Defined below.
@@ -12539,7 +12622,10 @@ static inline void skill_changes(void)
     hook_call(0x4be266, unid_item_sell_price, 5);
     hook_call(0x468649, read_unid_scroll, 5);
     hook_call(0x4684ed, read_unid_book, 6);
-    hook_call(0x42ab66, cant_enchant_blasters, 5);
+    hook_call(0x42ab66, cant_enchant_blasters, 5); // GM
+    hook_call(0x42adf6, cant_enchant_blasters, 5); // Master
+    hook_call(0x42b096, cant_enchant_blasters, 5); // Expert (unused)
+    hook_call(0x42b30b, cant_enchant_blasters, 5); // Normal (unused)
     hook_call(0x491191, npcs_cant_repair_blasters, 5);
     hook_call(0x4bdbe6, shops_cant_repair_blasters, 5);
     hook_call(0x490f91, shops_cant_repair_blasters_msg, 11);
@@ -12597,6 +12683,334 @@ static inline void patch_compatibility(void)
     patch_byte(0x42efc9, 20); // new melee fecovery limit (for the hint)
 }
 
+// Let robes, crowns and hats have an increased chance to generate enchanted,
+// to compensate for their low base utility (the % chance is rolled twice).
+static void __declspec(naked) robe_crown_ench_chance(void)
+{
+    asm
+      {
+        mov eax, dword ptr [edi+0x116b4+eax*4] ; spc ench chance
+        lea ecx, [eax+ebx]
+        cmp edx, ecx
+        jge fail
+        skip:
+        test eax, eax ; replaced comparison, basically
+        ret
+        fail:
+        mov ecx, dword ptr [esi]
+        lea ecx, [ecx+ecx*2]
+        shl ecx, 4
+        cmp byte ptr [edi+ecx+34], 1 ; base ac
+        ja skip
+        cmp byte ptr [edi+ecx+32], ITEM_TYPE_ARMOR - 1
+        je reroll
+        cmp byte ptr [edi+ecx+32], ITEM_TYPE_HELM - 1
+        jne skip
+        reroll:
+        call dword ptr ds:random
+        xor edx, edx
+        mov ecx, 100
+        div ecx
+        test ecx, ecx ; clear zf
+        ret
+      }
+}
+
+// Same for staves (b/c they're magical and can get valuable enchantments).
+static void __declspec(naked) staff_ench_chance(void)
+{
+    asm
+      {
+        mov ecx, 100 ; replaced code, kinda
+        div ecx ; ditto
+        cmp edx, dword ptr [ebx] ; this one is verbatim
+        jl quit
+        mov ecx, dword ptr [esi]
+        lea ecx, [ecx+ecx*2]
+        shl ecx, 4
+        cmp byte ptr [edi+ecx+33], SKILL_STAFF
+        jne skip
+        call dword ptr ds:random
+        xor edx, edx
+        mov ecx, 100
+        div ecx
+        skip:
+        cmp edx, dword ptr [ebx]
+        quit:
+        ret 4
+      }
+}
+
+// Parse two more prob columns into empty (padding) fields.
+static void __declspec(naked) spcitems_new_probability(void)
+{
+    asm
+      {
+        cmp edx, 14
+        jb old
+        add edx, 5 ; skip over other fields
+        old:
+        mov ecx, dword ptr [ebp-16] ; replaced code
+        mov byte ptr [ecx+edx+6], al ; ditto
+        ret
+      }
+}
+
+// Treat robes and crowns/hats as their own item types for ench purposes.
+static void __declspec(naked) std_ench_group(void)
+{
+    asm
+      {
+        cmp byte ptr [edi+ecx+32], ITEM_TYPE_ARMOR - 1
+        jne not_robe
+        cmp byte ptr [edi+ecx+33], SKILL_MISC
+        je robe
+        not_robe:
+        cmp byte ptr [edi+ecx+32], ITEM_TYPE_HELM - 1
+        jne not_crown
+        cmp byte ptr [edi+ecx+34], 0
+        je crown
+        not_crown:
+        movzx ecx, byte ptr [edi+ecx+32] ; replaced code
+        ret
+        robe:
+        mov ecx, 12
+        ret
+        crown:
+        mov ecx, 13
+        ret
+      }
+}
+
+// Same, but for Enchant Item instead of natural generation.
+static void __declspec(naked) std_ench_group_ei(void)
+{
+    asm
+      {
+        cmp byte ptr [ITEMS_TXT_ADDR+ecx+28], ITEM_TYPE_ARMOR - 1
+        jne not_robe
+        cmp byte ptr [ITEMS_TXT_ADDR+ecx+29], SKILL_MISC
+        je robe
+        not_robe:
+        cmp byte ptr [ITEMS_TXT_ADDR+ecx+28], ITEM_TYPE_HELM - 1
+        jne not_crown
+        cmp byte ptr [ITEMS_TXT_ADDR+ecx+30], 0
+        jz crown
+        not_crown:
+        movzx ecx, byte ptr [ITEMS_TXT_ADDR+ecx+28] ; replaced code
+        ret
+        robe:
+        mov ecx, 12
+        ret
+        crown:
+        mov ecx, 13
+        ret
+      }
+}
+
+// This one is for special enchs, and it also special-cases staves.
+static void __declspec(naked) spc_ench_group(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [esi]
+        lea ecx, [ecx+ecx*2]
+        shl ecx, 4
+        movzx edx, byte ptr [edi+ecx+32]
+        cmp edx, ITEM_TYPE_WEAPON - 1
+        je weapon
+        cmp edx, ITEM_TYPE_WEAPON2 - 1
+        je weapon
+        cmp edx, ITEM_TYPE_ARMOR - 1
+        je armor
+        cmp edx, ITEM_TYPE_HELM - 1
+        je helm
+        other:
+        mov dword ptr [ebp-8], edx
+        ret
+        weapon:
+        cmp byte ptr [edi+ecx+33], SKILL_STAFF
+        je staff
+        mov dword ptr [ebp-8], 0 ; any non-staff weapon
+        ret
+        staff:
+        mov dword ptr [ebp-8], 1 ; staff
+        ret
+        armor:
+        cmp byte ptr [edi+ecx+33], SKILL_MISC
+        jne other
+        mov dword ptr [ebp-8], 17 ; robe
+        ret
+        helm:
+        cmp byte ptr [edi+ecx+34], 0
+        jnz other
+        mov dword ptr [ebp-8], 18 ; crown
+        ret
+      }
+}
+
+// Provide the stored group as necessary.
+static void __declspec(naked) spc_ench_group_chunk(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ebp-8]
+      }
+}
+
+// Same, but into ecx.
+static void __declspec(naked) spc_ench_group_chunk_2(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [ebp-8]
+      }
+}
+
+// Also special enchs, but for Enchant Item.
+static void __declspec(naked) spc_ench_group_ei(void)
+{
+    asm
+      {
+        mov esi, dword ptr [edi]
+        lea esi, [esi+esi*2]
+        shl esi, 4
+        movzx eax, byte ptr [ITEMS_TXT_ADDR+esi+28]
+        cmp eax, ITEM_TYPE_WEAPON - 1
+        je weapon
+        cmp eax, ITEM_TYPE_WEAPON2 - 1
+        je weapon
+        cmp eax, ITEM_TYPE_ARMOR - 1
+        je armor
+        cmp eax, ITEM_TYPE_HELM - 1
+        je helm
+        quit:
+        mov dword ptr [ebp-36], eax ; store in an unused var
+        lea eax, [ebp-3696] ; replaced code
+        ret
+        weapon:
+        cmp byte ptr [ITEMS_TXT_ADDR+esi+29], SKILL_STAFF
+        je staff
+        mov al, 0 ; any non-staff weapon
+        jmp quit
+        staff:
+        mov al, 1 ; staff
+        jmp quit
+        armor:
+        cmp byte ptr [ITEMS_TXT_ADDR+esi+29], SKILL_MISC
+        jne quit
+        mov al, 17 ; robe
+        jmp quit
+        helm:
+        cmp byte ptr [ITEMS_TXT_ADDR+esi+30], 0
+        jnz quit
+        mov al, 18 ; crown
+        jmp quit
+      }
+}
+
+// Read the item group.
+static void __declspec(naked) spc_ench_group_ei_chunk(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ebp-36]
+      }
+}
+
+// Now read in into ecx and keep it there.
+static void __declspec(naked) spc_ench_group_ei_chunk_2(void)
+{
+    asm
+      {
+        mov eax, ecx
+        mov ecx, dword ptr [ebp-36]
+      }
+}
+
+// Expert code swaps edi and esi.
+static void __declspec(naked) spc_ench_group_ei_expert(void)
+{
+    asm
+      {
+        mov edi, esi
+        call spc_ench_group_ei
+        mov esi, edi
+        ret
+      }
+}
+
+// Change the mechanics of robe, crown, hat, and staff enchantment.
+static inline void new_enchant_item_types(void)
+{
+    hook_call(0x456aaa, robe_crown_ench_chance, 8);
+    hook_call(0x456ba4, staff_ench_chance, 5);
+    // robes are made player-enchantable in cant_enchant_blasters() above
+    // Add more columns to stditems and spcitems.
+    patch_byte(0x456eef, 12); // 2 more to stditems
+    patch_dword(0x456f25, 11); // and totals
+    // NB: new totals occupy (unused) part of bonus range array
+    patch_dword(0x456f73, dword(0x456f73) + 2); // don't parse lvl1 bonus range
+    patch_byte(0x4570a6, 16); // spcitems value column
+    patch_byte(0x4570be, 16); // same
+    patch_byte(0x4570e4, 17); // last column
+    patch_byte(0x45710d, 17); // column count
+    hook_call(0x4570b3, spcitems_new_probability, 7);
+    // This will calculate (junk) sums of levels and value too, but it`s ok.
+    patch_dword(0x457146, 19); // probabilities + fields we skip over
+    hook_call(0x456ace, std_ench_group, 5);
+    patch_byte(0x456aee, 0x39); // use our ecx
+    erase_code(0x456afa, 2); // don`t recalculate ecx
+    erase_code(0x456b04, 6); // more recalculation
+    erase_code(0x456b0d, 5); // ditto
+    hook_call(0x42acb4, std_ench_group_ei, 7); // GM
+    patch_byte(0x42acd7, 0xb1); // same as above (keep ecx)
+    erase_code(0x42acde, 2);
+    erase_code(0x42ace3, 3);
+    erase_code(0x42ace9, 10);
+    hook_call(0x42af44, std_ench_group_ei, 7); // Master
+    patch_byte(0x42af67, 0xb1);
+    erase_code(0x42af6e, 2);
+    erase_code(0x42af73, 3);
+    erase_code(0x42af79, 10);
+    hook_call(0x42b1a1, std_ench_group_ei, 7); // Expert (unused)
+    patch_byte(0x42b1c4, 0xb9);
+    erase_code(0x42b1cb, 2);
+    erase_code(0x42b1d0, 3);
+    erase_code(0x42b1d6, 10);
+    hook_call(0x42b401, std_ench_group_ei, 7); // Normal (unused)
+    patch_byte(0x42b424, 0xb1);
+    erase_code(0x42b42b, 2);
+    erase_code(0x42b430, 3);
+    erase_code(0x42b436, 10);
+    hook_call(0x456bdc, spc_ench_group, 10);
+    patch_bytes(0x456c87, spc_ench_group_chunk, 3);
+    erase_code(0x456c8a, 8); // rest of old group read
+    patch_bytes(0x456cc5, spc_ench_group_chunk_2, 3);
+    erase_code(0x456cc8, 5); // ditto
+    hook_call(0x42ad2c, spc_ench_group_ei, 6); // GM
+    patch_bytes(0x42ad43, spc_ench_group_ei_chunk, 3);
+    erase_code(0x42ad46, 12); // rest of replaced code
+    patch_bytes(0x42ad8f, spc_ench_group_ei_chunk_2, 5);
+    erase_code(0x42ad94, 8); // same
+    erase_code(0x42adbf, 2); // preserve ecx
+    erase_code(0x42adc4, 13); // ditto
+    hook_call(0x42afbc, spc_ench_group_ei, 6); // Master
+    patch_bytes(0x42afd3, spc_ench_group_ei_chunk, 3);
+    erase_code(0x42afd6, 12);
+    patch_bytes(0x42b01f, spc_ench_group_ei_chunk_2, 5);
+    erase_code(0x42b024, 8);
+    erase_code(0x42b053, 2);
+    erase_code(0x42b058, 13);
+    hook_call(0x42b227, spc_ench_group_ei_expert, 6); // actually unused
+    patch_bytes(0x42b23e, spc_ench_group_ei_chunk, 3);
+    erase_code(0x42b241, 12);
+    patch_bytes(0x42b28a, spc_ench_group_ei_chunk_2, 5);
+    erase_code(0x42b28f, 8);
+    erase_code(0x42b2ba, 2);
+    erase_code(0x42b2bf, 13);
+}
+
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
                     LPVOID const reserved)
 {
@@ -12634,6 +13048,7 @@ BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
         class_changes();
         skill_changes();
         patch_compatibility();
+        new_enchant_item_types();
       }
     return TRUE;
 }

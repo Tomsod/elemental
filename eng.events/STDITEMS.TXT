@@ -1,37 +1,36 @@
 Standard Bonuses by Group										
 
-Bonus Stat	Of Name	Arm	Shld	Helm	Belt	Cape	Gaunt	Boot	Ring	Amul
+Bonus Stat	Of Name	Arm	Shld	Helm	Belt	Cape	Gaunt	Boot	Ring	Amul	Robe	Crown
 
-Might	of Might	5	0	10	10	10	10	5	10	10
-Intellect	of Thought	5	0	10	10	10	10	5	10	10
-Personality	of Charm	5	0	10	10	10	10	10	10	10
-Endurance	of Vigor	5	0	10	10	10	10	5	10	10
-Accuracy	of Precision	5	0	10	10	10	10	5	10	10
-Speed	of Speed	5	0	10	10	10	10	25	10	10
-Luck	of Luck	5	0	10	10	10	10	10	10	10
-Hit Points	of Health	10	5	5	0	10	5	10	10	10
-Spell Points	of Magic	10	5	10	0	10	10	10	10	10
-Armor Class	of Defense	20	20	10	0	10	10	5	10	10
-Fire Resistance	of Fire Resistance	10	10	5	0	10	15	5	10	10
-Shock Resistance	of Shock Resistance	10	10	5	0	10	15	5	10	10
-Cold Resistance	of Cold Resistance	10	10	5	0	10	15	5	10	10					
-Poison Resistance	of Poison Resistance	10	10	5	0	10	15	5	10	10					
-Mind Resistance	of Mind Resistance	10	10	5	0	10	15	5	10	10					
-Magic Resistance	of Magic Resistance	10	10	5	0	10	15	5	10	10					
-Alchemy skill	of Alchemy	0	0	0	5	5	0	5	10	15					
-Thievery skill	of Thievery	0	0	0	5	5	20	5	15	5					
-Disarm skill	of Disarming	0	0	0	5	5	20	5	15	5					
-ID Item skill	of Items	0	0	0	5	5	0	5	10	15					
-ID Monster skill	of Monsters	0	0	0	5	5	0	5	10	15					
-Armsmaster skill	of Arms	10	10	10	0	0	10	0	0	0					
-Dodge skill	of Dodging	0	0	0	15	10	5	10	5	5					
-Unarmed skill	of the Fist	0	0	0	5	5	20	10	5	5					
+Might	of Might	5	0	10	10	10	10	5	10	10	5	5
+Intellect	of Thought	5	0	10	10	10	10	5	10	10	5	5
+Personality	of Charm	5	0	10	10	10	10	10	10	10	5	5
+Endurance	of Vigor	5	0	10	10	10	10	5	10	10	5	5
+Accuracy	of Precision	5	0	10	10	10	10	5	10	10	5	5
+Speed	of Speed	5	0	10	10	10	10	25	10	10	5	5
+Luck	of Luck	5	0	10	10	10	10	10	10	10	5	5
+Hit Points	of Health	10	5	5	0	10	5	10	10	10	20	20
+Spell Points	of Magic	10	5	10	0	10	10	10	10	10	20	20
+Armor Class	of Defense	20	20	10	0	10	10	5	10	10	40	0
+Fire Resistance	of Fire Resistance	10	10	5	0	10	15	5	10	10	5	5
+Shock Resistance	of Shock Resistance	10	10	5	0	10	15	5	10	10	5	5
+Cold Resistance	of Cold Resistance	10	10	5	0	10	15	5	10	10	5	5
+Poison Resistance	of Poison Resistance	10	10	5	0	10	15	5	10	10	5	5
+Mind Resistance	of Mind Resistance	10	10	5	0	10	15	5	10	10	5	5
+Magic Resistance	of Magic Resistance	10	10	5	0	10	15	5	10	10	5	5
+Alchemy skill	of Alchemy	0	0	0	5	5	0	5	10	15	0	10
+Thievery skill	of Thievery	0	0	0	5	5	20	5	15	5	0	0
+Disarm skill	of Disarming	0	0	0	5	5	20	5	15	5	0	0
+ID Item skill	of Items	0	0	0	5	5	0	5	10	15	0	10
+ID Monster skill	of Monsters	0	0	0	5	5	0	5	10	15	0	10
+Armsmaster skill	of Arms	10	10	10	0	0	10	0	0	0	0	0
+Dodge skill	of Dodging	0	0	0	15	10	5	10	5	5	20	0
+Unarmed skill	of the Fist	0	0	0	5	5	20	10	5	5	20	0
 
-		115	70	115	70	140	155	110	140	140					
+		145	100	135	115	200	260	165	230	225	185	135				
 
 	Bonus range for Standard by Level					Value Mod= (+100 / Plus of Item)									
 	lvl	min	max
-	1	0	0
 	2	1	5
 	3	3	8
 	4	6	12

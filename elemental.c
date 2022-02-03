@@ -450,7 +450,8 @@ enum items
     HEADACHE = 558,
     STORM_TRIDENT = 559,
     ELLINGERS_ROBE = 560,
-    LAST_ARTIFACT = 560,
+    VIPER = 561,
+    LAST_ARTIFACT = 561,
     FIRST_RECIPE = 740,
     LAST_RECIPE = 778,
 };
@@ -786,6 +787,7 @@ enum monster_buffs
     MBUFF_CURSED = 0, // my addition
     MBUFF_CHARM = 1,
     MBUFF_FEAR = 4,
+    MBUFF_SLOW = 7,
     MBUFF_BERSERK = 9,
     MBUFF_MASS_DISTORTION = 10, // also used for eradication in the mod
     MBUFF_ENSLAVE = 12,
@@ -2014,6 +2016,7 @@ static void __declspec(naked) bow_temp_damage(void)
 }
 
 // Check for temporary swiftness enchantments.
+// Also here: implement Viper's Swift property.
 static void __declspec(naked) temp_swiftness(void)
 {
     asm
@@ -2026,6 +2029,8 @@ static void __declspec(naked) temp_swiftness(void)
         cmp ecx, SPC_DARKNESS
         je swift
         no_temp:
+        cmp dword ptr [edx], VIPER
+        je swift
         mov ecx, dword ptr [edx+12]
         cmp ecx, SPC_SWIFT
         swift:
@@ -7446,6 +7451,7 @@ static void __declspec(naked) mon_res_roll_chunk(void)
 
 // Defined below.
 static void __stdcall headache_berserk(struct map_monster *);
+static void __stdcall viper_slow(struct player *, struct map_monster *);
 
 // Implement cursed weapons; the debuff is inflicted with a 20% chance.
 // Black Knights treat all melee weapons as cursed.
@@ -7472,12 +7478,22 @@ static void __declspec(naked) cursed_weapon(void)
         lea eax, [edi+0x214+eax*4-36]
         test byte ptr [eax+20], 2 ; broken bit
         jnz offhand
+        cmp dword ptr [eax], VIPER
+        je viper
         cmp dword ptr [eax], HEADACHE
         jne not_headache
         push eax
         push ecx
         push esi
         call headache_berserk
+        jmp restore
+        viper:
+        push eax
+        push ecx
+        push esi
+        push edi
+        call viper_slow
+        restore:
         pop ecx
         pop eax
         not_headache:
@@ -8334,18 +8350,20 @@ static void __declspec(naked) jump_over_specitems(void)
       }
 }
 
-// Let Headache deal extra Mind damage on hit.
-// Also here: Storm Trident has the same bonus damage as Iron Feather.
+// Let Headache deal extra Mind damage on hit.  Also here: Storm Trident has
+// the same bonus damage as Iron Feather, and Viper deals 15 poison damage.
 static void __declspec(naked) headache_mind_damage(void)
 {
     asm
       {
         cmp eax, HEADACHE
         je headache
+        cmp eax, VIPER
+        je viper
         cmp eax, STORM_TRIDENT
-        je quit
+        je skip
         sub eax, IRON_FEATHER ; replaced code
-        quit:
+        skip:
         ret
         headache:
         mov dword ptr [edi], MIND
@@ -8354,6 +8372,11 @@ static void __declspec(naked) headache_mind_damage(void)
         mov ecx, 6
         div ecx
         lea eax, [edx+10]
+        jmp quit
+        viper:
+        mov dword ptr [edi], POISON
+        mov eax, 15
+        quit:
         push 0x439fe8 ; return from calling func
         ret 4
       }
@@ -8361,6 +8384,7 @@ static void __declspec(naked) headache_mind_damage(void)
 
 // Headache also has a 20% chance to cause Berserk for 20 minutes.
 // Called from cursed_weapon() above.
+// TODO: make duration dependent on Axe mastery?
 static void __stdcall headache_berserk(struct map_monster *monster)
 {
     if (random() % 5 || !monster_resists_condition(monster, MIND))
@@ -8633,6 +8657,21 @@ static void __declspec(naked) ellingers_robe_preservation(void)
       }
 }
 
+// Viper has a 20% chance to inflict Slow.  Called from cursed_weapon() above.
+static void __stdcall viper_slow(struct player *player,
+                                 struct map_monster *monster)
+{
+    if (random() % 5 || !monster_resists_condition(monster, MAGIC))
+        return;
+    int mastery = skill_mastery(player->skills[SKILL_STAFF]);
+    add_buff(monster->spell_buffs + MBUFF_SLOW,
+             CURRENT_TIME + (mastery <= 1 ? 5 : 20) * 60 * 128 / 30, mastery,
+             (mastery <= 2 ? 2 : mastery == 3 ? 4 : 8), 0, 0);
+    magic_sparkles(monster, 0);
+    make_sound(SOUND_THIS, word(0x4edf30 + SPL_SLOW * 2),
+               0, 0, -1, 0, 0, 0, 0);
+}
+
 // Add the new properties to some old artifacts,
 // and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
@@ -8689,6 +8728,8 @@ static inline void new_artifacts(void)
     hook_call(0x494494, ellingers_robe_preservation, 6);
     // weakness immunity is in condition_immunity() above
     // magic bonus is in sacrificial_dagger_sp_bonus()
+    // Viper swiftness is in temp_swiftness() above
+    // poison damage is also in headache_mind_damage()
 }
 
 // When calculating missile damage, take note of the weapon's skill.

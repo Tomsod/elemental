@@ -6711,30 +6711,6 @@ static void __declspec(naked) pickpocket_specitem(void)
       }
 }
 
-// When searching for a place to put a new object into, only consider
-// the first (map objects count) objects as existant.
-// Previously all 1000 object slots were checked, and since walk travel
-// does not overwrite old objects with zeroes, they were duplicated.
-static void __declspec(naked) check_object_chunk(void)
-{
-    asm
-      {
-        cmp ebx, dword ptr [0x6650ac] ; map object count
-      }
-}
-
-// This is called on a game save to cull expired objects, and suffers from
-// much the same bug.  Together with the above chunk, duplication is fixed.
-// TODO: it's possible the first obj could be duplicated still; check that
-static void __declspec(naked) recount_objects(void)
-{
-    asm
-      {
-        cmp ebp, dword ptr [0x6650ac] ; map object count
-        ret
-      }
-}
-
 // Brand the title screen with current version of the mod.
 static void __declspec(naked) print_version(void)
 {
@@ -6822,8 +6798,6 @@ static inline void misc_rules(void)
     patch_pointer(0x4484f3, check_skill_hook);
     hook_call(0x44b360, evt_add_specitem, 5);
     hook_call(0x48dab0, pickpocket_specitem, 6);
-    patch_bytes(0x42f5f0, check_object_chunk, 6);
-    hook_call(0x42fa30, recount_objects, 5);
     // Let mace paralysis be physical-elemental (was earth/poison).
     patch_byte(0x439cd3, PHYSICAL);
     hook_call(0x415745, print_version, 6);

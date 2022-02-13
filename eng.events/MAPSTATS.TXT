@@ -74,6 +74,6 @@
 71	William Setag's Tower	mdt10.blv	0	0	8	672	7	10	5	8	4	2	20	50	50	0	Fighter Plate	Fighter Plate	1	1-3	Rat	Rat	3	1-3	0	0	1	1-3	19	STONEROOM	0
 72	Wromthrax's Cave	mdt09.blv	0	0	10	672	7	10	10	10	5	3	0	100	0	0	Dragon	Dragon	1	1-3	0	0	3	1-3	0	0	1	1-3	3	CAVE	0
 73	The Hidden Tomb	mdt11.blv	0	0	12	672	7	10	3	12	6	4	20	50	50	0	Lich	Lich	3	1-3	Vampire	Vampire	3	1-3	0	0	1	1-3	3	CAVE	0
-74	The Strange Temple	nwc.blv	0	0	1	672	7	10	0	1	1	1	0	0	0	0	0	0	1	1-3	0	0	3	1-3	0	0	1	1-3	19	STONEROOM	0
+74	The Strange Temple	nwc.blv	0	0	1	672	7	10	0	12	6	4	0	0	0	0	0	0	1	1-3	0	0	3	1-3	0	0	1	1-3	5	STONEROOM	0
 75	The Small House	mdt15.blv	0	0	20	672	7	10	0	20	10	6	0	0	0	0	zBlasterGuy	zBlasterGuy	1	1	Rat	Rat	3	1-3	0	0	1	1-3	19	STONEROOM	0
 76	The Arena	d05.blv	0	0	1	0	7	10	0	1	1	1	0	0	0	0	0	0	1	1-3	0	0	1	1-3	0	0	1	1-3	8	ARENA	0

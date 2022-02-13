@@ -451,7 +451,8 @@ enum items
     STORM_TRIDENT = 559,
     ELLINGERS_ROBE = 560,
     VIPER = 561,
-    LAST_ARTIFACT = 561,
+    TEMPLE_IN_BOTTLE = 562,
+    LAST_ARTIFACT = 562,
     FIRST_RECIPE = 740,
     LAST_RECIPE = 778,
 };
@@ -544,6 +545,19 @@ struct __attribute__((packed)) file_header
     uint32_t size;
     SKIP(4);
 };
+
+// All the stuff I need to preserve across save/loads (except WoM barrels).
+static struct elemdata
+{
+    // Stored reputation for the game's different regions.  [0] is always zero.
+    int reputation[12];
+    // Expanded "artifacts found" bool array to fit the new additions.
+    char artifacts_found[LAST_ARTIFACT-FIRST_ARTIFACT+1];
+    // Skill training for all 4 PCs.  Not all values are used.
+    int training[4][SKILL_COUNT];
+    // Location where the temple in a bottle was last used.
+    int x, y, z, direction, look_angle, map_index;
+} elemdata;
 
 // Number of barrels in the Wall of Mist.
 #define WOM_BARREL_CNT 15
@@ -663,6 +677,7 @@ enum spells
     SPL_VAMPIRIC_WEAPON = 91,
     SPL_SHRINKING_RAY = 92,
     SPL_CONTROL_UNDEAD = 94,
+    SPL_PAIN_REFLECTION = 95,
     SPL_ARMAGEDDON = 98,
     LAST_REAL_SPELL = 99,
     SPL_ARROW = 100, // pseudo-spell for bows
@@ -729,7 +744,8 @@ struct __attribute__((packed)) mapstats_item
     SKIP(23);
 };
 
-#define MAPSTATS ((struct mapstats_item *) 0x5caa38)
+#define MAPSTATS_ADDR 0x5caa38
+#define MAPSTATS ((struct mapstats_item *) MAPSTATS_ADDR)
 
 #define CUR_MAP_FILENAME ((char *) 0x6be1c4)
 
@@ -996,11 +1012,10 @@ static void __stdcall (*magic_sparkles)(void *monster, int unknown)
     = (funcptr_t) 0x4a7e19;
 static int __thiscall (*has_enchanted_item)(void *player, int enchantment)
     = (funcptr_t) 0x48d6b6;
-static int __fastcall (*player_has_item)(int item, void *player,
-                                         int check_mouse)
-    = (funcptr_t) 0x43ee38;
 static void *__thiscall (*load_bitmap)(void *lod, char *name, int lod_type)
     = (funcptr_t) 0x40fb2c;
+static void __fastcall (*aim_spell)(int spell, int pc, int skill, int flags,
+                                    int unknown) = (funcptr_t) 0x427734;
 static int __thiscall (*identify_price)(void *player, float shop_multiplier)
     = (funcptr_t) 0x4b80dc;
 static char *__thiscall (*item_name)(struct item *item) = (funcptr_t) 0x4564c5;
@@ -3818,6 +3833,8 @@ static void __declspec(naked) bless_water_reply_sizing(void)
         cmp eax, 81 ; the pit temple
         je skip
         cmp eax, 82 ; nighon temple
+        je skip
+        cmp eax, 87 ; temple in a bottle
         jne not_dark
         skip:
         and dword ptr [reply_buffer], 0
@@ -5244,10 +5261,6 @@ static void __declspec(naked) parse_mapstats_rep(void)
       }
 }
 
-#define REP_GROUP_COUNT 16
-// Stored reputation for the game's different regions.
-// 12-15 are unused.  0 is always neutral.
-static int regional_reputation[REP_GROUP_COUNT];
 #define REP_STACK_SIZE 8
 // Current reputation group.  Stores multiple values
 // to be pushed/popped by the game script.
@@ -5255,45 +5268,23 @@ static int reputation_group[REP_STACK_SIZE];
 // Top of the reputation group stack.
 static int reputation_index;
 
-// Defined below.
-static void new_game_training(void);
-static void load_game_training(void);
-static void save_game_training(void);
-static void new_game_artifacts(void);
-static void load_game_artifacts(void);
-static void save_game_artifacts(void);
-
-// Zero out all reputation on a new game.
-static void new_game_rep(void)
+// Reset all new savegame data on a new game.
+static void new_game_data(void)
 {
-    memset(regional_reputation, 0, REP_GROUP_COUNT * sizeof(int));
+    memset(&elemdata, 0, sizeof(elemdata));
     reputation_group[0] = 0; // will be set on map load
     reputation_index = 0;
 }
 
-// Hook for the above.  Also handles training values.
+// Hook for the above.
 static void __declspec(naked) new_game_hook(void)
 {
     asm
       {
         call dword ptr ds:save_game ; replaced call
-        call new_game_rep
-        call new_game_training
-        call new_game_artifacts
+        call new_game_data
         ret
       }
-}
-
-// Load reputation data from the savegame, if said data exists.
-static void load_game_rep(void)
-{
-    void *file = find_in_lod(SAVEGAME_LOD, "reputatn.bin", 1);
-    if (file)
-        fread(regional_reputation, sizeof(int), REP_GROUP_COUNT, file);
-    else // new or unpatched game; zero out all rep
-        memset(regional_reputation, 0, REP_GROUP_COUNT * sizeof(int));
-    reputation_group[0] = 0; // will be set on map load
-    reputation_index = 0;
 }
 
 // For bank_interest() below, stores the last week the interest was applied.
@@ -5301,43 +5292,50 @@ static void load_game_rep(void)
 // On a new game it's lowered to the current week, which is also 0.
 static int last_bank_week;
 
-// Hook for the above.  Also handles training values,
-// inits bank interest counter and resets hit messages.
+// Load mod data from the savegame, if said data exists.  Also reset some vars.
+static void load_game_data(void)
+{
+    void *file = find_in_lod(SAVEGAME_LOD, "elemdata.bin", 1);
+    if (file)
+        fread(&elemdata, sizeof(elemdata), 1, file);
+    else // probably won't happen; reset all data just in case
+        new_game_data();
+    reputation_group[0] = 0; // will be set on map load
+    reputation_index = 0;
+    last_bank_week = 0;
+    last_hit_player = 0;
+}
+
+// Hook for the above.
 static void __declspec(naked) load_game_hook(void)
 {
     asm
       {
-        call load_game_rep
-        call load_game_training
-        call load_game_artifacts
-        and dword ptr [last_bank_week], 0
-        and dword ptr [last_hit_player], 0
+        call load_game_data
         pop eax
         push 0x4e958c ; replaced code
         jmp eax
       }
 }
 
-// Update and save reputation into the savefile.
-static void save_game_rep(void)
+// Save mod data into the savefile.
+static void save_game_data(void)
 {
-    static const struct file_header header = { "reputatn.bin",
-                                               sizeof(regional_reputation) };
+    static const struct file_header header = { "elemdata.bin",
+                                               sizeof(elemdata) };
     int group = reputation_group[reputation_index];
     if (group) // do not store group 0
-        regional_reputation[group] = CURRENT_REP;
-    save_file_to_lod(SAVEGAME_LOD, &header, regional_reputation, 0);
+        elemdata.reputation[group] = CURRENT_REP;
+    save_file_to_lod(SAVEGAME_LOD, &header, &elemdata, 0);
 }
 
-// Hook for the above.  Also handles WoM barrels and training values.
+// Hook for the above.  Also handles WoM barrels.
 static void __declspec(naked) save_game_hook(void)
 {
     asm
       {
-        call save_game_rep
+        call save_game_data
         call save_wom_barrels
-        call save_game_training
-        call save_game_artifacts
         lea eax, [ebp-68] ; replaced code
         ret 8
       }
@@ -5349,7 +5347,7 @@ static void load_map_rep(void)
     reputation_index = 0;
     int map_index = get_map_index(MAPSTATS, CUR_MAP_FILENAME);
     reputation_group[0] = MAPSTATS[map_index].reputation_group;
-    CURRENT_REP = regional_reputation[reputation_group[0]];
+    CURRENT_REP = elemdata.reputation[reputation_group[0]];
 }
 
 // Used below to track the bow GM mini-quest.
@@ -5391,7 +5389,7 @@ static void leave_map_rep(void)
 {
     int group = reputation_group[reputation_index];
     if (group) // do not store group 0
-        regional_reputation[group] = CURRENT_REP;
+        elemdata.reputation[group] = CURRENT_REP;
 }
 
 // Hook for the above.  Again, inserted in a somewhat inconvenient place.
@@ -5478,11 +5476,11 @@ static void __stdcall add_rep(int new_group)
 {
     int old_group = reputation_group[reputation_index];
     if (old_group) // do not store group 0
-        regional_reputation[old_group] = CURRENT_REP;
+        elemdata.reputation[old_group] = CURRENT_REP;
     if (reputation_index < REP_STACK_SIZE - 1) // guard from overflow
         reputation_index++;
     reputation_group[reputation_index] = new_group;
-    CURRENT_REP = regional_reputation[new_group];
+    CURRENT_REP = elemdata.reputation[new_group];
 }
 
 // Hook for the new gamescript add code.
@@ -5520,8 +5518,8 @@ static void __stdcall sub_rep(int group_to_remove)
               {
                 // current group changes
                 if (group_to_remove) // do not store group 0
-                    regional_reputation[group_to_remove] = CURRENT_REP;
-                CURRENT_REP = regional_reputation[reputation_group[i-1]];
+                    elemdata.reputation[group_to_remove] = CURRENT_REP;
+                CURRENT_REP = elemdata.reputation[reputation_group[i-1]];
               }
             else
               {
@@ -5565,10 +5563,10 @@ static void __stdcall set_rep(int new_group)
 {
     int old_group = reputation_group[reputation_index];
     if (old_group) // do not store group 0
-        regional_reputation[old_group] = CURRENT_REP;
+        elemdata.reputation[old_group] = CURRENT_REP;
     reputation_index = 0;
     reputation_group[0] = new_group;
-    CURRENT_REP = regional_reputation[new_group];
+    CURRENT_REP = elemdata.reputation[new_group];
 }
 
 // Hook for the new gamescript set code.
@@ -8282,38 +8280,6 @@ static void __declspec(naked) cannot_recharge_dragon(void)
       }
 }
 
-// As with many other arrays, we have to replace this one to fit new content.
-// TODO: maybe combine all the new savegame data into a single bin file
-static char artifacts_found[LAST_ARTIFACT-FIRST_ARTIFACT+1];
-
-// Reset the found artifacts array on a new game.
-// Called from new_game_hook() above.
-static void new_game_artifacts(void)
-{
-    memset(artifacts_found, 0, sizeof(artifacts_found));
-}
-
-// Load the found artifacts data.
-// Called from load_game_hook() above.
-static void load_game_artifacts(void)
-{
-    void *file = find_in_lod(SAVEGAME_LOD, "artifact.bin", 1);
-    if (file)
-        fread(artifacts_found, sizeof(char),
-              LAST_ARTIFACT - FIRST_ARTIFACT + 1, file);
-    else // just in case
-        new_game_artifacts();
-}
-
-// Save the found artifacts data.
-// Called from save_game_hook() above.
-static void save_game_artifacts(void)
-{
-    static const struct file_header header = { "artifact.bin",
-                                               sizeof(artifacts_found) };
-    save_file_to_lod(SAVEGAME_LOD, &header, artifacts_found, 0);
-}
-
 // Get a random artifact ID, minding the gap between the new and old ones.
 static void __declspec(naked) random_artifact(void)
 {
@@ -8672,6 +8638,159 @@ static void __stdcall viper_slow(struct player *player,
                0, 0, -1, 0, 0, 0, 0);
 }
 
+// Save the party position when using Temple in a Bottle.
+static void save_temple_beacon(void)
+{
+    elemdata.x = dword(0xacd4ec);
+    elemdata.y = dword(0xacd4f0);
+    elemdata.z = dword(0xacd4f4);
+    elemdata.direction = dword(0xacd4f8);
+    elemdata.look_angle = dword(0xacd4fc);
+    elemdata.map_index = get_map_index(MAPSTATS, CUR_MAP_FILENAME);
+}
+
+// Hook for the above.
+static void __declspec(naked) save_temple_beacon_hook(void)
+{
+    asm
+      {
+        call save_temple_beacon
+        xor esi, esi ; replaced code
+        xor edx, edx ; ditto
+        mov ecx, edi ; and this too
+        ret
+      }
+}
+
+// Pseudo-map marker for MoveToMap event that is used in temple's exit door.
+static const char leavetiab[] = "leavetiab";
+static int tiab_strcmp; // so as not to compare twice
+
+// Provide stored coords when leaving temple in a bottle.
+static void __declspec(naked) movemap_leavetiab(void)
+{
+    asm
+      {
+        mov dword ptr [esp+60], eax ; replaced code
+        lea eax, [esi+31]
+        push eax
+        mov eax, offset leavetiab
+        push eax
+        call dword ptr ds:uncased_strcmp
+        add esp, 8
+        mov dword ptr [tiab_strcmp], eax ; for later
+        test eax, eax
+        jnz quit
+        mov eax, dword ptr [elemdata.x]
+        mov dword ptr [esp+64], eax
+        mov eax, dword ptr [elemdata.y]
+        mov dword ptr [esp+52], eax
+        mov eax, dword ptr [elemdata.z]
+        mov dword ptr [esp+32], eax
+        movsx eax, word ptr [elemdata.direction]
+        mov dword ptr [esp+40], eax
+        movsx ebp, word ptr [elemdata.look_angle]
+        quit:
+        mov eax, dword ptr [esp+60] ; restore
+        mov ecx, dword ptr [esp+64] ; same
+        cmp byte ptr [esi+29], bl ; replaced code
+        ret
+      }
+}
+
+// Provide stored map name; immediate teleport branch.
+static void __declspec(naked) movemap_immediate(void)
+{
+    asm
+      {
+        mov dword ptr [0x576cbc], eax ; replaced code
+        cmp dword ptr [tiab_strcmp], ebx
+        jnz quit
+        mov eax, 0x44
+        mul dword ptr [elemdata.map_index]
+        mov ecx, dword ptr [MAPSTATS_ADDR+eax+4] ; file name
+        quit:
+        ret
+      }
+}
+
+// Provide stored map name; exit dialogue branch.
+static void __declspec(naked) movemap_dialog(void)
+{
+    asm
+      {
+        add edi, eax ; replaced code
+        cmp dword ptr [tiab_strcmp], ebx
+        jz tiab
+        lea eax, [edi+31] ; replaced code
+        ret
+        tiab:
+        mov eax, 0x44
+        mul dword ptr [elemdata.map_index]
+        mov eax, dword ptr [MAPSTATS_ADDR+eax+4] ; file name
+        ret
+      }
+}
+
+// Because neutral reputation would prevent ordinary blessings, add
+// a rep-independent Pain Reflection for temple in a bottle instead.
+static void __declspec(naked) bottle_temple_blessing(void)
+{
+    asm
+      {
+        movzx eax, byte ptr [0xf8b06f+ecx] ; replaced code
+        cmp eax, edx ; replaced code
+        jne quit
+        mov eax, dword ptr [0x507a40] ; parent dialogue
+        mov eax, dword ptr [eax+28] ; temple id
+        cmp eax, 87 ; temple in a bottle
+        jne skip
+        push ebx
+        push 48
+        lea edx, [SKILL_MASTER+20+edx+1] ; we know the temple power
+        push edx
+        lea edx, [ecx-1]
+        mov ecx, SPL_PAIN_REFLECTION
+        call dword ptr ds:aim_spell
+        mov ecx, dword ptr [CURRENT_PLAYER]
+        cmp ecx, ebx ; clear zf
+        ret
+        skip:
+        xor eax, eax ; set zf
+        quit:
+        ret
+      }
+}
+
+// Consider the temple in a bottle as "dark" (raises zombies).
+static void __declspec(naked) dark_bottle_temple(void)
+{
+    asm
+      {
+        mov eax, dword ptr [eax+28] ; replaced code (temple id)
+        cmp eax, 78 ; replaced code (deyja temple)
+        jz quit
+        cmp eax, 87 ; temple in a bottle
+        quit:
+        ret
+      }
+}
+
+// Add temple in a bottle as a random artifact,
+// with the same properties as the old one.
+static void __declspec(naked) new_temple_in_bottle(void)
+{
+    asm
+      {
+        cmp eax, TEMPLE_IN_BOTTLE
+        jne not_it
+        mov eax, 650 ; old bottle
+        not_it:
+        sub eax, 616 ; replaced code
+        ret
+      }
+}
+
 // Add the new properties to some old artifacts,
 // and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
@@ -8701,12 +8820,12 @@ static inline void new_artifacts(void)
     // also regenerates in red_empty_wands() below
     hook_call(0x42aa15, cannot_recharge_dragon, 7);
     // Let's replace the generated artifacts array with a bigger one.
-    patch_pointer(0x4568f7, artifacts_found);
+    patch_pointer(0x4568f7, elemdata.artifacts_found);
     patch_byte(0x456901, LAST_ARTIFACT - FIRST_ARTIFACT + 1);
     hook_call(0x456909, random_artifact, 6);
-    patch_pointer(0x456929, artifacts_found);
+    patch_pointer(0x456929, elemdata.artifacts_found);
     // NB: this function only supports 29 + 11 artifacts by default
-    patch_pointer(0x45061e, artifacts_found - FIRST_ARTIFACT);
+    patch_pointer(0x45061e, elemdata.artifacts_found - FIRST_ARTIFACT);
     hook_call(0x45062e, jump_over_specitems, 5);
     hook_call(0x439e41, headache_mind_damage, 5);
     // stat penalty is in sacrificial_dagger_sp_bonus()
@@ -8730,6 +8849,14 @@ static inline void new_artifacts(void)
     // magic bonus is in sacrificial_dagger_sp_bonus()
     // Viper swiftness is in temp_swiftness() above
     // poison damage is also in headache_mind_damage()
+    hook_call(0x44c2d5, save_temple_beacon_hook, 6);
+    hook_call(0x447f80, movemap_leavetiab, 7);
+    hook_call(0x44800a, movemap_immediate, 5);
+    hook_call(0x4483f7, movemap_dialog, 5);
+    hook_call(0x4b738c, bottle_temple_blessing, 9);
+    hook_call(0x4b6f64, dark_bottle_temple, 6);
+    hook_call(0x4b7574, dark_bottle_temple, 6);
+    hook_call(0x46816f, new_temple_in_bottle, 5);
 }
 
 // When calculating missile damage, take note of the weapon's skill.
@@ -11565,9 +11692,6 @@ static void __declspec(naked) erad_stop_moving(void)
       }
 }
 
-// Defined below.
-static int training[4][SKILL_COUNT];
-
 // Make enchanted items more difficult to ID and repair.
 // Also here: register id/repair training.
 // NB: the latter will not work right at GM, but we don't need it to!
@@ -11615,10 +11739,10 @@ static void __declspec(naked) raise_ench_item_difficulty(void)
         imul ecx, ecx, SKILL_COUNT
         add edx, ecx
 #ifdef __clang__
-        mov ecx, offset training ; buggy clang strikes again
+        mov ecx, offset elemdata.training ; buggy clang strikes again
         inc dword ptr [ecx+edx*4] ; (can`t inc training[edx] directly)
 #else
-        inc dword ptr [training+edx*4] ; should also set the flags
+        inc dword ptr [elemdata.training+edx*4] ; should also set the flags
 #endif
         quit:
         ret
@@ -12237,7 +12361,7 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
             for (int i = 2; i <= 11; i++) // don't check emerald island!
                 if (i == 7) // also skip evenmorn (no temple)
                     continue;
-                else if (regional_reputation[i] > -5)
+                else if (elemdata.reputation[i] > -5)
                     return REFUSE;
             *new_skill_cost = 20000;
             return ACCEPT;
@@ -12313,7 +12437,7 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
     if (train_req)
       {
         char *reply;
-        switch (training[player-PARTY][skill] * 4 / train_req)
+        switch (elemdata.training[player-PARTY][skill] * 4 / train_req)
           {
             case 0:
                 reply = new_strings[STR_PRACTICE_0];
@@ -12459,33 +12583,6 @@ static void __declspec(naked) master_spell_skill(void)
       }
 }
 
-// Set the training values to 0 upon a new game.
-// Called from new_game_hook() above.
-static void new_game_training(void)
-{
-    memset(training, 0, sizeof(training));
-}
-
-// Load training values from the savefile.
-// Called from load_game_hook() above.
-static void load_game_training(void)
-{
-    void *file = find_in_lod(SAVEGAME_LOD, "training.bin", 1);
-    if (file)
-        fread(training, sizeof(int), 4 * SKILL_COUNT, file);
-    else // if somehow missing, zero it out
-        new_game_training();
-}
-
-// Save the training values.
-// Called from save_game_hook() above.
-static void save_game_training(void)
-{
-    static const struct file_header header = { "training.bin",
-                                               sizeof(training) };
-    save_file_to_lod(SAVEGAME_LOD, &header, training, 0);
-}
-
 // Called when killing a monster.  For bow, check for GM quest completion.
 // For melee weapons, advance kill counters.
 // TODO: will also need to track throwing knife kills
@@ -12529,7 +12626,7 @@ static void __stdcall kill_checks(struct player *player,
                     && !(item->flags & IFLAGS_BROKEN))
                   {
                     skill = new_skill;
-                    training[player-PARTY][skill]++;
+                    elemdata.training[player-PARTY][skill]++;
                   }
               }
             slot = SLOT_MAIN_HAND;
@@ -12639,7 +12736,7 @@ static int __stdcall train_armor(void *monster, void *player)
             int skill = ITEMS_TXT[armor->id].skill;
             if (!(armor->flags & IFLAGS_BROKEN)
                 && skill >= SKILL_LEATHER && skill <= SKILL_PLATE)
-                training[blocker-PARTY][skill]++;
+                elemdata.training[blocker-PARTY][skill]++;
           }
         int offhand = blocker->equipment[SLOT_OFFHAND];
         if (offhand)
@@ -12647,7 +12744,7 @@ static int __stdcall train_armor(void *monster, void *player)
             struct item *shield = &blocker->items[offhand-1];
             if (!(shield->flags & IFLAGS_BROKEN)
                 && ITEMS_TXT[shield->id].skill == SKILL_SHIELD)
-                training[blocker-PARTY][SKILL_SHIELD]++;
+                elemdata.training[blocker-PARTY][SKILL_SHIELD]++;
           }
       }
     return result;
@@ -12664,10 +12761,10 @@ static int __declspec(naked) train_disarm(void)
         imul ecx, ecx, SKILL_COUNT
         add ecx, SKILL_DISARM_TRAPS
 #ifdef __clang__
-        mov edx, offset training ; work around clang bugs
+        mov edx, offset elemdata.training ; work around clang bugs
         inc dword ptr [edx+ecx*4]
 #else
-        inc dword ptr [training+ecx*4]
+        inc dword ptr [elemdata.training+ecx*4]
 #endif
         ret
       }
@@ -12685,10 +12782,10 @@ static int __declspec(naked) train_id_monster(void)
         imul ecx, ecx, SKILL_COUNT
         add ecx, SKILL_IDENTIFY_MONSTER
 #ifdef __clang__
-        mov edx, offset training ; work around clang bugs
+        mov edx, offset elemdata.training ; work around clang bugs
         inc dword ptr [edx+ecx*4]
 #else
-        inc dword ptr [training+ecx*4]
+        inc dword ptr [elemdata.training+ecx*4]
 #endif
         skip:
         cmp dword ptr [0x507a70], ebx ; replaced code

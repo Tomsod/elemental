@@ -159,9 +159,11 @@ enum player_stats
     STAT_POISON_RES = 13,
     STAT_MIND_RES = 14,
     STAT_MAGIC_RES = 15,
+    STAT_MELEE_ATTACK = 25,
     STAT_MELEE_DAMAGE_BASE = 26,
     STAT_HOLY_RES = 33,
     STAT_FIRE_MAGIC = 34,
+    STAT_LIGHT_MAGIC = 41,
     STAT_DARK_MAGIC = 42,
     STAT_FIRE_POISON_RES = 47,
 };
@@ -452,7 +454,8 @@ enum items
     ELLINGERS_ROBE = 560,
     VIPER = 561,
     TEMPLE_IN_BOTTLE = 562,
-    LAST_ARTIFACT = 562,
+    SWORD_OF_LIGHT = 563,
+    LAST_ARTIFACT = 563,
     FIRST_RECIPE = 740,
     LAST_RECIPE = 778,
 };
@@ -2309,6 +2312,8 @@ static void __declspec(naked) enchant_weapon(void)
         test eax, eax
         ret 8
         spectral:
+        cmp dword ptr [esi], SWORD_OF_LIGHT ; would do nothing
+        je fail
         cmp dword ptr [esi+12], SPC_SPECTRAL
         je fail
         cmp dword ptr [esi+12], SPC_WRAITH
@@ -4899,6 +4904,7 @@ static void __declspec(naked) zombificable_chunk(void)
 // The new Spectral/Wraith weapons are also handled here.  Undead Slaying
 // always takes precedence over Spectral, which is okay since
 // all undead are at least as vulnerable to Holy as to Magic.
+// Sword of Light is also handled by this routine.
 // TODO: check if this works properly with Day of Protection
 static void __declspec(naked) undead_slaying_element(void)
 {
@@ -4912,14 +4918,13 @@ static void __declspec(naked) undead_slaying_element(void)
         seta dl
         cmp al, byte ptr [esi+86] ; monster magic res
         seta dh
-        test dx, dx
-        jz skip
         test ebx, ebx ; projectile
         jz prepare
         cmp dword ptr [ebx+72], SPL_ARROW
         jne skip
         prepare:
         push ebx ; backup
+        push 0 ; count of swords of light (we do support two of them)
         push 0 ; count of weapons
         push 0 ; count of undead slaying weapons
         push 0 ; count of spectral weapons
@@ -4947,6 +4952,11 @@ static void __declspec(naked) undead_slaying_element(void)
         cmp byte ptr [ITEMS_TXT_ADDR+edx+28], 2 ; equip stat 0-2 = weapon
         ja other_hand
         inc dword ptr [esp+8] ; have a weapon
+        cmp dword ptr [eax], SWORD_OF_LIGHT
+        jne skip_light
+        inc dword ptr [esp+12] ; have sword of light
+        jmp other_hand
+        skip_light:
         test bl, bl
         jz skip_undead
         cmp dword ptr [eax], GHOULSBANE
@@ -4985,6 +4995,14 @@ static void __declspec(naked) undead_slaying_element(void)
         pop edx ; spectral
         pop ebx ; undead sl.
         pop ecx ; total
+        cmp dword ptr [esp], 0
+        jz no_energy
+        cmp dword ptr [esp], ecx
+        jb halve
+        just_energy:
+        mov dword ptr [ebp-8], ENERGY
+        jmp quit
+        no_energy:
         test ebx, ebx
         jnz holy
         test edx, edx
@@ -4994,21 +5012,33 @@ static void __declspec(naked) undead_slaying_element(void)
         holy:
         cmp ebx, ecx
         je just_holy
+        halve:
         ; split the damage in half
         mov eax, dword ptr [ebp-12]
         shr eax, 1
-        sub dword ptr [esp+8], eax ; pushed damage
+        sub dword ptr [esp+12], eax ; pushed damage
         push eax
+        cmp dword ptr [esp], 0
+        jz holy_or_magic
+        cmp ebx, edx ; 0,1 or 1,0 or 0,0
+        je physical
+        jb part_magic
+        push HOLY
+        jmp either
+        holy_or_magic:
         cmp ebx, edx ; only equal here if both == 1 and two weapons
-        je both
+        je part_magic
+        physical:
         push PHYSICAL
         jmp either
-        both:
+        part_magic:
         push MAGIC
         either:
         push esi
         call dword ptr ds:monster_resists
         mov dword ptr [ebp-20], eax ; lesser half of damage
+        cmp dword ptr [esp], 0
+        jnz just_energy
         test ebx, ebx
         jz just_magic
         just_holy:
@@ -5017,6 +5047,7 @@ static void __declspec(naked) undead_slaying_element(void)
         just_magic:
         mov dword ptr [ebp-8], MAGIC
         quit:
+        pop ebx
         pop ebx
         skip:
         ret
@@ -6525,22 +6556,32 @@ static void __declspec(naked) th_weapons_max_damage(void)
 }
 
 // Not sure if this is ever used, but just in case.
+// Also here: give daggers and SoL double to-hit bonus.
 static void __declspec(naked) th_weapons_damage_bonus(void)
 {
     asm
       {
         movzx edi, byte ptr [ITEMS_TXT_ADDR+eax+32] ; replaced code (dmg bonus)
         cmp esi, STAT_MELEE_DAMAGE_BASE
-        jne quit
+        jne not_doubled
         cmp eax, CHARELE * 48
         je doubled
         cmp byte ptr [ITEMS_TXT_ADDR+eax+28], 1 ; two-handed weapon
-        jne quit
+        jne not_doubled
         cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_SWORD
         je doubled
         cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_AXE
-        jne quit
+        jne not_doubled
         doubled:
+        shl edi, 1
+        not_doubled:
+        cmp esi, STAT_MELEE_ATTACK
+        jne quit
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_DAGGER
+        je dagger
+        cmp eax, SWORD_OF_LIGHT * 48
+        jne quit
+        dagger:
         shl edi, 1
         quit:
         ret
@@ -6757,6 +6798,46 @@ static void __declspec(naked) th_spear(void)
       }
 }
 
+// Give offhand daggers and SoL double to-hit bonus.
+static void __declspec(naked) offhand_dagger_accuracy(void)
+{
+    asm
+      {
+        movzx ecx, byte ptr [ITEMS_TXT_ADDR+eax+32] ; quality bonus
+        add edi, ecx
+        cmp esi, STAT_MELEE_ATTACK
+        jne quit
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_DAGGER
+        je dagger
+        cmp ebx, SWORD_OF_LIGHT
+        jne quit
+        dagger:
+        add edi, ecx
+        quit:
+        mov eax, 0x48f60a
+        jmp eax
+      }
+}
+
+// Display daggers' doubled to-hit bonus properly.
+static void __declspec(naked) display_dagger_accuracy(void)
+{
+    asm
+      {
+        pop edx
+        push dword ptr [GLOBAL_TXT+53*4] ; replaced code
+        cmp byte ptr [edi+29], SKILL_DAGGER
+        je dagger
+        mov ecx, dword ptr [ebp-4] ; item
+        cmp dword ptr [ecx], SWORD_OF_LIGHT
+        jne quit
+        dagger:
+        shl eax, 1
+        quit:
+        jmp edx
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -6806,6 +6887,8 @@ static inline void misc_rules(void)
     // by allowing to replace it with a shield too.
     // Also allows the above hook to work properly.
     erase_code(0x469034, 46); // just nuke all the special spear code
+    hook_jump(0x48ecfe, offhand_dagger_accuracy);
+    hook_call(0x41dd1b, display_dagger_accuracy, 6);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -7850,7 +7933,8 @@ static void __declspec(naked) elven_chainmail_bow_bonus(void)
 }
 
 // Implement the Sacrificial Dagger SP bonus.
-// Also here: Headache's mental penalty and Ellinger's Robe magic boost.
+// Also here: Headache's mental penalty, Ellinger's Robe magic boost,
+// and Sword of Light's bonus.
 static void __declspec(naked) sacrificial_dagger_sp_bonus(void)
 {
     asm
@@ -7880,21 +7964,32 @@ static void __declspec(naked) sacrificial_dagger_sp_bonus(void)
         ja not_robe
         add edi, 2
         not_robe:
+        cmp eax, SWORD_OF_LIGHT
+        jne not_sword
+        cmp esi, STAT_LIGHT_MAGIC
+        jne not_sword
+        add edi, 5
+        not_sword:
         sub eax, PUCK ; replaced code
         ret
       }
 }
 
 // Restrict the Sacrificial Dagger to goblins in the same way as Elfbane.
+// Also here: restrict Sword of Light to Good PCs, like Justice.
 static void __declspec(naked) sacrificial_dagger_goblin_only(void)
 {
     asm
       {
         mov edx, MINDS_EYE ; replaced code
         cmp eax, SACRIFICIAL_DAGGER
-        jne not_it
+        jne not_dagger
         mov eax, ELFBANE
-        not_it:
+        not_dagger:
+        cmp eax, SWORD_OF_LIGHT
+        jne not_sword
+        mov eax, JUSTICE
+        not_sword:
         ret
       }
 }
@@ -8765,6 +8860,22 @@ static void __declspec(naked) new_temple_in_bottle(void)
       }
 }
 
+// Equipped SoL sprite.
+static const char itemsole[] = "itemsole";
+
+// Sword of Light has separate equipped and inventory graphics.
+static void __declspec(naked) equipped_sword_of_light(void)
+{
+    asm
+      {
+        cmp eax, SWORD_OF_LIGHT * 48
+        jne not_it
+        mov dword ptr [esp+4], offset itemsole
+        not_it:
+        jmp dword ptr ds:load_bitmap ; replaced call
+      }
+}
+
 // Add the new properties to some old artifacts,
 // and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
@@ -8831,6 +8942,12 @@ static inline void new_artifacts(void)
     hook_call(0x4b6f64, dark_bottle_temple, 6);
     hook_call(0x4b7574, dark_bottle_temple, 6);
     hook_call(0x46816f, new_temple_in_bottle, 5);
+    hook_call(0x43e380, equipped_sword_of_light, 5);
+    hook_call(0x43e590, equipped_sword_of_light, 5);
+    // energy attack is in undead_slaying_element() above
+    // light magic bonus is too in sacrificial_dagger_sp_bonus()
+    // alignment restriction is in sacrificial_dagger_goblin_only()
+    // also has dagger-like doubled to-hit bonus
 }
 
 // When calculating missile damage, take note of the weapon's skill.

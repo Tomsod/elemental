@@ -455,7 +455,8 @@ enum items
     VIPER = 561,
     TEMPLE_IN_BOTTLE = 562,
     SWORD_OF_LIGHT = 563,
-    LAST_ARTIFACT = 563,
+    OGHMA_INFINIUM = 564,
+    LAST_ARTIFACT = 564,
     FIRST_RECIPE = 740,
     LAST_RECIPE = 778,
 };
@@ -1019,6 +1020,8 @@ static void *__thiscall (*load_bitmap)(void *lod, char *name, int lod_type)
     = (funcptr_t) 0x40fb2c;
 static void __fastcall (*aim_spell)(int spell, int pc, int skill, int flags,
                                     int unknown) = (funcptr_t) 0x427734;
+static void __thiscall (*spell_face_anim)(void *this, int anim, int pc)
+    = (funcptr_t) 0x4a894d;
 static int __thiscall (*identify_price)(void *player, float shop_multiplier)
     = (funcptr_t) 0x4b80dc;
 static char *__thiscall (*item_name)(struct item *item) = (funcptr_t) 0x4564c5;
@@ -1357,6 +1360,7 @@ static int __thiscall is_immune(struct player *player, unsigned int element)
     case SHOCK:
         if (has_item_in_slot(player, STORM_TRIDENT, SLOT_MAIN_HAND))
             return 1;
+        break;
     case COLD:
         if (has_item_in_slot(player, PHYNAXIAN_CROWN, SLOT_HELM))
             return 1;
@@ -8845,18 +8849,37 @@ static void __declspec(naked) dark_bottle_temple(void)
       }
 }
 
-// Add temple in a bottle as a random artifact,
-// with the same properties as the old one.
+// Add temple in a bottle as a random artifact, with the same
+// properties as the old one.  Also here: Oghma Infinium's effect.
 static void __declspec(naked) new_temple_in_bottle(void)
 {
     asm
       {
+        cmp eax, OGHMA_INFINIUM
+        je oghma
         cmp eax, TEMPLE_IN_BOTTLE
         jne not_it
         mov eax, 650 ; old bottle
         not_it:
         sub eax, 616 ; replaced code
         ret
+        oghma:
+        add dword ptr [esi+0x1938], 80 ; skill points
+        sub dword ptr [esi+0x1944], 20 ; birth year
+        add word ptr [esi+222], 20 ; temporary age
+        mov ecx, dword ptr [0x71fe94]
+        mov ecx, dword ptr [ecx+0xe50]
+        mov eax, dword ptr [ebp+8] ; player id
+        dec eax
+        push eax
+        push 13 ; sparkles animation
+        call dword ptr ds:spell_face_anim
+        ; one unused parameter
+        push 21 ; learn spell
+        mov ecx, esi
+        call dword ptr ds:show_face_animation
+        mov eax, 0x468e7c ; remove the item
+        jmp eax
       }
 }
 
@@ -8948,6 +8971,7 @@ static inline void new_artifacts(void)
     // light magic bonus is too in sacrificial_dagger_sp_bonus()
     // alignment restriction is in sacrificial_dagger_goblin_only()
     // also has dagger-like doubled to-hit bonus
+    // oghma infinium effect is in new_temple_in_bottle()
 }
 
 // When calculating missile damage, take note of the weapon's skill.

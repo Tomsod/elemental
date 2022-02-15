@@ -9198,6 +9198,30 @@ static void __declspec(naked) adjust_wetsuit_blaster(void)
       }
 }
 
+// When equipping a wand into a missile slot, preload its spell sound.
+static void __declspec(naked) preload_equipped_wand_sound(void)
+{
+    asm
+      {
+        cmp dword ptr [MOUSE_ITEM], 604 ; replaced code (wetsuit)
+        je quit
+        cmp edi, 12 ; equipped item type
+        jne quit
+        wand:
+        mov eax, dword ptr [ebx+0x1948+SLOT_MISSILE*4]
+        test eax, eax ; just in case
+        jz skip
+        lea eax, [eax+eax*8]
+        mov eax, dword ptr [ebx+0x214+eax*4-36]
+        push 0x469528 ; sound code
+        ret 4
+        skip:
+        test ebx, ebx ; clear zf
+        quit:
+        ret
+      }
+}
+
 // Print "always" in the to-hit field with a wand equipped.
 // It's not strictly true with blades or debuffs, but it's good enough.
 // Also prints "N/A" when no ranged weapon present.
@@ -9305,6 +9329,20 @@ static void __declspec(naked) get_parsed_wand_spell(void)
       }
 }
 
+// Ditto, but in different code (specifically, it preloads the wand sound).
+static void __declspec(naked) get_parsed_wand_spell_sound(void)
+{
+    asm
+      {
+        pop edx
+        lea eax, [eax+eax*2]
+        shl eax, 4
+        movzx eax, byte ptr [ITEMS_TXT_ADDR+eax+30]
+        push eax
+        jmp edx
+      }
+}
+
 // Put blasters and wands in the missile weapon slot.
 // TODO: fix wand recovery being displayed incorrectly
 static inline void ranged_blasters(void)
@@ -9350,6 +9388,8 @@ static inline void ranged_blasters(void)
     patch_dword(0x42f085, 0x1950);
     patch_byte(0x469863, 2); // equip wands in missile slot
     patch_byte(0x4e8354, 2); // ditto
+    patch_byte(0x45f2ed, 2); // fix no sound (preload wand sound on game load)
+    hook_call(0x4690ee, preload_equipped_wand_sound, 10);
     // status screen
     patch_dword(0x48d40b, 0x1950); // check for wand in missile slot
     hook_call(0x418cc3, print_wand_to_hit, 6);
@@ -9358,6 +9398,8 @@ static inline void ranged_blasters(void)
     patch_bytes(0x457772, parse_sxx_items_txt_chunk, 6);
     hook_call(0x42ee7b, get_parsed_wand_spell, 7);
     hook_call(0x42f047, get_parsed_wand_spell, 7);
+    hook_call(0x45f2f9, get_parsed_wand_spell_sound, 7);
+    hook_call(0x46953f, get_parsed_wand_spell_sound, 7);
 }
 
 // Make sure to disable ranged attack with an empty wand equipped.

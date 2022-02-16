@@ -139,7 +139,10 @@ enum spcitems_txt
     SPC_LIGHTWEIGHT = 78,
     SPC_LEAPING = 79,
     SPC_PERMANENCE = 80,
-    SPC_COUNT = 80
+    SPC_FIRE_AFFINITY = 81,
+    SPC_EARTH_AFFINITY = 84,
+    SPC_BODY_AFFINITY = 87,
+    SPC_COUNT = 87
 };
 
 enum player_stats
@@ -153,6 +156,7 @@ enum player_stats
     STAT_LUCK = 6,
     STAT_HP = 7,
     STAT_SP = 8,
+    STAT_AC = 9,
     STAT_FIRE_RES = 10,
     STAT_SHOCK_RES = 11,
     STAT_COLD_RES = 12,
@@ -458,6 +462,7 @@ enum items
     OGHMA_INFINIUM = 564,
     GRIM_REAPER = 565,
     LAST_ARTIFACT = 565,
+    ROBE_OF_THE_ARCHMAGISTER = 598,
     FIRST_RECIPE = 740,
     LAST_RECIPE = 778,
 };
@@ -7894,6 +7899,68 @@ static void __declspec(naked) dispel_party_buffs(void)
       }
 }
 
+// Implement seven new enchantments that each boost one magic school slightly,
+// plus a corresponding stat.  Intended mainly for lower-tlvl robes and staves.
+static void __declspec(naked) magic_school_affinity(void)
+{
+    asm
+      {
+        mov eax, dword ptr [eax+0x214+12] ; replaced code
+        cmp eax, SPC_BODY_AFFINITY
+        ja quit
+        cmp eax, SPC_FIRE_AFFINITY
+        jae affinity
+        ret
+        affinity:
+        sub ecx, eax ; ecx == stat + 1
+        cmp ecx, STAT_FIRE_MAGIC + 1 - SPC_FIRE_AFFINITY
+        jne not_magic
+        cmp dword ptr [esp+24], 2 ; non-cumulative bonus
+        jg quit
+        mov dword ptr [esp+24], 2
+        ret
+        not_magic:
+        cmp eax, SPC_EARTH_AFFINITY
+        je earth
+        ; next we have some math acrobatics...
+        ; fire to water match the order of their resistances,
+        ; and spirit to body match them in inverse
+        ; so we check the difference or sum respectively
+        ja ego
+        cmp ecx, STAT_FIRE_RES + 1 - SPC_FIRE_AFFINITY
+        je resistance
+        ret
+        ego:
+        lea ecx, [esi+eax]
+        cmp ecx, STAT_POISON_RES + SPC_BODY_AFFINITY
+        jne quit
+        resistance:
+        add edi, 10
+        ret
+        earth:
+        cmp esi, STAT_AC
+        jne quit
+        add edi, 5
+        quit:
+        ret
+      }
+}
+
+// Now that's we have an alternative to the "of X magic" enchants,
+// make sure that the latter don't cancel the former at low skill.
+static void __declspec(naked) dont_lower_magic_bonus(void)
+{
+    asm
+      {
+        and eax, 31 ; replaced code
+        cmp dword ptr [esp+24], eax
+        jg quit
+        mov dword ptr [esp+24], eax ; replaced code
+        quit:
+        ret
+      }
+}
+
 // Let's add some new item enchantments.
 static inline void new_enchants(void)
 {
@@ -7933,6 +8000,16 @@ static inline void new_enchants(void)
     erase_code(0x405428, 23); // remove unconditional party buff dispel
     hook_call(0x40548a, dispel_immunity, 5);
     hook_call(0x4054d8, dispel_party_buffs, 5);
+    hook_call(0x48f2df, magic_school_affinity, 6);
+    // patch most x1.5 spell boni in the code
+    // nb: we skip ethric's and taledon's as we don't need light/dark
+    hook_call(0x48ef9c, dont_lower_magic_bonus, 7);
+    hook_call(0x48efb8, dont_lower_magic_bonus, 7);
+    hook_call(0x48efd0, dont_lower_magic_bonus, 7);
+    hook_call(0x48f10a, dont_lower_magic_bonus, 7);
+    hook_call(0x48f1c3, dont_lower_magic_bonus, 7);
+    hook_call(0x48f1db, dont_lower_magic_bonus, 7);
+    hook_call(0x48f1f4, dont_lower_magic_bonus, 7);
 }
 
 // Let the Elven Chainmail also improve bow skill.
@@ -8041,6 +8118,7 @@ static char robe_body[] = "itemrobev0";
 static char robe_arm1[] = "itemrobev0a1";
 static char robe_arm2[] = "itemrobev0a2";
 // xy are the same as robw (it's a recolor)
+// grey's robe has the same gfx as ellinger's for now, later will add another
 
 // Substitute our graphics and coordinates for worn RDSM/robe (w/o right arm).
 static void __declspec(naked) display_worn_rdsm_body(void)
@@ -8056,6 +8134,8 @@ static void __declspec(naked) display_worn_rdsm_body(void)
         cmp ecx, WIZARDS_ROBE
         je robw
         cmp ecx, ELLINGERS_ROBE
+        je robe
+        cmp ecx, ROBE_OF_THE_ARCHMAGISTER
         je robe
         sub eax, GOVERNORS_ARMOR ; replaced code
         ret
@@ -8118,6 +8198,8 @@ static void __declspec(naked) display_worn_rdsm_arm(void)
         cmp ecx, WIZARDS_ROBE
         je robw
         cmp ecx, ELLINGERS_ROBE
+        je robe
+        cmp ecx, ROBE_OF_THE_ARCHMAGISTER
         je robe
         sub eax, GOVERNORS_ARMOR ; replaced code
         ret

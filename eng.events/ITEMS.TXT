@@ -545,7 +545,7 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 543	item045	The Perfect Bow	4000	Missile	Bow	5d2	12	Special	0	Bow	12	0	0	12	40	"This bow seems to know its wielder's strength and adjusts itself accordingly.  You never have to struggle to pull the string back, and it's always easy to hold your shot until you're ready to fire.  Dozens of small advantages like this in the design of the bow make for the finest weapon of its type you have ever seen."
 544	item344	Shadow's Mask	2000	Helm	Misc	2	10	Special	0	Helm	25	Thieves'	0	0	0	"A mask designed to hide the identity of the wearer, it has also been magically enhanced to offer good protection and to aid thiefly pursuits."
 545	item128	Ghost Ring	2500	Ring	Misc	0	0	Special	0	Ring	32	of Spirit Magic	0	0	0	An odd ring that feels strangely warm to the touch.  It enhances the wearers connection to the spirit.
-546	item127	Faerie Ring	2500	Ring	Misc	0	0	Special	0	Ring	32	of Air Magic	0	0	0	A rare and very powerful ring made by Faeries.  Few mortals ever see such as this!
+546	item127	Faerie Ring	1500	Ring	Misc	0	0	Special	0	Ring	32	of Air Affinity	0	0	0	A rare and very powerful ring made by Faeries.  Few mortals ever see such as this!
 547	item347	Sun Cloak	2500	Cloak	Misc	1	10	Special	0	Cloak	29	of Light Magic	0	0	0	This cloak signifies the highest rank attainable by a Priest of the Sun.  No more than nine of these cloaks were ever made--one for each member of the High Council of the Sun.
 548	item348	Moon Cloak	2500	Cloak	Misc	1	10	Special	0	Cloak	29	of Dark Magic	0	0	0	This cloak signifies the highest rank attainable by a Priest of the Moon.  No more than nine of these cloaks were ever made--one for each member of the High Council of the Moon.
 549	item030	Zokarr's Axe	2500	Weapon2	Axe	3d7	13	Special	0	Two-Handed Axe	8	of Earth Magic	0	20	170	The family heirloom of the Zokarr monarchs.  This weapon grants the wielder a greater affinity with earth magic.
@@ -597,8 +597,8 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 595	null	_artifact595	0	0	0	0	0	0	0	_artifact595	0	0	0	0	0	Description here.
 596	null	_artifact596	0	0	0	0	0	0	0	_artifact596	0	0	0	0	0	Description here.
 597	null	_artifact597	0	0	0	0	0	0	0	_artifact597	0	0	0	0	0	Description here.
-598	null	_artifact598	0	0	0	0	0	0	0	_artifact598	0	0	0	0	0	Description here.
-599	null	_artifact599	0	0	0	0	0	0	0	_artifact599	0	0	0	0	0	Description here.
+598	itemrobe	Robe of the Archmagister	2500	Armor	Misc	1	3	Special	0	Robe	29	of Water Magic	0	0	0	"This ceremonial robe is used by the Archmagister of the School of Sorcery (currently Thomas Grey) on the official occasions and during certain magic rituals.  To assist in the latter, the fabric is enchanted to improve spells of the Water domain."		
+599	itemstar	Staff of the Archmagister	2500	Weapon2	Staff	2d4	8	Special	0	Staff	17	of Air Magic	0	6	95	"This ceremonial staff is wielded by the Archmagister of the School of Sorcery (currently Thomas Grey) on the official occasions and during certain magic rituals.  To assist in the latter, the orb on top of the staff is enchanted to improve spells of the Air domain."
 600	item297	Heart of the Wood	0	N / A	Misc	0	0	0	0	Gem	145	0	0	0	0	Quest Item:  A jewel like none you have ever seen.
 601	item259	Lich Jar	0	0	0	0	0	0	0	Jar	92	0	0	0	0	Quest Item:  A jar holding your physical and spiritual essence.  Don't lose the jar.
 602	item351	Case of Soul Jars	0	N / A	Misc	0	0	0	0	Case of Jars	134	0	0	0	0	Quest Item:  A rosewood case lovingly crafted to contain a set of Lich Jars.  This case appears to be full.

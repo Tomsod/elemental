@@ -456,7 +456,8 @@ enum items
     TEMPLE_IN_BOTTLE = 562,
     SWORD_OF_LIGHT = 563,
     OGHMA_INFINIUM = 564,
-    LAST_ARTIFACT = 564,
+    GRIM_REAPER = 565,
+    LAST_ARTIFACT = 565,
     FIRST_RECIPE = 740,
     LAST_RECIPE = 778,
 };
@@ -5802,6 +5803,7 @@ static void __declspec(naked) hp_burnout(void)
         jge no_burnout
         sar eax, 2 ; 25%, rounded up
         add dword ptr [esi+6460], eax ; burnout
+        mov dword ptr [ebp-4], 1 ; hp changed
         push 0x493d93 ; skip hp regen code
         ret 4
         no_burnout:
@@ -5837,12 +5839,24 @@ static void __declspec(naked) mp_regen_chunk(void)
 
 // Like with HP above, decrease excess SP by 25% instead of regeneration.
 // Jar-less liches have halved maximum, zombies can hold no SP.
-// Also here: handle SP regen from GM Meditation.
+// Also here: handle SP regen from GM Meditation and Grim Reaper's SP drain.
 static void __declspec(naked) sp_burnout(void)
 {
     asm
       {
+        mov ecx, esi
+        push SLOT_MAIN_HAND
+        push GRIM_REAPER
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        jz no_grim
+        cmp dword ptr [esi+6464], 0
+        jz no_drain
+        dec dword ptr [esi+6464]
+        mov dword ptr [ebp-4], 1 ; sp changed
+        no_drain:
         xor eax, eax ; zombies have no sp
+        no_grim:
         cmp dword ptr [ebp-24], 0 ; zombie
         jnz compare_sp
         mov ecx, esi
@@ -5856,6 +5870,7 @@ static void __declspec(naked) sp_burnout(void)
         je quit
         sar eax, 2 ; 25%, rounded up
         add dword ptr [esi+6464], eax ; burnout
+        mov dword ptr [ebp-4], 1 ; sp changed
         quit:
         push 0x493f3a ; skip old lich/zombie code
         ret
@@ -5873,6 +5888,7 @@ static void __declspec(naked) sp_burnout(void)
         cmp eax, edi
         cmova eax, edi
         add dword ptr [esi+6464], eax
+        mov dword ptr [ebp-4], 1 ; sp changed
         jmp quit
       }
 }
@@ -8899,6 +8915,42 @@ static void __declspec(naked) equipped_sword_of_light(void)
       }
 }
 
+// Implement Grim Reaper's instadeath effect.
+// Called from lich_vampiric_touch() below.
+static int __stdcall grim_reaper(struct player *player,
+                                 struct map_monster *monster)
+{
+    // has the same immune monsters as GM unarmed, except oozes
+    // (medusae and blaster guys are implicitly immune instead)
+    if (monster->holy_resistance < IMMUNE)
+        return 0;
+    int id = monster->id;
+    if (id >= 34 && id <= 48 || id >= 64 && id <= 66 || id >= 79 && id <= 81
+        || id >= 190 && id <= 192 || id >= 253 && id <= 255)
+        return 0;
+    if (random() % 5)
+        return 0;
+    // drain sp/hp even if monster resisted
+    int new_sp = player->sp - 15;
+    if (new_sp < 0)
+      {
+        player->sp = 0;
+        damage_player(player, -new_sp * 2, ENERGY);
+      }
+    else
+      {
+        player->sp = new_sp;
+      }
+    if (monster->hp <= random() % monster->max_hp
+        && monster_resists_condition(monster, MAGIC))
+      {
+        monster->hp = 0;
+        make_sound(SOUND_THIS, SOUND_DIE, 0, 0, -1, 0, 0, 0, 0);
+        return 1;
+      }
+    return 0;
+}
+
 // Add the new properties to some old artifacts,
 // and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
@@ -8972,6 +9024,7 @@ static inline void new_artifacts(void)
     // alignment restriction is in sacrificial_dagger_goblin_only()
     // also has dagger-like doubled to-hit bonus
     // oghma infinium effect is in new_temple_in_bottle()
+    // grim reaper sp drain is in sp_burnout() above
 }
 
 // When calculating missile damage, take note of the weapon's skill.
@@ -11400,8 +11453,8 @@ static void __declspec(naked) warlock_dark_bonus(void)
 static int __stdcall maybe_instakill(struct player *, struct map_monster *);
 
 // New Lich bonus: drain life with unarmed (or GM Staff) attacks.
-// Also here: apply Hammerhands bonus to GM Staff attacks,
-// and check for the new GM Unarmed perk.
+// Also here: apply Hammerhands bonus to GM Staff attacks, check for the
+// new GM Unarmed perk, and trigger Grim Reaper's instadeath effect.
 static void __declspec(naked) lich_vampiric_touch(void)
 {
     asm
@@ -11413,8 +11466,9 @@ static void __declspec(naked) lich_vampiric_touch(void)
         test ecx, ecx
         jz skip
         lea ecx, [ecx+ecx*8]
-        lea ecx, [edi+0x214+ecx*4-36]
-        mov ecx, dword ptr [ecx] ; id
+        mov ecx, dword ptr [edi+0x214+ecx*4-36] ; id
+        cmp ecx, GRIM_REAPER
+        je grim
         lea ecx, [ecx+ecx*2]
         shl ecx, 4
         cmp byte ptr [ITEMS_TXT_ADDR+ecx+29], SKILL_STAFF
@@ -11439,6 +11493,13 @@ static void __declspec(naked) lich_vampiric_touch(void)
         not_lich:
         mov eax, 1 ; hammerhands applies as well
         skip:
+        ret
+        grim:
+        push esi
+        push edi
+        call grim_reaper
+        or dword ptr [ebp-32], eax ; also force a hit
+        xor eax, eax ; not unarmed
         ret
       }
 }

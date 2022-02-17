@@ -461,7 +461,8 @@ enum items
     SWORD_OF_LIGHT = 563,
     OGHMA_INFINIUM = 564,
     GRIM_REAPER = 565,
-    LAST_ARTIFACT = 565,
+    WITCHBANE = 566,
+    LAST_ARTIFACT = 566,
     ROBE_OF_THE_ARCHMAGISTER = 598,
     FIRST_RECIPE = 740,
     LAST_RECIPE = 778,
@@ -477,6 +478,7 @@ enum item_slot
     SLOT_BELT = 5,
     SLOT_CLOAK = 6,
     SLOT_GAUNTLETS = 7,
+    SLOT_AMULET = 9,
 };
 
 #define BUFF_STRINGS 0x506798
@@ -1377,6 +1379,10 @@ static int __thiscall is_immune(struct player *player, unsigned int element)
         break;
     case MIND:
         if (has_item_in_slot(player, MINDS_EYE, SLOT_HELM))
+            return 1;
+        break;
+    case MAGIC:
+        if (has_item_in_slot(player, WITCHBANE, SLOT_AMULET))
             return 1;
         break;
       }
@@ -9107,6 +9113,8 @@ static inline void new_artifacts(void)
     // also has dagger-like doubled to-hit bonus
     // oghma infinium effect is in new_temple_in_bottle()
     // grim reaper sp drain is in sp_burnout() above
+    // witchbane magic immunity is in is_immune() above
+    // and its sp penalty is in get_new_full_sp() below
 }
 
 // When calculating missile damage, take note of the weapon's skill.
@@ -10328,6 +10336,8 @@ static int __thiscall get_new_full_sp(struct player *player)
 {
     int stat = CLASS_SP_STATS[player->class];
     if (player->class < 5 || stat == 3)
+        return 0;
+    if (has_item_in_slot(player, WITCHBANE, SLOT_AMULET))
         return 0;
     int level = get_level(player);
     int bonus = get_meditation_bonus(player);

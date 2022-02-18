@@ -462,7 +462,8 @@ enum items
     OGHMA_INFINIUM = 564,
     GRIM_REAPER = 565,
     WITCHBANE = 566,
-    LAST_ARTIFACT = 566,
+    BAG_OF_HOLDING = 567,
+    LAST_ARTIFACT = 567,
     ROBE_OF_THE_ARCHMAGISTER = 598,
     FIRST_RECIPE = 740,
     LAST_RECIPE = 778,
@@ -551,12 +552,25 @@ enum gender
 
 #define MAP_VARS 0x5e4b10
 
+#define CURRENT_SCREEN 0x4e28d8
+
 struct __attribute__((packed)) file_header
 {
     char name[20]; // could be shorter, I'm guessing here
     uint32_t size;
     SKIP(4);
 };
+
+struct __attribute__((packed)) map_chest
+{
+    uint16_t picture;
+    uint16_t bits;
+    struct item items[140];
+    uint16_t slots[140];
+};
+
+#define MAP_CHESTS ((struct map_chest *) 0x5e4fd0)
+#define EXTRA_CHEST_COUNT 1
 
 // All the stuff I need to preserve across save/loads (except WoM barrels).
 static struct elemdata
@@ -569,6 +583,7 @@ static struct elemdata
     int training[4][SKILL_COUNT];
     // Location where the temple in a bottle was last used.
     int x, y, z, direction, look_angle, map_index;
+    struct map_chest extra_chests[EXTRA_CHEST_COUNT];
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -904,6 +919,11 @@ struct __attribute__((packed)) patch_options
     SKIP(4);
 };
 
+// my addition
+#define ACTION_EXTRA_CHEST 40
+//vanilla
+#define ACTION_EXIT 113
+
 static int __cdecl (*uncased_strcmp)(const char *left, const char *right)
     = (funcptr_t) 0x4caaf0;
 static int __thiscall (*get_resistance)(const void *player, int stat)
@@ -1030,6 +1050,10 @@ static void __fastcall (*aim_spell)(int spell, int pc, int skill, int flags,
                                     int unknown) = (funcptr_t) 0x427734;
 static void __thiscall (*spell_face_anim)(void *this, int anim, int pc)
     = (funcptr_t) 0x4a894d;
+#define ACTION_THIS 0x50ca50
+static void __thiscall (*add_action)(void *this, int action, int param1,
+                                     int param2) = (funcptr_t) 0x42eb69;
+static int __thiscall (*open_chest)(int chest) = (funcptr_t) 0x4203c7;
 static int __thiscall (*identify_price)(void *player, float shop_multiplier)
     = (funcptr_t) 0x4b80dc;
 static char *__thiscall (*item_name)(struct item *item) = (funcptr_t) 0x4564c5;
@@ -3383,9 +3407,9 @@ static void __declspec(naked) throw_potions_jump(void)
 {
     asm
       {
-        cmp dword ptr [0x4e28d8], 23 ; current screen
+        cmp dword ptr [CURRENT_SCREEN], 23
         je fail
-        cmp dword ptr [0x4e28d8], 13 ; inside a house
+        cmp dword ptr [CURRENT_SCREEN], 13 ; inside a house
         jne pass
         fail:
         push 0x468e87
@@ -5315,12 +5339,21 @@ static int reputation_group[REP_STACK_SIZE];
 // Top of the reputation group stack.
 static int reputation_index;
 
+// The extra chest that currently replaces chest 0 (-1 == none).
+static int replaced_chest;
+
 // Reset all new savegame data on a new game.
 static void new_game_data(void)
 {
     memset(&elemdata, 0, sizeof(elemdata));
+    for (int i = 0; i < EXTRA_CHEST_COUNT; i++)
+      {
+        elemdata.extra_chests[i].picture = 6;
+        elemdata.extra_chests[i].bits = 2;
+      }
     reputation_group[0] = 0; // will be set on map load
     reputation_index = 0;
+    replaced_chest = -1;
 }
 
 // Hook for the above.
@@ -5351,6 +5384,7 @@ static void load_game_data(void)
     reputation_index = 0;
     last_bank_week = 0;
     last_hit_player = 0;
+    replaced_chest = -1;
 }
 
 // Hook for the above.
@@ -5365,6 +5399,9 @@ static void __declspec(naked) load_game_hook(void)
       }
 }
 
+// Defined below.
+static void __thiscall replace_chest(int id);
+
 // Save mod data into the savefile.
 static void save_game_data(void)
 {
@@ -5373,6 +5410,7 @@ static void save_game_data(void)
     int group = reputation_group[reputation_index];
     if (group) // do not store group 0
         elemdata.reputation[group] = CURRENT_REP;
+    replace_chest(-1); // we don't want swapped chests in the savefile
     save_file_to_lod(SAVEGAME_LOD, &header, &elemdata, 0);
 }
 
@@ -6791,7 +6829,7 @@ static void __declspec(naked) print_version(void)
         mov eax, dword ptr [esi+24] ; replaced code
         cmp eax, 1 ; if in main menu
         jne quit
-        cmp dword ptr [0x4e28d8], 0 ; current screen
+        cmp dword ptr [CURRENT_SCREEN], 0
         jz version
         quit:
         cmp eax, 70 ; replaced code
@@ -8954,13 +8992,18 @@ static void __declspec(naked) dark_bottle_temple(void)
 }
 
 // Add temple in a bottle as a random artifact, with the same
-// properties as the old one.  Also here: Oghma Infinium's effect.
+// properties as the old one.  Also here: Oghma Infinium's effect,
+// and the bag of holding.  All new arts cannot be used un-ID'd.
 static void __declspec(naked) new_temple_in_bottle(void)
 {
     asm
       {
+        test byte ptr [MOUSE_ITEM+20], IFLAGS_ID
+        jz not_it
         cmp eax, OGHMA_INFINIUM
         je oghma
+        cmp eax, BAG_OF_HOLDING
+        je bag
         cmp eax, TEMPLE_IN_BOTTLE
         jne not_it
         mov eax, 650 ; old bottle
@@ -8984,6 +9027,31 @@ static void __declspec(naked) new_temple_in_bottle(void)
         call dword ptr ds:show_face_animation
         mov eax, 0x468e7c ; remove the item
         jmp eax
+        bag:
+        cmp dword ptr [CURRENT_SCREEN], 10 ; chest
+        je fail
+        cmp dword ptr [CURRENT_SCREEN], 13 ; dialog
+        je fail
+        cmp dword ptr [CURRENT_SCREEN], 15 ; inv + chest
+        je fail
+        cmp dword ptr [CURRENT_SCREEN], 0
+        jz exited
+        push 0
+        push 0
+        push ACTION_EXIT
+        mov ecx, ACTION_THIS
+        call dword ptr ds:add_action
+        exited:
+        push 1 ; so it`ll be preserved on exit
+        push 0
+        push ACTION_EXTRA_CHEST
+        mov ecx, ACTION_THIS
+        call dword ptr ds:add_action
+        push 0x468e87 ; exit function
+        ret 4
+        fail:
+        push 0x468624 ; buzz sound
+        ret 4
       }
 }
 
@@ -9037,6 +9105,73 @@ static int __stdcall grim_reaper(struct player *player,
         return 1;
       }
     return 0;
+}
+
+// Replace chest 0 with whatever we need (-1 to restore).
+static void __thiscall replace_chest(int id)
+{
+    static struct map_chest backup;
+    if (id == replaced_chest)
+        return;
+#define CHEST(id) ((id) == -1 ? &backup : elemdata.extra_chests + (id))
+    memcpy(CHEST(replaced_chest), MAP_CHESTS, sizeof(struct map_chest));
+    memcpy(MAP_CHESTS, CHEST(id), sizeof(struct map_chest));
+    replaced_chest = id;
+}
+
+// If we're opening the actual chest 0, restore it beforehand.
+static void __declspec(naked) open_regular_chest(void)
+{
+    asm
+      {
+        cmp ecx, ebx ; ebx == 0
+        jnz quit
+        dec ecx
+        call replace_chest
+        xor ecx, ecx
+        quit:
+        jmp dword ptr ds:open_chest ; replaced call
+      }
+}
+
+// Make a new action that opens an extra chest.
+// We need an action to safely trigger it from inventory etc.
+static void __declspec(naked) action_open_extra_chest(void)
+{
+    asm
+      {
+        cmp ecx, ACTION_EXTRA_CHEST
+        je chest
+        movzx eax, byte ptr [0x4353a1+eax] ; replaced code
+        ret
+        chest:
+        mov ecx, dword ptr [esp+24] ; action param 1
+        call replace_chest
+        xor ecx, ecx
+        call dword ptr ds:open_chest
+        mov eax, 118 ; no action
+        ret
+      }
+}
+
+// Disallow putting BoH into itself.
+static void __declspec(naked) no_boh_recursion(void)
+{
+    asm
+      {
+        cmp dword ptr [edx], BAG_OF_HOLDING
+        jne quit
+        cmp dword ptr [ebp+8], 0
+        jnz quit
+        cmp dword ptr [replaced_chest], 0
+        jz fail
+        quit:
+        mov edx, dword ptr [0x4e2bec+eax] ; replaced code
+        ret
+        fail:
+        push 0x41ffce ; no space face anim
+        ret 4
+      }
 }
 
 // Add the new properties to some old artifacts,
@@ -9115,6 +9250,9 @@ static inline void new_artifacts(void)
     // grim reaper sp drain is in sp_burnout() above
     // witchbane magic immunity is in is_immune() above
     // and its sp penalty is in get_new_full_sp() below
+    hook_call(0x447ea4, open_regular_chest, 5);
+    hook_call(0x430598, action_open_extra_chest, 7);
+    hook_call(0x41ff6d, no_boh_recursion, 6);
 }
 
 // When calculating missile damage, take note of the weapon's skill.
@@ -9184,7 +9322,7 @@ static void __declspec(naked) missile_on_shift_click(void)
         ret
         no_spell:
         mov dword ptr [use_melee_attack], ecx ; == 0
-        mov eax, dword ptr [0x50ca50] ; actions count
+        mov eax, dword ptr [ACTION_THIS] ; actions count
         push 0x42255e ; weapon attack code
         ret 4
       }

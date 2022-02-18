@@ -265,3 +265,4 @@ Holy Water	149	64	64	-	-	-	-	-	-	-	x	-	-	-	objholy	0	0	0	0	0	0
 Thrown Holy Water	12040	64	64	-	-	x	-	x	-	x	-	-	-	-	objholy	768	1500	0	0	0	0
 Holy Explosion	12041	16	16	-	-	x	x	x	x	-	-	-	-	-	sp106b	64	0	0	0	0	0
 Dragon Scales	150	128	128	-	-	-	-	-	-	-	x	-	-	-	objscal	0	0	0	0	0	0
+Bag of Holding	151	64	64	-	-	-	-	-	-	-	x	-	-	-	objboh	0	0	0	0	0	0

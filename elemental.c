@@ -706,7 +706,6 @@ enum spells
     SPL_SHRINKING_RAY = 92,
     SPL_CONTROL_UNDEAD = 94,
     SPL_PAIN_REFLECTION = 95,
-    SPL_ARMAGEDDON = 98,
     LAST_REAL_SPELL = 99,
     SPL_ARROW = 100, // pseudo-spell for bows
     SPL_BLASTER = 102, // ditto for blasters
@@ -4047,10 +4046,6 @@ static void spell_elements(void)
     patch_byte(0x428cce, ELEMENT(SPL_PARALYZE));
     patch_byte(0x46bf8c, ELEMENT(SPL_SHRINKING_RAY));
     patch_byte(0x42e0be, ELEMENT(SPL_CONTROL_UNDEAD));
-    // Armageddon element wasn't updated from MM6, where it was 5 (then magic).
-    // As in MM7 resistance 5 is unused, armageddon became irresistible.
-    patch_byte(0x401b74, ELEMENT(SPL_ARMAGEDDON)); // to monsters
-    patch_byte(0x401bfb, ELEMENT(SPL_ARMAGEDDON)); // to players
     // Not sure if the next two do anything, but just in case.
     patch_byte(0x46c9ea, ELEMENT(SPL_PARALYZE));
     patch_byte(0x46c9e6, ELEMENT(SPL_SHRINKING_RAY));
@@ -13543,9 +13538,7 @@ static inline void patch_compatibility(void)
     options->fix_light_bolt = FALSE; // I don't want this!
     options->armageddon_element = MAGIC; // can't read spells.txt this early
     options->keep_empty_wands = FALSE; // my implementation is better
-    patch_word(0x453a31, 0x850f); // remove acid burst fix
-    patch_dword(0x453a33, 0xaf); // ditto (I fix it in spells.txt)
-    patch_byte(0x42efc9, 20); // new melee fecovery limit (for the hint)
+    patch_byte(0x42efc9, 20); // new melee recovery limit (for the hint)
 }
 
 // Let robes, crowns and hats have an increased chance to generate enchanted,

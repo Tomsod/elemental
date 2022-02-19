@@ -714,3 +714,4 @@ Global Text
 711	"You have only little experience in %s.  Practice it more to qualify for training."
 712	"While you have used the %s skill before, it's not yet quite enough for becoming a Grandmaster."
 713	"You only need a little more practice in %s, then you can be taught!"
+714	Open Right Bag

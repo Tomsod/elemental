@@ -222,6 +222,7 @@ enum new_strings
     STR_PRACTICE_1,
     STR_PRACTICE_2,
     STR_PRACTICE_3,
+    STR_OPEN_RIGHT_BAG,
     NEW_STRING_COUNT
 };
 
@@ -566,11 +567,11 @@ struct __attribute__((packed)) map_chest
     uint16_t picture;
     uint16_t bits;
     struct item items[140];
-    uint16_t slots[140];
+    int16_t slots[140];
 };
 
 #define MAP_CHESTS ((struct map_chest *) 0x5e4fd0)
-#define EXTRA_CHEST_COUNT 1
+#define EXTRA_CHEST_COUNT 5
 
 // All the stuff I need to preserve across save/loads (except WoM barrels).
 static struct elemdata
@@ -781,6 +782,8 @@ struct __attribute__((packed)) mapstats_item
 
 enum profession
 {
+    NPC_PORTER = 29,
+    NPC_QUARTER_MASTER = 30,
     NPC_PIRATE = 45,
     NPC_GYPSY = 48,
     NPC_DUPER = 50,
@@ -953,7 +956,7 @@ static void __thiscall (*show_face_animation)(void *player, int animation,
     = (funcptr_t) 0x4948a9;
 static void __thiscall (*delete_backpack_item)(void *player, int cell)
     = (funcptr_t) 0x492a2e;
-static void __thiscall (*add_mouse_item)(void *this, void *item)
+static void __thiscall (*add_mouse_item)(void *this, struct item *item)
     = (funcptr_t) 0x4936d9;
 #define MOUSE_THIS_ADDR 0xacce38
 #define MOUSE_THIS ((void *) MOUSE_THIS_ADDR)
@@ -1036,6 +1039,12 @@ static int __cdecl (*fread)(void *buffer, int size, int count, void *stream)
     = (funcptr_t) 0x4cb8a5;
 static int (*get_eff_reputation)(void) = (funcptr_t) 0x47752f;
 static int __thiscall (*get_full_sp)(void *player) = (funcptr_t) 0x48e55d;
+static int __thiscall (*hireling_action)(int id) = (funcptr_t) 0x4bb6b9;
+static int __cdecl (*add_button)(void *dialog, int left, int top, int width,
+                                 int height, int unknown1, int hover_action,
+                                 int action, int action_param, int unknown_2,
+                                 char *text, int unknown_3, int unknown_4)
+    = (funcptr_t) 0x41d0d8;
 // Technically thiscall, but ecx isn't used.
 static int __stdcall (*monster_resists_condition)(void *monster, int element)
     = (funcptr_t) 0x427619;
@@ -1050,7 +1059,8 @@ static void __fastcall (*aim_spell)(int spell, int pc, int skill, int flags,
                                     int unknown) = (funcptr_t) 0x427734;
 static void __thiscall (*spell_face_anim)(void *this, int anim, int pc)
     = (funcptr_t) 0x4a894d;
-#define ACTION_THIS 0x50ca50
+#define ACTION_THIS_ADDR 0x50ca50
+#define ACTION_THIS ((void *) ACTION_THIS_ADDR)
 static void __thiscall (*add_action)(void *this, int action, int param1,
                                      int param2) = (funcptr_t) 0x42eb69;
 static int __thiscall (*open_chest)(int chest) = (funcptr_t) 0x4203c7;
@@ -6907,6 +6917,201 @@ static void __declspec(naked) display_dagger_accuracy(void)
       }
 }
 
+// Let's give some hirelings new abilities.
+static int __thiscall new_hireling_action(int id)
+{
+    if (id == NPC_PORTER)
+      {
+        add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
+        add_action(ACTION_THIS, ACTION_EXTRA_CHEST, 1, 1);
+        return 2;
+      }
+    if (id == NPC_QUARTER_MASTER)
+      {
+        add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
+        add_action(ACTION_THIS, ACTION_EXTRA_CHEST, 2, 1);
+        return 2;
+      }
+    if (id == NPC_GYPSY)
+      {
+        add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
+        add_action(ACTION_THIS, ACTION_EXTRA_CHEST, 4, 1);
+        return 2;
+      }
+    return hireling_action(id);
+}
+
+// Actually print the dialog option for new NPCs.
+static void __declspec(naked) enable_new_hireling_action(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ebp+24] ; replaced code
+        cmp eax, NPC_PORTER
+        je enable
+        cmp eax, NPC_QUARTER_MASTER
+        je enable
+        cmp eax, NPC_GYPSY
+        je enable
+        cmp eax, 10 ; replaced code
+        ret
+        enable:
+        xor eax, eax ; this will pass the checks
+        ret
+      }
+}
+
+// Also allow using the ability text string.
+static void __declspec(naked) new_hireling_action_text(void)
+{
+    asm
+      {
+        jz quit ; replaced jump
+        cmp ecx, 11 ; replaced code
+        jz quit
+        cmp ecx, NPC_PORTER
+        jz quit
+        cmp ecx, NPC_QUARTER_MASTER
+        jz quit
+        cmp ecx, NPC_GYPSY
+        quit:
+        ret
+      }
+}
+
+static const char empty_string[] = "";
+
+// Skip the "your packs are full" status line when using porter/QM ability.
+static void __declspec(naked) dont_show_cook_message(void)
+{
+    asm
+      {
+        mov ecx, offset empty_string ; nothing by default
+        cmp eax, 1 ; 1 if failed cook/chef
+        cmove ecx, dword ptr [GLOBAL_TXT+140*4] ; replaced code
+        ret
+      }
+}
+
+// When firing an NPC, remove everything from their bags.
+static void __thiscall empty_extra_chest(int id)
+{
+    if (id == replaced_chest)
+        replace_chest(-1); // sync chest data
+    struct map_chest *chest = elemdata.extra_chests + id;
+    for (int i = 0; i < 9 * 9; i++)
+      {
+        int item = chest->slots[i] - 1;
+        if (item >= 0)
+            add_mouse_item(MOUSE_THIS, chest->items + item);
+      }
+    memset(chest->items, 0, sizeof(chest->items));
+    memset(chest->slots, 0, sizeof(chest->slots));
+}
+
+// Hook for the above.
+static void __declspec(naked) empty_extra_chest_hook(void)
+{
+    asm
+      {
+        cmp dword ptr [ebp+24], NPC_PORTER
+        jne not_porter
+        mov ecx, 1
+        call empty_extra_chest
+        not_porter:
+        cmp dword ptr [ebp+24], NPC_QUARTER_MASTER
+        jne not_qm
+        mov ecx, 2
+        call empty_extra_chest
+        mov ecx, 3
+        call empty_extra_chest
+        not_qm:
+        cmp dword ptr [ebp+24], NPC_GYPSY
+        jne skip
+        mov ecx, 4
+        call empty_extra_chest
+        skip:
+        cmp dword ptr [0x73c014], edi ; replaced code
+        ret
+      }
+}
+
+// Add a second action dialog option for quartermasters.
+static void __declspec(naked) quartermaster_extra_dialog(void)
+{
+    asm
+      {
+        cmp dword ptr [ebp+24], NPC_QUARTER_MASTER
+        jne skip
+        mov eax, dword ptr [0x5c3468] ; font data
+        movzx eax, byte ptr [eax+5]
+        add eax, 140 - 3
+        push ebx
+        push esi
+        push ebx
+        push 10 ; our new subaction
+        push 136 ; interact with npc action
+        push ebx
+        push 1
+        push eax
+        push 140
+        push 250
+        push edi
+        push ecx
+        call dword ptr ds:add_button
+        add esp, 48
+        mov ecx, dword ptr [0x507a3c] ; restore
+        inc dword ptr [esp+4] ; one more dialog line
+        skip:
+        push 0x41d038 ; replaced call
+        ret
+      }
+}
+
+// Supply actual text to the new dialog option.
+static void __declspec(naked) quartermaster_extra_dialog_text(void)
+{
+    asm
+      {
+        mov eax, dword ptr [edi+36] ; replaced text
+        cmp eax, 10 ; our new subaction
+        je qm
+        cmp eax, 24 ; replaced text
+        ret
+        qm:
+        mov eax, dword ptr [new_strings+STR_OPEN_RIGHT_BAG*4]
+        push 0x44581d ; code after fetching a string
+        ret 4
+      }
+}
+
+// Actually open the second bag.
+static void __declspec(naked) quartermaster_extra_action(void)
+{
+    asm
+      {
+        cmp eax, 10 ; our new subaction
+        je right_bag
+        mov ecx, eax ; replaced code
+        sub ecx, 9 ; replaced code
+        ret
+        right_bag:
+        push 0
+        push 0
+        push ACTION_EXIT
+        mov ecx, ACTION_THIS_ADDR
+        call dword ptr ds:add_action
+        push 1
+        push 3
+        push ACTION_EXTRA_CHEST
+        mov ecx, ACTION_THIS_ADDR
+        call dword ptr ds:add_action
+        xor ecx, ecx
+        inc ecx ; this will skip the vanilla code
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -6958,6 +7163,15 @@ static inline void misc_rules(void)
     erase_code(0x469034, 46); // just nuke all the special spear code
     hook_jump(0x48ecfe, offhand_dagger_accuracy);
     hook_call(0x41dd1b, display_dagger_accuracy, 6);
+    hook_call(0x4bc4c8, new_hireling_action, 5);
+    hook_call(0x445f16, enable_new_hireling_action, 6);
+    hook_call(0x44532e, new_hireling_action_text, 5);
+    hook_call(0x4bc4d1, dont_show_cook_message, 6);
+    hook_call(0x4bc581, empty_extra_chest_hook, 6);
+    erase_code(0x41f739, 54); // old porter etc. bonus
+    hook_call(0x445f77, quartermaster_extra_dialog, 5);
+    hook_call(0x445747, quartermaster_extra_dialog_text, 6);
+    hook_call(0x4bc439, quartermaster_extra_action, 5);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -9039,13 +9253,13 @@ static void __declspec(naked) new_temple_in_bottle(void)
         push 0
         push 0
         push ACTION_EXIT
-        mov ecx, ACTION_THIS
+        mov ecx, ACTION_THIS_ADDR
         call dword ptr ds:add_action
         exited:
         push 1 ; so it`ll be preserved on exit
         push 0
         push ACTION_EXTRA_CHEST
-        mov ecx, ACTION_THIS
+        mov ecx, ACTION_THIS_ADDR
         call dword ptr ds:add_action
         push 0x468e87 ; exit function
         ret 4
@@ -9322,7 +9536,7 @@ static void __declspec(naked) missile_on_shift_click(void)
         ret
         no_spell:
         mov dword ptr [use_melee_attack], ecx ; == 0
-        mov eax, dword ptr [ACTION_THIS] ; actions count
+        mov eax, dword ptr [ACTION_THIS_ADDR] ; actions count
         push 0x42255e ; weapon attack code
         ret 4
       }

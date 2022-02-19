@@ -464,7 +464,8 @@ enum items
     GRIM_REAPER = 565,
     WITCHBANE = 566,
     BAG_OF_HOLDING = 567,
-    LAST_ARTIFACT = 567,
+    CLOVER = 568,
+    LAST_ARTIFACT = 568,
     ROBE_OF_THE_ARCHMAGISTER = 598,
     FIRST_RECIPE = 740,
     LAST_RECIPE = 778,
@@ -7944,11 +7945,32 @@ static void __declspec(naked) soul_stealing_weapon(void)
 
 // If the monster can be backstabbed, add 2 to the first parameter
 // of melee damage function.  If skill-based backstab triggers,
-// add 4 instead.
+// add 4 instead.  Clover's double damage is also checked here.
 static void __declspec(naked) check_backstab(void)
 {
     asm
       {
+        push SLOT_MAIN_HAND
+        push CLOVER
+        call dword ptr ds:has_item_in_slot
+        mov ecx, edi ; restore
+        test eax, eax
+        jz no_clover
+        call dword ptr ds:get_luck
+        push eax
+        call dword ptr ds:get_effective_stat
+        push eax
+        call dword ptr ds:random
+        xor edx, edx
+        mov ecx, 100
+        div ecx
+        pop eax
+        mov ecx, edi ; restore
+        cmp eax, edx
+        jle no_clover
+        add dword ptr [esp+4], 4 ; double total damage flag
+        jmp quit
+        no_clover:
         mov edx, dword ptr [0xacd4f8] ; party direction
         sub dx, word ptr [esi+154] ; monster direction
         test dh, 6 ; we want no more than +/-512 mod 2048 difference
@@ -8100,7 +8122,7 @@ static void __declspec(naked) dispel_immunity(void)
         dec eax ; set flags
         jz immune
         mov ecx, dword ptr [esi]
-        push 0
+        push SLOT_OFFHAND
         push KELEBRIM
         call dword ptr ds:has_item_in_slot
         dec eax ; set flags
@@ -8284,7 +8306,7 @@ static void __declspec(naked) elven_chainmail_bow_bonus(void)
 
 // Implement the Sacrificial Dagger SP bonus.
 // Also here: Headache's mental penalty, Ellinger's Robe magic boost,
-// and Sword of Light's bonus.
+// Sword of Light's and Clover's bonus.
 static void __declspec(naked) sacrificial_dagger_sp_bonus(void)
 {
     asm
@@ -8320,6 +8342,12 @@ static void __declspec(naked) sacrificial_dagger_sp_bonus(void)
         jne not_sword
         add edi, 5
         not_sword:
+        cmp eax, CLOVER
+        jne not_clover
+        cmp esi, STAT_LUCK
+        jne not_clover
+        add edi, 50
+        not_clover:
         sub eax, PUCK ; replaced code
         ret
       }
@@ -9416,9 +9444,14 @@ static inline void new_artifacts(void)
     patch_byte(0x456901, LAST_ARTIFACT - FIRST_ARTIFACT + 1);
     hook_call(0x456909, random_artifact, 6);
     patch_pointer(0x456929, elemdata.artifacts_found);
-    // NB: this function only supports 29 + 11 artifacts by default
     patch_pointer(0x45061e, elemdata.artifacts_found - FIRST_ARTIFACT);
     hook_call(0x45062e, jump_over_specitems, 5);
+    // make space on the stack for all possible arts
+    const int art_count = LAST_OLD_ARTIFACT - FIRST_ARTIFACT + 1
+                          + LAST_ARTIFACT - FIRST_NEW_ARTIFACT + 1;
+    patch_dword(0x4505fd, art_count * 4);
+    patch_dword(0x450628, art_count * -4);
+    patch_dword(0x450651, art_count * -4);
     hook_call(0x439e41, headache_mind_damage, 5);
     // stat penalty is in sacrificial_dagger_sp_bonus()
     // The below hooks deal with Storm Trident's free Lightning Bolt spell.
@@ -9462,6 +9495,7 @@ static inline void new_artifacts(void)
     hook_call(0x447ea4, open_regular_chest, 5);
     hook_call(0x430598, action_open_extra_chest, 7);
     hook_call(0x41ff6d, no_boh_recursion, 6);
+    // clover double damage is in check_backstab() above
 }
 
 // When calculating missile damage, take note of the weapon's skill.
@@ -12157,7 +12191,7 @@ static void __declspec(naked) perception_extra_item(void)
 }
 
 // Double total melee damage if the flag is set.
-// Currently used by Thievery backstab.
+// Currently used by Thievery backstab and Clover.
 static void __declspec(naked) double_total_damage(void)
 {
     asm

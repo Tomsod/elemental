@@ -441,6 +441,7 @@ enum items
     OLD_NICK = 517,
     KELEBRIM = 520,
     PHYNAXIAN_CROWN = 523,
+    TITANS_BELT = 524,
     TWILIGHT = 525,
     JUSTICE = 527,
     LAST_OLD_ARTIFACT = 528,
@@ -9411,6 +9412,43 @@ static void __declspec(naked) no_boh_recursion(void)
       }
 }
 
+// Make Titan's Belt more relevant by giving it more direct effects.
+static void __declspec(naked) titan_belt_recovery_penalty(void)
+{
+    asm
+      {
+        push SLOT_BELT
+        push TITANS_BELT
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        jz quit
+        add dword ptr [ebp-12], 20 ; penalty
+        quit:
+        mov ecx, esi ; restore
+        jmp dword ptr ds:get_speed ; replaced call
+      }
+}
+
+// And the other one, too.  This patches the magic effects function,
+// as item bonus to damage is not always checked by the game.
+static void __declspec(naked) titan_belt_damage_bonus(void)
+{
+    asm
+      {
+        push ecx
+        push SLOT_BELT
+        push TITANS_BELT
+        call dword ptr ds:has_item_in_slot
+        pop ecx
+        test eax, eax
+        movzx eax, word ptr [ecx+0x1828] ; replaced code
+        jz skip
+        add eax, 12 ; bonus
+        skip:
+        ret
+      }
+}
+
 // Add the new properties to some old artifacts,
 // and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
@@ -9496,6 +9534,10 @@ static inline void new_artifacts(void)
     hook_call(0x430598, action_open_extra_chest, 7);
     hook_call(0x41ff6d, no_boh_recursion, 6);
     // clover double damage is in check_backstab() above
+    // and luck bonus is in sacrificial_dagger_sp_bonus()
+    hook_call(0x48e3f1, titan_belt_recovery_penalty, 5);
+    hook_call(0x48f840, titan_belt_damage_bonus, 7);
+    patch_dword(0x48f6a8, 0x48f556); // remove old effects
 }
 
 // When calculating missile damage, take note of the weapon's skill.

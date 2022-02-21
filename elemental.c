@@ -467,7 +467,8 @@ enum items
     BAG_OF_HOLDING = 567,
     CLOVER = 568,
     FLATTENER = 569,
-    LAST_ARTIFACT = 569,
+    ELOQUENCE_TALISMAN = 570,
+    LAST_ARTIFACT = 570,
     ROBE_OF_THE_ARCHMAGISTER = 598,
     FIRST_RECIPE = 740,
     LAST_RECIPE = 778,
@@ -4584,12 +4585,23 @@ static void __declspec(naked) wizard_eye_from_day_of_protection(void)
 
 // When re-casting Immolation or GM Wizard Eye to switch them off,
 // do not charge spell points.  Same for Storm Trident's free spell.
+// Also here: Eloquence Talisman's spell recovery bonus.
 static void __declspec(naked) switch_off_spells_for_free(void)
 {
     asm
       {
         mov dword ptr [ebp-180], eax ; replaced code
         jnz quit ; not casting from a spellbook
+        mov ecx, dword ptr [ebp-32] ; PC
+        push SLOT_AMULET
+        push ELOQUENCE_TALISMAN
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        jz no_talisman
+        mov eax, dword ptr [ebp-180]
+        shr eax, 2
+        sub dword ptr [ebp-180], eax ; -25% of base recovery
+        no_talisman:
         cmp word ptr [ebx], SPL_IMMOLATION
         jne not_immolation
         mov eax, dword ptr [PARTY_BUFFS+16*BUFF_IMMOLATION]
@@ -5913,24 +5925,29 @@ static void __declspec(naked) mp_regen_chunk(void)
 
 // Like with HP above, decrease excess SP by 25% instead of regeneration.
 // Jar-less liches have halved maximum, zombies can hold no SP.
-// Also here: handle SP regen from GM Meditation and Grim Reaper's SP drain.
+// Also here: handle SP regen from GM Meditation
+// and Grim Reaper and Eloquence Talisman's SP drain.
 static void __declspec(naked) sp_burnout(void)
 {
     asm
       {
+        cmp dword ptr [esi+6464], 0
+        jz no_drain
         mov ecx, esi
         push SLOT_MAIN_HAND
         push GRIM_REAPER
         call dword ptr ds:has_item_in_slot
-        test eax, eax
-        jz no_grim
-        cmp dword ptr [esi+6464], 0
+        or dword ptr [ebp-4], eax ; sp maybe changed
+        sub dword ptr [esi+6464], eax
         jz no_drain
-        dec dword ptr [esi+6464]
-        mov dword ptr [ebp-4], 1 ; sp changed
+        mov ecx, esi
+        push SLOT_AMULET
+        push ELOQUENCE_TALISMAN
+        call dword ptr ds:has_item_in_slot
+        or dword ptr [ebp-4], eax
+        sub dword ptr [esi+6464], eax
         no_drain:
         xor eax, eax ; zombies have no sp
-        no_grim:
         cmp dword ptr [ebp-24], 0 ; zombie
         jnz compare_sp
         mov ecx, esi
@@ -9551,6 +9568,24 @@ static int __stdcall flattener(struct player *player,
     return damage;
 }
 
+// Let Eloquence Talisman boost Merchant, mostly for flavor.
+static void __declspec(naked) eloquence_merchant_bonus(void)
+{
+    asm
+      {
+        jz no_merchant_npc ; replaced jump
+        add esi, 6 ; replaced code
+        no_merchant_npc:
+        mov ecx, dword ptr [ebp-4] ; PC
+        push SLOT_AMULET
+        push ELOQUENCE_TALISMAN
+        call dword ptr ds:has_item_in_slot
+        lea eax, [eax+eax*4]
+        add esi, eax
+        ret
+      }
+}
+
 // Add the new properties to some old artifacts,
 // and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
@@ -9646,6 +9681,9 @@ static inline void new_artifacts(void)
     hook_call(0x43d878, flattener_2h_body, 7);
     hook_call(0x43daba, flattener_2h_body_eax, 7);
     hook_call(0x43e79c, flattener_2h_body_eax, 7);
+    hook_call(0x48f9db, eloquence_merchant_bonus, 5);
+    // spell recovery bonus is in switch_off_spells_for_free() above
+    // sp drain is in sp_burnout() above
 }
 
 // When calculating missile damage, take note of the weapon's skill.

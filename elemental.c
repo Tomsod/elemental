@@ -466,7 +466,8 @@ enum items
     WITCHBANE = 566,
     BAG_OF_HOLDING = 567,
     CLOVER = 568,
-    LAST_ARTIFACT = 568,
+    FLATTENER = 569,
+    LAST_ARTIFACT = 569,
     ROBE_OF_THE_ARCHMAGISTER = 598,
     FIRST_RECIPE = 740,
     LAST_RECIPE = 778,
@@ -729,7 +730,10 @@ struct __attribute__((packed)) map_monster
     uint8_t spell1;
     SKIP(7);
     uint8_t holy_resistance;
-    SKIP(10);
+    uint8_t magic_resistance;
+    SKIP(2);
+    uint8_t physical_resistance;
+    SKIP(6);
     uint16_t id;
     SKIP(10);
     uint32_t max_hp;
@@ -838,6 +842,7 @@ enum monster_buffs
     MBUFF_BERSERK = 9,
     MBUFF_MASS_DISTORTION = 10, // also used for eradication in the mod
     MBUFF_ENSLAVE = 12,
+    MBUFF_DAY_OF_PROTECTION = 13,
 };
 
 // Berserk effect animation ID.
@@ -943,7 +948,8 @@ static int __thiscall (*add_buff)(struct spell_buff *buff, long long time,
                                   int skill, int power, int overlay,
                                   int caster) = (funcptr_t) 0x458519;
 static funcptr_t elem_damage = (funcptr_t) 0x439e16;
-static funcptr_t monster_resists = (funcptr_t) 0x427522;
+static int __stdcall (*monster_resists)(void *monster, int element, int damage)
+    = (funcptr_t) 0x427522;
 static funcptr_t monster_in_group = (funcptr_t) 0x438bce;
 static void __thiscall (*expire_temp_bonus)(struct item *item, long long time)
     = (funcptr_t) 0x458299;
@@ -2364,6 +2370,8 @@ static void __declspec(naked) enchant_weapon(void)
         ret 8
         spectral:
         cmp dword ptr [esi], SWORD_OF_LIGHT ; would do nothing
+        je fail
+        cmp dword ptr [esi], FLATTENER
         je fail
         cmp dword ptr [esi+12], SPC_SPECTRAL
         je fail
@@ -4952,7 +4960,6 @@ static void __declspec(naked) zombificable_chunk(void)
 // always takes precedence over Spectral, which is okay since
 // all undead are at least as vulnerable to Holy as to Magic.
 // Sword of Light is also handled by this routine.
-// TODO: check if this works properly with Day of Protection
 static void __declspec(naked) undead_slaying_element(void)
 {
     asm
@@ -4963,7 +4970,16 @@ static void __declspec(naked) undead_slaying_element(void)
         mov al, byte ptr [esi+89] ; monster physical res
         cmp al, byte ptr [esi+85] ; monster holy res
         seta dl
+        cmp dword ptr [esi+212+MBUFF_DAY_OF_PROTECTION*16], 0
+        jnz protected
+        cmp dword ptr [esi+212+MBUFF_DAY_OF_PROTECTION*16+4], 0
+        jz compare
+        protected:
+        sub al, byte ptr [esi+212+MBUFF_DAY_OF_PROTECTION*16+8]
+        jb negative
+        compare:
         cmp al, byte ptr [esi+86] ; monster magic res
+        negative:
         seta dh
         test ebx, ebx ; projectile
         jz prepare
@@ -5024,6 +5040,8 @@ static void __declspec(naked) undead_slaying_element(void)
         skip_undead:
         test bh, bh
         jz other_hand
+        cmp dword ptr [eax], FLATTENER
+        je spectral
         cmp dword ptr [eax+12], SPC_SPECTRAL
         je spectral
         cmp dword ptr [eax+12], SPC_WRAITH
@@ -9449,6 +9467,90 @@ static void __declspec(naked) titan_belt_damage_bonus(void)
       }
 }
 
+// Lower Flattener's speed when it's wielded in one hand.  If sword is in
+// the left hand, this actually lowers the sword's speed, but it's okay.
+static void __declspec(naked) flattener_penalty(void)
+{
+    asm
+      {
+        cmp dword ptr [ebp+8], ebx ; ranged flag
+        jnz quit
+        push SLOT_MAIN_HAND
+        push FLATTENER
+        call dword ptr ds:has_item_in_slot
+        mov ecx, esi ; restore
+        test eax, eax
+        jz quit
+        add dword ptr [ebp-20], 20 ; penalty
+        quit:
+        push 0x48d612 ; replaced call
+        ret
+      }
+}
+
+// Draw Flattener as a 2H weapon when appropriate.
+static void __declspec(naked) flattener_2h(void)
+{
+    asm
+      {
+        mov eax, [ecx+0x1948+SLOT_MAIN_HAND*4]
+        lea eax, [eax+eax*8]
+        cmp dword ptr [ecx+0x214+eax*4-36], FLATTENER
+        jne skip
+        mov eax, 4 ; pass the check
+        ret 4
+        skip:
+        push 0x48d637 ; replaced call
+        ret
+      }
+}
+
+// Ditto, but this code draws the arm itself.
+static void __declspec(naked) flattener_2h_body(void)
+{
+    asm
+      {
+        cmp edx, FLATTENER * 48
+        je quit
+        cmp byte ptr [ITEMS_TXT_ADDR+edx+29], SKILL_SPEAR ; replaced code
+        quit:
+        ret
+      }
+}
+
+// Same check, different register.
+static void __declspec(naked) flattener_2h_body_eax(void)
+{
+    asm
+      {
+        cmp eax, FLATTENER * 48
+        je quit
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_SPEAR ; replaced code
+        quit:
+        ret
+      }
+}
+
+// The chief Flattener's effect (spectral-elemental mass distortion).
+// Called from lich_vampiric_touch() below.
+static int __stdcall flattener(struct player *player,
+                               struct map_monster *monster)
+{
+    if (random() % 10)
+        return 0;
+    int mres = monster->magic_resistance;
+    if (monster->spell_buffs[MBUFF_DAY_OF_PROTECTION].expire_time)
+        mres += monster->spell_buffs[MBUFF_DAY_OF_PROTECTION].power;
+    int element = mres > monster->physical_resistance ? PHYSICAL : MAGIC;
+    int skill = get_skill(player, SKILL_MACE) & SKILL_MASK;
+    int damage = monster_resists(monster, element,
+                                 monster->hp * (25 + skill * 2) / 100);
+    if (damage)
+        add_buff(monster->spell_buffs + MBUFF_MASS_DISTORTION,
+                 dword(0x50ba5c) + 128, 0, 0, 0, 0);
+    return damage;
+}
+
 // Add the new properties to some old artifacts,
 // and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
@@ -9538,6 +9640,12 @@ static inline void new_artifacts(void)
     hook_call(0x48e3f1, titan_belt_recovery_penalty, 5);
     hook_call(0x48f840, titan_belt_damage_bonus, 7);
     patch_dword(0x48f6a8, 0x48f556); // remove old effects
+    // flattener is spectral
+    hook_call(0x48e38d, flattener_penalty, 5);
+    hook_call(0x43db84, flattener_2h, 5);
+    hook_call(0x43d878, flattener_2h_body, 7);
+    hook_call(0x43daba, flattener_2h_body_eax, 7);
+    hook_call(0x43e79c, flattener_2h_body_eax, 7);
 }
 
 // When calculating missile damage, take note of the weapon's skill.
@@ -11969,7 +12077,7 @@ static int __stdcall maybe_instakill(struct player *, struct map_monster *);
 
 // New Lich bonus: drain life with unarmed (or GM Staff) attacks.
 // Also here: apply Hammerhands bonus to GM Staff attacks, check for the
-// new GM Unarmed perk, and trigger Grim Reaper's instadeath effect.
+// new GM Unarmed perk, and trigger Grim Reaper and Flattener's effects.
 static void __declspec(naked) lich_vampiric_touch(void)
 {
     asm
@@ -11984,6 +12092,8 @@ static void __declspec(naked) lich_vampiric_touch(void)
         mov ecx, dword ptr [edi+0x214+ecx*4-36] ; id
         cmp ecx, GRIM_REAPER
         je grim
+        cmp ecx, FLATTENER
+        je flat
         lea ecx, [ecx+ecx*2]
         shl ecx, 4
         cmp byte ptr [ITEMS_TXT_ADDR+ecx+29], SKILL_STAFF
@@ -12014,6 +12124,13 @@ static void __declspec(naked) lich_vampiric_touch(void)
         push edi
         call grim_reaper
         or dword ptr [ebp-32], eax ; also force a hit
+        jmp quit
+        flat:
+        push esi
+        push edi
+        call flattener
+        add dword ptr [ebp-12], eax ; bonus dmg does not affect vampirism
+        quit:
         xor eax, eax ; not unarmed
         ret
       }

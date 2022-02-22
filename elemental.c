@@ -676,7 +676,8 @@ struct __attribute((packed)) spell_info
     uint8_t damage_dice;
 };
 
-#define SPELL_INFO ((struct spell_info *) 0x4e3c46)
+#define SPELL_INFO_ADDR 0x4e3c46
+#define SPELL_INFO ((struct spell_info *) SPELL_INFO_ADDR)
 
 enum spells
 {
@@ -5507,16 +5508,16 @@ static void __declspec(naked) load_map_hook(void)
 // Store the current reputation as the map is offloaded.
 // Somewhat redundant, as every map change induces an autosave,
 // and we sync rep on saving, but better safe than sorry.
+// Also here: sync extra chests, which otherwise break in Arena.
 static void leave_map_rep(void)
 {
     int group = reputation_group[reputation_index];
     if (group) // do not store group 0
         elemdata.reputation[group] = CURRENT_REP;
+    replace_chest(-1);
 }
 
 // Hook for the above.  Again, inserted in a somewhat inconvenient place.
-// This function governs the LeaveMap event, as I understand,
-// but it wasn't called on boat/horse travel, which is fixed below.
 static void __declspec(naked) leave_map_hook(void)
 {
     asm
@@ -7046,6 +7047,9 @@ static void __declspec(naked) empty_extra_chest_hook(void)
 {
     asm
       {
+        mov eax, dword ptr [0xad44f4+24] ; left npc prof
+        cmp eax, dword ptr [0xad4540+24] ; right npc prof
+        je skip ; if another porter etc. remains, do not empty
         cmp dword ptr [ebp+24], NPC_PORTER
         jne not_porter
         mov ecx, 1
@@ -9072,6 +9076,8 @@ static void __declspec(naked) lightning_spear_skill(void)
         mov ecx, eax
         call dword ptr ds:skill_mastery
         mov dword ptr [ebp-24], eax
+        movzx eax, word ptr [SPELL_INFO_ADDR+SPL_LIGHTNING_BOLT*20+8+eax*2]
+        mov dword ptr [ebp-180], eax ; recovery
         pass:
         mov eax, 0x4289b3 ; attack spells
         jmp eax
@@ -9351,7 +9357,8 @@ static int __stdcall grim_reaper(struct player *player,
 {
     // has the same immune monsters as GM unarmed, except oozes
     // (medusae and blaster guys are implicitly immune instead)
-    if (monster->holy_resistance < IMMUNE)
+    if (monster->holy_resistance < IMMUNE
+        || monster->magic_resistance == IMMUNE)
         return 0;
     int id = monster->id;
     if (id >= 34 && id <= 48 || id >= 64 && id <= 66 || id >= 79 && id <= 81

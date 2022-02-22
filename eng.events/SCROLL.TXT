@@ -234,15 +234,15 @@ The White Potion of Speed Boost temporarily boosts your speed just when you need
 755	"
 The White Potion of Accuracy Boost temporarily boosts your accuracy just when you need it.  To mix this potion, add an Orange Potion to the Compound Potion of Stoneskin."	Accuracy Boost
 756	"
-The White Flaming Potion turns any weapon into a weapon of Flame and can also be thrown.  To mix this potion, either combine Haste and a Green Potion, or Stoneskin and a Purple Potion."	Flaming Potion
+The White Flaming Potion turns any weapon into a weapon of Infernos and can also be thrown.  To mix this potion, either combine Haste and a Green Potion, or Stoneskin and a Purple Potion."	Flaming Potion
 757	"
-The White Freezing Potion turns any weapon into a weapon of Frost and can also be thrown.  To mix this potion, either combine Heroism and a Green Potion, or Shield and an Orange Potion."	Freezing Potion
+The White Freezing Potion turns any weapon into a weapon of Ice and can also be thrown.  To mix this potion, either combine Heroism and a Green Potion, or Shield and an Orange Potion."	Freezing Potion
 758	"
-The White Noxious Potion turns any weapon into a weapon of Poison and can also be thrown.  To mix this potion, either combine Recharge Item and an Orange Potion, or Harden Item and a Purple Potion."	Noxious Potion
+The White Noxious Potion turns any weapon into a weapon of Venom and can also be thrown.  To mix this potion, either combine Recharge Item and an Orange Potion, or Harden Item and a Purple Potion."	Noxious Potion
 759	"
-The White Shocking Potion turns any weapon into a weapon of Sparks and can also be thrown.  To mix this potion, either combine Haste and a Purple Potion, or Heroism and an Orange Potion."	Shocking Potion
+The White Shocking Potion turns any weapon into a weapon of Lightning and can also be thrown.  To mix this potion, either combine Haste and a Purple Potion, or Heroism and an Orange Potion."	Shocking Potion
 760	"
-The White Swift Potion turns any weapon into a weapon of Swiftness.  To mix this potion, either combine Recharge Item and a Purple Potion, or Shield and a Green Potion."	Swift Potion
+The White Swift Potion makes any weapon Swift and can also be drunk.  To mix this potion, either combine Recharge Item and a Purple Potion, or Shield and a Green Potion."	Swift Potion
 761	"
 The White Potion of Cure Paralysis eliminates the Paralysis condition.  To mix this potion, either combine Harden Item and an Orange Potion, or Stoneskin and a Green Potion."	Cure Paralysis
 762	"

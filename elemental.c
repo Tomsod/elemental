@@ -438,6 +438,7 @@ enum items
     GHOULSBANE = 507,
     GIBBET = 508,
     CHARELE = 509,
+    ETHRICS_STAFF = 515,
     OLD_NICK = 517,
     KELEBRIM = 520,
     PHYNAXIAN_CROWN = 523,
@@ -728,9 +729,13 @@ struct __attribute__((packed)) map_monster
     SKIP(36);
     uint32_t bits;
     uint16_t hp;
-    SKIP(35);
+    SKIP(10);
+    uint8_t level;
+    SKIP(24);
     uint8_t spell1;
-    SKIP(7);
+    SKIP(5);
+    uint8_t poison_resistance;
+    uint8_t mind_resistance;
     uint8_t holy_resistance;
     uint8_t magic_resistance;
     SKIP(2);
@@ -748,7 +753,9 @@ struct __attribute__((packed)) map_monster
     SKIP(28);
     uint16_t ai_state;
     SKIP(5);
-    uint8_t eradicated_flag; // was padding
+    uint8_t mod_flags; // was padding
+#define MMF_ERADICATED 1
+#define MMF_REANIMATE 2
     SKIP(28);
     struct spell_buff spell_buffs[22];
     SKIP(272);
@@ -1073,6 +1080,7 @@ static void __thiscall (*spell_face_anim)(void *this, int anim, int pc)
 static void __thiscall (*add_action)(void *this, int action, int param1,
                                      int param2) = (funcptr_t) 0x42eb69;
 static int __thiscall (*open_chest)(int chest) = (funcptr_t) 0x4203c7;
+static void __thiscall (*resurrect_monster)(int mon_id) = (funcptr_t) 0x402f27;
 static int __thiscall (*identify_price)(void *player, float shop_multiplier)
     = (funcptr_t) 0x4b80dc;
 static char *__thiscall (*item_name)(struct item *item) = (funcptr_t) 0x4564c5;
@@ -4896,6 +4904,10 @@ static inline void misc_spells(void)
 // For consistency with players, monsters revived with Reanimate now have
 // their resistances changed the same way as zombie players
 // (immune to poison and mind, not immune to holy).
+// Further, instead of being set to peaceful zombies now start enslaved,
+// so they won't turn on you if you hit them now.
+// Also, zombies now don't give XP but do give loot.
+// Finally, zombies' max HP is lowered to their HP on reanimation.
 static void __declspec(naked) zombify(void)
 {
     asm
@@ -4906,7 +4918,25 @@ static void __declspec(naked) zombify(void)
         jne not_immune
         mov byte ptr [edi+0x55], 0
         not_immune:
-        lea ecx, [edi+0x164]
+        mov dword ptr [edi+116], 0 ; xp
+        mov eax, dword ptr [ebp-4] ; reanimate power
+        lea eax, [eax+eax*4]
+        add eax, eax
+        cmp eax, dword ptr [edi+108] ; max hp
+        jg low_hp
+        mov dword ptr [edi+108], eax
+        low_hp:
+        lea ecx, [edi+212+MBUFF_ENSLAVE*16]
+        xor eax, eax
+        push eax
+        push eax
+        push eax
+        push eax
+        dec eax
+        push eax
+        shr dword ptr [esp], 1
+        push eax
+        call dword ptr ds:add_buff
         ret
       }
 }
@@ -5146,16 +5176,79 @@ static void __declspec(naked) add_damage_half(void)
       }
 }
 
+// Possibly raise the monster killed by Ethric's staff as a loyal zombie.
+static void __stdcall ethrics_staff_zombie(struct player *player,
+                                           struct map_monster *monster)
+{
+    int staff = get_skill(player, SKILL_STAFF);
+    int power = (staff & SKILL_MASK) * (skill_mastery(staff) + 1);
+    int dark = get_skill(player, SKILL_DARK);
+    int power2 = (dark & SKILL_MASK) * (skill_mastery(dark) + 1);
+    if (power2 > power)
+        power = power2;
+    if (power < monster->level)
+        return;
+    power *= 10;
+    if (monster->max_hp > power)
+        monster->max_hp = power;
+    monster->mod_flags |= MMF_REANIMATE;
+    monster->poison_resistance = IMMUNE;
+    monster->mind_resistance = IMMUNE;
+    if (monster->holy_resistance == IMMUNE)
+        monster->holy_resistance = 0;
+}
+
+// Reanimate the monster as soon as it finishes its death animation.
+static void __declspec(naked) delayed_reanimation(void)
+{
+    asm
+      {
+        test byte ptr [esi+183], MMF_REANIMATE
+        jnz reanimate
+        mov word ptr [esi+176], 5 ; replaced code
+        ret
+        reanimate:
+        and byte ptr [esi+183], ~MMF_REANIMATE
+        mov dword ptr [esi+116], 0 ; no more xp
+        mov dword ptr [esi+708], 0 ; group
+        mov dword ptr [esi+712], 9999 ; ally
+        mov ecx, dword ptr [ebp-12] ; monster num
+        call dword ptr ds:resurrect_monster
+        lea ecx, [esi+212+MBUFF_ENSLAVE*16]
+        xor eax, eax
+        push eax
+        push eax
+        push eax
+        push eax
+        dec eax
+        push eax
+        shr dword ptr [esp], 1
+        push eax
+        call dword ptr ds:add_buff
+        push 0x401e26 ; skip dead gfx code
+        ret 4
+      }
+}
+
 // Tweaks of zombie players and monsters.
 static inline void zombie_stuff(void)
 {
-    hook_call(0x42dcd0, zombify, 6);
+    hook_call(0x42dcaa, zombify, 5);
+    erase_code(0x42dcaf, 19); // old reanimate code
+    erase_code(0x42dccc, 10); // ditto
+    erase_code(0x42dcdc, 27); // same
     patch_bytes(0x428987, destroy_undead_chunk, 7);
     patch_bytes(0x42e0ad, control_undead_chunk, 7);
     patch_bytes(0x42bce1, turn_undead_chunk, 7);
     patch_bytes(0x4b75e3, zombificable_chunk, 22);
     hook_call(0x4398c3, undead_slaying_element, 5);
     hook_call(0x4398d1, add_damage_half, 5);
+    hook_call(0x401dea, delayed_reanimation, 9);
+    // Make charmed and enslaved monsters (incl. zombies) friendly.
+    erase_code(0x422485, 10); // chat with enslaved etc. monsters
+    erase_code(0x46a4f7, 10); // ditto, but space instead of mouse
+    erase_code(0x4015d5, 2); // minimap and danger gem
+    erase_code(0x401808, 2); // ditto, but indoors
 }
 
 // Calls the original function.
@@ -7930,9 +8023,9 @@ static void __stdcall kill_checks(struct player *, struct map_monster *,
 // Implement soul stealing weapons: when used to kill a monster,
 // they add SP equal to monster's level.  Just like vampiric weapons,
 // overheal is possible, and wielding two such weapons will double SP gain.
-// The new Sacrificial Dagger is also soul stealing.
-// Also here: store the damaging projectile for later use,
-// and run skill-related on-kill checks.
+// The new Sacrificial Dagger and Ethric's Staff are also soul stealing.
+// The latter also raises zombies.  Also here: store the damaging projectile
+// for later use, and run skill-related on-kill checks.
 static void __declspec(naked) soul_stealing_weapon(void)
 {
     asm
@@ -7945,8 +8038,7 @@ static void __declspec(naked) soul_stealing_weapon(void)
         test ebx, ebx
         jnz quit
         movzx eax, byte ptr [edi+0xb9] ; class
-        cmp byte ptr [0x4ed634+eax], bl ; sp multiplier
-        jz quit
+        movzx ebx, byte ptr [0x4ed634+eax] ; sp multiplier
         mov eax, dword ptr [edi+0x194c] ; main hand
         test eax, eax
         jz offhand
@@ -7954,6 +8046,14 @@ static void __declspec(naked) soul_stealing_weapon(void)
         lea eax, [edi+0x214+eax*4-36]
         test byte ptr [eax+20], 2 ; broken bit
         jnz offhand
+        cmp dword ptr [eax], ETHRICS_STAFF
+        jne no_zombie
+        push esi
+        push edi
+        call ethrics_staff_zombie
+        no_zombie:
+        test ebx, ebx
+        jz quit
         cmp dword ptr [eax], SACRIFICIAL_DAGGER
         je soul_mainhand
         cmp dword ptr [eax+12], SPC_SOUL_STEALING
@@ -7962,6 +8062,9 @@ static void __declspec(naked) soul_stealing_weapon(void)
         movzx eax, byte ptr [esi+52] ; monster level
         add dword ptr [edi+6464], eax ; add SP -- overheal is OK here
         offhand:
+        test ebx, ebx
+        jz quit
+        xor ebx, ebx ; restore
         mov eax, dword ptr [edi+0x1948] ; offhand
         test eax, eax
         jz quit
@@ -9593,6 +9696,17 @@ static void __declspec(naked) eloquence_merchant_bonus(void)
       }
 }
 
+// Massively increase Ethric's Staff's HP drain (x5).
+// TODO: should we make an exception for liches?
+static void __declspec(naked) higher_ethric_drain(void)
+{
+    asm
+      {
+        sub dword ptr [esi+0x193c], 5
+        ret
+      }
+}
+
 // Add the new properties to some old artifacts,
 // and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
@@ -9691,6 +9805,9 @@ static inline void new_artifacts(void)
     hook_call(0x48f9db, eloquence_merchant_bonus, 5);
     // spell recovery bonus is in switch_off_spells_for_free() above
     // sp drain is in sp_burnout() above
+    hook_call(0x493de7, higher_ethric_drain, 6);
+    // ethric's staff is now soul stealing
+    // also it raises zombies on kill
 }
 
 // When calculating missile damage, take note of the weapon's skill.
@@ -12456,7 +12573,7 @@ static void __stdcall blaster_eradicate(struct player *player,
         monster->spell_buffs[MBUFF_MASS_DISTORTION].expire_time
         // same var as for actual mdist, seems to be some anim timer
             = dword(0x50ba5c) + ERAD_TIME;
-        monster->eradicated_flag = 1;
+        monster->mod_flags |= MMF_ERADICATED;
         monster->hp = 0;
         struct map_object anim = { BERZERK,
                                    find_objlist_item(OBJLIST_THIS, BERZERK),
@@ -12497,7 +12614,7 @@ static void __declspec(naked) draw_erad_hook(void)
 {
     asm
       {
-        cmp byte ptr [ecx+183], 0 ; eradicated flag
+        test byte ptr [ecx+183], MMF_ERADICATED
         jnz draw
         cmp dword ptr [ecx+372], eax ; replaced code
         ret
@@ -12514,7 +12631,7 @@ static void __declspec(naked) draw_erad_hook_out(void)
 {
     asm
       {
-        cmp byte ptr [edi+37], 0 ; eradicated flag
+        test byte ptr [edi+37], MMF_ERADICATED
         jnz draw
         cmp dword ptr [edi+226], edx ; replaced code
         ret
@@ -12535,7 +12652,7 @@ static void __declspec(naked) draw_erad_hook_out(void)
 static int __thiscall get_erad_mon_z(struct map_monster *monster)
 {
     if (monster->spell_buffs[MBUFF_MASS_DISTORTION].expire_time <= 0
-        || !monster->eradicated_flag)
+        || !(monster->mod_flags & MMF_ERADICATED))
         return 0;
     int time = monster->spell_buffs[MBUFF_MASS_DISTORTION].expire_time
                - dword(0x50ba5c); // anim timer
@@ -12578,9 +12695,9 @@ static void __declspec(naked) erad_stop_moving(void)
 {
     asm
       {
-        cmp byte ptr [esi+183], 1 ; eradicated flag
-        jz quit
-        mov ax, word ptr [esi+176] ; replaced code
+        test byte ptr [esi+183], MMF_ERADICATED
+        mov ax, AI_REMOVED ; we need zf == 1 if flag set
+        cmovz ax, word ptr [esi+176] ; replaced code, almost
         cmp ax, AI_REMOVED ; replaced code
         quit:
         ret

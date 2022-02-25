@@ -176,6 +176,7 @@ enum class
 {
     CLASS_CHAMPION = 2,
     CLASS_BLACK_KNIGHT = 3,
+    CLASS_THIEF = 4,
     CLASS_MONK = 8,
     CLASS_MASTER = 10,
     CLASS_SNIPER = 19,
@@ -469,7 +470,8 @@ enum items
     CLOVER = 568,
     FLATTENER = 569,
     ELOQUENCE_TALISMAN = 570,
-    LAST_ARTIFACT = 570,
+    GADGETEERS_BELT = 571,
+    LAST_ARTIFACT = 571,
     ROBE_OF_THE_ARCHMAGISTER = 598,
     FIRST_RECIPE = 740,
     LAST_RECIPE = 778,
@@ -2421,9 +2423,13 @@ static void __declspec(naked) vampiric_weapon(void)
       }
 }
 
+// We need these for the belt bonus.
+static const float f1_25 = 1.25;
+static const float f1_5 = 1.5;
+
 // Make the new checks for the weapon-enchanting potions.
 // Bows of carnage can be enchanted by swift potions only.
-// Also handles holy water.
+// Also handles holy water.  Gadgeteer's Belt's bonus is also applied here.
 static void __declspec(naked) weapon_potions(void)
 {
     asm
@@ -2470,6 +2476,22 @@ static void __declspec(naked) weapon_potions(void)
         mov dword ptr [esi+4], TEMP_ENCH_MARKER
         mov dword ptr [esi+8], ebx
         fmul dword ptr [0x4d8470]
+        mov ecx, dword ptr [CURRENT_PLAYER]
+        mov ecx, dword ptr [0xa74f44+ecx*4] ; PC pointers
+        mov bh, byte ptr [ecx+0xb9] ; class
+        push SLOT_BELT
+        push GADGETEERS_BELT
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        jz quit
+        and bh, -4
+        cmp bh, CLASS_THIEF
+        je thief
+        fmul dword ptr [f1_25]
+        ret
+        thief:
+        fmul dword ptr [f1_5]
+        quit:
         ret
         swift:
         cmp dword ptr [esi+12], SPC_DARKNESS
@@ -2503,19 +2525,19 @@ static void __declspec(naked) potion_aura(void)
         mov eax, dword ptr [ebp-12] ; replaced code
         or al, 8 ; temp bonus bit
         mov cl, 16
-        cmp ebx, SPC_INFERNOS
+        cmp bl, SPC_INFERNOS
         je red
-        cmp ebx, SPC_LIGHTNING
+        cmp bl, SPC_LIGHTNING
         je purple
-        cmp ebx, SPC_ICE
+        cmp bl, SPC_ICE
         je blue
-        cmp ebx, SPC_VENOM
+        cmp bl, SPC_VENOM
         je green
-        cmp ebx, SPC_SWIFT
+        cmp bl, SPC_SWIFT
         je green
-        cmp ebx, SPC_DRAGON_SLAYING
+        cmp bl, SPC_DRAGON_SLAYING
         je red
-        cmp ebx, SPC_UNDEAD_SLAYING
+        cmp bl, SPC_UNDEAD_SLAYING
         je blue
         purple:
         shl cl, 1
@@ -2620,20 +2642,49 @@ static inline void temp_enchants(void)
 // Compound buff potions like Bless or Stoneskin always granted the minimal
 // possible bonus (+5, corresponding to the spell skill of 0), irrespective
 // of the potion's power.  Now this bonus is increased by half the power.
+// Also here: increase all buff power and duration if Gadgeteer's Belt is worn.
 static void __declspec(naked) buff_potions_power(void)
 {
     asm
       {
+        push ecx
+        mov ecx, esi
+        push SLOT_BELT
+        push GADGETEERS_BELT
+        call dword ptr ds:has_item_in_slot
+        pop ecx
+        mov ah, byte ptr [esi+0xb9] ; class
+        and ah, -4
+        mov edx, dword ptr [MOUSE_ITEM+4]
         cmp dword ptr [esp+12], MASTER
-        jne quit
+        jne resistance
         cmp dword ptr [esp+16], 5
-        jne quit
-        mov eax, dword ptr [MOUSE_ITEM+4]
-        shr eax, 1
-        add dword ptr [esp+16], eax
+        jne resistance
+        shr edx, 1
+        add dword ptr [esp+16], edx
+        jmp bonus
+        resistance:
+        mov edx, dword ptr [esp+16]
+        bonus:
+        test al, al
+        jz quit
+        shr edx, 1
+        cmp ah, CLASS_THIEF
+        je half
+        shr edx, 1
+        half:
+        add dword ptr [esp+16], edx
+        mov edx, dword ptr [MOUSE_ITEM+4]
+        cmp ah, CLASS_THIEF
+        mov eax, 30 * 60 * 128 / 30 / 4 ; quarter of half hour in ticks
+        jne quarter
+        add eax, eax
+        quarter:
+        mul edx
+        add dword ptr [esp+4], eax
+        adc dword ptr [esp+8], edx
         quit:
-        push 0x458519 ; replaced call
-        ret
+        jmp dword ptr ds:add_buff ; replaced call
       }
 }
 
@@ -3381,6 +3432,7 @@ static inline void misc_items(void)
     patch_dword(0x48f660, dword(0x48f664));
     erase_code(0x48f258, 8);
     hook_call(0x468c58, buff_potions_power, 5);
+    hook_call(0x468951, buff_potions_power, 5); // water breathing
     hook_call(0x453e34, maybe_add_recipe, 7);
     hook_call(0x4220b4, autobrew, 7);
     hook_call(0x467f79, read_recipe_hook, 6);
@@ -3487,22 +3539,38 @@ static void __declspec(naked) throw_potions_jump(void)
 // Provide the proper spell power for the potion throw event.
 // We hijacked the scroll cast event for this,
 // which uses a fixed power, so we store the power in a static var.
+// Also here: let Gadgeteer's Belt enhance (actual) scroll power.
 static void __declspec(naked) throw_potions_power(void)
 {
     asm
       {
-        pop eax
-        cmp dword ptr [esp+28], SPL_FLAMING_POTION ; param 1 = spell
+        cmp dword ptr [esp+32], SPL_FLAMING_POTION ; param 1 = spell
         jb ordinary
-        cmp dword ptr [esp+28], SPL_HOLY_WATER
+        cmp dword ptr [esp+32], SPL_HOLY_WATER
         ja ordinary
+        pop eax
         push dword ptr [potion_damage]
-        push eax
-        ret
+        jmp eax
         ordinary:
-        push 0x85 ; scroll power = M5
-        push eax
-        ret
+        mov ecx, dword ptr [esp+56] ; PC index
+        mov ecx, dword ptr [0xa74f48+ecx*4] ; PC pointers
+        mov bl, byte ptr [ecx+0xb9] ; class
+        push SLOT_BELT
+        push GADGETEERS_BELT
+        call dword ptr ds:has_item_in_slot
+        mov ecx, SKILL_MASTER + 5 ; vanilla scroll power
+        test eax, eax
+        jz no_belt
+        add ecx, SKILL_GM - SKILL_MASTER + 5
+        and bl, -4
+        cmp bl, CLASS_THIEF
+        jne no_belt
+        add ecx, 5
+        no_belt:
+        xor ebx, ebx ; restore
+        pop eax
+        push ecx
+        jmp eax
       }
 }
 
@@ -3607,6 +3675,7 @@ static void forbid_spell(void); // defined below
 static int last_hit_player;
 
 // Redirect potion pseudo-spell code to the attack spell code.
+// Potion power is fixed here too (with possible Gadgeteer's Belt bonus).
 // This hook is also reused for spell disabling.
 // The new Fate spell ID is also handled here.
 static void __declspec(naked) cast_potions_jump(void)
@@ -3622,6 +3691,24 @@ static void __declspec(naked) cast_potions_jump(void)
         cmp eax, SPL_HOLY_WATER - 1
         ja not_it
         mov dword ptr [ebp-0xb4], 100 ; recovery
+        movzx edi, word ptr [ebx+10] ; raw spell (potion) power
+        mov ecx, dword ptr [ebp-32] ; PC
+        push SLOT_BELT
+        push GADGETEERS_BELT
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        jz no_belt
+        mov edx, edi
+        shr edx, 1
+        mov ecx, dword ptr [ebp-32]
+        mov al, byte ptr [ecx+0xb9] ; class
+        and al, -4
+        cmp al, CLASS_THIEF
+        je bonus
+        shr edx, 1
+        bonus:
+        add edi, edx
+        no_belt:
         push 0x4289c6
         ret 4
         not_it:
@@ -3774,13 +3861,7 @@ static void __declspec(naked) damage_potions_monster(void)
         not_holy:
         sub eax, SPL_FLAMING_POTION
         mov dword ptr [ebp-8], eax ; element
-        ; the higher bits of the potion`s power are here:
-        mov ecx, dword ptr [ebx+0x50] ; spell mastery
-        ; this will only work properly with power < 192
-        ; thankfully, potions with power > 135 are not legitimately brewable
-        dec ecx
-        shl ecx, 6
-        add ecx, dword ptr [ebx+0x4c] ; the rest of potion/spell power
+        mov ecx, dword ptr [ebx+0x4c] ; potion power
         mov edx, 3
         and eax, 1
         sub edx, eax ; d2 for elec and poison, d3 for fire, cold, and holy
@@ -7241,6 +7322,56 @@ static void __declspec(naked) quartermaster_extra_action(void)
       }
 }
 
+// Let Intellect and Gadgeteer's Belt affect wand power.
+static void __declspec(naked) variable_wand_power(void)
+{
+    asm
+      {
+        push ecx
+        mov ecx, esi
+        push SLOT_BELT
+        push GADGETEERS_BELT
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        jz no_belt
+        add dword ptr [esp+8], SKILL_GM + 5 ; spell skill
+        mov al, byte ptr [esi+0xb9] ; class
+        and al, -4
+        cmp al, CLASS_THIEF
+        jne no_belt
+        add dword ptr [esp+8], 5 ; extra bonus
+        no_belt:
+        mov ecx, esi
+        call dword ptr ds:get_intellect
+        push eax
+        call dword ptr ds:get_effective_stat
+        sar eax, 1
+        sub eax, 3 ; equal to vanilla at 30 Int
+        add dword ptr [esp+8], eax
+        pop ecx
+        lea edx, [ebx-1]
+        jmp dword ptr ds:aim_spell ; replaced call
+      }
+}
+
+// Let Personality affect merchant prices.
+static void __declspec(naked) personality_trading_bonus(void)
+{
+    asm
+      {
+        mov ecx, edi
+        call dword ptr ds:get_personality
+        push eax
+        call dword ptr ds:get_effective_stat
+        mov edi, eax
+        call dword ptr ds:get_eff_reputation ; replaced call
+        sub eax, edi
+        mov edi, ebx ; moved here from earlier
+        and edi, SKILL_MASK; ditto
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -7301,6 +7432,12 @@ static inline void misc_rules(void)
     hook_call(0x445f77, quartermaster_extra_dialog, 5);
     hook_call(0x445747, quartermaster_extra_dialog_text, 6);
     hook_call(0x4bc439, quartermaster_extra_action, 5);
+    hook_call(0x42ee82, variable_wand_power, 5);
+    hook_call(0x42f04e, variable_wand_power, 5);
+    erase_code(0x491200, 2); // preserve pc pointer for the below hook
+    erase_code(0x491207, 3); // ditto
+    hook_call(0x49121b, personality_trading_bonus, 5);
+    patch_byte(0x49124d, 0); // remove the old 7% merchant bonus
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -9707,6 +9844,98 @@ static void __declspec(naked) higher_ethric_drain(void)
       }
 }
 
+// Worn Gadgeteer's Belt data (same as Silver Belt for now!)
+STATIC const int gadgeteers_belt_xy[] = { 539, 185, 539, 177,
+                                          538, 214, 541, 213, };
+FIX(gadgeteers_belt_xy);
+static char gadgeteers_belt_gfx[] = "item103v0"; // temporary
+
+// Draw the new belt on the paperdoll.
+static void __declspec(naked) display_new_belt(void)
+{
+    asm
+      {
+        cmp ecx, GADGETEERS_BELT
+        je belt
+        sub ecx, TITANS_BELT ; replaced code
+        ret
+        belt:
+        mov eax, dword ptr [esp+40] ; body type
+        mov ecx, dword ptr [REF(gadgeteers_belt_xy)+eax*8]
+        mov edx, dword ptr [REF(gadgeteers_belt_xy)+eax*8+4]
+        mov dword ptr [esp+24], ecx
+        mov dword ptr [esp+20], edx
+        and eax, 1 ; no special dwarf gfx
+        add eax, '1'
+        mov edx, offset gadgeteers_belt_gfx
+        mov byte ptr [edx+8], al ; will probably be +9 later
+        push 2
+        push edx
+        mov ecx, 0x6d0490 ; icons.lod
+        call dword ptr ds:load_bitmap
+        mov ebx, eax
+        push 0x43d954 ; code after setting coords
+        ret 4
+      }
+}
+
+// Let Gadgeteer's Belt enhance drunk potion power.
+// This hook is for HP and SP potions.
+static void __declspec(naked) gadgeteer_cure_potions_bonus(void)
+{
+    asm
+      {
+        mov ecx, esi
+        push SLOT_BELT
+        push GADGETEERS_BELT
+        call dword ptr ds:has_item_in_slot
+        mov edx, dword ptr [MOUSE_ITEM+4] ; power
+        cmp dword ptr [MOUSE_ITEM], FIRST_WHITE_POTION
+        jb simple
+        lea edx, [edx+edx*4]
+        simple:
+        test eax, eax
+        jz skip
+        mov eax, edx
+        shr eax, 1
+        mov cl, byte ptr [esi+0xb9] ; class
+        and cl, -4
+        cmp cl, CLASS_THIEF
+        je skip
+        shr eax, 1
+        skip:
+        add eax, edx
+        ret
+      }
+}
+
+// And this is for the Recharge Item potion.
+static void __declspec(naked) gadgeteer_recharge_potion_bonus(void)
+{
+    asm
+      {
+        fild dword ptr [MOUSE_ITEM+4] ; replaced code
+        mov ecx, dword ptr [CURRENT_PLAYER]
+        mov ecx, dword ptr [0xa74f44+ecx*4] ; PC pointers
+        mov bl, byte ptr [ecx+0xb9] ; class
+        push SLOT_BELT
+        push GADGETEERS_BELT
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        jz quit
+        and bl, -4
+        cmp bl, CLASS_THIEF
+        je thief
+        fmul dword ptr [f1_25]
+        jmp quit
+        thief:
+        fmul dword ptr [f1_5]
+        quit:
+        xor ebx, ebx ; restore
+        ret
+      }
+}
+
 // Add the new properties to some old artifacts,
 // and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
@@ -9808,6 +10037,16 @@ static inline void new_artifacts(void)
     hook_call(0x493de7, higher_ethric_drain, 6);
     // ethric's staff is now soul stealing
     // also it raises zombies on kill
+    hook_call(0x43d8d5, display_new_belt, 6);
+    // wand bonus is in variable_wand_power() above
+    // scroll bonus is in throw_potions_power() above
+    hook_call(0x468798, gadgeteer_cure_potions_bonus, 5); // red
+    hook_call(0x4687b7, gadgeteer_cure_potions_bonus, 5); // blue
+    hook_call(0x468afc, gadgeteer_cure_potions_bonus, 8); // divine cure
+    hook_call(0x468b09, gadgeteer_cure_potions_bonus, 8); // divine power
+    // buff potions boosted in buff_potions_power() above
+    // weapon-enchanting potions are in weapon_potions() above
+    hook_call(0x416992, gadgeteer_recharge_potion_bonus, 6);
 }
 
 // When calculating missile damage, take note of the weapon's skill.

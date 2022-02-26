@@ -163,6 +163,7 @@ enum player_stats
     STAT_POISON_RES = 13,
     STAT_MIND_RES = 14,
     STAT_MAGIC_RES = 15,
+    STAT_ALCHEMY = 16,
     STAT_MELEE_ATTACK = 25,
     STAT_MELEE_DAMAGE_BASE = 26,
     STAT_HOLY_RES = 33,
@@ -452,6 +453,7 @@ enum items
     MINDS_EYE = 532,
     ELVEN_CHAINMAIL = 533,
     FORGE_GAUNTLETS = 534,
+    CLANKERS_AMULET = 537,
     SACRIFICIAL_DAGGER = 553,
     RED_DRAGON_SCALE_MAIL = 554,
     RED_DRAGON_SCALE_SHIELD = 555,
@@ -4229,24 +4231,34 @@ static void __declspec(naked) enchant_item_lvl45(void)
 
 // At noon (11:00 to 12:59), Enchant Item is more powerful.
 // Master casts as GM, and GM uses treasure level 5 instead of 4.
+// Clanker's Amulet grants this effect at any time of day.
 static void __declspec(naked) enchant_item_noon_check(void)
 {
     asm
       {
         mov dword ptr [enchant_item_gm_noon], esi ; esi == 0
         cmp dword ptr [0xacd554], 11 ; hour of day
-        jb quit
-        cmp dword ptr [0xacd554], 12 ; hour of day
-        ja quit
+        jb not_noon
+        cmp dword ptr [0xacd554], 13
+        jb bonus
+        not_noon:
+        push SLOT_AMULET
+        push CLANKERS_AMULET
+        mov ecx, [ebp-32]
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        bonus:
+        mov ecx, dword ptr [ebp-24] ; replaced code (mastery)
+        jz quit
         cmp ecx, GM
         jae gm
         inc ecx
-        quit:
-        add eax, PARTY_ADDR ; replaced code
-        ret
+        jmp quit
         gm:
         inc dword ptr [enchant_item_gm_noon]
-        jmp quit
+        quit:
+        lea eax, [edi+edi*4] ; replaced code
+        ret
       }
 }
 
@@ -4885,7 +4897,7 @@ static inline void misc_spells(void)
     patch_dword(0x42af9b, 0x5e3f7c); // TL3 max number for M
     patch_dword(0x42afa1, 0x5e3f78); // TL3 min number for M
     hook_call(0x42ad3b, enchant_item_lvl45, 6);
-    hook_call(0x42ab30, enchant_item_noon_check, 5);
+    hook_call(0x42ab11, enchant_item_noon_check, 6);
     hook_call(0x42ad0f, enchant_item_noon_numeric, 6);
     // Bug fix: let EI halve some numeric enchs like when naturally generated.
     hook_call(0x42b208, enchant_item_halve_expert, 5); // expert
@@ -8571,7 +8583,7 @@ static void __declspec(naked) elven_chainmail_bow_bonus(void)
 
 // Implement the Sacrificial Dagger SP bonus.
 // Also here: Headache's mental penalty, Ellinger's Robe magic boost,
-// Sword of Light's and Clover's bonus.
+// Sword of Light, Clover, and Clanker's Amulet's bonus.
 static void __declspec(naked) sacrificial_dagger_sp_bonus(void)
 {
     asm
@@ -8613,6 +8625,12 @@ static void __declspec(naked) sacrificial_dagger_sp_bonus(void)
         jne not_clover
         add edi, 50
         not_clover:
+        cmp eax, CLANKERS_AMULET
+        jne not_clanker
+        cmp esi, STAT_ALCHEMY
+        jne not_clanker
+        add edi, 10
+        not_clanker:
         sub eax, PUCK ; replaced code
         ret
       }
@@ -10032,6 +10050,8 @@ static inline void new_artifacts(void)
     // buff potions boosted in buff_potions_power() above
     // weapon-enchanting potions are in weapon_potions() above
     hook_call(0x416992, gadgeteer_recharge_potion_bonus, 6);
+    // clanker's amulet alchemy bonus is in sacrificial_dagger_sp_bonus()
+    // enchant item bonus is in enchant_item_noon_check() above
 }
 
 // When calculating missile damage, take note of the weapon's skill.

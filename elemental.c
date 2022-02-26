@@ -181,6 +181,8 @@ enum class
     CLASS_MONK = 8,
     CLASS_MASTER = 10,
     CLASS_SNIPER = 19,
+    CLASS_RANGER = 20,
+    CLASS_DRUID = 28,
     CLASS_LICH = 35,
     CLASS_COUNT = 36,
 };
@@ -473,7 +475,8 @@ enum items
     FLATTENER = 569,
     ELOQUENCE_TALISMAN = 570,
     GADGETEERS_BELT = 571,
-    LAST_ARTIFACT = 571,
+    GARDENERS_GLOVES = 572,
+    LAST_ARTIFACT = 572,
     ROBE_OF_THE_ARCHMAGISTER = 598,
     FIRST_RECIPE = 740,
     LAST_RECIPE = 778,
@@ -760,6 +763,9 @@ struct __attribute__((packed)) map_monster
     uint8_t mod_flags; // was padding
 #define MMF_ERADICATED 1
 #define MMF_REANIMATE 2
+#define MMF_ZOMBIE 4
+#define MMF_EXTRA_REAGENT 8
+#define MMF_REAGENT_MORE_LIKELY 16
     SKIP(28);
     struct spell_buff spell_buffs[22];
     SKIP(272);
@@ -4997,6 +5003,7 @@ static void __declspec(naked) zombify(void)
         mov byte ptr [edi+0x55], 0
         not_immune:
         mov dword ptr [edi+116], 0 ; xp
+        or byte ptr [edi+183], MMF_ZOMBIE
         mov eax, dword ptr [ebp-4] ; reanimate power
         lea eax, [eax+eax*4]
         add eax, eax
@@ -5269,7 +5276,7 @@ static void __stdcall ethrics_staff_zombie(struct player *player,
     power *= 10;
     if (monster->max_hp > power)
         monster->max_hp = power;
-    monster->mod_flags |= MMF_REANIMATE;
+    monster->mod_flags |= MMF_REANIMATE | MMF_ZOMBIE;
     monster->poison_resistance = IMMUNE;
     monster->mind_resistance = IMMUNE;
     if (monster->holy_resistance == IMMUNE)
@@ -8583,16 +8590,17 @@ static void __declspec(naked) elven_chainmail_bow_bonus(void)
 
 // Implement the Sacrificial Dagger SP bonus.
 // Also here: Headache's mental penalty, Ellinger's Robe magic boost,
-// Sword of Light, Clover, and Clanker's Amulet's bonus.
-static void __declspec(naked) sacrificial_dagger_sp_bonus(void)
+// Sword of Light, Clover, Clanker's Amulet, and Gardener's Gloves boni.
+static void __declspec(naked) artifact_stat_bonus(void)
 {
     asm
       {
         cmp eax, SACRIFICIAL_DAGGER
         jne not_dagger
         cmp esi, STAT_SP
-        jne not_dagger
+        jne quit
         add edi, 30
+        ret
         not_dagger:
         cmp eax, HEADACHE
         jne not_headache
@@ -8601,37 +8609,48 @@ static void __declspec(naked) sacrificial_dagger_sp_bonus(void)
         cmp esi, STAT_PERSONALITY
         je penalty
         cmp esi, STAT_MIND_RES
-        jne not_headache
+        jne quit
         penalty:
         sub edi, 30
+        ret
         not_headache:
         cmp eax, ELLINGERS_ROBE
         jne not_robe
         cmp esi, STAT_FIRE_MAGIC
-        jb not_robe
+        jb quit
         cmp esi, STAT_DARK_MAGIC
-        ja not_robe
+        ja quit
         add edi, 2
+        ret
         not_robe:
         cmp eax, SWORD_OF_LIGHT
         jne not_sword
         cmp esi, STAT_LIGHT_MAGIC
-        jne not_sword
+        jne quit
         add edi, 5
+        ret
         not_sword:
         cmp eax, CLOVER
         jne not_clover
         cmp esi, STAT_LUCK
-        jne not_clover
+        jne quit
         add edi, 50
+        ret
         not_clover:
         cmp eax, CLANKERS_AMULET
         jne not_clanker
         cmp esi, STAT_ALCHEMY
-        jne not_clanker
+        jne quit
         add edi, 10
+        ret
         not_clanker:
+        cmp eax, GARDENERS_GLOVES
+        jne not_gloves
+        push 0x48f387 ; earth magic bonus
+        ret 4
+        not_gloves:
         sub eax, PUCK ; replaced code
+        quit:
         ret
       }
 }
@@ -9939,6 +9958,89 @@ static void __declspec(naked) gadgeteer_recharge_potion_bonus(void)
       }
 }
 
+// Gardener's Gloves ability: flag monster for a possible reagent drop.
+static void __declspec(naked) plant_seed(void)
+{
+    asm
+      {
+        jnz hit ; replaced jump
+        cmp dword ptr [ebp-32], eax ; replaced code
+        jnz hit
+        ret
+        hit:
+        mov ecx, edi
+        push SLOT_GAUNTLETS
+        push GARDENERS_GLOVES
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        jz skip
+        or byte ptr [esi+183], MMF_EXTRA_REAGENT
+        mov al, byte ptr [edi+0xb9] ; class
+        and al, -4
+        cmp al, CLASS_RANGER
+        je bonus
+        cmp al, CLASS_DRUID
+        jne skip
+        bonus:
+        or byte ptr [esi+183], MMF_REAGENT_MORE_LIKELY
+        skip:
+        mov cx, word ptr [esi+40] ; restore
+        inc eax ; clear zf
+        ret
+      }
+}
+
+// Possibly drop the reagent on death.  This uses the vanilla code
+// that drops reagents from some monsters with a 20% chance.
+// These monsters are NOT affected by the Gloves' ability.
+// Eradicated and zombified monsters never drop any reagents (even vanilla).
+static void __declspec(naked) harvest_seed(void)
+{
+    asm
+      {
+        mov edi, 20 ; drop chance
+        test byte ptr [esi+183], MMF_ERADICATED + MMF_ZOMBIE
+        jnz skip
+        cmp dword ptr [ebp-40], 0 ; vanilla reagent
+        jnz quit
+        movzx edi, byte ptr [esi+183]
+        and edi, MMF_EXTRA_REAGENT + MMF_REAGENT_MORE_LIKELY
+        jz skip
+        shr edi, 3 ; flags also double as drop chance
+        lea edi, [edi+edi*4]
+        mov dword ptr [ebp-40], FIRST_REAGENT
+        call dword ptr ds:random
+        and eax, 3
+        lea eax, [eax+eax*4]
+        add dword ptr [ebp-40], eax
+        movzx eax, byte ptr [esi+52] ; monster level
+        xor edx, edx
+        add eax, 10
+        mov ecx, 20
+        div ecx
+        cmp eax, 4
+        jbe ok
+        mov eax, 4
+        ok:
+        add dword ptr [ebp-40], eax
+        quit:
+        jmp dword ptr ds:random ; replaced call
+        skip:
+        mov eax, 99 ; no drop
+        ret
+      }
+}
+
+// Instead of a fixed 20% chance, use edi we set above.
+static void __declspec(naked) reagent_chance_chunk(void)
+{
+    asm
+      {
+        cmp edx, edi
+        nop
+      }
+}
+
 // Add the new properties to some old artifacts,
 // and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
@@ -9947,7 +10049,7 @@ static inline void new_artifacts(void)
     erase_code(0x48ea64, 12);
     // elven chainmail is lightweight now
     hook_call(0x48f24e, elven_chainmail_bow_bonus, 5);
-    hook_call(0x48eee0, sacrificial_dagger_sp_bonus, 5);
+    hook_call(0x48eee0, artifact_stat_bonus, 5);
     hook_call(0x492c4a, sacrificial_dagger_goblin_only, 5);
     // corsair and old nick can backstab now
     erase_code(0x48ceae, 8); // old nick elf slaying
@@ -9981,7 +10083,7 @@ static inline void new_artifacts(void)
     patch_dword(0x450628, art_count * -4);
     patch_dword(0x450651, art_count * -4);
     hook_call(0x439e41, headache_mind_damage, 5);
-    // stat penalty is in sacrificial_dagger_sp_bonus()
+    // stat penalty is in artifact_stat_bonus()
     // The below hooks deal with Storm Trident's free Lightning Bolt spell.
     hook_call(0x41136e, check_lightning_image, 7);
     hook_call(0x41166a, check_lightning_button, 7);
@@ -9999,7 +10101,7 @@ static inline void new_artifacts(void)
     hook_call(0x48dc59, ellingers_robe_preservation, 6);
     hook_call(0x494494, ellingers_robe_preservation, 6);
     // weakness immunity is in condition_immunity() above
-    // magic bonus is in sacrificial_dagger_sp_bonus()
+    // magic bonus is in artifact_stat_bonus()
     // Viper swiftness is in temp_swiftness() above
     // poison damage is also in headache_mind_damage()
     hook_call(0x44c2d5, save_temple_beacon_hook, 6);
@@ -10013,7 +10115,7 @@ static inline void new_artifacts(void)
     hook_call(0x43e380, equipped_sword_of_light, 5);
     hook_call(0x43e590, equipped_sword_of_light, 5);
     // energy attack is in undead_slaying_element() above
-    // light magic bonus is too in sacrificial_dagger_sp_bonus()
+    // light magic bonus is too in artifact_stat_bonus()
     // alignment restriction is in sacrificial_dagger_goblin_only()
     // also has dagger-like doubled to-hit bonus
     // oghma infinium effect is in new_temple_in_bottle()
@@ -10024,7 +10126,7 @@ static inline void new_artifacts(void)
     hook_call(0x430598, action_open_extra_chest, 7);
     hook_call(0x41ff6d, no_boh_recursion, 6);
     // clover double damage is in check_backstab() above
-    // and luck bonus is in sacrificial_dagger_sp_bonus()
+    // and luck bonus is in artifact_stat_bonus()
     hook_call(0x48e3f1, titan_belt_recovery_penalty, 5);
     hook_call(0x48f840, titan_belt_damage_bonus, 7);
     patch_dword(0x48f6a8, 0x48f556); // remove old effects
@@ -10050,8 +10152,13 @@ static inline void new_artifacts(void)
     // buff potions boosted in buff_potions_power() above
     // weapon-enchanting potions are in weapon_potions() above
     hook_call(0x416992, gadgeteer_recharge_potion_bonus, 6);
-    // clanker's amulet alchemy bonus is in sacrificial_dagger_sp_bonus()
+    // clanker's amulet alchemy bonus is in artifact_stat_bonus()
     // enchant item bonus is in enchant_item_noon_check() above
+    hook_call(0x439a32, plant_seed, 5);
+    erase_code(0x402e94, 6); // don't skip reagent code if no vanilla reagent
+    hook_call(0x402e9a, harvest_seed, 5);
+    patch_bytes(0x402ea5, reagent_chance_chunk, 3);
+    // earth magic bonus is in artifact_stat_bonus()
 }
 
 // When calculating missile damage, take note of the weapon's skill.

@@ -2077,27 +2077,12 @@ static void __declspec(naked) temp_elem_damage(void)
       }
 }
 
-// Defined below.
-static void __stdcall blaster_eradicate(struct player *, struct map_monster *,
-                                        struct map_object *);
-
 // The projectile damage code needs an extra instruction.
-// Also here: check for blaster eradication.
 static void __declspec(naked) bow_temp_damage(void)
 {
     asm
       {
         and dword ptr [ebp-12], 0
-        push eax
-        push ecx
-        push edx
-        push ebx
-        push esi
-        push edi
-        call blaster_eradicate
-        pop edx
-        pop ecx
-        pop eax
         jmp temp_elem_damage
       }
 }
@@ -12537,15 +12522,25 @@ static void __declspec(naked) lich_vampiric_touch(void)
       }
 }
 
+// Defined below.
+static void __stdcall blaster_eradicate(struct player *, struct map_monster *,
+                                        struct map_object *);
+
 // Part of Hammerhands fix.  Replaces a mov with add
 // (to total damage, which now contains HH damage),
 // and swaps it with a cmp, as the add would ruin its flags.
-static void __declspec(naked) add_to_damage_chunk(void)
+// Blaster GM effect is also checked here.
+static void __declspec(naked) add_to_damage(void)
 {
     asm
       {
         add dword ptr [ebp-12], eax
+        push ebx
+        push esi
+        push edi
+        call blaster_eradicate
         cmp dword ptr [ebp-28], 0
+        ret
       }
 }
 
@@ -12693,7 +12688,7 @@ static inline void class_changes(void)
     // While we're here, prevent Hammerhands from interacting with
     // Vampiric weapons (also see add_damage_half() above).
     patch_byte(0x43990c, -12); // add to total damage
-    patch_bytes(0x439910, add_to_damage_chunk, 7);
+    hook_call(0x439910, add_to_damage, 7);
     // Enable class hints on the stats screen.
     patch_dword(0x418088, dword(0x418088) + 8);
     hook_call(0x44a8c8, set_light_dark_path, 5);
@@ -12796,12 +12791,12 @@ static void __declspec(naked) lenient_alchemy(void)
 // Let a GM blaster shot have a small chance to eradicate the target,
 // killing it without leaving a corpse.  For testing purposes,
 // blasters of Carnage (unobtainable) always trigger this effect.
-// Called from bow_temp_damage() above.
+// Called from add_to_damage() above.
 static void __stdcall blaster_eradicate(struct player *player,
                                         struct map_monster *monster,
                                         struct map_object *projectile)
 {
-    if (projectile->spell_type != SPL_BLASTER)
+    if (!projectile || projectile->spell_type != SPL_BLASTER)
         return;
     int skill = get_skill(player, SKILL_BLASTER);
     if (skill > SKILL_GM && (skill & SKILL_MASK) > random() % 200

@@ -162,9 +162,9 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 160	itemrobp	Pilgrim's Robe	50	Armor	Misc	1	0	2	1	Robe	29	0	0	0	0	"Simply sewn from rough fabric, such clothing can be commonly seen on pilgrims and other wayfarers.  The robe will protect from cold and weather, but is almost useless in combat.  At least it doesn't slow down the wearer, unlike actual armor."		
 161	itemrobm	Martial Robe	250	Armor	Misc	1	1	2	8	Robe	29	0	0	0	0	"Robes like these are often worn by monks and other martial arts practitioners.  Although the decorated fabric barely protects from blows, it doesn't hinder dodging them, either.  Some robes also have a useful enchantment."		
 162	itemrobw	Wizard's Robe	450	Armor	Misc	1	2	2	16	Robe	29	0	0	0	0	"This fashion is popular among Bracadian wizards.  Such robes have both ceremonial and practical purpose: the clothing is easily enchanted, especially with magic-boosting charms, and many wizards prefer these enchantments to the dubious protection of leather."		
-163	null	_item163	0	0	0	0	0	0	0	_item163	0	0	0	0	0	Description here.
-164	null	_item164	0	0	0	0	0	0	0	_item164	0	0	0	0	0	Description here.
-165	null	_item165	0	0	0	0	0	0	0	_item165	0	0	0	0	0	Description here.
+163	itemtk1	Throwing Knives	40	Missile	Dagger	1d4	0	4	1	Knives	5	0	0	0	-85	A case of throwing knives.  Less range and damage than arrows, but quicker to draw and easier to master.  To repair spent knives, Ctrl-click on the item.		
+164	itemtk2	Living Wood Knives	200	Missile	Dagger	1d4	3	4	6	Knives	5	0	0	0	-85	Enchanted throwing knives of elvish make.  New knives will regrow over time to replace the lost ones, but this magic might be suppressed in the presence of other strong enchantments.  To repair spent knives, Ctrl-click on the item.		
+165	itemtk3	Boomerang Knife	400	Missile	Dagger	1d4	6	4	12	Knife	5	0	0	0	-85	A splendid throwing knife made by Bracadian smiths.  Thanks to a telekinesis enchantment, the knife will return to its owner after being thrown.		
 166	null	_item166	0	0	0	0	0	0	0	_item166	0	0	0	0	0	Description here.
 167	null	_item167	0	0	0	0	0	0	0	_item167	0	0	0	0	0	Description here.
 168	null	_item168	0	0	0	0	0	0	0	_item168	0	0	0	0	0	Description here.
@@ -595,7 +595,7 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 593	null	_artifact593	0	0	0	0	0	0	0	_artifact593	0	0	0	0	0	Description here.
 594	null	_artifact594	0	0	0	0	0	0	0	_artifact594	0	0	0	0	0	Description here.
 595	null	_artifact595	0	0	0	0	0	0	0	_artifact595	0	0	0	0	0	Description here.
-596	null	_artifact596	0	0	0	0	0	0	0	_artifact596	0	0	0	0	0	Description here.
+596	itemtk4	Vampire Knives	2500	Missile	Dagger	1d4	7	Special	0	Knives	5	of Darkness	0	0	-85	A set of crimson throwing knives found in a vampire crypt.  The blades drain life from their victims, and a new knife appears after every throw, allowing for a constant barrage of attacks.  Using this weapon skillfully, it's almost impossible to die in battle.		
 597	item007	The DeathBlade	666	Weapon2	Sword	4d5	250	Special	0	Two-Handed Sword	2	of Darkness	0	16	142	For testing only!
 598	itemrobe	Robe of the Archmagister	2500	Armor	Misc	1	3	Special	0	Robe	29	of Water Magic	0	0	0	"This ceremonial robe is used by the Archmagister of the School of Sorcery (currently Thomas Grey) on the official occasions and during certain magic rituals.  To assist in the latter, the fabric is enchanted to improve spells of the Water domain."		
 599	itemstar	Staff of the Archmagister	2500	Weapon2	Staff	2d4	8	Special	0	Staff	17	of Air Magic	0	6	95	"This ceremonial staff is wielded by the Archmagister of the School of Sorcery (currently Thomas Grey) on the official occasions and during certain magic rituals.  To assist in the latter, the orb on top of the staff is enchanted to improve spells of the Air domain."

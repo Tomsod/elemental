@@ -227,6 +227,7 @@ enum new_strings
     STR_PRACTICE_2,
     STR_PRACTICE_3,
     STR_OPEN_RIGHT_BAG,
+    STR_KNIVES,
     NEW_STRING_COUNT
 };
 
@@ -409,7 +410,9 @@ enum items
     PILGRIMS_ROBE = 160,
     MARTIAL_ROBE = 161,
     WIZARDS_ROBE = 162,
-    LAST_PREFIX = 162, // last enchantable item
+    THROWING_KNIVES = 163,
+    LIVING_WOOD_KNIVES = 164,
+    LAST_PREFIX = 165, // last enchantable item
     FIRST_REAGENT = 200,
     LAST_REAGENT = 214, // not counting gray
     FIRST_GRAY_REAGENT = 215,
@@ -537,6 +540,8 @@ struct __attribute__((packed)) items_txt_item
 enum face_animations
 {
     ANIM_ID_FAIL = 9,
+    ANIM_REPAIR = 10,
+    ANIM_REPAIR_FAIL = 11,
     ANIM_MIX_POTION = 16,
     ANIM_SMILE = 36,
     ANIM_SHAKE_HEAD = 67,
@@ -639,6 +644,7 @@ struct __attribute__((packed)) dialog_param
 
 enum objlist
 {
+    OBJ_ARROW = 545,
     OBJ_FIREARROW = 550,
     OBJ_LASER = 555,
     OBJ_ACID_BURST = 3060,
@@ -652,6 +658,7 @@ enum objlist
     OBJ_NOXIOUS_EXPLOSION = 12031,
     OBJ_THROWN_HOLY_WATER = 12040,
     OBJ_HOLY_EXPLOSION = 12041,
+    OBJ_KNIFE = 12050,
 };
 
 #define ELEMENT(spell) byte(0x5cbecc + (spell) * 0x24)
@@ -721,6 +728,7 @@ enum spells
     SPL_PAIN_REFLECTION = 95,
     LAST_REAL_SPELL = 99,
     SPL_ARROW = 100, // pseudo-spell for bows
+    SPL_KNIFE = 101, // for throwing knives (my addition)
     SPL_BLASTER = 102, // ditto for blasters
     SPL_FATE = 103, // was 47
     // new pseudo-spells
@@ -806,6 +814,7 @@ struct __attribute__((packed)) mapstats_item
 
 enum profession
 {
+    NPC_SMITH = 1,
     NPC_PORTER = 29,
     NPC_QUARTER_MASTER = 30,
     NPC_PIRATE = 45,
@@ -1128,6 +1137,7 @@ static void __fastcall (*process_event)(int event, int unknown, int unknown2)
     = (funcptr_t) 0x44686d;
 static void __thiscall (*evt_sub)(void *player, int what, int amount)
     = (funcptr_t) 0x44b9f0;
+static int __thiscall (*have_npc_hired)(int npc) = (funcptr_t) 0x476399;
 
 //---------------------------------------------------------------------------//
 
@@ -2270,9 +2280,10 @@ static void __declspec(naked) temp_bane_melee_2(void)
       }
 }
 
-static char enchant_buffer[100];
+// Additional item info paragraphs.
+static char enchant_buffer[100], charge_buffer[100];
 
-// Print the temp enchantment description.
+// Print the temp enchantment description and/or remaining knives.
 static void __declspec(naked) display_temp_enchant(void)
 {
     asm
@@ -2282,11 +2293,23 @@ static void __declspec(naked) display_temp_enchant(void)
         dec dword ptr [ebp-24]
         jz quit
         cmp dword ptr [ebp-24], 1
+        jne not_knives
+        mov ecx, dword ptr [ebp-4]
+        cmp dword ptr [ecx], THROWING_KNIVES
+        je knives
+        cmp dword ptr [ecx], LIVING_WOOD_KNIVES
+        jne skip
+        knives:
+        mov dword ptr [ebp-8], offset charge_buffer
+        jmp pass
+        not_knives:
+        cmp dword ptr [ebp-24], 2
         jne quit
         mov ecx, dword ptr [ebp-4]
         cmp dword ptr [ecx+4], TEMP_ENCH_MARKER
         jne skip
         mov dword ptr [ebp-8], offset enchant_buffer
+        pass:
         cmp ebx, 1
         quit:
         ret
@@ -2297,8 +2320,12 @@ static void __declspec(naked) display_temp_enchant(void)
 STATIC struct spcitem spcitems[SPC_COUNT];
 FIX(spcitems);
 
-// Adjust description screen height to fit the new line.
-// Also compose the line itself while we're at it.
+// Formats for displaying wand charges or knives.
+static const char nonzero_charges[] = "%s: %u/%u";
+static const char zero_charges[] = "\f%05d%s: 0/%u";
+
+// Adjust description screen height to fit the new lines.
+// Also compose the lines themselves while we're at it.
 static void __declspec(naked) temp_enchant_height(void)
 {
     asm
@@ -2308,6 +2335,47 @@ static void __declspec(naked) temp_enchant_height(void)
         dec dword ptr [ebp-24]
         jz quit
         cmp dword ptr [ebp-24], 1
+        jne not_knives
+        mov ecx, dword ptr [ebp-4]
+        cmp dword ptr [ecx], THROWING_KNIVES
+        je knives
+        cmp dword ptr [ecx], LIVING_WOOD_KNIVES
+        jne skip
+        knives:
+        movzx eax, byte ptr [ecx+25] ; max charges
+        push eax
+        mov edx, dword ptr [ecx+16] ; charges
+        test edx, edx
+        jz zero
+        push edx
+        zero:
+        push dword ptr [new_strings+STR_KNIVES*4]
+        jnz nonzero
+        push dword ptr [colors+CLR_RED*4]
+#ifdef __clang__
+        ; for some reason clang crashes if I try to push offsets directly
+        mov eax, offset zero_charges
+        jmp buffer
+        nonzero:
+        mov eax, offset nonzero_charges
+        buffer:
+        push eax
+        mov eax, offset charge_buffer
+        push eax
+#else
+        push offset zero_charges
+        jmp buffer
+        nonzero:
+        push offset nonzero_charges
+        buffer:
+        push offset charge_buffer
+#endif
+        call dword ptr ds:sprintf
+        add esp, 20
+        mov dword ptr [ebp-12], offset charge_buffer
+        jmp pass
+        not_knives:
+        cmp dword ptr [ebp-24], 2
         jne quit
         mov ecx, dword ptr [ebp-4]
         cmp dword ptr [ecx+4], TEMP_ENCH_MARKER
@@ -2318,12 +2386,16 @@ static void __declspec(naked) temp_enchant_height(void)
         push dword ptr [eax]
         push dword ptr [new_strings+STR_TEMPORARY*4]
         push 0x4e2e80
-        ; for some reason clang crashes if I try to push offsets directly
+#ifdef __clang__
         mov eax, offset enchant_buffer
         push eax
+#else
+        push offset enchant_buffer
+#endif
         call dword ptr ds:sprintf
         add esp, 16
         mov dword ptr [ebp-12], offset enchant_buffer
+        pass:
         cmp ebx, 1
         quit:
         ret
@@ -2609,9 +2681,9 @@ static inline void temp_enchants(void)
     hook_call(0x48cffa, temp_bane_melee_2, 5);
     patch_word(0x48d003, 0xce01); // add esi, ecx
     hook_call(0x41e025, display_temp_enchant, 7);
-    patch_dword(0x41dfe5, 4); // one more cycle
+    patch_dword(0x41dfe5, 5); // two more cycles
     hook_call(0x41de8d, temp_enchant_height, 7);
-    patch_dword(0x41de37, 4); // ditto
+    patch_dword(0x41de37, 5); // ditto
     hook_call(0x429122, fire_aura, 15);
     erase_code(0x4290f7, 10); // remove old enchantment checks
     erase_code(0x42901a, 12); // make GM fall through to M WRT duration
@@ -3025,7 +3097,11 @@ static void __thiscall brew_if_possible(struct player *player, int potion)
         show_face_animation(player, ANIM_MIX_POTION, 0); // successful brew
 }
 
+//Defined below.
+static void __thiscall repair_knives(struct player *, struct item *);
+
 // Hooks in the backpack code to implement autobrew on ctrl-click.
+// Also calls the knife repair/recharge function.
 static void __declspec(naked) autobrew(void)
 {
     asm
@@ -3040,6 +3116,10 @@ static void __declspec(naked) autobrew(void)
         ret
         ctrl:
         mov eax, dword ptr [esi]
+        cmp eax, THROWING_KNIVES
+        je knives
+        cmp eax, LIVING_WOOD_KNIVES
+        je knives
         cmp eax, CATALYST
         jb quit
         cmp eax, LAST_POTION
@@ -3052,6 +3132,12 @@ static void __declspec(naked) autobrew(void)
         mov ecx, ebx
         push eax
         call brew_if_possible
+        jmp skip
+        knives:
+        mov ecx, ebx
+        push esi
+        call repair_knives
+        skip:
         push 0x4220e0
         ret 8
       }
@@ -3757,6 +3843,7 @@ static void __declspec(naked) cast_potions_sound(void)
 }
 
 // Redirect the explode action for the new potions to fireball.
+// Also here: treat knives like arrows.
 static void __declspec(naked) explode_potions_jump(void)
 {
     asm
@@ -3771,7 +3858,11 @@ static void __declspec(naked) explode_potions_jump(void)
         je potion
         cmp cx, OBJ_THROWN_HOLY_WATER 
         je potion
-        mov eax, OBJ_ACID_BURST
+        cmp cx, OBJ_KNIFE
+        jne not_knife
+        mov cx, OBJ_ARROW
+        not_knife:
+        mov eax, OBJ_ACID_BURST ; replaced code
         ret
         potion:
         push 0x46c887
@@ -5112,6 +5203,8 @@ static void __declspec(naked) undead_slaying_element(void)
         test ebx, ebx ; projectile
         jz prepare
         cmp dword ptr [ebx+72], SPL_ARROW
+        je prepare
+        cmp dword ptr [ebx+72], SPL_KNIFE
         jne skip
         prepare:
         push ebx ; backup
@@ -7012,28 +7105,36 @@ static void __declspec(naked) check_skill_hook(void)
       }
 }
 
+// Defined below.
+static void init_knife_charges(void);
+
 // Initialise specitems spawned through Add gamescript command.
 // Necessary for the new Barrow Knife.
+// Also initialise throwing knife charges, just in case.
 static void __declspec(naked) evt_add_specitem(void)
 {
     asm
       {
-        push eax
-        push eax
+        mov esi, eax
+        call init_knife_charges
+        push esi
         mov ecx, ITEMS_TXT_ADDR - 4
         call dword ptr ds:set_specitem_bonus
-        pop eax
+        mov eax, esi ; restore
         mov ecx, MOUSE_THIS_ADDR ; replaced code
         ret
       }
 }
 
 // Initalise pickpocketed specitems, e.g. Lady Carmine's Dagger.
+// Also initialise throwing knife charges.
 static void __declspec(naked) pickpocket_specitem(void)
 {
     asm
       {
         lea esi, [ebp-52] ; replaced code
+        call init_knife_charges
+        mov ebx, dword ptr [esi] ; restore
         push esi
         mov ecx, ITEMS_TXT_ADDR - 4
         call dword ptr ds:set_specitem_bonus
@@ -8072,7 +8173,10 @@ static void __declspec(naked) cursed_weapon(void)
         test ebx, ebx
         jz melee
         cmp dword ptr [ebx+72], SPL_ARROW
+        je bow
+        cmp dword ptr [ebx+72], SPL_KNIFE
         jne fail
+        bow:
         mov eax, dword ptr [edi+0x1950] ; bow slot
         xor ecx, ecx
         jmp check
@@ -8969,13 +9073,21 @@ static void __declspec(naked) check_dragon_wand(void)
 // 30 minutes in game ticks, used as a division constant.
 static const int half_hour = 30 * 60 * 128 / 30;
 
+// Defined below.
+static void regen_living_knives(void);
+
 // Restore Dragon's Wrath charges at the rate of 2/hour.
+// Also here: regen the +3 throwing knives in a similar way.
 static void __declspec(naked) regen_dragon_charges(void)
 {
     asm
       {
         cmp dword ptr [ecx], DRAGONS_WRATH
         je dragon
+        cmp dword ptr [ecx], LIVING_WOOD_KNIVES
+        jne skip
+        call regen_living_knives
+        skip:
         mov eax, dword ptr [ecx+20] ; replaced code
         test al, 8 ; replaced code
         ret
@@ -10174,15 +10286,48 @@ static void __declspec(naked) check_missile_skill(void)
 }
 
 // Do not add GM Bow damage if we're using blasters.
+// For throwing knives, add Dagger skill boni and half Might.
 static void __declspec(naked) check_missile_skill_2(void)
 {
     asm
       {
-        cmp dword ptr [ebp-8], SKILL_BLASTER
-        je quit
+        cmp dword ptr [ebp-8], SKILL_DAGGER
+        je dagger
+        cmp dword ptr [ebp-8], SKILL_BOW
+        jne skip
         mov ax, word ptr [edi] ; replaced code
         test ax, ax ; replaced code
-        quit:
+        ret
+        dagger:
+        mov ecx, eax
+        push SKILL_DAGGER
+        call dword ptr ds:get_skill
+        cmp eax, SKILL_MASTER
+        jb no_skill
+        mov ebx, eax
+        call dword ptr ds:random
+        xor edx, edx
+        mov ecx, 100
+        div ecx
+        mov eax, ebx
+        and eax, SKILL_MASK
+        cmp eax, edx
+        jbe no_crit
+        lea esi, [esi+esi*2]
+        no_crit:
+        cmp ebx, SKILL_GM
+        jb no_skill
+        and ebx, SKILL_MASK
+        add esi, ebx
+        no_skill:
+        lea ecx, [edi-0x112] ; PC
+        call dword ptr ds:get_might
+        push eax
+        call dword ptr ds:get_effective_stat
+        sar eax, 1
+        add esi, eax
+        skip:
+        xor eax, eax ; set zf
         ret
       }
 }
@@ -10279,7 +10424,7 @@ static void __declspec(naked) allow_bows_in_melee(void)
 // 0 if no blaster, 1 to draw later, 2 if drawing now.
 static int draw_blaster;
 
-// Do not draw equipped small blaster behind the body.
+// Do not draw equipped small blaster or throwing knives behind the body.
 static void __declspec(naked) postpone_drawing_blaster(void)
 {
     asm
@@ -10289,8 +10434,14 @@ static void __declspec(naked) postpone_drawing_blaster(void)
         test eax, eax ; replaced code
         jz quit
         lea edx, [eax+eax*8]
-        cmp dword ptr [ebx+0x214+edx*4-36], BLASTER
+        mov edx, dword ptr [ebx+0x214+edx*4-36]
+        cmp edx, BLASTER
+        je skip
+        lea edx, [edx+edx*2]
+        shl edx, 4
+        cmp byte ptr [ITEMS_TXT_ADDR+edx+29], SKILL_DAGGER
         jne quit
+        skip:
         mov byte ptr [draw_blaster], 1
         ; we will skip drawing it now because zf == 1
         quit:
@@ -10298,7 +10449,7 @@ static void __declspec(naked) postpone_drawing_blaster(void)
       }
 }
 
-// Instead, draw it between body and a belt.
+// Instead, draw them between body and a belt.
 static void __declspec(naked) draw_blaster_behind_belt(void)
 {
     asm
@@ -10315,7 +10466,7 @@ static void __declspec(naked) draw_blaster_behind_belt(void)
       }
 }
 
-// After drawing the blaster out of order, return to the belt code.
+// After drawing the blaster/knives out of order, return to the belt code.
 static void __declspec(naked) return_from_drawing_blaster(void)
 {
     asm
@@ -10598,28 +10749,33 @@ static void __declspec(naked) empty_wand_chunk(void)
       }
 }
 
-// Color equipped empty wands red, as if broken.
-// Make sure to check if Dragon's Wrath had regained some charges.
+// Color equipped empty wands and low-tier knives red, as if broken.
+// Make sure to check if the regenerating ones have regained some charges.
 static void __declspec(naked) red_empty_wands(void)
 {
     asm
       {
         and ecx, 0xf0 ; replaced code
         jnz quit
+        cmp dword ptr [edi], LIVING_WOOD_KNIVES
+        je regen
         cmp dword ptr [edi], DRAGONS_WRATH
         jne not_dragon
+        regen:
         mov ecx, edi
         push eax
         call regen_dragon_charges ; still usable
         pop eax ; restore
         xor ecx, ecx
-        jmp wand
+        jmp charged
         not_dragon:
+        cmp dword ptr [edi], THROWING_KNIVES
+        je charged
         cmp dword ptr [edi], FIRST_WAND
         jb not_it
         cmp dword ptr [edi], LAST_WAND
         ja not_it
-        wand:
+        charged:
         cmp dword ptr [edi+16], ecx ; charges vs. 0
         jnz not_it
         or al, 2 ; broken bit (for display only)
@@ -10629,9 +10785,6 @@ static void __declspec(naked) red_empty_wands(void)
         ret
       }
 }
-
-// Displays (zero) charges; the string is colored red.
-static const char red_charges[] = "\f%05d%s: 0/%u";
 
 // Display current and max wand charges, even if it's empty.
 static void __declspec(naked) display_wand_charges(void)
@@ -10651,7 +10804,7 @@ static void __declspec(naked) display_wand_charges(void)
         jnz quit
         push dword ptr [GLOBAL_TXT+464*4]
         push dword ptr [colors+CLR_RED*4]
-        mov eax, offset red_charges
+        mov eax, offset zero_charges
         push eax
         add edx, 14 ; skip over pushes
         quit:
@@ -10756,15 +10909,19 @@ static void __declspec(naked) preused_wands_5(void)
 }
 
 // Shops are the exception: wands are always fully charged there.
+// Same for throwing knives.
 static void __declspec(naked) charge_shop_wands_common(void)
 {
     asm
       {
         mov dword ptr [ecx+20], 1 ; replaced code (item flags)
+        cmp dword ptr [ecx], THROWING_KNIVES
+        je recharge
         cmp dword ptr [ecx], FIRST_WAND
         jb quit
         cmp dword ptr [ecx], LAST_WAND
         ja quit
+        recharge:
         movzx edx, byte ptr [ecx+25] ; max charges
         mov dword ptr [ecx+16], edx ; charges
         quit:
@@ -10937,7 +11094,7 @@ static inline void wand_charges(void)
     erase_code(0x42f07d, 12); // shooting at nothing
     hook_call(0x43d0aa, red_empty_wands, 6);
     hook_call(0x41de08, display_wand_charges, 5);
-    patch_pointer(0x41de17, "%s: %u/%u"); // new format
+    patch_pointer(0x41de17, nonzero_charges); // new format
     patch_byte(0x41de29, 20); // call fixup
     hook_call(0x456a78, preused_wands, 6);
     hook_call(0x44b357, preused_wands_2, 6);
@@ -13227,8 +13384,7 @@ static void __declspec(naked) npcs_cant_repair_blasters(void)
         jz skip
         cmp eax, BLASTER_RIFLE
         jz skip
-        push 0x476399 ; hireling check func
-        ret
+        jmp dword ptr ds:have_npc_hired ; replaced call
         skip:
         xor eax, eax
         ret
@@ -13957,8 +14113,7 @@ static void __declspec(naked) master_spell_skill(void)
 }
 
 // Called when killing a monster.  For bow, check for GM quest completion.
-// For melee weapons, advance kill counters.
-// TODO: will also need to track throwing knife kills
+// For melee weapons (and throwing knives), advance kill counters.
 static void __stdcall kill_checks(struct player *player,
                                   struct map_monster *monster,
                                   struct map_object *proj)
@@ -13983,6 +14138,8 @@ static void __stdcall kill_checks(struct player *player,
             bow_kill_player = new_player;
             bow_kill_time = new_time;
           }
+        else if (proj->spell_type == SPL_KNIFE)
+            elemdata.training[player-PARTY][SKILL_DAGGER]++;
       }
     else
       {
@@ -14585,6 +14742,380 @@ static inline void new_enchant_item_types(void)
     erase_code(0x42b2bf, 13);
 }
 
+// For the sprite filename.
+static char knife_buffer[10];
+static const char knife_equipped_suffix[] = "e";
+
+// Knives have a separate paperdoll sprite.
+static void __declspec(naked) equipped_knife_sprite(void)
+{
+    asm
+      {
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_DAGGER
+        je knife
+        pop edx
+        push dword ptr [ITEMS_TXT_ADDR+eax] ; replaced code
+        jmp edx
+        knife:
+        push eax ; preserve
+        push ecx ; ditto
+        push dword ptr [ITEMS_TXT_ADDR+eax] ; inventory sprite name
+#ifdef __clang__
+        mov eax, offset knife_buffer
+        push eax
+#else
+        push offset knife_buffer
+#endif
+        call dword ptr ds:strcpy_ptr
+#ifdef __clang__
+        mov edx, offset knife_equipped_suffix
+        mov eax, offset knife_buffer
+        push edx
+        push eax
+#else
+        push offset knife_equipped_suffix
+        push offset knife_buffer
+#endif
+        call dword ptr ds:strcat_ptr
+        add esp, 16
+        pop ecx ; restore
+        pop eax ; this too
+#ifdef __clang__
+        mov edx, offset knife_buffer
+        xchg edx, dword ptr [esp]
+#else
+        pop edx
+        push offset knife_buffer
+#endif
+        jmp edx
+      }
+}
+
+// Let the Dagger skill affect throwing knife to-hit.
+static void __declspec(naked) knife_skill_accuracy(void)
+{
+    asm
+      {
+        cmp edi, SKILL_DAGGER
+        jne skip
+        cmp dword ptr [ebp-4], SLOT_MISSILE
+        je quit ; same as bow
+        skip:
+        sub edi, SKILL_BOW ; replaced code
+        quit:
+        ret
+      }
+}
+
+// Let GM Dagger and Might increase throwing knife damage.
+// This hook is for damage display purposes.
+static void __declspec(naked) knife_displayed_damage(void)
+{
+    asm
+      {
+        mov eax, dword ptr [esi+0x1948+SLOT_MISSILE*4]
+        test eax, eax
+        jz quit
+        lea eax, [eax+eax*8]
+        test byte ptr [esi+0x214+eax*4-36+20], IFLAGS_BROKEN
+        jnz skip
+        mov eax, dword ptr [esi+0x214+eax*4-36]
+        lea eax, [eax+eax*2]
+        shl eax, 4
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_DAGGER
+        je dagger
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_BOW
+        jne skip
+        mov ax, word ptr [esi+0x108+SKILL_BOW*2] ; replaced code
+        test ax, ax ; ditto
+        quit:
+        ret
+        dagger:
+        mov ecx, esi
+        call dword ptr ds:get_might
+        push eax
+        call dword ptr ds:get_effective_stat
+        sar eax, 1
+        add edi, eax
+        mov ecx, esi
+        push SKILL_DAGGER
+        call dword ptr ds:get_skill
+        cmp eax, SKILL_GM
+        jb skip
+        and eax, SKILL_MASK
+        add edi, eax
+        skip:
+        xor eax, eax ; set zf
+        ret
+      }
+}
+
+// Appropriate the unused spell 101 for throwing knives.
+static void __declspec(naked) knife_spell(void)
+{
+    asm
+      {
+        cmp ecx, SPL_ARROW
+        jne quit
+        mov eax, dword ptr [esi+0x1948+SLOT_MISSILE*4]
+        lea eax, [eax+eax*8]
+        mov eax, dword ptr [esi+0x214+eax*4-36]
+        lea eax, [eax+eax*2]
+        shl eax, 4
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_DAGGER
+        jne quit
+        mov ecx, SPL_KNIFE
+        mov dword ptr [ebp-20], 2 ; sound flag
+        quit:
+        jmp dword ptr ds:aim_spell ; replaced call
+      }
+}
+
+// Give throwing knives the dagger swing sound.
+// TODO: maybe something more appropriate?
+static void __declspec(naked) knife_sound(void)
+{
+    asm
+      {
+        cmp dword ptr [ebp-20], 2 ; sound flag
+        jae knife
+        mov dword ptr [ebp-4], SKILL_BOW ; replaced code
+        ret
+        knife:
+        mov dword ptr [ebp-4], SKILL_DAGGER ; skill for sound purposes
+        ret
+      }
+}
+
+// Avoid throwing two knives with Master Bow.
+static void __declspec(naked) no_knife_double_shot(void)
+{
+    asm
+      {
+        xor ecx, ecx
+        cmp eax, SPL_ARROW - 1
+        cmove cx, word ptr [esi+0x108+SKILL_BOW*2] ; replaced movzx
+        ret
+      }
+}
+
+// Like thrown potions, throwing knife velocity depends on Might.
+// TODO: the multiplier could be tweaked later
+static void __declspec(naked) knife_velocity(void)
+{
+    asm
+      {
+        movzx eax, word ptr [eax+ecx+48] ; replaced code
+        cmp word ptr [ebx], SPL_KNIFE
+        jne arrow
+        push eax
+        push edx
+        mov ecx, dword ptr [ebp-32]
+        call dword ptr ds:get_might
+        push eax
+        call dword ptr ds:get_effective_stat
+        imul eax, 150
+        pop edx
+        pop ecx
+        add eax, ecx
+        arrow:
+        ret
+      }
+}
+
+// The +0 and +3 knives start with 50-100 and 40-80 max charges
+// respectively; like wands, +0 knives will be pre-used.
+// For the +3 knives we instead set knife regeneration time.
+// Also called from evt_add_specitem() and pickpocket_specitem() above.
+static void __declspec(naked) init_knife_charges(void)
+{
+    asm
+      {
+        mov eax, dword ptr [esi] ; replaced code
+        mov ebx, 51
+        cmp eax, THROWING_KNIVES
+        je charges
+        mov ebx, 41
+        cmp eax, LIVING_WOOD_KNIVES
+        jne quit
+        mov eax, dword ptr [CURRENT_TIME_ADDR]
+        mov dword ptr [esi+28], eax
+        mov eax, dword ptr [CURRENT_TIME_ADDR+4]
+        mov dword ptr [esi+32], eax
+        charges:
+        call dword ptr ds:random
+        xor edx, edx
+        div ebx
+        add ebx, edx
+        dec ebx
+        mov byte ptr [esi+25], bl ; max charges
+        mov dword ptr [esi+16], ebx ; charges
+        cmp dword ptr [esi], LIVING_WOOD_KNIVES
+        je full
+        shr ebx, 1
+        call dword ptr ds:random
+        xor edx, edx
+        div ebx
+        sub dword ptr [esi+16], edx
+        full:
+        mov eax, dword ptr [esi] ; restore
+        quit:
+        lea eax, [eax+eax*2] ; replaced code
+        ret
+      }
+}
+
+// Call the above code from some other item-generating function.
+static void __declspec(naked) also_init_knife_charges(void)
+{
+    asm
+      {
+        mov esi, eax
+        call init_knife_charges
+        mov eax, esi ; restore
+        mov ebx, 0xdf1a68 ; ditto
+        mov ecx, MOUSE_THIS_ADDR ; replaced code
+        ret
+      }
+}
+
+// Ditto, for the corpse-looting code.
+static void __declspec(naked) init_looted_knife_charges(void)
+{
+    asm
+      {
+        push ebx
+        mov esi, eax
+        call init_knife_charges
+        mov eax, esi ; restore
+        pop ebx ; ditto
+        mov esi, MOUSE_THIS_ADDR ; replaced code
+        ret
+      }
+}
+
+// Spend one charge when throwing a knife; do not fire at 0 charges.
+static void __declspec(naked) use_knife_charge(void)
+{
+    asm
+      {
+        lea ecx, [esi+0x214+eax*4-36] ; missile weapon
+        test byte ptr [ecx+20], IFLAGS_BROKEN ; replaced code, almost
+        jnz quit
+        cmp dword ptr [ecx], THROWING_KNIVES
+        je knives
+        cmp dword ptr [ecx], LIVING_WOOD_KNIVES
+        jne skip
+        call regen_living_knives ; update charges
+        knives:
+        cmp dword ptr [ecx+16], 0 ; charges
+        jz fail
+        dec dword ptr [ecx+16]
+        skip:
+        xor eax, eax ; set zf
+        ret
+        fail:
+        test esi, esi ; clear zf
+        quit:
+        ret
+      }
+}
+
+// Repair (some) knives on a Ctrl-click.  Called from autobrew() above.
+static void __thiscall repair_knives(struct player *player, struct item *knife)
+{
+    int spent = knife->max_charges - knife->charges;
+    if (!spent)
+        return;
+    int skill = get_skill(player, SKILL_REPAIR);
+    int percent = skill & SKILL_MASK;
+    // same % as recharge item, but with shifted mastery
+    if (skill >= SKILL_GM)
+        percent = 100;
+    else if (skill >= SKILL_MASTER)
+        percent += 80;
+    else if (skill >= SKILL_EXPERT)
+        percent += 70;
+    else if (skill > 0)
+        percent += 50;
+    if (percent < 80 && have_npc_hired(NPC_SMITH))
+        percent = 80;
+    int repaired = spent * percent / 100;
+    if (!repaired)
+      {
+        show_face_animation(player, ANIM_REPAIR_FAIL, 0);
+        return;
+      }
+    if (percent >= 100)
+        knife->charges = knife->max_charges;
+    else
+      {
+        knife->charges += repaired;
+        knife->max_charges = knife->charges;
+      }
+    show_face_animation(player, ANIM_REPAIR, 0);
+}
+
+// 5 minutes in game ticks, used as a division constant.
+static const int five_minutes = 5 * 60 * 128 / 30;
+
+// Restore one +3 knife every 5 minutes if no temp enchant present.
+// Called from use_knife_charge() and also regen_dragon_charges() above.
+// TODO: this will cut charges to max if above -- is this ok?
+static void __declspec(naked) regen_living_knives(void)
+{
+    asm
+      {
+        mov eax, dword ptr [CURRENT_TIME_ADDR]
+        mov edx, dword ptr [CURRENT_TIME_ADDR+4]
+        sub eax, dword ptr [ecx+28] ; recharge timer low
+        sbb edx, dword ptr [ecx+32] ; recharge timer high
+        jb quit
+        div dword ptr [five_minutes]
+        test eax, eax
+        jz quit
+        add dword ptr [ecx+16], eax ; charges
+        movzx eax, byte ptr [ecx+25] ; max charges
+        cmp dword ptr [ecx+16], eax
+        jbe ok
+        mov dword ptr [ecx+16], eax
+        ok:
+        mov eax, dword ptr [CURRENT_TIME_ADDR]
+        sub eax, edx ; set timer to remainder
+        mov edx, dword ptr [CURRENT_TIME_ADDR+4]
+        sbb edx, 0
+        mov dword ptr [ecx+28], eax
+        mov dword ptr [ecx+32], edx
+        quit:
+        ret
+      }
+}
+
+// Implement a dagger-skill alternative to bows.
+static inline void throwing_knives(void)
+{
+    // knives drawn under belt in postpone_drawing_blaster() above
+    hook_call(0x43d07b, equipped_knife_sprite, 6);
+    hook_call(0x48fcd6, knife_skill_accuracy, 8);
+    hook_call(0x48d138, knife_displayed_damage, 10); // min damage
+    hook_call(0x48d1a5, knife_displayed_damage, 10); // max damage
+    // actual damage is in check_missile_skill_2() above
+    hook_call(0x42ef0b, knife_spell, 5);
+    hook_call(0x42f017, knife_spell, 5);
+    hook_call(0x42eecf, knife_sound, 7);
+    hook_call(0x4280de, no_knife_double_shot, 7);
+    patch_dword(0x4e3aac + SPL_KNIFE * 4, OBJ_KNIFE); // projectile for knives
+    hook_call(0x428264, knife_velocity, 5);
+    // knives treated as arrows in explode_potions_jump() above
+    hook_jump(0x4396aa, (void *) 0x439652); // treat knives as arrows when hit
+    // knife count in temp_enchant_height() and display_temp_enchant() above
+    hook_call(0x456a2c, init_knife_charges, 5);
+    hook_call(0x415cce, also_init_knife_charges, 5);
+    hook_call(0x426b72, init_looted_knife_charges, 5);
+    // full charge in shops in charge_shop_wands_common() above
+    hook_call(0x42ecf9, use_knife_charge, 8);
+}
+
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
                     LPVOID const reserved)
 {
@@ -14623,6 +15154,7 @@ BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
         skill_changes();
         patch_compatibility();
         new_enchant_item_types();
+        throwing_knives();
       }
     return TRUE;
 }

@@ -161,3 +161,6 @@ ID	Name	Gender
 160	Мантия паломника	feminine
 161	Боевая мантия	feminine
 162	Мантия чародея	feminine
+163	Метательные ножи	plural
+164	Ножи из живого дерева	plural
+165	Нож-бумеранг	masculine

@@ -691,7 +691,7 @@ Global Text
 688	You don't have enough potion bottles!
 689	Bless Water %d Gold
 690	Always
-691	"Sorry, but I cannot recharge this %s.  Its magic is nearly drained."
+691	"Sorry, but I cannot restore even a single charge for this %s."
 692	"I can restore this %s to %d charges for only %d gold."
 693	Rating
 694	Base Value
@@ -716,3 +716,5 @@ Global Text
 713	"You only need a little more practice in %s, then you can be taught!"
 714	Open Right Bag
 715	Knives
+716	"Sorry, but I cannot repair even a single one of these %s."
+717	"I can repair these %s, yielding %d knives, for only %d gold."

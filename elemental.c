@@ -228,6 +228,8 @@ enum new_strings
     STR_PRACTICE_3,
     STR_OPEN_RIGHT_BAG,
     STR_KNIVES,
+    STR_CANNOT_KNIVES,
+    STR_REPAIR_KNIVES,
     NEW_STRING_COUNT
 };
 
@@ -1138,6 +1140,9 @@ static void __fastcall (*process_event)(int event, int unknown, int unknown2)
 static void __thiscall (*evt_sub)(void *player, int what, int amount)
     = (funcptr_t) 0x44b9f0;
 static int __thiscall (*have_npc_hired)(int npc) = (funcptr_t) 0x476399;
+static int __thiscall (*repair_price)(void *player, int item_value,
+                                      float shop_multiplier)
+    = (funcptr_t) 0x4b8126;
 
 //---------------------------------------------------------------------------//
 
@@ -3249,7 +3254,9 @@ static void __declspec(naked) pure_potions_power(void)
       }
 }
 
-static void wand_price(void); // defined below
+// Defined below.
+static void wand_price(void);
+static void knife_price(void);
 
 // Make the price of most potions variable.
 // Potion price is arranged so that at the typical potion powers
@@ -3276,6 +3283,10 @@ static void __declspec(naked) potion_price(void)
         cmp dword ptr [esi], LAST_WAND
         jbe wand_price
         not_wand:
+        cmp dword ptr [esi], THROWING_KNIVES
+        je knife_price
+        cmp dword ptr [esi], LIVING_WOOD_KNIVES
+        je knife_price
         xor edx, edx ; set zf
         ret
         potion:
@@ -7477,6 +7488,55 @@ static void __declspec(naked) personality_trading_bonus(void)
       }
 }
 
+// When using a recharge spell/potion, degrade
+// a portion of spent charges rather than of total charges.
+static void __declspec(naked) recharge_spent_charges_sub_spell(void)
+{
+    asm
+      {
+        sub eax, dword ptr [ecx+16] ; discount remaining charges
+        mov dword ptr [ebp-20], eax ; replaced code
+        fild dword ptr [ebp-20] ; replaced code
+        ret
+      }
+}
+
+// Second part of above.
+static void __declspec(naked) recharge_spent_charges_add_spell(void)
+{
+    asm
+      {
+        movzx eax, al ; replaced code
+        add eax, dword ptr [ecx+16] ; previous charges
+        mov byte ptr [ecx+25], al ; replaced code
+        ret
+      }
+}
+
+// Ditto, but for the recharge potion.
+static void __declspec(naked) recharge_spent_charges_sub_potion(void)
+{
+    asm
+      {
+        sub eax, dword ptr [esi+16] ; discount remaining charges
+        mov dword ptr [ebp-20], eax ; replaced code
+        fild dword ptr [ebp-20] ; replaced code
+        ret
+      }
+}
+
+// Second part of above.
+static void __declspec(naked) recharge_spent_charges_add_potion(void)
+{
+    asm
+      {
+        movzx eax, al ; replaced code
+        add eax, dword ptr [esi+16] ; previous charges
+        mov byte ptr [esi+25], al ; replaced code
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -7543,6 +7603,10 @@ static inline void misc_rules(void)
     erase_code(0x491207, 3); // ditto
     hook_call(0x49121b, personality_trading_bonus, 5);
     patch_byte(0x49124d, 0); // remove the old 7% merchant bonus
+    hook_call(0x42aa85, recharge_spent_charges_sub_spell, 6);
+    hook_call(0x42aa9a, recharge_spent_charges_add_spell, 6);
+    hook_call(0x4169bf, recharge_spent_charges_sub_potion, 6);
+    hook_call(0x4169d0, recharge_spent_charges_add_potion, 6);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -10966,29 +11030,32 @@ static void __declspec(naked) shop_recharge_dialog(void)
         test byte ptr [esi+20], 2 ; replaced code
         ret
         wand:
-        mov edx, dword ptr [0x507a40]
-        imul edx, dword ptr [edx+28], 52
-        fld dword ptr [0x5912d8+edx] ; store price multiplier
-        fmul dword ptr [shop_recharge_multiplier]
         movzx eax, byte ptr [esi+25] ; max charges
-        push eax
-        fimul dword ptr [esp]
-        fisttp dword ptr [esp]
-        pop ebx ; == charges after recharge
-        cmp ebx, 0
-        jbe worn_out
-        cmp ebx, dword ptr [esi+16] ; current charges
-        jg rechargeable
+        sub eax, dword ptr [esi+16] ; current charges
+        ja rechargeable
         xor ebx, ebx ; set zf
         ret
         rechargeable:
-        push dword ptr [0x5912d8+edx]
+        mov edx, dword ptr [0x507a40]
+        imul edx, dword ptr [edx+28], 52
+        fld dword ptr [0x5912d8+edx] ; store price multiplier
+        fld st(0)
+        fmul dword ptr [shop_recharge_multiplier]
+        push eax
+        fimul dword ptr [esp]
+        fisttp dword ptr [esp]
+        pop ebx ; == restored charges
+        cmp ebx, 0
+        jbe cannot
+        add ebx, dword ptr [esi+16] ; current charges
+        push 4
+        fimul dword ptr [esp]
+        fstp dword ptr [esp]
         mov ecx, edi
         call dword ptr ds:identify_price
-        shl eax, 2 ; 4x as expensive as identification
         push eax
         push ebx
-        worn_out:
+        cannot:
         mov ecx, esi
         call dword ptr ds:item_name
         mov ecx, offset name_buffer
@@ -11006,10 +11073,11 @@ static void __declspec(naked) shop_recharge_dialog(void)
         mov eax, offset recharge_buffer
         push eax
         call dword ptr ds:sprintf
-        add esp, 12
+        add esp, 20
         cmp ebx, 0
-        jbe no_adjust
-        add esp, 8
+        ja no_adjust
+        sub esp, 8
+        fstp st(0)
         no_adjust:
         mov eax, offset recharge_buffer
         xor ebx, ebx
@@ -11022,7 +11090,7 @@ static void __declspec(naked) shop_recharge_dialog(void)
 static int new_charges;
 
 // Actually clicking on the wand: check if we should recharge it,
-// and calculate price and new charges if so.
+// and calculate price and new charges if so.  Also here: repair knives.
 static void __declspec(naked) prepare_shop_recharge(void)
 {
     asm
@@ -11032,51 +11100,82 @@ static void __declspec(naked) prepare_shop_recharge(void)
         cmp dword ptr [esi], LAST_WAND
         jbe wand
         not_wand:
-        fstp st(0) ; discard store price multiplier
         mov dword ptr [ebp-8], eax ; replaced code
-        test byte ptr [esi+20], 2 ; replaced code
+        test byte ptr [esi+20], IFLAGS_BROKEN ; replaced code
+        jnz skip ; actual repair takes priority
+        cmp dword ptr [esi], THROWING_KNIVES
+        je knives
+        cmp dword ptr [esi], LIVING_WOOD_KNIVES
+        je knives
+        xor eax, eax ; set zf
+        skip:
+        fstp st(0) ; discard store price multiplier
         ret
+        knives:
+        fld1 ; 20% bonus
+        faddp
+        jmp multiply
         wand:
         fld st(0)
+        multiply:
         fmul dword ptr [shop_recharge_multiplier]
         movzx eax, byte ptr [esi+25] ; max charges
+        sub eax, dword ptr [esi+16] ; current charges
+        jbe cannot_recharge
         push eax
         fimul dword ptr [esp]
         fisttp dword ptr [esp]
-        pop eax ; == charges after recharge
+        pop eax ; == restored charges
         cmp eax, 0
-        jbe cannot_recharge
-        cmp eax, dword ptr [esi+16] ; current charges
-        jg recharge
+        ja recharge
         cannot_recharge:
+        cmp dword ptr [esi], THROWING_KNIVES
+        je quit
+        cmp dword ptr [esi], LIVING_WOOD_KNIVES
+        je quit
         fstp st(0) ; discard store price multiplier
         xor eax, eax ; set zf
+        quit:
         ret
         recharge:
+        add eax, dword ptr [esi+16]
         mov dword ptr [new_charges], eax
+        cmp dword ptr [esi], THROWING_KNIVES
+        je old_price
+        cmp dword ptr [esi], LIVING_WOOD_KNIVES
+        je old_price
         mov ecx, edi
-        sub esp, 4
-        fstp dword ptr [esp] ; store price multiplier
+        push 4
+        fimul dword ptr [esp]
+        fstp dword ptr [esp]
         call dword ptr ds:identify_price
-        shl eax, 2 ; 4x as expensive as identification
         mov dword ptr [ebp-8], eax ; store the price
-        ret ; zf should be unset now
+        old_price:
+        test esi, esi ; clear zf
+        ret
       }
 }
 
-// After passing all the checks, actually recharge the wand.
+// After passing all the checks, actually recharge the wand / repair knives.
 static void __declspec(naked) perform_shop_recharge(void)
 {
     asm
       {
         cmp dword ptr [esi], FIRST_WAND
-        jb not_wand
+        jb repair
         cmp dword ptr [esi], LAST_WAND
-        ja not_wand
+        jbe recharge
+        test byte ptr [esi+20], IFLAGS_BROKEN
+        jnz repair ; actual repair first
+        cmp dword ptr [esi], THROWING_KNIVES
+        je recharge
+        cmp dword ptr [esi], LIVING_WOOD_KNIVES
+        jne repair
+        recharge:
         mov eax, dword ptr [new_charges]
         mov dword ptr [esi+16], eax ; charges
         mov byte ptr [esi+25], al ; max charges
-        not_wand:
+        repair:
         mov eax, dword ptr [esi+20] ; replaced code
         mov ecx, edi ; replaced code
         ret
@@ -15091,6 +15190,104 @@ static void __declspec(naked) regen_living_knives(void)
       }
 }
 
+// Similar to wand recharge, weapon shops offer throwing knife repair.
+static void __declspec(naked) knife_repair_dialog(void)
+{
+    asm
+      {
+        lea esi, [edi+0x214+eax*4-36] ; replaced code
+        test byte ptr [esi+20], IFLAGS_BROKEN ; replaced code
+        jnz quit ; broken status takes priority
+        cmp dword ptr [esi], THROWING_KNIVES
+        je knives
+        cmp dword ptr [esi], LIVING_WOOD_KNIVES
+        je knives
+        skip:
+        xor ebx, ebx ; set zf
+        quit:
+        ret
+        knives:
+        movzx eax, byte ptr [esi+25] ; max charges
+        sub eax, dword ptr [esi+16] ; current charges
+        jbe skip
+        mov edx, dword ptr [0x507a40]
+        imul edx, dword ptr [edx+28], 52
+        fld dword ptr [0x5912d8+edx] ; store price multiplier
+        fld1 ; 20% bonus
+        fadd st(0), st(1)
+        fmul dword ptr [shop_recharge_multiplier]
+        push eax
+        fimul dword ptr [esp]
+        fisttp dword ptr [esp]
+        pop ebx ; == restored charges
+        cmp ebx, 0
+        jbe cannot
+        add ebx, dword ptr [esi+16] ; current charges
+        sub esp, 4
+        fstp dword ptr [esp]
+        mov ecx, esi
+        call dword ptr ds:item_value
+        push eax
+        mov ecx, edi
+        call dword ptr ds:repair_price
+        push eax
+        push ebx
+        cannot:
+        mov ecx, esi
+        call dword ptr ds:item_name
+        mov ecx, offset name_buffer
+        push ecx ; for the second sprintf
+        push eax
+        push dword ptr [colors+CLR_ITEM*4]
+        push COLOR_FORMAT_ADDR
+        push ecx
+        call dword ptr ds:sprintf
+        add esp, 16
+        cmp ebx, 0
+        cmova eax, dword ptr [new_strings+STR_REPAIR_KNIVES*4]
+        cmovbe eax, dword ptr [new_strings+STR_CANNOT_KNIVES*4]
+        push eax
+        mov eax, offset recharge_buffer
+        push eax
+        call dword ptr ds:sprintf
+        add esp, 20
+        cmp ebx, 0
+        ja no_adjust
+        sub esp, 8
+        fstp st(0)
+        no_adjust:
+        mov eax, offset recharge_buffer
+        xor ebx, ebx
+        push 0x4b5453
+        ret 4
+      }
+}
+
+// Make knife price depend on charges.  Called from potion_price() above.
+static void __declspec(naked) knife_price(void)
+{
+    asm
+      {
+        mov ecx, 100 ; +0 knives max
+        cmp dword ptr [esi], LIVING_WOOD_KNIVES
+        jne multiply
+        mov ecx, 80 ; +3 knives max
+        multiply:
+        movzx eax, byte ptr [esi+25] ; max charges
+        add eax, dword ptr [esi+16] ; charges
+        mul edi
+        div ecx
+        test eax, eax
+        jz zero
+        mov edi, eax
+        xor eax, eax ; set zf
+        ret
+        zero:
+        mov edi, 1 ; disallow 0 price just in case
+        ret
+      }
+}
+
 // Implement a dagger-skill alternative to bows.
 static inline void throwing_knives(void)
 {
@@ -15114,6 +15311,8 @@ static inline void throwing_knives(void)
     hook_call(0x426b72, init_looted_knife_charges, 5);
     // full charge in shops in charge_shop_wands_common() above
     hook_call(0x42ecf9, use_knife_charge, 8);
+    hook_call(0x4b954b, knife_repair_dialog, 11);
+    // actually repaired in prepare_shop_recharge() and perform_shop_recharge()
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

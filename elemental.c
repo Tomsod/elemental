@@ -603,6 +603,7 @@ static struct elemdata
     int training[4][SKILL_COUNT];
     // Location where the temple in a bottle was last used.
     int x, y, z, direction, look_angle, map_index;
+    // For the bag of holding and porter-like NPCs.
     struct map_chest extra_chests[EXTRA_CHEST_COUNT];
 } elemdata;
 
@@ -950,12 +951,14 @@ struct __attribute__((packed)) patch_options
 {
     SKIP(196);
     int fix_unimplemented_spells;
-    SKIP(132);
+    SKIP(120);
+    int fix_unmarked_artifacts;
+    SKIP(8);
     int fix_light_bolt;
     int armageddon_element;
     SKIP(16);
     int keep_empty_wands;
-    SKIP(4);
+    SKIP(16);
 };
 
 // my addition
@@ -9211,10 +9214,12 @@ static void __declspec(naked) cannot_recharge_dragon(void)
 }
 
 // Get a random artifact ID, minding the gap between the new and old ones.
+// Also here: don't count guaranteed artifacts towards the artifact limit.
 static void __declspec(naked) random_artifact(void)
 {
     asm
       {
+        and dword ptr [ebp+12], 0x7f ; art counter
         xor edx, edx
         mov ecx, LAST_OLD_ARTIFACT - FIRST_ARTIFACT + 1
         add ecx, LAST_ARTIFACT - FIRST_NEW_ARTIFACT + 1
@@ -10217,6 +10222,85 @@ static void __declspec(naked) reagent_chance_chunk(void)
       }
 }
 
+// Mark guaranteed (tlvl 7) artifacts as generated, but in a special way.
+// When counting artifacts towards the limit, these will be ignored.
+static void __declspec(naked) mark_guaranteed_artifacts(void)
+{
+    asm
+      {
+#ifdef __clang__
+        add eax, offset elemdata.artifacts_found - FIRST_ARTIFACT
+        mov byte ptr [eax], 0x80
+#else
+        mov byte ptr [elemdata.artifacts_found-FIRST_ARTIFACT+eax], 0x80
+#endif
+        cmp dword ptr [ebp+4], 0x45051a ; if called from chest generator
+        jne not_chest
+        or byte ptr [edi+21], 5 ; flag for mm7patch art refund
+        not_chest:
+        jmp dword ptr ds:set_specitem_bonus ; replaced call
+      }
+}
+
+// Mark all static artifacts added by the mod as refundable.
+// If a chest would have an artifact that's already generated,
+// replace it with a random one.  Also, ID all difficulty 0 items.
+static void __declspec(naked) fix_static_chest_items(void)
+{
+    asm
+      {
+        jl quit ; replaced jump
+        mov ecx, dword ptr [esp+32]
+        test byte ptr [ecx+2], 0x40 ; true if chest already checked
+        jnz skip
+        mov eax, dword ptr [ebx]
+        cmp eax, FIRST_ARTIFACT
+        jb ok
+        cmp eax, LAST_OLD_ARTIFACT
+        jbe artifact
+        cmp eax, FIRST_NEW_ARTIFACT
+        jb ok
+        cmp eax, LAST_ARTIFACT
+        ja ok
+        artifact:
+#ifdef __clang__
+        mov edx, offset elemdata.artifacts_found - FIRST_ARTIFACT
+        cmp byte ptr [edx+eax], 0
+        jnz replace
+        mov byte ptr [edx+eax], 0x80
+#else
+        cmp byte ptr [elemdata.artifacts_found-FIRST_ARTIFACT+eax], 0
+        jnz replace
+        mov byte ptr [elemdata.artifacts_found-FIRST_ARTIFACT+eax], 0x80
+#endif
+        or byte ptr [ebx+21], 5 ; flag for mm7patch art refund
+        ok:
+        lea eax, [eax+eax*2]
+        shl eax, 4
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+46], 0 ; id difficulty
+        jnz skip
+        or byte ptr [ebx+20], IFLAGS_ID
+        skip:
+        mov dword ptr [esp], 0x45051e ; replaced jump adress
+        quit:
+        ret
+        replace:
+        mov dword ptr [esp], 0x450513 ; random artifact code
+        ret
+      }
+}
+
+// Prevent running the above code on every map reload by marking fixed chests.
+static void __declspec(naked) mark_chest_checked(void)
+{
+    asm
+      {
+        or byte ptr [ebx+2], 0x40 ; the mark
+        add ebx, 5324 ; replaced code
+        ret
+      }
+}
+
 // Add the new properties to some old artifacts,
 // and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
@@ -10335,6 +10419,9 @@ static inline void new_artifacts(void)
     hook_call(0x402e9a, harvest_seed, 5);
     patch_bytes(0x402ea5, reagent_chance_chunk, 3);
     // earth magic bonus is in artifact_stat_bonus()
+    hook_call(0x450657, mark_guaranteed_artifacts, 5);
+    hook_call(0x45028f, fix_static_chest_items, 6);
+    hook_call(0x45052f, mark_chest_checked, 6);
 }
 
 // When calculating missile damage, take note of the weapon's skill.
@@ -14507,6 +14594,7 @@ static inline void patch_compatibility(void)
     FARPROC get_options = GetProcAddress(patch, "GetOptions");
     struct patch_options *options = (void *) get_options();
     options->fix_unimplemented_spells = FALSE; // conflicts with my hook
+    options->fix_unmarked_artifacts = FALSE; // I do it differently
     options->fix_light_bolt = FALSE; // I don't want this!
     options->armageddon_element = MAGIC; // can't read spells.txt this early
     options->keep_empty_wands = FALSE; // my implementation is better

@@ -376,9 +376,9 @@ Q Bit	Quest Note Text	Notes	Owner
 375		Completed Meditation GM mini-quest     0	0
 376	"—варите снадобье ќмоложени€, затем вернитесь к Ћюсид Ёппл, чтобы закончить ваше обучение."	Alchemy GM mini-quest       0	0
 377		Completed Alchemy GM mini-quest       0	0
-378	0	0	0	0
-379	0	0	0	0
-380	0	0	0	0
+378		Looted Clanker's artifact chest	0	0
+379		Looted Colony Zod artifact chest	0	0
+380		Looted Shoals artifact chest	0	0
 381	0	0	0	0
 382	0	0	0	0
 383	0	0	0	0

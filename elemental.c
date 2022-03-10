@@ -142,7 +142,9 @@ enum spcitems_txt
     SPC_FIRE_AFFINITY = 81,
     SPC_EARTH_AFFINITY = 84,
     SPC_BODY_AFFINITY = 87,
-    SPC_COUNT = 87
+    SPC_TAUNTING = 88,
+    SPC_JESTER = 89,
+    SPC_COUNT = 89
 };
 
 enum player_stats
@@ -164,6 +166,8 @@ enum player_stats
     STAT_MIND_RES = 14,
     STAT_MAGIC_RES = 15,
     STAT_ALCHEMY = 16,
+    STAT_THIEVERY = 17,
+    STAT_DISARM = 18,
     STAT_MELEE_ATTACK = 25,
     STAT_MELEE_DAMAGE_BASE = 26,
     STAT_HOLY_RES = 33,
@@ -230,6 +234,7 @@ enum new_strings
     STR_KNIVES,
     STR_CANNOT_KNIVES,
     STR_REPAIR_KNIVES,
+    STR_AURA_OF_CONFLICT,
     NEW_STRING_COUNT
 };
 
@@ -323,7 +328,7 @@ struct __attribute__((packed)) player
     uint64_t conditions[20];
     SKIP(8);
     char name[16];
-    SKIP(1);
+    uint8_t gender;
     uint8_t class;
     SKIP(2);
     union {
@@ -375,14 +380,15 @@ struct __attribute__((packed)) player
 
 enum player_buffs
 {
-    PBUFF_FIRE_RES = 5,
     PBUFF_SHOCK_RES = 0,
-    PBUFF_COLD_RES = 22,
     PBUFF_POISON_RES = 2,
-    PBUFF_MIND_RES = 9,
     PBUFF_MAGIC_RES = 3,
+    PBUFF_AURA_OF_CONFLICT = 4,
+    PBUFF_FIRE_RES = 5,
+    PBUFF_MIND_RES = 9,
     PBUFF_PAIN_REFLECTION = 10,
     PBUFF_PRESERVATION = 11,
+    PBUFF_COLD_RES = 22,
 };
 
 enum skill_mastery
@@ -461,6 +467,7 @@ enum items
     ELVEN_CHAINMAIL = 533,
     FORGE_GAUNTLETS = 534,
     CLANKERS_AMULET = 537,
+    SHADOWS_MASK = 544,
     SACRIFICIAL_DAGGER = 553,
     RED_DRAGON_SCALE_MAIL = 554,
     RED_DRAGON_SCALE_SHIELD = 555,
@@ -717,9 +724,9 @@ enum spells
     SPL_TURN_UNDEAD = 48,
     SPL_SPIRIT_LASH = 52,
     SPL_REMOVE_FEAR = 56,
+    SPL_AURA_OF_CONFLICT = 59,
     SPL_BERSERK = 62,
     SPL_CURE_WEAKNESS = 67,
-    SPL_HEAL = 68,
     SPL_FLYING_FIST = 76,
     SPL_LIGHT_BOLT = 78,
     SPL_DESTROY_UNDEAD = 79,
@@ -740,6 +747,7 @@ enum spells
     SPL_FREEZING_POTION = 106,
     SPL_NOXIOUS_POTION = 107,
     SPL_HOLY_WATER = 108,
+    SPL_TELEPATHY = 109, // was 59
 };
 
 struct __attribute__((packed)) map_monster
@@ -762,7 +770,9 @@ struct __attribute__((packed)) map_monster
     uint16_t id;
     SKIP(10);
     uint32_t max_hp;
-    SKIP(26);
+    SKIP(16);
+    uint32_t preference;
+    SKIP(6);
     uint16_t height;
     SKIP(2);
     int16_t x;
@@ -796,9 +806,16 @@ enum target
 #define PARTY_ADDR 0xacd804
 #define PARTY ((struct player *) PARTY_ADDR)
 
-#define COND_WEAK 1
-#define COND_AFRAID 3
-#define COND_ERADICATED 16
+enum condition
+{
+    COND_WEAK = 1,
+    COND_AFRAID = 3,
+    COND_PARALYZED = 12,
+    COND_UNCONSCIOUS = 13,
+    COND_DEAD = 14,
+    COND_STONED = 15,
+    COND_ERADICATED = 16,
+};
 
 struct __attribute__((packed)) mapstats_item
 {
@@ -1097,7 +1114,7 @@ static void *__thiscall (*load_bitmap)(void *lod, char *name, int lod_type)
     = (funcptr_t) 0x40fb2c;
 static void __fastcall (*aim_spell)(int spell, int pc, int skill, int flags,
                                     int unknown) = (funcptr_t) 0x427734;
-static void __thiscall (*spell_face_anim)(void *this, int anim, int pc)
+static void __thiscall (*spell_face_anim)(void *this, short anim, short pc)
     = (funcptr_t) 0x4a894d;
 #define ACTION_THIS_ADDR 0x50ca50
 #define ACTION_THIS ((void *) ACTION_THIS_ADDR)
@@ -1787,6 +1804,7 @@ static void __declspec(naked) new_global_txt_parse_check(void)
 // Instead of replacing every instance of e.g. "water" with "cold",
 // overwrite string pointers themselves.  Note that spell school names
 // are stored separately by now and are thus not affected.
+// Also here: replace Fate player buff string with Aura of Conflict.
 static void new_element_names(void)
 {
     // fire is unchanged
@@ -1797,6 +1815,8 @@ static void new_element_names(void)
     // mind is unchanged
     dword(GLOBAL_TXT + 29 * 4) = dword(GLOBAL_TXT + 138 * 4); // magic
     // light and dark are not displayed anymore
+    dword(BUFF_STRINGS + PBUFF_AURA_OF_CONFLICT * 4)
+        = (uintptr_t) new_strings[STR_AURA_OF_CONFLICT];
 }
 
 // We need to do a few things after global.txt is parsed.
@@ -3671,7 +3691,7 @@ static void aim_remove_fear(void); // defined below
 
 // Pretend that the thrown potion is Fire Bolt for aiming purposes.
 // There's also a Remove Fear aiming hook here now.
-// Also handles the new Fate spell ID.
+// Also handles the new Fate and Telepathy spell ID.
 static void __declspec(naked) aim_potions_type(void)
 {
     asm
@@ -3679,9 +3699,12 @@ static void __declspec(naked) aim_potions_type(void)
         cmp ecx, SPL_REMOVE_FEAR
         je aim_remove_fear
         cmp ecx, SPL_FATE
-        jne not_fate
-        mov ecx, SPL_HEAL ; same aiming mode
-        not_fate:
+        je debuff
+        cmp ecx, SPL_TELEPATHY
+        jne not_debuff
+        debuff:
+        mov ecx, SPL_PARALYZE ; same aiming mode
+        not_debuff:
         cmp ecx, SPL_FLAMING_POTION
         jb ordinary
         cmp ecx, SPL_HOLY_WATER
@@ -3770,7 +3793,7 @@ static int last_hit_player;
 // Redirect potion pseudo-spell code to the attack spell code.
 // Potion power is fixed here too (with possible Gadgeteer's Belt bonus).
 // This hook is also reused for spell disabling.
-// The new Fate spell ID is also handled here.
+// The new Fate and Telepathy spell ID are also handled here.
 static void __declspec(naked) cast_potions_jump(void)
 {
     asm
@@ -3779,6 +3802,8 @@ static void __declspec(naked) cast_potions_jump(void)
         jna forbid_spell
         cmp eax, SPL_FATE - 1
         je fate
+        cmp eax, SPL_TELEPATHY - 1
+        je telepathy
         cmp eax, SPL_FLAMING_POTION - 1
         jb not_it
         cmp eax, SPL_HOLY_WATER - 1
@@ -3811,6 +3836,11 @@ static void __declspec(naked) cast_potions_jump(void)
         mov word ptr [ebx], SPL_SPECTRAL_WEAPON ; for the sound
         push 0x42b91d ; fate code
         ret 4
+        telepathy:
+        mov word ptr [ebx], SPL_AURA_OF_CONFLICT ; sound
+        mov dword ptr [ebp-168], 6030 ; anim
+        mov dword ptr [esp], 0x42c2ca
+        ret
       }
 }
 
@@ -4970,6 +5000,38 @@ static void __declspec(naked) zero_item_spells(void)
       }
 }
 
+// Replace Telepathy with an aggro-affecting buff.
+static void __declspec(naked) aura_of_conflict(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ebp-32]
+        mov edx, dword ptr [ebp-36]
+        sub dword ptr [eax+0x1940], edx ; sp cost
+        mov eax, 10 * 60 * 128 / 30 ; ten minutes
+        mul edi ; spell power
+        push esi
+        push esi
+        push ecx
+        push ecx
+        add eax, dword ptr [CURRENT_TIME_ADDR]
+        adc edx, dword ptr [CURRENT_TIME_ADDR+4]
+        push edx
+        push eax
+        movzx edi, word ptr [ebx+4] ; target pc
+        mov ecx, dword ptr [0xa74f48+edi*4] ; PC pointers
+        lea ecx, [ecx+0x17a0+PBUFF_AURA_OF_CONFLICT*16]
+        call dword ptr ds:add_buff
+        push edi
+        push 19 ; generic swirly animation
+        mov ecx, dword ptr [0x71fe94]
+        mov ecx, dword ptr [ecx+0xe50]
+        call dword ptr ds:spell_face_anim
+        push 0x42deaa ; after casting a spell
+        ret
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -5088,6 +5150,12 @@ static inline void misc_spells(void)
     SPELL_INFO[SPL_FLYING_FIST].damage_fixed = 20;
     SPELL_INFO[SPL_FLYING_FIST].damage_dice = 10;
     hook_call(0x427e6a, zero_item_spells, 5);
+    // Change Aura of Conflict buff color to Mind.
+    patch_byte(0x4e2ac4, byte(0x4e2ad3));
+    patch_byte(0x4e2ac5, byte(0x4e2ad4));
+    patch_byte(0x4e2ac6, byte(0x4e2ad5));
+    patch_pointer(0x42ea51, aura_of_conflict);
+    patch_byte(0x427cd8, 2); // targets a pc
 }
 
 // For consistency with players, monsters revived with Reanimate now have
@@ -7540,6 +7608,73 @@ static void __declspec(naked) recharge_spent_charges_add_potion(void)
       }
 }
 
+// Instead of monsters always attacking their preferred targets,
+// use a weighted random that considers preferences and aggro effects.
+static int __stdcall weighted_monster_preference(struct map_monster *monster)
+{
+    int preference = monster->preference;
+    int weights[4];
+    for (int i = 0; i < 4; i++)
+      {
+        struct player *player = PARTY + i;
+        if (player->conditions[COND_PARALYZED]
+            || player->conditions[COND_UNCONSCIOUS]
+            || player->conditions[COND_DEAD] || player->conditions[COND_STONED]
+            || player->conditions[COND_ERADICATED])
+          {
+            weights[i] = 0;
+            continue;
+          }
+        weights[i] = 1;
+        for (int slot = 0; slot < 16; slot++)
+          {
+            int equipment = player->equipment[slot];
+            if (!equipment)
+                continue;
+            struct item *item = &player->items[equipment-1];
+            if ((item->bonus2 == SPC_TAUNTING || item->bonus2 == SPC_JESTER
+                 || item->id == GIBBET) && !(item->flags & IFLAGS_BROKEN))
+                weights[i]++;
+          }
+        weights[i] += player->spell_buffs[PBUFF_AURA_OF_CONFLICT].power;
+        if (has_item_in_slot(player, SHADOWS_MASK, SLOT_HELM))
+            continue; // race/class/gender hidden
+        static const int class_pref[9] = { 0x1, 0x80, 0x100, 0x2, 0x4,
+                                           0x40, 0x10, 0x8, 0x20 };
+        if (preference & class_pref[player->class/4])
+            weights[i] += 3;
+        static const int race_pref[4] = { 0x800, 0x1000, 0x4000, 0x2000 };
+        if (preference & 0x7800 && preference & race_pref[get_race(player)])
+            weights[i] += 2;
+        if (preference & (player->gender ? 0x400 : 0x200))
+            weights[i] += 1;
+      }
+    int sum = weights[0] + weights[1] + weights[2] + weights[3];
+    if (!sum)
+        return 0;
+    int roll = random() % sum;
+    for (int i = 0; i < 3; i++)
+      {
+        roll -= weights[i];
+        if (roll < 0)
+            return i;
+      }
+    return 3;
+}
+
+// Allow monsters to attack their non-default enemies on sight.
+// Necessary for the ring of aggravate monster encounter.
+static void __declspec(naked) better_monster_hostility_chunk(void)
+{
+    asm
+      {
+        lea edx, [MAP_MONSTERS_ADDR+eax]
+        mov ecx, ebx
+        call dword ptr ds:is_hostile_to
+        nop ; just in case
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -7610,6 +7745,9 @@ static inline void misc_rules(void)
     hook_call(0x42aa9a, recharge_spent_charges_add_spell, 6);
     hook_call(0x4169bf, recharge_spent_charges_sub_potion, 6);
     hook_call(0x4169d0, recharge_spent_charges_add_potion, 6);
+    hook_jump(0x426dc7, weighted_monster_preference);
+    patch_bytes(0x4021ca, better_monster_hostility_chunk, 15);
+    erase_code(0x4021d9, 23); // rest of old code
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -8820,6 +8958,16 @@ static void __declspec(naked) artifact_stat_bonus(void)
         push 0x48f387 ; earth magic bonus
         ret 4
         not_gloves:
+        cmp eax, SHADOWS_MASK
+        jne not_mask
+        cmp esi, STAT_THIEVERY
+        je bonus
+        cmp esi, STAT_DISARM
+        jne quit
+        bonus:
+        add edi, 3
+        ret
+        not_mask:
         sub eax, PUCK ; replaced code
         quit:
         ret
@@ -9253,6 +9401,7 @@ static void __declspec(naked) jump_over_specitems(void)
 
 // Let Headache deal extra Mind damage on hit.  Also here: Storm Trident has
 // the same bonus damage as Iron Feather, and Viper deals 15 poison damage.
+// Items "of The Jester" also do bonus Mind damage.
 static void __declspec(naked) headache_mind_damage(void)
 {
     asm
@@ -9263,16 +9412,26 @@ static void __declspec(naked) headache_mind_damage(void)
         je viper
         cmp eax, STORM_TRIDENT
         je skip
+        cmp dword ptr [ebx+12], SPC_JESTER
+        je jester
         sub eax, IRON_FEATHER ; replaced code
         skip:
         ret
         headache:
-        mov dword ptr [edi], MIND
         call dword ptr ds:random
         xor edx, edx
         mov ecx, 6
         div ecx
         lea eax, [edx+10]
+        jmp mind
+        jester:
+        call dword ptr ds:random
+        xor edx, edx
+        mov ecx, 5
+        div ecx
+        lea eax, [edx+6]
+        mind:
+        mov dword ptr [edi], MIND
         jmp quit
         viper:
         mov dword ptr [edi], POISON

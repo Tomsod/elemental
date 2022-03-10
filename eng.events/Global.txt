@@ -718,3 +718,4 @@ Global Text
 715	Knives
 716	"Sorry, but I cannot repair even a single one of these %s."
 717	"I can repair these %s, yielding %d knives, for only %d gold."
+718	Aura of Conflict

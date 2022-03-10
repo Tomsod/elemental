@@ -500,7 +500,7 @@ Item #	Pic File	1	2	3	4	5	6
 496	book5	0	0	0	0	0	1
 497	book5	0	0	0	0	0	1
 498	book5	0	0	0	0	0	0
-499	null	0	0	0	0	0	0
+499	scroll2	2	2	0	0	0	0
 500	ldagger3	0	0	0	0	0	0
 501	hammer3	0	0	0	0	0	0
 502	2haxe3	0	0	0	0	0	0

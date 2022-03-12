@@ -837,6 +837,8 @@ enum profession
     NPC_SMITH = 1,
     NPC_PORTER = 29,
     NPC_QUARTER_MASTER = 30,
+    NPC_COOK = 33,
+    NPC_CHEF = 34,
     NPC_PIRATE = 45,
     NPC_GYPSY = 48,
     NPC_DUPER = 50,
@@ -893,6 +895,9 @@ enum monster_buffs
     MBUFF_DAY_OF_PROTECTION = 13,
 };
 
+// Flag controlling which hireling reply is displayed.
+#define HIRELING_REPLY 0xf8b06c
+
 // Berserk effect animation ID.
 #define BERZERK 6060
 
@@ -901,7 +906,7 @@ enum monster_buffs
 // new NPC topic count
 #define TOPIC_COUNT 602
 // count of added NPC text entries
-#define NEW_TEXT_COUNT 21
+#define NEW_TEXT_COUNT 41
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658
@@ -1015,8 +1020,8 @@ static void __thiscall (*delete_backpack_item)(void *player, int cell)
     = (funcptr_t) 0x492a2e;
 static void __thiscall (*add_mouse_item)(void *this, struct item *item)
     = (funcptr_t) 0x4936d9;
-#define MOUSE_THIS_ADDR 0xacce38
-#define MOUSE_THIS ((void *) MOUSE_THIS_ADDR)
+#define PARTY_BIN_ADDR 0xacce38
+#define PARTY_BIN ((void *) PARTY_BIN_ADDR)
 static int __thiscall (*put_in_backpack)(void *player, int slot, int item_id)
     = (funcptr_t) 0x4927a0;
 static void __thiscall (*make_sound)(void *this, int sound, int object,
@@ -1120,6 +1125,7 @@ static void __thiscall (*spell_face_anim)(void *this, short anim, short pc)
 #define ACTION_THIS ((void *) ACTION_THIS_ADDR)
 static void __thiscall (*add_action)(void *this, int action, int param1,
                                      int param2) = (funcptr_t) 0x42eb69;
+static void __thiscall (*rest_party)(void *this) = (funcptr_t) 0x490cfa;
 static int __thiscall (*open_chest)(int chest) = (funcptr_t) 0x4203c7;
 static void __thiscall (*resurrect_monster)(int mon_id) = (funcptr_t) 0x402f27;
 static int __thiscall (*identify_price)(void *player, float shop_multiplier)
@@ -3121,7 +3127,7 @@ static void __thiscall brew_if_possible(struct player *player, int potion)
       }
     struct item brewn_potion = { .id = potion, .flags = IFLAGS_ID,
                                  .bonus = buffer[best_brew].power };
-    add_mouse_item(MOUSE_THIS, &brewn_potion);
+    add_mouse_item(PARTY_BIN, &brewn_potion);
         show_face_animation(player, ANIM_MIX_POTION, 0); // successful brew
 }
 
@@ -4213,7 +4219,7 @@ static void __declspec(naked) bless_water_action(void)
         mov dword ptr [esp], HOLY_WATER ; id
         mov dword ptr [esp+4], ebx ; power
         mov dword ptr [esp+20], 1 ; identified flag
-        mov ecx, MOUSE_THIS_ADDR
+        mov ecx, PARTY_BIN_ADDR
         push esp
         call dword ptr ds:add_mouse_item
         mov ecx, esi
@@ -7203,7 +7209,7 @@ static void __declspec(naked) evt_add_specitem(void)
         mov ecx, ITEMS_TXT_ADDR - 4
         call dword ptr ds:set_specitem_bonus
         mov eax, esi ; restore
-        mov ecx, MOUSE_THIS_ADDR ; replaced code
+        mov ecx, PARTY_BIN_ADDR ; replaced code
         ret
       }
 }
@@ -7318,21 +7324,24 @@ static int __thiscall new_hireling_action(int id)
       {
         add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
         add_action(ACTION_THIS, ACTION_EXTRA_CHEST, 1, 1);
-        return 2;
       }
-    if (id == NPC_QUARTER_MASTER)
+    else if (id == NPC_QUARTER_MASTER)
       {
         add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
         add_action(ACTION_THIS, ACTION_EXTRA_CHEST, 2, 1);
-        return 2;
       }
-    if (id == NPC_GYPSY)
+    else if (id == NPC_GYPSY)
       {
         add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
         add_action(ACTION_THIS, ACTION_EXTRA_CHEST, 4, 1);
-        return 2;
       }
-    return hireling_action(id);
+    else if (id == NPC_COOK || id == NPC_CHEF)
+      {
+        byte(HIRELING_REPLY) = 2;
+        dword(0x590f0c) = 77; // enable reply code
+      }
+    else return hireling_action(id);
+    return TRUE;
 }
 
 // Actually print the dialog option for new NPCs.
@@ -7373,20 +7382,6 @@ static void __declspec(naked) new_hireling_action_text(void)
       }
 }
 
-static const char empty_string[] = "";
-
-// Skip the "your packs are full" status line when using porter/QM ability.
-static void __declspec(naked) dont_show_cook_message(void)
-{
-    asm
-      {
-        mov ecx, offset empty_string ; nothing by default
-        cmp eax, 1 ; 1 if failed cook/chef
-        cmove ecx, dword ptr [GLOBAL_TXT+140*4] ; replaced code
-        ret
-      }
-}
-
 // When firing an NPC, remove everything from their bags.
 static void __thiscall empty_extra_chest(int id)
 {
@@ -7397,7 +7392,7 @@ static void __thiscall empty_extra_chest(int id)
       {
         int item = chest->slots[i] - 1;
         if (item >= 0)
-            add_mouse_item(MOUSE_THIS, chest->items + item);
+            add_mouse_item(PARTY_BIN, chest->items + item);
       }
     memset(chest->items, 0, sizeof(chest->items));
     memset(chest->slots, 0, sizeof(chest->slots));
@@ -7675,6 +7670,245 @@ static void __declspec(naked) better_monster_hostility_chunk(void)
       }
 }
 
+// Buffs granted by resting in taverns.  Thematically chosen.
+static const short tavern_buffs[14][15] = {
+    //  Mig Int Per End Acc Spe Luc Arm Lev Fir Sho Col Poi Min Mag
+      {  0,  0,  0,  0,  0,  0, 10,  0,  0, 20,  0,  0,  0,  0,  0 }, // Emera
+      {  0,  0,  0, 20,  0,  0,  0, 10,  0,  0,  0,  0,  0,  0,  0 }, // Harmo
+      { 20,  0, 20,  0,  0,  0,  0,  5,  0,  0,  0,  0,  0,  0,  0 }, // Erath
+      {  0, 20,  0,  0, 20,  0,  0,  0,  0,  0,  0,  0, 10,  0,  0 }, // Tular
+      {  0,  0,  0, 20,  0, 20,  0, 10,  0,  0,  0,  0,  0,  0, 20 }, // Deyja
+      {  0, 10, 10,  0,  0,  0, 20,  0,  0,  0,  0,  0, 10, 10, 10 }, // Braca
+      {  0,  0, 30, 30, 30,  0, 10, 20,  5, 40,  0,  0, 40, 40,  0 }, // Celes
+      { 30, 30,  0,  0,  0, 30, 30, 10,  5,  0, 40, 40,  0,  0, 40 }, // T.Pit
+      {  0,  0,  0,  0,  0,  0,  0, 10,  0,  0,  0,  0,  0, 20, 20 }, // Evenm
+      { 15, 30, 30, 15, 15, 15, 15, 10,  5, 20, 20, 20, 20, 20, 20 }, // Nigho
+      { 10, 10, 10, 20,  0,  0,  0,  0,  0,  0,  0,  0,  0, 20, 20 }, // Barro
+      { 20,  0,  0, 20, 20, 20,  0, 20,  0,  0,  0, 10,  0,  0,  0 }, // Tatal
+      {  0, 20,  0,  0, 20,  0, 10,  0,  0, 10, 20, 20, 10,  0,  0 }, // Avlee
+      { 20,  0,  0, 10, 10, 10, 10, 10,  0, 20,  0,  0, 20,  0,  0 }, // Stone
+};
+// Buffs by the cook and/or chef NPCs.  Each is picked with a 20% chance.
+static const short cook_chef_buffs[15][15] = {
+    //  Mig Int Per End Acc Spe Luc Arm Lev Fir Sho Col Poi Min Mag
+      {  0,  0, 20,  0,  0,  0, 20,  0,  0,  0,  0,  0,  0,  0,  0 }, // cook
+      {  0,  0,  0, 20,  0,  0,  0,  0,  0,  0,  0,  0, 20,  0,  0 },
+      {  0, 20,  0,  0, 20,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
+      {  0,  0,  0,  0,  0, 20,  0,  0,  0,  0, 20,  0,  0,  0,  0 },
+      { 20,  0,  0,  0,  0,  0,  0,  0,  0, 20,  0,  0,  0,  0,  0 },
+      {  0,  0,  0, 10,  0, 30,  0, 10,  0, 30,  0,  0,  0,  0,  0 }, // chef
+      {  0, 20,  0,  0, 30,  0,  0,  0,  0,  0,  0, 30,  0,  0,  0 },
+      {  0, 30, 20,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 30,  0 },
+      { 25,  0,  0, 25,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 25 },
+      {  0,  0,  0,  0,  0,  0, 20, 20,  0,  0, 20,  0, 20,  0,  0 },
+      { 10, 10, 10, 10, 10, 10, 10, 10,  3,  0,  0,  0,  0,  0,  0 }, // both
+      { 20,  0,  0, 20,  0,  0,  0, 20,  0, 30, 30, 30,  0,  0,  0 },
+      {  0, 30, 30,  0,  0,  0, 30,  0,  0,  0,  0,  0,  0, 30, 30 },
+      {  0,  0,  0,  0, 40, 40,  0, 40,  0,  0,  0,  0, 40,  0,  0 },
+      {  0,  0,  0,  0,  0,  0, 20,  0,  0, 20, 20, 20, 20, 20, 20 },
+};
+// In lieu of a passed parameter.
+static int tavern_buff_ptr = -1;
+
+// Let resting at taverns or with cooks buff stats, a la MMX "well rested".
+static void __declspec(naked) tavern_rest_buff(void)
+{
+    asm
+      {
+        cmp dword ptr [esp+44], 409 ; tavern rest action
+        jne not_tavern
+        mov edx, dword ptr [esp+24] ; tavern id
+        sub edx, 107 ; first tavern
+        lea edx, [edx+edx*2]
+        lea edx, [edx+edx*4]
+        add edx, edx
+        add edx, offset tavern_buffs
+        mov dword ptr [tavern_buff_ptr], edx
+        xor edx, edx
+        jmp dish
+        not_tavern:
+        cmp dword ptr [esp+44], 97 ; ordinary rest
+        jne skip
+        mov ecx, NPC_CHEF
+        call dword ptr ds:have_npc_hired
+        lea ebx, [eax+eax]
+        mov ecx, NPC_COOK
+        call dword ptr ds:have_npc_hired
+        add ebx, eax
+        jz restore
+        call dword ptr ds:random
+        xor edx, edx
+        mov ecx, 5
+        div ecx
+        dec ebx
+        mov ecx, ebx
+        shr ecx, 1
+        lea ebx, [ebx+ebx*4]
+        add ebx, edx
+        lea ebx, [ebx+ebx*2]
+        lea ebx, [ebx+ebx*4]
+        add ebx, ebx
+        add ebx, offset cook_chef_buffs
+        mov dword ptr [tavern_buff_ptr], ebx
+        xor ebx, ebx
+        lea ecx, [ecx+ecx*4]
+        inc edx
+        add edx, ecx
+        dish:
+        cmp dword ptr [0xad44f4+24], NPC_COOK ; left npc
+        je left
+        cmp dword ptr [0xad44f4+24], NPC_CHEF
+        jne not_left
+        left:
+        mov dword ptr [0xad44f4+68], edx
+        not_left:
+        cmp dword ptr [0xad4540+24], NPC_COOK ; right npc
+        je right
+        cmp dword ptr [0xad4540+24], NPC_CHEF
+        jne restore
+        right:
+        mov dword ptr [0xad4540+68], edx
+        restore:
+        mov ecx, PARTY_BIN_ADDR
+        skip:
+        call dword ptr ds:rest_party ; replaced call
+        mov dword ptr [tavern_buff_ptr], -1 ; restore
+        ret
+      }
+}
+
+// Actually apply the buff.  This needs to be between stat and HP/SP reset.
+static void __declspec(naked) tavern_buff_on_rest(void)
+{
+    asm
+      {
+        mov edx, dword ptr [tavern_buff_ptr]
+        test edx, edx
+        js skip
+        mov ax, word ptr [edx]
+        mov word ptr [esi+0xbe], ax
+        mov ax, word ptr [edx+2]
+        mov word ptr [esi+0xc2], ax
+        mov ax, word ptr [edx+4]
+        mov word ptr [esi+0xc6], ax
+        mov ax, word ptr [edx+6]
+        mov word ptr [esi+0xca], ax
+        mov ax, word ptr [edx+8]
+        mov word ptr [esi+0xd2], ax
+        mov ax, word ptr [edx+10]
+        mov word ptr [esi+0xce], ax
+        mov ax, word ptr [edx+12]
+        mov word ptr [esi+0xd6], ax
+        mov ax, word ptr [edx+14]
+        mov word ptr [esi+0xd8], ax
+        mov ax, word ptr [edx+16]
+        mov word ptr [esi+0xdc], ax
+        mov ax, word ptr [edx+18]
+        mov word ptr [esi+0x178a], ax
+        mov ax, word ptr [edx+20]
+        mov word ptr [esi+0x178c], ax
+        mov ax, word ptr [edx+22]
+        mov word ptr [esi+0x178e], ax
+        mov ax, word ptr [edx+24]
+        mov word ptr [esi+0x1790], ax
+        mov ax, word ptr [edx+26]
+        mov word ptr [esi+0x1798], ax
+        mov ax, word ptr [edx+28]
+        mov word ptr [esi+0x179a], ax
+        skip:
+        mov ecx, esi ; replaced code
+        mov dword ptr [esi+COND_UNCONSCIOUS*8], edi ; replaced code
+        ret
+      }
+}
+
+// Only disable cooks' dialogue if their buff is to expire (3 days awake).
+static void __declspec(naked) dont_reset_cooks(void)
+{
+    asm
+      {
+        cmp byte ptr [0xacd59c], 3 ; days awake
+        jae left
+        cmp dword ptr [0xad44f4+24], NPC_COOK ; left npc
+        je skip_left
+        cmp dword ptr [0xad44f4+24], NPC_CHEF
+        je skip_left
+        left:
+        mov dword ptr [0xad44f4+68], edx ; replaced code
+        cmp byte ptr [0xacd59c], 3
+        jae right
+        skip_left:
+        cmp dword ptr [0xad4540+24], NPC_COOK ; right npc
+        je skip_right
+        cmp dword ptr [0xad4540+24], NPC_CHEF
+        je skip_right
+        right:
+        mov dword ptr [0xad4540+68], edx ; replaced code
+        skip_right:
+        ret
+      }
+}
+
+// For cooks and chefs, show the ability line only if the used field is NOT 0.
+static void __declspec(naked) invert_cook_check(void)
+{
+    asm
+      {
+        jz skip ; replaced jump
+        cmp dword ptr [ebp+24], NPC_COOK
+        je invert
+        cmp dword ptr [ebp+24], NPC_CHEF
+        je invert
+        cmp dword ptr [ebp+68], ebx ; replaced code
+        ret
+        invert:
+        cmp dword ptr [ebp+68], ebx ; used ability flag
+        jz skip
+        xor eax, eax ; set zf
+        ret
+        skip:
+        test ebp, ebp ; clear zf
+        ret
+      }
+}
+
+// Now that the reply flag can be 2, we can't just xor it.
+static void __declspec(naked) toggle_cook_reply(void)
+{
+    asm
+      {
+        cmp byte ptr [HIRELING_REPLY], bl ; == 1
+        setne dl
+        mov byte ptr [HIRELING_REPLY], dl
+        ret
+      }
+}
+
+// Storage for the new NPC text entries.
+STATIC char *new_npc_text[NEW_TEXT_COUNT];
+FIX(new_npc_text);
+
+// Print the decription for the applied buff.
+static void __declspec(naked) print_cook_reply(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [0x737aac+eax*4] ; replaced code
+        cmp byte ptr [HIRELING_REPLY], 2
+        jne quit
+        sub eax, NPC_COOK * 5
+        jz cook
+        cmp eax, 5 ; chef is next
+        jne quit
+        cook:
+        add eax, eax
+        add eax, dword ptr [ebx+68] ; ability/dish flag
+        mov ecx, dword ptr [REF(new_npc_text)+810*4-790*4+eax*4] ; decriptions
+        quit:
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -7729,7 +7963,7 @@ static inline void misc_rules(void)
     hook_call(0x4bc4c8, new_hireling_action, 5);
     hook_call(0x445f16, enable_new_hireling_action, 6);
     hook_call(0x44532e, new_hireling_action_text, 5);
-    hook_call(0x4bc4d1, dont_show_cook_message, 6);
+    hook_jump(0x4bc4d1, (void *) 0x4bc81e); // skip old cook/chef statusline
     hook_call(0x4bc581, empty_extra_chest_hook, 6);
     erase_code(0x41f739, 54); // old porter etc. bonus
     hook_call(0x445f77, quartermaster_extra_dialog, 5);
@@ -7748,6 +7982,12 @@ static inline void misc_rules(void)
     hook_jump(0x426dc7, weighted_monster_preference);
     patch_bytes(0x4021ca, better_monster_hostility_chunk, 15);
     erase_code(0x4021d9, 23); // rest of old code
+    hook_call(0x43420f, tavern_rest_buff, 5);
+    hook_call(0x490d79, tavern_buff_on_rest, 5);
+    hook_call(0x494148, dont_reset_cooks, 12);
+    hook_call(0x445f0f, invert_cook_check, 5);
+    hook_call(0x4bc56a, toggle_cook_reply, 6);
+    hook_call(0x445523, print_cook_reply, 7);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -11634,10 +11874,6 @@ static inline void damage_messages(void)
     hook_call(0x42ef8a, splitter_fireball_message, 7);
 }
 
-// Storage for the new NPC text entries.
-STATIC char *new_npc_text[NEW_TEXT_COUNT];
-FIX(new_npc_text);
-
 // Provide the address of the above buffer to the parsing function.
 static void __declspec(naked) write_new_npc_text(void)
 {
@@ -15320,7 +15556,7 @@ static void __declspec(naked) also_init_knife_charges(void)
         call init_knife_charges
         mov eax, esi ; restore
         mov ebx, 0xdf1a68 ; ditto
-        mov ecx, MOUSE_THIS_ADDR ; replaced code
+        mov ecx, PARTY_BIN_ADDR ; replaced code
         ret
       }
 }
@@ -15335,7 +15571,7 @@ static void __declspec(naked) init_looted_knife_charges(void)
         call init_knife_charges
         mov eax, esi ; restore
         pop ebx ; ditto
-        mov esi, MOUSE_THIS_ADDR ; replaced code
+        mov esi, PARTY_BIN_ADDR ; replaced code
         ret
       }
 }

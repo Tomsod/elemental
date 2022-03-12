@@ -874,3 +874,23 @@ Also, bring our half of the key to us, as well.  It is enshrined in the Temple o
 808	"Traditionally, to be proclaimed Grand Master Alchemist, one must either turn base metals to gold, or reverse aging.  While the former is still an open problem, the potions of Rejuvenation are rather well-studied nowadays.  So, if you want the title, brew one!  Without the knowledge, it might take a few attempts, but consider it part of the training."	Mini-quest	GM Alchemy teacher
 809	"No potion yet?  It's better to figure out the recipe on your own, but in principle you can buy it at any alchemy shop.  If you're lazy…"	Mini-quest in progress	GM Alchemy teacher
 810	"Hm, yes, this potion seems to qualify.  A bit amateurish, but you got the gist of it.  Congratulations, Alchemists!  I can now share my secret knowledge on how to brew these safely."	Mini-quest complete	GM Alchemy teacher
+811	"Today's breakfast is a bowl of Lucky Charms to each of you, guaranteed to make you luckier and more charming for the rest of the day.  Lucky Charms: they're magically delicious!"	First solo dish	Cook NPC
+812	"I got us some authentic Vori lutefisk!  While the flavor might present a challenge, if you master it, you'll be unfazed by any other of today's hurdles, especially poisonous in nature."	Second solo dish	Cook NPC
+813	"I baked some carrot cake while you were asleep.  Carrots are good for your eyes, and sugar is good for your brain, so dig in!"	Third solo dish	Cook NPC
+814	"Electric eel unagi, rare and exotic!  The lingering electricity will wake you up for sure.  Note: this is a real dish I'm not making up right now."	Fourth solo dish	Cook NPC
+815	"Grilled beefsteak today.  Good for your muscles and still hot!  You gotta fight fire with fire, so it'll make you more fireproof for a while."	Fifth solo dish	Cook NPC
+816	"Today's dish is so complicated I can't even describe it.  It has a little bit of everything!  Far beyond my own capacity, but I was happy to help."	First combo dish	Cook NPC
+817	"The reason it's called a Dragonslayer's ""Dinner"" despite being served for breakfast is that we expect an actual dragon for dinner today.  Please don't disappoint us."	Second combo dish	Cook NPC
+818	"Pizza is a classic, although I rarely get to work with such expensive ingredients!  It's sure to boost both your magic ability and resistance."	Third combo dish	Cook NPC
+819	"I assisted in making the soup, and while the recipe is unfamiliar to me, the ingredients SHOULD neutralize each other.  I trust my colleague's expertise!"	Fourth combo dish	Cook NPC
+820	"Don't ask what the sauce is made of.  I did, now I wish I didn't.  It's completely palatable, though, don't worry."	Fifth combo dish	Cook NPC
+821	"I made some extra-spicy curry for you.  It will wake you up and get running, and fireballs will seem mildly chilly by contrast.  Try it!"	First solo dish	Chef NPC
+822	"Ice cream cake today!  It makes you accustomed to frost and snaps your senses into cold focus.  Plus, it's delicious!"	Second solo dish	Chef NPC
+823	"Baklava for breakfast!  Walnuts are brain-shaped, so they're good for your noggin, and honey is real brain food as well.  You'll be geniuses for sure!"	Third solo dish	Chef NPC
+824	"Spinach soup for today.  Good hearty meal, it makes you stronger, sturdier, and improves your willpower -- perfect for any warrior!"	Fourth solo dish	Chef NPC
+825	"I prepared gargoyle stew this morning.  The meat is tough, but it makes you tougher as well, so it's worth the chewing effort."	Fifth solo dish	Chef NPC
+826	"A breakfast fit for true heroes, I call it the Hero's Feast.  Makes you stronger, faster, smarter, more skilled, and much less hungry for an entire day."	First combo dish	Chef NPC
+827	"We cooked you a Dragonslayer's Dinner today.  It gives you an edge in fighting dragons of any kind, so don't waste this opportunity!"	Second combo dish	Chef NPC
+828	"Today we have magical mushroom pizza, made with fresh elvish toadstools.  It's the best way to achieve enlightenment besides spending 20 years in a monastery, although the effect is temporary."	Third combo dish	Chef NPC
+829	"We brewed a potent Assassin's Soup for you today.  It's guaranteed to be poison free and can unlock an inner rogue in anyone."	Fourth combo dish	Chef NPC
+830	"Unicorn steak with rainbow sauce for your enjoyment.  Unicorns are able to resist any kind of magical attack, and so can you now!"	Fifth combo dish	Chef NPC

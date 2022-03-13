@@ -658,6 +658,7 @@ enum objlist
     OBJ_FIREARROW = 550,
     OBJ_LASER = 555,
     OBJ_ACID_BURST = 3060,
+    OBJ_BERSERK = 6060,
     OBJ_FLAMING_POTION = 12000,
     OBJ_FLAMING_EXPLOSION = 12001,
     OBJ_SHOCKING_POTION = 12010,
@@ -669,6 +670,7 @@ enum objlist
     OBJ_THROWN_HOLY_WATER = 12040,
     OBJ_HOLY_EXPLOSION = 12041,
     OBJ_KNIFE = 12050,
+    OBJ_BLASTER_ERADICATION = 12060,
 };
 
 #define ELEMENT(spell) byte(0x5cbecc + (spell) * 0x24)
@@ -897,9 +899,6 @@ enum monster_buffs
 
 // Flag controlling which hireling reply is displayed.
 #define HIRELING_REPLY 0xf8b06c
-
-// Berserk effect animation ID.
-#define BERZERK 6060
 
 // new NPC greeting count (starting from 1)
 #define GREET_COUNT 220
@@ -9693,8 +9692,8 @@ static void __stdcall headache_berserk(struct map_monster *monster)
     remove_buff(monster->spell_buffs + MBUFF_ENSLAVE);
     add_buff(monster->spell_buffs + MBUFF_BERSERK,
              CURRENT_TIME + 20 * 60 * 128 / 30, EXPERT, 0, 0, 0);
-    struct map_object anim = { BERZERK,
-                               find_objlist_item(OBJLIST_THIS, BERZERK),
+    struct map_object anim = { OBJ_BERSERK,
+                               find_objlist_item(OBJLIST_THIS, OBJ_BERSERK),
                                monster->x, monster->y,
                                monster->z + monster->height };
     launch_object(&anim, 0, 0, 0);
@@ -13651,7 +13650,7 @@ static void __declspec(naked) lenient_alchemy(void)
 }
 
 // Length of blaster eradication animation.
-#define ERAD_TIME 64
+#define ERAD_TIME 48
 
 // Let a GM blaster shot have a small chance to eradicate the target,
 // killing it without leaving a corpse.  For testing purposes,
@@ -13674,8 +13673,9 @@ static void __stdcall blaster_eradicate(struct player *player,
             = dword(0x50ba5c) + ERAD_TIME;
         monster->mod_flags |= MMF_ERADICATED;
         monster->hp = 0;
-        struct map_object anim = { BERZERK,
-                                   find_objlist_item(OBJLIST_THIS, BERZERK),
+        struct map_object anim = { OBJ_BLASTER_ERADICATION,
+                                   find_objlist_item(OBJLIST_THIS,
+                                                     OBJ_BLASTER_ERADICATION),
                                    monster->x, monster->y,
                                    monster->z + monster->height / 2 };
         launch_object(&anim, 0, 0, 0);
@@ -13797,8 +13797,6 @@ static void __declspec(naked) erad_stop_moving(void)
         test byte ptr [esi+183], MMF_ERADICATED
         mov ax, AI_REMOVED ; we need zf == 1 if flag set
         cmovz ax, word ptr [esi+176] ; replaced code, almost
-        cmp ax, AI_REMOVED ; replaced code
-        quit:
         ret
       }
 }
@@ -14923,7 +14921,8 @@ static inline void skill_changes(void)
     hook_call(0x47b9ee, draw_erad_hook_out, 6);
     hook_call(0x43ffe1, erad_z_hook, 5);
     hook_call(0x47b66d, erad_z_hook_out, 7);
-    hook_call(0x470707, erad_stop_moving, 11);
+    hook_call(0x470707, erad_stop_moving, 7); // outdoors
+    hook_call(0x46f939, erad_stop_moving, 7); // indoors
     patch_byte(0x48fd08, 3); // remove old blaster GM bonus
     hook_call(0x491135, raise_ench_item_difficulty, 6);
     hook_call(0x4911d7, raise_ench_item_difficulty, 6);

@@ -442,8 +442,9 @@ enum items
     LAST_OLD_POTION = 271,
     POTION_MAGIC_IMMUNITY = 277,
     POTION_PAIN_REFLECTION = 278,
-    LAST_POTION = 278,
-    HOLY_WATER = 279, // not a potion
+    POTION_DIVINE_MASTERY = 279,
+    LAST_POTION = 279,
+    HOLY_WATER = 280, // not a potion
     FIRST_ARTIFACT = 500,
     PUCK = 500,
     IRON_FEATHER = 501,
@@ -491,7 +492,7 @@ enum items
     LAST_ARTIFACT = 572,
     ROBE_OF_THE_ARCHMAGISTER = 598,
     FIRST_RECIPE = 740,
-    LAST_RECIPE = 778,
+    LAST_RECIPE = 779,
 };
 
 enum item_slot
@@ -1140,7 +1141,6 @@ static int __thiscall (*get_stat_bonus_from_items)(void *player, int stat,
                                                    int ignore_offhand)
     = (funcptr_t) 0x48eaa6;
 static funcptr_t get_text_width = (funcptr_t) 0x44c52e;
-static int __thiscall (*get_base_level)(void *player) = (funcptr_t) 0x48c8dc;
 static int __thiscall (*is_bare_fisted)(void *player) = (funcptr_t) 0x48d65c;
 static funcptr_t reset_interface = (funcptr_t) 0x422698;
 static int __thiscall (*get_perception_bonus)(void *player)
@@ -1867,10 +1867,11 @@ static const uint32_t new_potion_buffs[] = { PBUFF_FIRE_RES, PBUFF_SHOCK_RES,
                                              PBUFF_PAIN_REFLECTION };
 
 static void throw_potions_jump(void); // defined below
+static const int thirty = 30; // for a div below
 
 // Add elemental immunity potions and the pain reflection potion.
 // Magic immunity lasts 3 min/level, the rest are 10 min/level.
-// TODO: do we really need to use floats just to divide by 30?
+// The potion of Divine Mastery is also here.
 static void __declspec(naked) new_potion_effects(void)
 {
     asm
@@ -1881,6 +1882,8 @@ static void __declspec(naked) new_potion_effects(void)
         new:
         cmp edx, HOLY_WATER
         je throw_potions_jump
+        cmp edx, POTION_DIVINE_MASTERY
+        je divine_mastery
         mov ecx, offset new_potion_buffs
         mov ecx, dword ptr [ecx+eax*4-52*4]
         shl ecx, 4
@@ -1907,21 +1910,31 @@ static void __declspec(naked) new_potion_effects(void)
         cmp edx, POTION_MAGIC_IMMUNITY
         mov eax, dword ptr [MOUSE_ITEM+4]
         je magic
-        imul eax, eax, 128 * 60 * 10
+        mov edx, 128 * 60 * 10
         jmp multiply
         magic:
-        imul eax, eax, 128 * 60 * 3
+        mov edx, 128 * 60 * 3
         multiply:
-        push eax
-        fild dword ptr [esp]
-        add esp, 4
-        fmul dword ptr [0x4d8470]
-        call dword ptr ds:ftol
+        mul edx
+        div dword ptr [thirty]
+        xor edx, edx
         add eax, dword ptr [CURRENT_TIME_ADDR]
         adc edx, dword ptr [CURRENT_TIME_ADDR+4]
         push edx
         push eax
         call dword ptr ds:add_buff
+        jmp quit
+        divine_mastery:
+        movzx eax, word ptr [esi+0xda] ; pc level
+        mul dword ptr [MOUSE_ITEM+4] ; potion power
+        mov ecx, 100
+        div ecx
+        neg edx ; round up
+        adc eax, ebx
+        cmp ax, word ptr [esi+0xdc] ; level bonus
+        jle quit
+        mov word ptr [esi+0xdc], ax
+        quit:
         push 0x4687a8
         ret
       }
@@ -2008,6 +2021,18 @@ static void __declspec(naked) immunity_strings(void)
       }
 }
 
+// Pre-identify sold recipes.  Non-consequental in vanilla, but I want the type
+// of all recipes to be just "Recipe" and this allows still showing their name.
+static void __declspec(naked) identify_recipes(void)
+{
+    asm
+      {
+        mov dword ptr [0xad9f24+eax*4], edx ; replaced code
+        or byte ptr [0xad9f24+eax*4+20], IFLAGS_ID
+        ret
+      }
+}
+
 // Add new black potions.  Also some holy water code.
 static inline void new_potions(void)
 {
@@ -2022,6 +2047,7 @@ static inline void new_potions(void)
     patch_byte(0x4b8fd4, LAST_RECIPE - FIRST_RECIPE + 1); // sell new recipes
     patch_dword(0x490f1f, LAST_RECIPE); // allow selling new recipes
     patch_dword(0x4bda2b, LAST_RECIPE); // ditto
+    hook_call(0x4b8ff1, identify_recipes, 7);
 }
 
 // We now store a temporary enchantment in the bonus strength field,
@@ -7117,8 +7143,7 @@ static void __declspec(naked) color_broken_ac_2(void)
 
 // Implement the CheckSkill 0x2b command properly.  From what I understand,
 // it's supposed to check for effective skill (multiplied by mastery).
-// Some skills (such as Perception) are multiplied before adding NPC etc.
-// bonuses, others are after; I chose the uniform approach here (always after).
+// Learning is special, as its bonus (from NPCs etc.) is not multiplied.
 static int __stdcall check_skill(int player, int skill, int level, int mastery)
 {
     if (player == 5)
@@ -7160,11 +7185,16 @@ static int __stdcall check_skill(int player, int skill, int level, int mastery)
             /* fall through */
         // skills that are x1/2/3/5 dep. on mastery
         case SKILL_PERCEPTION:
-        case SKILL_LEARNING:
         case SKILL_THIEVERY:
             if (current_mastery == GM)
                 current_mastery++;
             current_skill *= current_mastery;
+            break;
+        // special case (only base skill is x1/2/3/5)
+        case SKILL_LEARNING:
+            if (current_mastery != GM)
+                current_mastery--;
+            current_skill += PARTY[player].skills[skill] * current_mastery;
             break;
       }
     return current_skill >= level;
@@ -9117,6 +9147,7 @@ static inline void new_enchants(void)
     hook_call(0x48f1c3, dont_lower_magic_bonus, 7);
     hook_call(0x48f1db, dont_lower_magic_bonus, 7);
     hook_call(0x48f1f4, dont_lower_magic_bonus, 7);
+    patch_byte(0x48ed15, 3); // nerf "of power" ench bonus
 }
 
 // Let the Elven Chainmail also improve bow skill.
@@ -13079,7 +13110,7 @@ static void __declspec(naked) racial_resistances(void)
       {
         cmp dword ptr [esp+28], 0
         jz no_bonus
-        call dword ptr ds:get_base_level
+        movzx eax, word ptr [ecx+0xda] ; pc level
         cmp dword ptr [esp+28], 10
         jae big_bonus
         shr eax, 1
@@ -13088,7 +13119,6 @@ static void __declspec(naked) racial_resistances(void)
         dec eax
         add_bonus:
         add dword ptr [esp+28], eax
-        mov ecx, esi ; restore
         no_bonus:
         jmp dword ptr ds:get_stat_bonus_from_items ; replaced call
       }
@@ -13101,7 +13131,7 @@ static void __declspec(naked) base_racial_resistances(void)
       {
         test esi, esi
         jz no_bonus
-        call dword ptr ds:get_base_level
+        movzx eax, word ptr [ecx+0xda] ; pc level
         cmp esi, 10
         jae big_bonus
         shr eax, 1
@@ -13110,7 +13140,6 @@ static void __declspec(naked) base_racial_resistances(void)
         dec eax
         add_bonus:
         add esi, eax
-        mov ecx, ebx ; restore
         no_bonus:
         jmp dword ptr ds:get_stat_bonus_from_items ; replaced call
       }
@@ -14860,7 +14889,7 @@ static int __stdcall train_armor(void *monster, void *player)
 }
 
 // Increment the training counter on a successful chest disarm.
-static int __declspec(naked) train_disarm(void)
+static void __declspec(naked) train_disarm(void)
 {
     asm
       {
@@ -14880,7 +14909,7 @@ static int __declspec(naked) train_disarm(void)
 }
 
 // Register a successful ID Monster use.
-static int __declspec(naked) train_id_monster(void)
+static void __declspec(naked) train_id_monster(void)
 {
     asm
       {
@@ -14898,6 +14927,41 @@ static int __declspec(naked) train_id_monster(void)
 #endif
         skip:
         cmp dword ptr [0x507a70], ebx ; replaced code
+        ret
+      }
+}
+
+// Let temporary levels boost skills slightly.
+// Learning gets special treatment because of how it handles boni.
+static void __declspec(naked) level_skill_bonus(void)
+{
+    asm
+      {
+        movzx ebx, word ptr [eax+0x108+edi*2] ; replaced code, almost
+        mov ecx, eax
+        call dword ptr ds:get_level
+        mov ecx, dword ptr [ebp-4] ; pc
+        movzx ecx, word ptr [ecx+0xda] ; base level
+        sub eax, ecx
+        jbe skip
+        cmp ecx, 20
+        ja ok
+        mov ecx, 20 ; prevent abuse from purposefully staying at level 1
+        ok:
+        add ecx, ecx
+        mov edx, ebx
+        and edx, SKILL_MASK
+        mul edx
+        div ecx
+        add esi, eax
+        cmp edi, SKILL_LEARNING
+        jne skip
+        mov edx, ebx
+        shr edx, 6 ; conveniently 1/2/4 for E/M/G
+        mul edx
+        add esi, eax
+        skip:
+        mov eax, ebx
         ret
       }
 }
@@ -14979,6 +15043,9 @@ static inline void skill_changes(void)
     // id item and repair training is in raise_ench_item_difficulty() above
     hook_call(0x42046d, train_disarm, 7);
     hook_call(0x41eb30, train_id_monster, 6);
+    patch_byte(0x4912a1, 0xc6); // multiply perception bonus by mastery
+    patch_byte(0x491307, 0xc6); // same with disarm
+    hook_call(0x48fbd5, level_skill_bonus, 8);
 }
 
 // Switch off some of MM7Patch's features to ensure compatibility.

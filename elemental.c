@@ -1619,6 +1619,7 @@ static void __declspec(naked) holy_is_not_magic_base(void)
 // number 200 is only respected for monsters.
 
 // Replace the old code described above with the new immunity check.
+// Also here: directly decrease damage by luck rating %.
 static void __declspec(naked) immune_to_damage(void)
 {
     asm
@@ -1631,9 +1632,26 @@ static void __declspec(naked) immune_to_damage(void)
         pop eax
         jnz immune
         test eax, eax
+        jnz reduce
         ret
         immune:
         xor eax, eax
+        ret
+        reduce:
+        cmp dword ptr [ebp+8], ENERGY
+        je skip
+        mov ecx, esi
+        call dword ptr ds:get_luck
+        push eax
+        call dword ptr ds:get_effective_stat
+        neg eax
+        mov ecx, 100
+        add eax, ecx
+        mul dword ptr [ebp+12] ; base damage
+        div ecx
+        mov dword ptr [ebp+12], eax
+        skip:
+        test esi, esi ; clear zf
         ret
       }
 }
@@ -6726,8 +6744,6 @@ static char *__stdcall resistance_hint(char *description, int resistance)
             return description;
       }
     int total = get_resistance(current, resistance - 9);
-    if (total)
-        total += get_effective_stat(get_luck(current));
     strcpy(buffer, description);
     if (total > 0 && !is_immune(current, element))
       {
@@ -7938,6 +7954,22 @@ static void __declspec(naked) print_cook_reply(void)
       }
 }
 
+// Add luck rating to effective perception.  Also, affect NPC bonus by mastery.
+static void __declspec(naked) luck_perception_bonus(void)
+{
+    asm
+      {
+        mov ebx, eax
+        mov ecx, edi
+        call dword ptr ds:get_luck
+        push eax
+        call dword ptr ds:get_effective_stat
+        mov esi, eax
+        mov eax, ebx ; restore
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -8017,6 +8049,16 @@ static inline void misc_rules(void)
     hook_call(0x445f0f, invert_cook_check, 5);
     hook_call(0x4bc56a, toggle_cook_reply, 6);
     hook_call(0x445523, print_cook_reply, 7);
+    // remove old luck bonus to damage resistance
+    patch_dword(0x48d51a, 0x901e5f8d); // lea ebx, [edi+30]; nop
+    patch_dword(0x48d542, 0x901e5f8d);
+    patch_dword(0x48d565, 0x901e5f8d);
+    patch_dword(0x48d588, 0x901e5f8d);
+    patch_byte(0x48def9, 0x43); // double luck effect on condition resistance
+    patch_byte(0x405482, 0x47); // same for dispel magic
+    hook_call(0x49125e, luck_perception_bonus, 9);
+    erase_code(0x49126b, 3); // allow negative bonus
+    patch_byte(0x49129e, 0x90); // multiply total perception by mastery
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -15043,8 +15085,7 @@ static inline void skill_changes(void)
     // id item and repair training is in raise_ench_item_difficulty() above
     hook_call(0x42046d, train_disarm, 7);
     hook_call(0x41eb30, train_id_monster, 6);
-    patch_byte(0x4912a1, 0xc6); // multiply perception bonus by mastery
-    patch_byte(0x491307, 0xc6); // same with disarm
+    patch_byte(0x491307, 0xc6); // multiply disarm bonus by mastery
     hook_call(0x48fbd5, level_skill_bonus, 8);
 }
 

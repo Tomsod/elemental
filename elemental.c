@@ -613,6 +613,8 @@ static struct elemdata
     int x, y, z, direction, look_angle, map_index;
     // For the bag of holding and porter-like NPCs.
     struct map_chest extra_chests[EXTRA_CHEST_COUNT];
+    // Difficulty level!  Yes, it's stored in the savegame.
+    int difficulty;
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -1028,7 +1030,8 @@ static void __thiscall (*make_sound)(void *this, int sound, int object,
                                      int loops, int x, int y, int unknown,
                                      int volume, int playback_rate)
     = (funcptr_t) 0x4aa29b;
-#define SOUND_THIS ((void *) 0xf78f58)
+#define SOUND_THIS_ADDR 0xf78f58
+#define SOUND_THIS ((void *) SOUND_THIS_ADDR)
 static void __thiscall (*evt_set)(void *player, int what, int amount)
     = (funcptr_t) 0x44a5ee;
 static int __thiscall (*exists_in_lod)(void *lod, char *filename)
@@ -1168,6 +1171,7 @@ static int __thiscall (*have_npc_hired)(int npc) = (funcptr_t) 0x476399;
 static int __thiscall (*repair_price)(void *player, int item_value,
                                       float shop_multiplier)
     = (funcptr_t) 0x4b8126;
+static void __thiscall (*set_gold)(int value) = (funcptr_t) 0x492b68;
 
 //---------------------------------------------------------------------------//
 
@@ -8642,7 +8646,8 @@ static void __declspec(naked) cursed_monster_hits_monster(void)
 }
 
 // In addition, resistances of a cursed monster are considered 25% lower
-// (10 resistance penetration).  Also here: GM ID Monster adds 5 more.
+// (10 resistance penetration).  Also here: GM ID Monster adds 5 more,
+// and (unrelated) all damage to monsters is lowered on higher difficulties.
 static void __declspec(naked) cursed_monster_resists_damage(void)
 {
     asm
@@ -8661,6 +8666,16 @@ static void __declspec(naked) cursed_monster_resists_damage(void)
         no_bonus:
         mov dword ptr [ebp+12], esi ; unused at this point
         add esi, eax
+        cmp dword ptr [elemdata.difficulty], 0
+        jz skip
+        mov eax, dword ptr [ebp+16] ; damage
+        sar eax, 1
+        cmp dword ptr [elemdata.difficulty], 2
+        jae lower
+        sar eax, 1
+        lower:
+        sub dword ptr [ebp+16], eax
+        skip:
         ret
       }
 }
@@ -10292,6 +10307,7 @@ static int __stdcall grim_reaper(struct player *player,
         player->sp = new_sp;
       }
     if (monster->hp <= random() % monster->max_hp
+        && elemdata.difficulty <= random() % 4
         && monster_resists_condition(monster, MAGIC))
       {
         monster->hp = 0;
@@ -13736,6 +13752,7 @@ static void __stdcall blaster_eradicate(struct player *player,
     int skill = get_skill(player, SKILL_BLASTER);
     if (skill > SKILL_GM && (skill & SKILL_MASK) > random() % 200
         && monster->hp <= random() % monster->max_hp
+        && elemdata.difficulty <= random() % 4
         && monster_resists_condition(monster, MAGIC)
         || projectile->item.bonus2 == SPC_CARNAGE)
       {
@@ -14329,6 +14346,7 @@ static int __stdcall maybe_instakill(struct player *player,
     int skill = get_skill(player, SKILL_UNARMED);
     if (skill > SKILL_GM && (skill & SKILL_MASK) > random() % 200
         && monster->hp <= random() % monster->max_hp
+        && elemdata.difficulty <= random() % 4
         && monster_resists_condition(monster, PHYSICAL))
       {
         monster->hp = 0;
@@ -14975,6 +14993,7 @@ static void __declspec(naked) train_id_monster(void)
 
 // Let temporary levels boost skills slightly.
 // Learning gets special treatment because of how it handles boni.
+// Also here: penalize most skills based on difficulty.
 static void __declspec(naked) level_skill_bonus(void)
 {
     asm
@@ -15004,6 +15023,23 @@ static void __declspec(naked) level_skill_bonus(void)
         add esi, eax
         skip:
         mov eax, ebx
+        cmp dword ptr [elemdata.difficulty], 0
+        jz quit
+        cmp edi, SKILL_BODYBUILDING
+        je quit
+        cmp edi, SKILL_MEDITATION
+        je quit
+        cmp edi, SKILL_LEARNING
+        je quit
+        and eax, SKILL_MASK
+        shr eax, 1
+        cmp dword ptr [elemdata.difficulty], 2
+        jae lower
+        shr eax, 1
+        lower:
+        sub esi, eax
+        mov eax, ebx
+        quit:
         ret
       }
 }
@@ -15905,6 +15941,252 @@ static inline void throwing_knives(void)
     // actually repaired in prepare_shop_recharge() and perform_shop_recharge()
 }
 
+// Draw the right options difficulty button in the settings screen.
+static void __declspec(naked) get_difficulty_button(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [elemdata.difficulty]
+        neg ecx
+        add ecx, 2
+        shl ecx, 6
+        ret
+      }
+}
+
+// On pressing a button, update the difficulty (unless in combat).
+static void __declspec(naked) change_difficulty(void)
+{
+    asm
+      {
+        test byte ptr [0xad45b0], 0x30 ; if enemies are near
+        jnz forbid
+        shr ecx, 6
+        neg ecx
+        add ecx, 2
+        mov dword ptr [elemdata.difficulty], ecx
+        ret
+        forbid:
+        push ebx
+        push ebx
+        push ebx
+        push ebx
+        push -1
+        push ebx
+        push ebx
+        push SOUND_BUZZ
+        mov ecx, SOUND_THIS_ADDR
+        call dword ptr ds:make_sound
+        ret
+      }
+}
+
+// Adjust monster recovery based on difficulty.
+static void __declspec(naked) difficult_monster_recovery(void)
+{
+    asm
+      {
+        mov eax, dword ptr [0x5cccc0+eax+80] ; replaced code
+        cmp dword ptr [elemdata.difficulty], ebx
+        jz skip
+        mov ecx, eax
+        shr ecx, 1
+        cmp dword ptr [elemdata.difficulty], 2
+        jae lower
+        shr ecx, 1
+        lower:
+        sub eax, ecx
+        skip:
+        ret
+      }
+}
+
+// Ditto, but using different registers.
+static void __declspec(naked) difficult_monster_recovery_esi(void)
+{
+    asm
+      {
+        mov esi, dword ptr [0x5cccc0+esi+80] ; replaced code
+        cmp dword ptr [elemdata.difficulty], ecx
+        jz skip
+        mov ebx, esi
+        shr ebx, 1
+        cmp dword ptr [elemdata.difficulty], 2
+        jae lower
+        shr ebx, 1
+        lower:
+        sub esi, ebx
+        skip:
+        ret
+      }
+}
+
+// Same, but in a different place.
+static void __declspec(naked) difficult_monster_recovery_after(void)
+{
+    asm
+      {
+        cmp dword ptr [elemdata.difficulty], esi
+        jz skip
+        shr eax, 1
+        cmp dword ptr [elemdata.difficulty], 2
+        jae lower
+        shr eax, 1
+        lower:
+        sub dword ptr [ebp+8], eax
+        skip:
+        cmp dword ptr [0xacd6b4], 1 ; replaced code
+        ret
+      }
+}
+
+// Add bonus experience for killing monsters on higher difficulties.
+static void __declspec(naked) difficult_monster_experience(void)
+{
+    asm
+      {
+        cmp dword ptr [elemdata.difficulty], ecx
+        jz skip
+        mov edx, eax
+        shr edx, 1
+        cmp dword ptr [elemdata.difficulty], 2
+        jae raise
+        shr edx, 1
+        raise:
+        add eax, edx
+        skip:
+        mov edx, PARTY_ADDR + 112 ; replaced code
+        ret
+      }
+}
+
+// Reduce gold earned on higher difficulties.
+static void __declspec(naked) difficult_gold_gain(void)
+{
+    asm
+      {
+        xor edi, edi ; replaced code
+        xor ebp, ebp ; ditto
+        cmp dword ptr [elemdata.difficulty], edi
+        jz skip
+        mov eax, ecx
+        shr eax, 1
+        cmp dword ptr [elemdata.difficulty], 2
+        jae lower
+        shr eax, 1
+        lower:
+        sub ecx, eax
+        skip:
+        mov eax, edx ; replaced code
+        ret
+      }
+}
+
+// Also reduce the profit from selling items.
+static void __declspec(naked) difficult_barter(void)
+{
+    asm
+      {
+        cmp esi, eax ; replaced code
+        jl skip ; replaced jump
+        mov eax, esi ; replaced code
+        cmp dword ptr [elemdata.difficulty], 0
+        jz skip
+        shr esi, 1
+        cmp dword ptr [elemdata.difficulty], 2
+        jae lower
+        shr esi, 1
+        lower:
+        sub eax, esi
+        skip:
+        ret
+      }
+}
+
+// Visually reduce the value of gold piles on higher difficulties.
+static void __declspec(naked) difficult_gold_pile(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ecx+12] ; replaced code
+        cmp dword ptr [elemdata.difficulty], ebx
+        jz skip
+        shr eax, 1
+        cmp dword ptr [elemdata.difficulty], 2
+        jae lower
+        shr eax, 1
+        lower:
+        neg eax
+        add eax, dword ptr [ecx+12]
+        skip:
+        mov dword ptr [ebp-120], eax ; replaced code
+        ret
+      }
+}
+
+// Also reduce bank gold quest rewards.
+static void __declspec(naked) difficult_bank_gold(void)
+{
+    asm
+      {
+        add dword ptr [0xacd570], eax ; replaced code
+        cmp dword ptr [elemdata.difficulty], 0
+        jz skip
+        shr eax, 1
+        cmp dword ptr [elemdata.difficulty], 2
+        jae lower
+        shr eax, 1
+        lower:
+        sub dword ptr [0xacd570], eax ; bank gold
+        skip:
+        ret
+      }
+}
+
+// I need to exempt box traders from difficulty gold penalties,
+// as the profit margin is their entire point, so I'll use
+// evt.Sub("Gold", -sell_price) for them, and make it give irreducible gold.
+static void __declspec(naked) subtract_negative_gold(void)
+{
+    asm
+      {
+        cmp ecx, 0
+        jl give
+        cmp ecx, dword ptr [0xacd56c] ; replaced code
+        ret
+        give:
+        neg ecx
+        add ecx, dword ptr [0xacd56c] ; party gold
+        add dword ptr [esp], 12 ; skip over old code
+        jmp dword ptr ds:set_gold
+      }
+}
+
+// Allow optionally increasing game difficulty.
+static inline void difficulty_level(void)
+{
+    hook_call(0x414fe1, get_difficulty_button, 6);
+    hook_call(0x431d9f, change_difficulty, 5);
+    erase_code(0x431da4, 21); // rest of the old button-press code
+    hook_call(0x4064b5, difficult_monster_recovery, 6);
+    hook_call(0x40657e, difficult_monster_recovery_esi, 6);
+    hook_call(0x40363a, difficult_monster_recovery_after, 7);
+    hook_call(0x403811, difficult_monster_recovery_after, 7);
+    hook_call(0x4039da, difficult_monster_recovery_after, 7);
+    hook_call(0x403be6, difficult_monster_recovery_after, 7);
+    hook_call(0x403e1e, difficult_monster_recovery_after, 7);
+    // damage lowered in cursed_monster_resists_damage() above
+    // also a chance to resist instadeath in resp. code
+    hook_call(0x42695b, difficult_monster_experience, 5);
+    hook_call(0x420bb2, difficult_gold_gain, 6);
+    hook_call(0x4b809a, difficult_barter, 6);
+    hook_call(0x41d964, difficult_gold_pile, 6);
+    hook_call(0x44b854, difficult_bank_gold, 6);
+    hook_call(0x44bbf6, subtract_negative_gold, 6);
+    // skill penalty in level_skill_bonus() above
+    patch_pointer(0x417d78, "%s: %+d"); // display penalty correctly
+}
+
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
                     LPVOID const reserved)
 {
@@ -15944,6 +16226,7 @@ BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
         patch_compatibility();
         new_enchant_item_types();
         throwing_knives();
+        difficulty_level();
       }
     return TRUE;
 }

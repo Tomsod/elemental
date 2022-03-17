@@ -985,6 +985,11 @@ struct __attribute__((packed)) patch_options
     SKIP(16);
 };
 
+// I didn't want to do this, but here's some function offset from v2.5.7.
+// Having the wrong version will not cause crashes, though.
+#define PATCH_CODE_BASE 0x32c1000
+#define PATCH_AXE_HOOK_OFFSET 0x42038
+
 // my addition
 #define ACTION_EXTRA_CHEST 40
 //vanilla
@@ -5363,7 +5368,7 @@ static void __declspec(naked) undead_slaying_element(void)
         jz other_hand
         lea eax, [eax+eax*8]
         lea eax, [edi+0x214+eax*4-36]
-        test byte ptr [eax+20], 2 ; broken bit
+        test byte ptr [eax+20], IFLAGS_BROKEN
         jnz other_hand
         mov edx, dword ptr [eax] ; id
         lea edx, [edx+edx*2]
@@ -7141,7 +7146,7 @@ static void __declspec(naked) color_broken_ac(void)
         jz next
         lea edx, [edx+edx*8]
         lea edx, [ebp+0x214+edx*4-36]
-        test byte ptr [edx+20], 2 ; broken bit
+        test byte ptr [edx+20], IFLAGS_BROKEN
         jz next
         mov eax, dword ptr [colors+CLR_RED*4]
         ret
@@ -8276,7 +8281,19 @@ static inline void cure_spells(void)
     erase_code(0x42c17f, 5); // fall through to set edi code
 }
 
-// Let the magic skill affect the chance of debuffs working.
+// Bonus for mod-triggered debuffs.
+static int debuff_penetration = 0;
+
+// Our wrapper for the debuff resist function.
+static int __stdcall debuff_monster(void *monster, int element, int bonus)
+{
+    debuff_penetration = bonus;
+    int result = monster_resists_condition(monster, element);
+    debuff_penetration = 0;
+    return result;
+}
+
+// Let the magic (or some other) skill affect the chance of debuffs working.
 // Shrinking Ray requires special handling here.
 // Also handles Cursed monsters and GM ID Monster bonus.
 static void __declspec(naked) pierce_debuff_resistance(void)
@@ -8284,7 +8301,39 @@ static void __declspec(naked) pierce_debuff_resistance(void)
     asm
       {
         add ecx, esi
-        xor esi, esi
+        mov esi, dword ptr [debuff_penetration]
+        test esi, esi
+        jnz not_spell
+        cmp dword ptr [ebp+4], 0x439c54 ; weapon stun
+        je weapon
+        cmp dword ptr [ebp+4], 0x439cdf ; mace paralysis
+        je weapon
+        cmp dword ptr [ebp+4], PATCH_CODE_BASE + PATCH_AXE_HOOK_OFFSET + 29
+        jne not_weapon
+        weapon:
+        push ecx
+        push eax
+        mov ecx, dword ptr [ebp-8] ; stored edi
+        ; vanilla debuffs only happen from main hand
+        mov eax, dword ptr [ecx+0x1948+SLOT_MAIN_HAND*4]
+        test eax, eax
+        jz no_weapon
+        lea eax, [eax+eax*8]
+        test byte ptr [ecx+0x214+eax*4-36+20], IFLAGS_BROKEN
+        jnz no_weapon
+        mov eax, dword ptr [ecx+0x214+eax*4-36]
+        lea eax, [eax+eax*2]
+        shl eax, 4
+        movzx eax, byte ptr [ITEMS_TXT_ADDR+eax+29]
+        push eax
+        call dword ptr ds:get_skill
+        and eax, SKILL_MASK
+        mov esi, eax
+        no_weapon:
+        pop eax
+        pop ecx
+        jmp not_spell
+        not_weapon:
         cmp dword ptr [ebp+4], 0x46bf98 ; gm shrinking ray code
         jne not_gm_ray
         mov esi, dword ptr [ebp-8] ; stored edi
@@ -8690,7 +8739,7 @@ static void __declspec(naked) mon_res_roll_chunk(void)
 }
 
 // Defined below.
-static void __stdcall headache_berserk(struct map_monster *);
+static void __stdcall headache_berserk(struct player *, struct map_monster *);
 static void __stdcall viper_slow(struct player *, struct map_monster *);
 
 // Implement cursed weapons; the debuff is inflicted with a 20% chance.
@@ -8719,7 +8768,7 @@ static void __declspec(naked) cursed_weapon(void)
         jz offhand
         lea eax, [eax+eax*8]
         lea eax, [edi+0x214+eax*4-36]
-        test byte ptr [eax+20], 2 ; broken bit
+        test byte ptr [eax+20], IFLAGS_BROKEN
         jnz offhand
         cmp dword ptr [eax], VIPER
         je viper
@@ -8728,6 +8777,7 @@ static void __declspec(naked) cursed_weapon(void)
         push eax
         push ecx
         push esi
+        push edi
         call headache_berserk
         jmp restore
         viper:
@@ -8755,15 +8805,26 @@ static void __declspec(naked) cursed_weapon(void)
         mov eax, dword ptr [edi+0x1948] ; offhand
         jmp check
         cursed:
+        push eax
         call dword ptr ds:random
         mov ecx, 5 ; 20% chance
         xor edx, edx
         div ecx
+        pop eax
         test edx, edx
         jnz fail
+        mov eax, dword ptr [eax]
+        lea eax, [eax+eax*2]
+        shl eax, 4
+        movzx eax, byte ptr [ITEMS_TXT_ADDR+eax+29]
+        push eax
+        mov ecx, edi
+        call dword ptr ds:get_skill
+        and eax, SKILL_MASK
+        push eax
         push MAGIC
         push esi ; monster
-        call dword ptr ds:monster_resists_condition
+        call debuff_monster
         test eax, eax
         jz fail
         xor ebx, ebx
@@ -8820,7 +8881,7 @@ static void __declspec(naked) soul_stealing_weapon(void)
         jz offhand
         lea eax, [eax+eax*8]
         lea eax, [edi+0x214+eax*4-36]
-        test byte ptr [eax+20], 2 ; broken bit
+        test byte ptr [eax+20], IFLAGS_BROKEN
         jnz offhand
         cmp dword ptr [eax], ETHRICS_STAFF
         jne no_zombie
@@ -8846,7 +8907,7 @@ static void __declspec(naked) soul_stealing_weapon(void)
         jz quit
         lea eax, [eax+eax*8]
         lea eax, [edi+0x214+eax*4-36]
-        test byte ptr [eax+20], 2 ; broken bit
+        test byte ptr [eax+20], IFLAGS_BROKEN
         jnz quit
         cmp dword ptr [eax], SACRIFICIAL_DAGGER
         je soul_offhand
@@ -9769,17 +9830,22 @@ static void __declspec(naked) headache_mind_damage(void)
       }
 }
 
-// Headache also has a 20% chance to cause Berserk for 20 minutes.
+// Headache also has a 20% chance to cause Berserk.
 // Called from cursed_weapon() above.
-// TODO: make duration dependent on Axe mastery?
-static void __stdcall headache_berserk(struct map_monster *monster)
+static void __stdcall headache_berserk(struct player *player,
+                                       struct map_monster *monster)
 {
-    if (random() % 5 || !monster_resists_condition(monster, MIND))
+    int skill = get_skill(player, SKILL_AXE);
+    if (random() % 5 || !debuff_monster(monster, MIND, skill & SKILL_MASK))
         return;
     remove_buff(monster->spell_buffs + MBUFF_CHARM);
     remove_buff(monster->spell_buffs + MBUFF_ENSLAVE);
+    int mastery = skill_mastery(skill);
+    if (mastery < EXPERT)
+        mastery = EXPERT;
     add_buff(monster->spell_buffs + MBUFF_BERSERK,
-             CURRENT_TIME + 20 * 60 * 128 / 30, EXPERT, 0, 0, 0);
+             CURRENT_TIME + (15 << (mastery - 2)) * 60 * 128 / 30,
+             mastery, 0, 0, 0);
     struct map_object anim = { OBJ_BERSERK,
                                find_objlist_item(OBJLIST_THIS, OBJ_BERSERK),
                                monster->x, monster->y,
@@ -10050,9 +10116,10 @@ static void __declspec(naked) ellingers_robe_preservation(void)
 static void __stdcall viper_slow(struct player *player,
                                  struct map_monster *monster)
 {
-    if (random() % 5 || !monster_resists_condition(monster, MAGIC))
+    int skill = get_skill(player, SKILL_STAFF);
+    if (random() % 5 || !debuff_monster(monster, MAGIC, skill & SKILL_MASK))
         return;
-    int mastery = skill_mastery(player->skills[SKILL_STAFF]);
+    int mastery = skill_mastery(skill);
     add_buff(monster->spell_buffs + MBUFF_SLOW,
              CURRENT_TIME + (mastery <= 1 ? 5 : 20) * 60 * 128 / 30, mastery,
              (mastery <= 2 ? 2 : mastery == 3 ? 4 : 8), 0, 0);
@@ -10308,7 +10375,8 @@ static int __stdcall grim_reaper(struct player *player,
       }
     if (monster->hp <= random() % monster->max_hp
         && elemdata.difficulty <= random() % 4
-        && monster_resists_condition(monster, MAGIC))
+        && debuff_monster(monster, MAGIC,
+                          get_skill(player, SKILL_AXE) & SKILL_MASK))
       {
         monster->hp = 0;
         make_sound(SOUND_THIS, SOUND_DIE, 0, 0, -1, 0, 0, 0, 0);
@@ -11216,7 +11284,7 @@ static void __declspec(naked) print_wand_to_hit(void)
         jmp print
         have_missile:
         lea eax, [eax+eax*8]
-        test byte ptr [ecx+0x214+eax*4-36+20], 2 ; broken bit
+        test byte ptr [ecx+0x214+eax*4-36+20], IFLAGS_BROKEN
         jnz no_missile
         mov eax, dword ptr [ecx+0x214+eax*4-36]
         lea eax, [eax+eax*2]
@@ -11255,7 +11323,7 @@ static void __declspec(naked) print_wand_to_hit_ref(void)
         jmp print
         have_missile:
         lea eax, [eax+eax*8]
-        test byte ptr [ecx+0x214+eax*4-36+20], 2 ; broken bit
+        test byte ptr [ecx+0x214+eax*4-36+20], IFLAGS_BROKEN
         jnz no_missile
         mov eax, dword ptr [ecx+0x214+eax*4-36]
         lea eax, [eax+eax*2]
@@ -11416,7 +11484,7 @@ static void __declspec(naked) red_empty_wands(void)
         charged:
         cmp dword ptr [edi+16], ecx ; charges vs. 0
         jnz not_it
-        or al, 2 ; broken bit (for display only)
+        or al, IFLAGS_BROKEN ; for display only
         not_it:
         test ecx, ecx ; zf = 1
         quit:
@@ -13753,7 +13821,7 @@ static void __stdcall blaster_eradicate(struct player *player,
     if (skill > SKILL_GM && (skill & SKILL_MASK) > random() % 200
         && monster->hp <= random() % monster->max_hp
         && elemdata.difficulty <= random() % 4
-        && monster_resists_condition(monster, MAGIC)
+        && debuff_monster(monster, MAGIC, skill & SKILL_MASK)
         || projectile->item.bonus2 == SPC_CARNAGE)
       {
         monster->spell_buffs[MBUFF_MASS_DISTORTION].expire_time
@@ -14347,7 +14415,7 @@ static int __stdcall maybe_instakill(struct player *player,
     if (skill > SKILL_GM && (skill & SKILL_MASK) > random() % 200
         && monster->hp <= random() % monster->max_hp
         && elemdata.difficulty <= random() % 4
-        && monster_resists_condition(monster, PHYSICAL))
+        && debuff_monster(monster, PHYSICAL, skill & SKILL_MASK))
       {
         monster->hp = 0;
         make_sound(SOUND_THIS, SOUND_DIE, 0, 0, -1, 0, 0, 0, 0);

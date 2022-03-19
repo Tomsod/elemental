@@ -8126,6 +8126,37 @@ static void __declspec(naked) luck_perception_bonus(void)
       }
 }
 
+// Make training sessions always last 8 days, like in MM6.
+static void __declspec(naked) reduce_training_time(void)
+{
+    asm
+      {
+        cmp ecx, 1
+        jb skip
+        xor ecx, ecx
+        dec ecx
+        shr ecx, 1
+        skip:
+        mov eax, dword ptr [CURRENT_PLAYER] ; replaced code
+        ret
+      }
+}
+
+// However, each successive level trained in a session is 25% more expensive.
+static void __declspec(naked) increase_training_price(void)
+{
+    asm
+      {
+        call dword ptr ds:ftol ; replaced call
+        mov ecx, dword ptr [CURRENT_PLAYER]
+        mov ecx, dword ptr [0xf8afc4+ecx*4] ; per-player level counters
+        add ecx, 4
+        mul ecx
+        shrd eax, edx, 2
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -8215,6 +8246,8 @@ static inline void misc_rules(void)
     hook_call(0x49125e, luck_perception_bonus, 9);
     erase_code(0x49126b, 3); // allow negative bonus
     patch_byte(0x49129e, 0x90); // multiply total perception by mastery
+    hook_call(0x4b4b93, reduce_training_time, 5);
+    hook_call(0x4b474f, increase_training_price, 5);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

@@ -113,13 +113,11 @@ enum elements
 enum spcitems_txt
 {
     SPC_CARNAGE = 3,
-    SPC_FROST = 5,
     SPC_ICE = 6,
-    SPC_SPARKS = 7,
     SPC_LIGHTNING = 8,
+    SPC_FIRE = 10,
     SPC_FLAME = 11,
     SPC_INFERNOS = 12,
-    SPC_POISON = 13,
     SPC_VENOM = 14,
     SPC_VAMPIRIC = 16,
     SPC_DRAGON_SLAYING = 40,
@@ -534,7 +532,8 @@ struct __attribute__((packed)) items_txt_item
     SKIP(4);
     char *name;
     char *generic_name;
-    SKIP(17);
+    SKIP(16);
+    uint8_t equip_stat;
     uint8_t skill;
     uint8_t mod1_dice_count;
     SKIP(1);
@@ -640,6 +639,7 @@ static struct elemdata
 
 #define ITEM_TYPE_WEAPON 1
 #define ITEM_TYPE_WEAPON2 2
+#define ITEM_TYPE_MISSILE 3
 #define ITEM_TYPE_ARMOR 4
 #define ITEM_TYPE_HELM 6
 // my addition
@@ -678,7 +678,8 @@ enum objlist
 
 #define ELEMENT(spell) byte(0x5cbecc + (spell) * 0x24)
 
-#define PARTY_BUFFS 0xacd6c4
+#define PARTY_BUFF_ADDR 0xacd6c4
+#define PARTY_BUFFS ((struct spell_buff *) PARTY_BUFF_ADDR)
 
 enum party_buffs
 {
@@ -725,13 +726,17 @@ enum spells
     SPL_STUN = 34,
     SPL_SLOW = 35,
     SPL_MASS_DISTORTION = 44,
+    SPL_BLESS = 46,
     SPL_SPECTRAL_WEAPON = 47,
     SPL_TURN_UNDEAD = 48,
+    SPL_PRESERVATION = 50,
     SPL_SPIRIT_LASH = 52,
     SPL_REMOVE_FEAR = 56,
     SPL_AURA_OF_CONFLICT = 59,
     SPL_BERSERK = 62,
     SPL_CURE_WEAKNESS = 67,
+    SPL_REGENERATION = 71,
+    SPL_HAMMERHANDS = 73,
     SPL_FLYING_FIST = 76,
     SPL_LIGHT_BOLT = 78,
     SPL_DESTROY_UNDEAD = 79,
@@ -821,6 +826,20 @@ enum condition
     COND_STONED = 15,
     COND_ERADICATED = 16,
 };
+
+struct __attribute__((packed)) spell_queue_item
+{
+    uint16_t spell;
+    uint16_t caster;
+    uint16_t target_pc;
+    SKIP(2);
+    uint16_t flags;
+    uint16_t skill;
+    uint32_t target_object;
+    SKIP(4);
+};
+
+#define SPELL_QUEUE ((struct spell_queue_item *) 0x50bf48)
 
 struct __attribute__((packed)) mapstats_item
 {
@@ -1009,7 +1028,8 @@ static funcptr_t ftol = (funcptr_t) 0x4ca74c;
 static int __thiscall (*add_buff)(struct spell_buff *buff, long long time,
                                   int skill, int power, int overlay,
                                   int caster) = (funcptr_t) 0x458519;
-static funcptr_t elem_damage = (funcptr_t) 0x439e16;
+static int __fastcall (*elem_damage)(void *weapon, int *ret_element,
+                                     int *ret_vampiric) = (funcptr_t) 0x439e16;
 static int __stdcall (*monster_resists)(void *monster, int element, int damage)
     = (funcptr_t) 0x427522;
 static funcptr_t monster_in_group = (funcptr_t) 0x438bce;
@@ -2489,9 +2509,59 @@ static void __declspec(naked) temp_enchant_height(void)
 }
 
 // Rules for temporary enchantments: weapons that already
-// attack with the same element are forbidden, as are
-// bows of carnage; items with a numeric bonus also cannot
-// get a temp enchantment.  If an artifact or an enchanted item
+// have a similar elemental/slaying/etc. ability are forbidden;
+// items with a numeric bonus also cannot get a temp enchantment.
+// Bows of carnage can be enchanted by swift potions only.
+static int __thiscall can_add_temp_enchant(struct item *weapon, int enchant)
+{
+    if (weapon->bonus || weapon->bonus2 == SPC_CARNAGE && enchant != SPC_SWIFT)
+        return FALSE;
+    int element, old_element, vampiric = FALSE, damage;
+    switch (enchant)
+      {
+        case SPC_FIRE:
+        case SPC_FLAME:
+        case SPC_INFERNOS:
+            element = FIRE;
+            goto elemental;
+        case SPC_LIGHTNING:
+            element = SHOCK;
+            goto elemental;
+        case SPC_ICE:
+            element = COLD;
+            goto elemental;
+        case SPC_VENOM:
+            element = POISON;
+            goto elemental;
+        case SPC_VAMPIRIC:
+            element = 10; // old dark
+        elemental:
+            damage = elem_damage(weapon, &old_element, &vampiric);
+            return element != old_element || !damage && !vampiric;
+        case SPC_SPECTRAL:
+            if (weapon->id == SWORD_OF_LIGHT || weapon->id == FLATTENER
+                || weapon->bonus2 == SPC_WRAITH)
+                return FALSE;
+            goto dupe;
+        case SPC_SWIFT:
+            if (weapon->id == PUCK || weapon->bonus2 == SPC_DARKNESS)
+                return FALSE;
+            goto dupe;
+        case SPC_UNDEAD_SLAYING:
+            if (weapon->id == GHOULSBANE || weapon->id == JUSTICE)
+                return FALSE;
+            // else fallthrough
+        case SPC_DRAGON_SLAYING:
+            if (weapon->id == GIBBET)
+                return FALSE;
+        dupe:
+            return weapon->bonus2 != enchant;
+        default: // just in case
+            return FALSE;
+      }
+}
+
+// Handle weapon-enchanting spells.  If an artifact or an enchanted item
 // is targeted by a GM-level spell, it's enchanted temporarily.
 static void __declspec(naked) enchant_weapon(void)
 {
@@ -2502,60 +2572,35 @@ static void __declspec(naked) enchant_weapon(void)
         jne temporary
         cmp dword ptr [esi+12], 0
         jnz temporary
-        mov eax, dword ptr [esp+8]
+        mov eax, dword ptr [esp+4]
         mov dword ptr [esi+12], eax
-        ret 8
+        ret 4
         temporary:
-        cmp dword ptr [esi+4], 0
-        jnz fail
-        cmp dword ptr [esi+12], SPC_CARNAGE
-        je fail
-        cmp dword ptr [esp+8], SPC_SPECTRAL
-        je spectral
-        xor eax, eax
-        push eax
-        push eax
         mov ecx, esi
-        lea edx, [esp+4]
-        push esp
-        call dword ptr ds:elem_damage
-        pop edx
-        pop ecx
-        or eax, edx
-        jz okay
-        cmp dword ptr [esp+4], ecx
-        je fail
-        okay:
+        push dword ptr [esp+4]
+        call can_add_temp_enchant
+        test eax, eax
+        jz fail
         mov dword ptr [esi+4], TEMP_ENCH_MARKER
-        mov eax, dword ptr [esp+8]
+        mov eax, dword ptr [esp+4]
         mov dword ptr [esi+8], eax
         test eax, eax
-        ret 8
-        spectral:
-        cmp dword ptr [esi], SWORD_OF_LIGHT ; would do nothing
-        je fail
-        cmp dword ptr [esi], FLATTENER
-        je fail
-        cmp dword ptr [esi+12], SPC_SPECTRAL
-        je fail
-        cmp dword ptr [esi+12], SPC_WRAITH
-        jne okay
+        ret 4
         fail:
         xor esi, esi
         push 0x4290a7
-        ret 16
+        ret 12
       }
 }
 
 // Rehaul Fire Aura according to the above rules.
-// Spectral Weapon code also arrives here (FIRE is ignored).
+// Spectral Weapon code also arrives here.
 static void __declspec(naked) fire_aura(void)
 {
     asm
       {
         mov esi, dword ptr [ebp-28]
         push dword ptr [ebp-4]
-        push FIRE
         call enchant_weapon
         ret
       }
@@ -2568,7 +2613,6 @@ static void __declspec(naked) vampiric_weapon(void)
       {
         mov esi, dword ptr [ebp-12]
         push SPC_VAMPIRIC
-        push 10
         call enchant_weapon
         ret
       }
@@ -2579,51 +2623,21 @@ static const float f1_25 = 1.25;
 static const float f1_5 = 1.5;
 
 // Make the new checks for the weapon-enchanting potions.
-// Bows of carnage can be enchanted by swift potions only.
 // Also handles holy water.  Gadgeteer's Belt's bonus is also applied here.
 static void __declspec(naked) weapon_potions(void)
 {
     asm
       {
         mov ebx, eax
-        cmp ebx, SPC_SWIFT
-        je swift
-        cmp dword ptr [esi+12], SPC_CARNAGE
-        je fail
-        cmp ebx, SPC_UNDEAD_SLAYING
-        je undead
-        cmp ebx, SPC_DRAGON_SLAYING
-        je dragon
-        xor edi, edi
-        cmp ebx, SPC_FLAME
-        je fire
-        cmp ebx, SPC_SPARKS
-        je shock
-        cmp ebx, SPC_FROST
-        je frost
-        cmp ebx, SPC_POISON
-        jne fail
-        inc edi
-        frost:
-        inc edi
-        shock:
-        inc edi
-        fire:
+        cmp ebx, SPC_VAMPIRIC
+        jae not_elem
         inc ebx ; buff elemental enchants a little
-        xor eax, eax
-        push eax
-        push eax
+        not_elem:
+        push ebx
         mov ecx, esi
-        lea edx, [esp+4]
-        push esp
-        call dword ptr ds:elem_damage
-        pop edx
-        pop ecx
-        or eax, edx
-        jz okay
-        cmp ecx, edi
-        je fail
-        okay:
+        call can_add_temp_enchant
+        test eax, eax
+        jz fail
         mov dword ptr [esi+4], TEMP_ENCH_MARKER
         mov dword ptr [esi+8], ebx
         fmul dword ptr [0x4d8470]
@@ -2644,23 +2658,6 @@ static void __declspec(naked) weapon_potions(void)
         fmul dword ptr [f1_5]
         quit:
         ret
-        swift:
-        cmp dword ptr [esi+12], SPC_DARKNESS
-        je fail
-        cmp dword ptr [esi], PUCK
-        je fail
-        jmp dupe
-        undead:
-        cmp dword ptr [esi], GHOULSBANE
-        je fail
-        cmp dword ptr [esi], JUSTICE
-        je fail
-        dragon:
-        cmp dword ptr [esi], GIBBET
-        je fail
-        dupe:
-        cmp dword ptr [esi+12], ebx
-        jne okay
         fail:
         fstp st(0)
         push 0x41677e
@@ -4366,7 +4363,7 @@ static void __declspec(naked) feather_fall_jump(void)
     asm
       {
         fld1
-        cmp word ptr [PARTY_BUFFS+16*BUFF_FEATHER_FALL+10], GM
+        cmp word ptr [PARTY_BUFF_ADDR+16*BUFF_FEATHER_FALL+10], GM
         jne no_ff
         fadd dword ptr [jump_multiplier]
         no_ff:
@@ -4706,7 +4703,7 @@ static void __declspec(naked) wizard_eye_functionality(void)
 {
     asm
       {
-        movzx eax, word ptr [PARTY_BUFFS+16*BUFF_WIZARD_EYE+10] ; replaced code
+        movzx eax, word ptr [PARTY_BUFF_ADDR+16*BUFF_WIZARD_EYE+10] ; old code
         cmp eax, GM
         jne quit
         mov dword ptr [ebp-24], 1 ; wizard eye active
@@ -4720,7 +4717,7 @@ static void __declspec(naked) wizard_eye_permanence(void)
 {
     asm
       {
-        cmp esi, PARTY_BUFFS + 16 * BUFF_WIZARD_EYE
+        cmp esi, PARTY_BUFF_ADDR + 16 * BUFF_WIZARD_EYE
         jne not_eye
         cmp word ptr [esi+10], GM
         je quit ; caller will also check zf later
@@ -4737,9 +4734,9 @@ static void __declspec(naked) wizard_eye_animation(void)
 {
     asm
       {
-        cmp word ptr [PARTY_BUFFS+16*BUFF_WIZARD_EYE+10], MASTER
+        cmp word ptr [PARTY_BUFF_ADDR+16*BUFF_WIZARD_EYE+10], MASTER
         jg quit ; caller will also check flags
-        cmp dword ptr [PARTY_BUFFS+16*BUFF_WIZARD_EYE+4], 0 ; replaced code
+        cmp dword ptr [PARTY_BUFF_ADDR+16*BUFF_WIZARD_EYE+4], 0 ; replaced code
         quit:
         ret
       }
@@ -4750,7 +4747,7 @@ static void __declspec(naked) wizard_eye_display_count(void)
 {
     asm
       {
-        cmp eax, PARTY_BUFFS + 16 * BUFF_WIZARD_EYE
+        cmp eax, PARTY_BUFF_ADDR + 16 * BUFF_WIZARD_EYE
         jne not_eye
         cmp word ptr [eax+10], MASTER
         jg quit ; caller will also check flags
@@ -4770,7 +4767,7 @@ static void __declspec(naked) wizard_eye_display(void)
 {
     asm
       {
-        cmp ecx, PARTY_BUFFS + 16 * BUFF_WIZARD_EYE
+        cmp ecx, PARTY_BUFF_ADDR + 16 * BUFF_WIZARD_EYE
         jne not_eye ; note that WE is last buff so it`ll never be greater
         cmp word ptr [ecx+10], MASTER
         not_eye:
@@ -4791,9 +4788,9 @@ static void __declspec(naked) wizard_eye_display_duration(void)
 {
     asm
       {
-        cmp dword ptr [ebp-8], PARTY_BUFFS + 16 * BUFF_WIZARD_EYE
+        cmp dword ptr [ebp-8], PARTY_BUFF_ADDR + 16 * BUFF_WIZARD_EYE
         jne not_eye
-        cmp word ptr [PARTY_BUFFS+16*BUFF_WIZARD_EYE+10], GM
+        cmp word ptr [PARTY_BUFF_ADDR+16*BUFF_WIZARD_EYE+10], GM
         je permanent
         not_eye:
         push 0x41d1b6 ; replaced function call
@@ -4827,7 +4824,7 @@ static void __declspec(naked) wizard_eye_display_duration(void)
 }
 
 // GM Wizard Eye is applied permanently.
-// Casting it the second time will cancel it.
+// Ctrl-clicking on it in the spellbook will cancel it.
 // TODO: cancelling could have a different sound?
 static void __declspec(naked) wizard_eye_cast(void)
 {
@@ -4839,14 +4836,12 @@ static void __declspec(naked) wizard_eye_cast(void)
         mov dword ptr [ebp-20], eax ; replaced code
         ret
         permanent:
-        mov di, word ptr [PARTY_BUFFS+16*BUFF_WIZARD_EYE+10]
-        mov ecx, PARTY_BUFFS + 16 * BUFF_WIZARD_EYE
+        mov ecx, PARTY_BUFF_ADDR + 16 * BUFF_WIZARD_EYE
         call dword ptr ds:remove_buff
-        mov word ptr [PARTY_BUFFS+16*BUFF_WIZARD_EYE+10], si ; == 0
-        cmp di, GM
-        je remove
-        add word ptr [PARTY_BUFFS+16*BUFF_WIZARD_EYE+10], GM
-        remove:
+        mov dx, GM
+        test byte ptr [ebx+9], 4 ; turn off flag
+        cmovnz dx, si ; si == 0
+        mov word ptr [PARTY_BUFF_ADDR+16*BUFF_WIZARD_EYE+10], dx
         push 0x42deaa ; post-cast code
         ret 8
       }
@@ -4858,7 +4853,7 @@ static void __declspec(naked) wizard_eye_from_day_of_protection(void)
 {
     asm
       {
-        cmp word ptr [PARTY_BUFFS+16*BUFF_WIZARD_EYE+10], GM
+        cmp word ptr [PARTY_BUFF_ADDR+16*BUFF_WIZARD_EYE+10], GM
         je skip
         mov dword ptr [ebp-24], MASTER ; no GM
         fild qword ptr [CURRENT_TIME_ADDR] ; replaced code
@@ -4869,7 +4864,7 @@ static void __declspec(naked) wizard_eye_from_day_of_protection(void)
       }
 }
 
-// When re-casting Immolation or GM Wizard Eye to switch them off,
+// When ctrl-clicking Immolation or GM Wizard Eye to switch them off,
 // do not charge spell points.  Same for Storm Trident's free spell.
 // Also here: Eloquence Talisman's spell recovery bonus.
 static void __declspec(naked) switch_off_spells_for_free(void)
@@ -4888,21 +4883,8 @@ static void __declspec(naked) switch_off_spells_for_free(void)
         shr eax, 2
         sub dword ptr [ebp-180], eax ; -25% of base recovery
         no_talisman:
-        cmp word ptr [ebx], SPL_IMMOLATION
-        jne not_immolation
-        mov eax, dword ptr [PARTY_BUFFS+16*BUFF_IMMOLATION]
-        or eax, dword ptr [PARTY_BUFFS+16*BUFF_IMMOLATION+4]
-        ret ; zf will be checked shortly
-        not_immolation:
-        cmp word ptr [ebx], SPL_WIZARD_EYE
-        jne not_eye
-        cmp dword ptr [ebp-24], GM
-        jne not_eye
-        cmp word ptr [PARTY_BUFFS+16*BUFF_WIZARD_EYE+10], GM
-        jne not_eye
-        cmp esi, 1 ; clear zf
-        ret
-        not_eye:
+        test byte ptr [ebx+9], 4 ; turn off flag
+        jnz quit
         cmp word ptr [ebx], SPL_LIGHTNING_BOLT
         jne set_zf
         mov ecx, dword ptr [ebp-32] ; PC
@@ -4918,22 +4900,19 @@ static void __declspec(naked) switch_off_spells_for_free(void)
       }
 }
 
-// Allow cancelling Immolation by casting it a second time.
+// Allow cancelling Immolation by ctrl-clicking on it in the spellbook.
 static void __declspec(naked) switch_off_immolation(void)
 {
     asm
       {
-        mov ecx, dword ptr [PARTY_BUFFS+16*BUFF_IMMOLATION]
-        or ecx, dword ptr [PARTY_BUFFS+16*BUFF_IMMOLATION+4]
-        jz cast
-        cmp word ptr [ebx+10], si ; only if casting from spellbook
-        jz remove
+        test byte ptr [ebx+9], 4 ; turn off flag
+        jnz remove
         cast:
         shl eax, 7 ; replaced code
         mov dword ptr [ebp-44], eax ; replaced code
         ret
         remove:
-        mov ecx, PARTY_BUFFS + 16 * BUFF_IMMOLATION
+        mov ecx, PARTY_BUFF_ADDR + 16 * BUFF_IMMOLATION
         call dword ptr ds:remove_buff
         push 0x42deaa ; post-cast code
         ret 8
@@ -5090,6 +5069,172 @@ static void __declspec(naked) aura_of_conflict(void)
       }
 }
 
+// For batch casting.
+static int accumulated_recovery;
+
+// Give some spells different effects on a Ctrl-click.
+// TODO: should we disable permanent weapon enchantment here?
+static int __stdcall alternative_spell_mode(int player_id, int spell)
+{
+    int unsafe = byte(0xad45b0) & 0x30;
+    struct player *player = PARTY + player_id;
+    int enchant, flags = 0x820, items[8], pcs[8] = { 0, 1, 2, 3 }, count = 4;
+    switch (spell)
+      {
+        case SPL_FIRE_AURA:
+            enchant = SPC_FIRE; // approximate
+            goto weapon;
+        case SPL_SPECTRAL_WEAPON:
+            enchant = SPC_SPECTRAL;
+            goto weapon;
+        case SPL_VAMPIRIC_WEAPON:
+            enchant = SPC_VAMPIRIC;
+        weapon:
+            count = 0;
+            for (int pc = 0; pc < 4; pc++)
+              {
+                struct player *current = PARTY + pc;
+                int right = current->equipment[SLOT_MAIN_HAND];
+                if (right
+                    && can_add_temp_enchant(&current->items[right-1], enchant))
+                  {
+                    pcs[count] = pc;
+                    items[count] = right - 1;
+                    count++;
+                  }
+                int left = current->equipment[SLOT_OFFHAND];
+                if (left)
+                  {
+                    struct item *weapon = &current->items[left-1];
+                    if (ITEMS_TXT[weapon->id].equip_stat < ITEM_TYPE_MISSILE
+                        && can_add_temp_enchant(weapon, enchant))
+                      {
+                        pcs[count] = pc;
+                        items[count] = left - 1;
+                        count++;
+                      }
+                  }
+              }
+            if (!count)
+                for (int pc = 0; pc < 4; pc++)
+                  {
+                    struct player *current = PARTY + pc;
+                    int missile = current->equipment[SLOT_MISSILE];
+                    if (missile)
+                      {
+                        struct item *bow = &current->items[missile-1];
+                        if (ITEMS_TXT[bow->id].equip_stat < ITEM_TYPE_MISSILE
+                            && ITEMS_TXT[bow->id].skill != SKILL_BLASTER
+                            && can_add_temp_enchant(bow, enchant))
+                          {
+                            pcs[count] = pc;
+                            items[count] = missile - 1;
+                            count++;
+                          }
+                      }
+                  }
+            if (!count)
+                return FALSE;
+            break;
+        case SPL_WIZARD_EYE:
+            if (player->skills[SKILL_AIR] < SKILL_GM
+                || PARTY_BUFFS[BUFF_WIZARD_EYE].skill < GM)
+                return FALSE;
+            goto turn_off;
+        case SPL_IMMOLATION:
+            if (!PARTY_BUFFS[BUFF_IMMOLATION].expire_time)
+                return FALSE;
+        turn_off:
+            count = 1;
+            flags = 0x400; // turn off for free
+            unsafe = FALSE;
+            break;
+        case SPL_BLESS:
+            if (player->skills[SKILL_SPIRIT] >= SKILL_EXPERT)
+                return FALSE;
+            break;
+        case SPL_PRESERVATION:
+            if (player->skills[SKILL_SPIRIT] >= SKILL_MASTER)
+                return FALSE;
+            break;
+        case SPL_REGENERATION:
+            break;
+        case SPL_HAMMERHANDS:
+            if (player->skills[SKILL_BODY] >= SKILL_GM)
+                return FALSE;
+            break;
+        case SPL_PAIN_REFLECTION:
+            if (player->skills[SKILL_DARK] >= SKILL_MASTER)
+                return FALSE;
+            break;
+        default:
+            return FALSE;
+      }
+    if (unsafe)
+        return FALSE;
+    // this relies on the fact none of these spells have a variable cost
+    int max_count = player->sp / SPELL_INFO[spell].cost_gm;
+    if (max_count <= 0)
+        return FALSE;
+    if (count > max_count)
+        count = max_count;
+    accumulated_recovery = 0;
+    int id = 0;
+    for (int target = 0; target < count; target++)
+      {
+        while (SPELL_QUEUE[id].spell)
+            if (++id >= 10)
+                goto skip;
+        SPELL_QUEUE[id].spell = spell;
+        SPELL_QUEUE[id].caster = player_id;
+        SPELL_QUEUE[id].target_pc = pcs[target];
+        SPELL_QUEUE[id].flags = flags;
+        SPELL_QUEUE[id].skill = 0; // use the caster's skill
+        SPELL_QUEUE[id].target_object = items[target];
+      }
+    skip:
+    SPELL_QUEUE[id].flags &= ~0x20; // last spell induces recovery
+    return TRUE;
+}
+
+// Hook for the above.
+static void __declspec(naked) alternative_spell_mode_hook(void)
+{
+    asm
+      {
+        cmp dword ptr [0x4f86dc], 3 ; replaced code
+        jz quit
+        cmp dword ptr [0x507a18], 1 ; ctrl pressed
+        jne quit
+        push dword ptr [esp+24] ; spell
+        push dword ptr [esp+52] ; player id
+        call alternative_spell_mode
+        cmp eax, 1 ; skip vanilla code if true
+        quit:
+        ret
+      }
+}
+
+// When batch casting, accumulate recovery until the last spell.
+static void __declspec(naked) cumulative_recovery(void)
+{
+    asm
+      {
+        xor esi, esi ; replaced code
+        test byte ptr [ebx+9], 8 ; our flag
+        jz skip
+        mov eax, dword ptr [ebp-180] ; recovery
+        test eax, eax
+        cmovs eax, esi
+        add eax, dword ptr [accumulated_recovery]
+        mov dword ptr [accumulated_recovery], eax
+        mov dword ptr [ebp-180], eax
+        skip:
+        test byte ptr [ebx+8], 0x20 ; replaced code
+        ret
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -5214,6 +5359,8 @@ static inline void misc_spells(void)
     patch_byte(0x4e2ac6, byte(0x4e2ad5));
     patch_pointer(0x42ea51, aura_of_conflict);
     patch_byte(0x427cd8, 2); // targets a pc
+    hook_call(0x434702, alternative_spell_mode_hook, 7);
+    hook_call(0x428295, cumulative_recovery, 6);
 }
 
 // For consistency with players, monsters revived with Reanimate now have
@@ -9125,7 +9272,7 @@ static void __declspec(naked) dispel_party_buffs(void)
 {
     asm
       {
-        mov esi, PARTY_BUFFS
+        mov esi, PARTY_BUFF_ADDR
         check_buff:
         mov cl, byte ptr [esi+14] ; caster
         test cl, cl

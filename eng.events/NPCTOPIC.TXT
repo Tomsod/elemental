@@ -601,3 +601,5 @@
 600	Meditation Grandmaster	GM mini-quest in progress
 601	Not so fast…	Alchemy GM mini-quest
 602	Alchemy Grandmaster	GM mini-quest in progress
+603	Quest	Sacrificial Dagger quest
+604	Quest	Sacrificial Dagger quest in progress

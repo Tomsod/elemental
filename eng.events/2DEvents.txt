@@ -497,7 +497,7 @@
 495		H_House M47	3	76	Dreamwright Residence			0	0	0	0	1.5
 496		H_House M43	3	77	Wain Manor			0	0	0	0	1.5
 497		N_House M11	5	112	Putnam Residence			0	0	0	0	1.5
-498		N_House M12	5	113	Hawker Residence			0	0	0	0	1.5
+498		N_House M12	5	113	Pebble Residence			0	0	0	0	1.5
 499		N_House P15	5	110	Avalanche's			0	0	0	0	1.5
 500		Wz_House P8	6	100	Stone House			0	0	0	0	1.5
 501		Wz_House P9	6	101	Watershed Residence			0	0	0	0	1.5

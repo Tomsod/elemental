@@ -871,7 +871,7 @@ enum profession
 };
 
 // New max number of global.evt comands (was 4400 before).
-#define GLOBAL_EVT_LINES 5300
+#define GLOBAL_EVT_LINES 5350
 // New max size of global.evt itself (was 46080 bytes before).
 #define GLOBAL_EVT_SIZE 53000
 
@@ -923,11 +923,11 @@ enum monster_buffs
 #define HIRELING_REPLY 0xf8b06c
 
 // new NPC greeting count (starting from 1)
-#define GREET_COUNT 220
+#define GREET_COUNT 221
 // new NPC topic count
-#define TOPIC_COUNT 602
+#define TOPIC_COUNT 604
 // count of added NPC text entries
-#define NEW_TEXT_COUNT 41
+#define NEW_TEXT_COUNT 45
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658
@@ -11157,6 +11157,7 @@ static inline void new_artifacts(void)
     hook_call(0x450657, mark_guaranteed_artifacts, 5);
     hook_call(0x45028f, fix_static_chest_items, 6);
     hook_call(0x45052f, mark_chest_checked, 6);
+    patch_byte(0x456935, 12); // reduce max randomly generated artifacts
 }
 
 // When calculating missile damage, take note of the weapon's skill.

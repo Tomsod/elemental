@@ -601,3 +601,5 @@
 600	Великий магистр медитации	GM mini-quest in progress
 601	Не спешите...	Alchemy GM mini-quest
 602	Великий магистр алхимии	GM mini-quest in progress
+603	Квест	Sacrificial Dagger quest
+604	Квест	Sacrificial Dagger quest in progress

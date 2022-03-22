@@ -396,7 +396,7 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 394	Kira Cardrin	191	0	0	0	286	0	189	0	421	418	0	0	0	0	Hint NPC in Steadwick (3)
 395	Inja Yew	469	0	0	0	308	0	184	0	447	500	0	0	0	0	Hint NPC in Tularean Forest (4)
 396	Alik Whitemoon	420	0	0	0	323	0	184	0	448	444	0	0	0	0	Hint NPC in Tularean Forest (4)
-397	Damon Hawker	37	0	0	0	498	0	190	0	422	499	0	0	0	0	Hint NPC in Deyja (5)
+397	Amber Pebble	546	0	0	0	498	0	221	0	603	499	422	0	0	0	Hint NPC in Deyja (5) + Goblin Dagger Quest
 398	Claes Mogren	562	0	0	0	338	0	190	0	423	444	0	0	0	0	Hint NPC in Deyja (5)
 399	Licia Rivenrock	376	0	0	0	520	0	183	0	457	429	0	0	0	0	Hint NPC in Barrow Downs (11)
 400	Feldspar Toolmen	324	0	0	0	517	0	183	0	429	439	0	0	0	0	Hint NPC in Barrow Downs (11)

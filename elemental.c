@@ -820,6 +820,7 @@ enum condition
 {
     COND_WEAK = 1,
     COND_AFRAID = 3,
+    COND_INSANE = 5,
     COND_PARALYZED = 12,
     COND_UNCONSCIOUS = 13,
     COND_DEAD = 14,
@@ -2080,7 +2081,34 @@ static void __declspec(naked) identify_recipes(void)
       }
 }
 
-// Add new black potions.  Also some holy water code.
+// Add a Raise Dead black potion (replaces Stone to Flesh).
+static void __declspec(naked) raise_dead_potion(void)
+{
+    asm
+      {
+        mov eax, dword ptr [esi+COND_DEAD*8]
+        or eax, dword ptr [esi+COND_DEAD*8+4]
+        jz quit
+        mov dword ptr [esi+COND_DEAD*8], ebx ; == 0
+        mov dword ptr [esi+COND_DEAD*8+4], ebx
+        mov dword ptr [esi+COND_UNCONSCIOUS*8], ebx
+        mov dword ptr [esi+COND_UNCONSCIOUS*8+4], ebx
+        mov ecx, esi
+        call dword ptr ds:get_full_hp
+        cmp eax, dword ptr [MOUSE_ITEM+4] ; potion power
+        cmova eax, dword ptr [MOUSE_ITEM+4]
+        mov dword ptr [esi+0x193c], eax ; hp
+        push ebx ; cannot resist
+        push COND_WEAK
+        mov ecx, esi
+        call condition_immunity ; inflict condition
+        quit:
+        push 0x468da0 ; post-drink code
+        ret
+      }
+}
+
+// Add new (black) potions and rearrange others.  Also some holy water code.
 static inline void new_potions(void)
 {
     hook_call(0x468c50, resistance_replaces_immunity, 6);
@@ -2095,6 +2123,14 @@ static inline void new_potions(void)
     patch_dword(0x490f1f, LAST_RECIPE); // allow selling new recipes
     patch_dword(0x4bda2b, LAST_RECIPE); // ditto
     hook_call(0x4b8ff1, identify_recipes, 7);
+    // Rearrange some potion effects.
+    int awaken = dword(0x468eda);
+    patch_dword(0x468eda, dword(0x468eca)); // swap with magic potion
+    patch_dword(0x468eca, awaken); // ditto
+    erase_code(0x4687bc, 3); // nerf magic potions (no +10 bonus)
+    patch_dword(0x468ef2, dword(0x468f3a)); // recharge now cures paralysis
+    patch_dword(0x468f3a, dword(0x468f66)); // cure paralysis -> stone to flesh
+    patch_pointer(0x468f66, raise_dead_potion); // stone to flesh -> raise dead
 }
 
 // We now store a temporary enchantment in the bonus strength field,
@@ -4532,7 +4568,7 @@ static void __declspec(naked) berserk_pc(void)
         test eax, eax
         jz quit
         push 1 ; can resist -- arguable, but avoids abuse
-        push 5 ; insane condition
+        push COND_INSANE
         mov ecx, esi
         call condition_immunity ; our wrapper for inflict_condition()
         quit:

@@ -220,13 +220,13 @@ The Black Potion of Pure Luck could be the answer for a party who is Disarm Trap
 748	"
 The Black Potion of Slaying can turn any weapon into a weapon of dragon slaying.  To mix this potion, combine the White Flaming Potion with the Potion of Shield."	Slaying Potion
 749	"
-The Black Potion of Stone to Flesh allows you to cure stoning yourself.  To mix this potion, combine the White Potion of Cure Paralysis with the Potion of Heroism."	Stone To Flesh
+The Black Potion of Raise Dead can revive a dead character.  To mix this potion, combine the White Potion of Stone to Flesh with the Potion of Heroism."	Stone To Flesh
 750	"
 The White Potion of Might Boost temporarily boosts your strength just when you need it.  To mix this potion, add a Purple Potion to the Compound Potion of Heroism."	Might Boost
 751	"
 The White Potion of Intellect Boost temporarily boosts your intellect just when you need it.  To mix this potion, add a Green Potion to the Compound Potion of Harden Item."	Intellect Boost
 752	"
-The White Potion of Personality Boost temporarily boosts your personality just when you need it.  To mix this potion, add a Green Potion to the Compound Potion of Recharge Item."	Personality Boost
+The White Potion of Personality Boost temporarily boosts your personality just when you need it.  To mix this potion, add a Green Potion to the Compound Potion of Recharge."	Personality Boost
 753	"
 The White Potion of Endurance Boost temporarily boosts your endurance just when you need it.  To mix this potion, add a Purple Potion to the Compound Potion of Shield."	Endurance Boost
 754	"
@@ -238,19 +238,19 @@ The White Flaming Potion turns any weapon into a weapon of Infernos and can also
 757	"
 The White Freezing Potion turns any weapon into a weapon of Ice and can also be thrown.  To mix this potion, either combine Heroism and a Green Potion, or Shield and an Orange Potion."	Freezing Potion
 758	"
-The White Noxious Potion turns any weapon into a weapon of Venom and can also be thrown.  To mix this potion, either combine Recharge Item and an Orange Potion, or Harden Item and a Purple Potion."	Noxious Potion
+The White Noxious Potion turns any weapon into a weapon of Venom and can also be thrown.  To mix this potion, either combine Recharge and an Orange Potion, or Harden Item and a Purple Potion."	Noxious Potion
 759	"
 The White Shocking Potion turns any weapon into a weapon of Lightning and can also be thrown.  To mix this potion, either combine Haste and a Purple Potion, or Heroism and an Orange Potion."	Shocking Potion
 760	"
-The White Swift Potion makes any weapon Swift and can also be drunk.  To mix this potion, either combine Recharge Item and a Purple Potion, or Shield and a Green Potion."	Swift Potion
+The White Swift Potion makes any weapon Swift and can also be drunk.  To mix this potion, either combine Recharge and a Purple Potion, or Shield and a Green Potion."	Swift Potion
 761	"
-The White Potion of Cure Paralysis eliminates the Paralysis condition.  To mix this potion, either combine Harden Item and an Orange Potion, or Stoneskin and a Green Potion."	Cure Paralysis
+The White Potion of Stone to Flesh eliminates the Stoned condition.  To mix this potion, either combine Harden Item and an Orange Potion, or Stoneskin and a Green Potion."	Stone to Flesh
 762	"
-The White Potion of Divine Restoration eliminates all conditions except stoned, dead or eradicated.  To mix this potion you need to combine two Compound Potions: Haste and Recharge Item, or Stoneskin and Shield, or Heroism and Harden Item."	Divine Restoration
+The White Potion of Divine Restoration eliminates all conditions except stoned, dead or eradicated.  To mix this potion you need to combine two Compound Potions: Haste and Recharge, or Stoneskin and Shield, or Heroism and Harden Item."	Divine Restoration
 763	"
 The White Potion of Divine Cure is more powerful than the Potion of Cure Wounds.  To mix this potion, combine the Compound Potions of Haste and Stoneskin."	Divine Cure
 764	"
-The White Potion of Divine Power is more powerful than the Magic Potion.  To mix this potion, combine the Compound Potions of Harden Item and Recharge Item."	Divine Power
+The White Potion of Divine Power is more powerful than the Magic Potion.  To mix this potion, combine the Compound Potions of Harden Item and Recharge."	Divine Power
 765	"
 The White Potion of Luck Boost temporarily boosts your luck just when you need it.  To mix this potion, combine the Compound Potions of Heroism and Shield."	Luck Boost
 766	"
@@ -262,9 +262,9 @@ The White Potion of Cold Resistance temporarily raises your resistance to cold i
 769	"
 The White Potion of Magic Resistance temporarily raises your resistance to non-elemental magic.  To mix this potion, combine the Compound Potions of Heroism and Stoneskin."	Magic Resistance
 770	"
-The White Potion of Mind Resistance temporarily raises your resistance to mental attacks.  To mix this potion, combine the Compound Potions of Heroism and Recharge Item."	Mind Resistance
+The White Potion of Mind Resistance temporarily raises your resistance to mental attacks.  To mix this potion, combine the Compound Potions of Heroism and Recharge."	Mind Resistance
 771	"
-The White Potion of Poison Resistance temporarily raises your resistance to poisons and acid.  To mix this potion, combine the Compound Potions of Stoneskin and Recharge Item."	Poison Resistance
+The White Potion of Poison Resistance temporarily raises your resistance to poisons and acid.  To mix this potion, combine the Compound Potions of Stoneskin and Recharge."	Poison Resistance
 772	"
 The Black Potion of Fire Immunity gives complete immunity to fire damage for its (short) duration.  To mix this potion, add a Green Potion to the White Potion of Fire Resistance."	Fire Immunity
 773	"
@@ -280,7 +280,7 @@ The Black Potion of Magic Immunity gives complete immunity to non-elemental magi
 778	"
 The Black Potion of Pain Reflection damages monsters as they attack you.  To mix this potion, combine the White Noxious Potion and a Potion of Haste."	Pain Reflection
 779	"
-The Black Potion of Divine Mastery increases a character's level until next rest, which affects HP and SP pools and possibly skills.  To mix this potion, add a Potion of Recharge Item to the White Potion of Luck Boost."	Divine Mastery
+The Black Potion of Divine Mastery increases a character's level until next rest, which affects HP and SP pools and possibly skills.  To mix this potion, add a Potion of Recharge to the White Potion of Luck Boost."	Divine Mastery
 780			Ritual of Dark Containment
 781			
 			

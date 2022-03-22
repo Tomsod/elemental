@@ -45,17 +45,17 @@ Note bit	Autonote Text	Category
 44	0	Stat	
 45	Catalyst (Grey) = Mushrooms + Empty Bottle.  Different grey reagents can be used for increased effect.	potion
 46	Cure Wounds (Red) = Widoweeps Berries + Empty Bottle.  Different red reagents can be used for increased effect.	potion
-47	Magic Potion (Blue) = Phirna Root + Empty Bottle.  Different blue reagents can be used for increased effect.	potion
+47	Awaken (Blue) = Phirna Root + Empty Bottle.  Different blue reagents can be used for increased effect.	potion
 48	Cure Weakness (Yellow) = Poppysnaps + Empty Bottle.  Different yellow reagents can be used for increased effect.	potion
 49	Cure Disease (Orange) = Yellow + Red	potion
 50	Cure Poison (Purple) = Blue + Red	potion
-51	Awaken (Green) = Yellow + Blue	potion
+51	Magic Potion (Green) = Yellow + Blue	potion
 52	Haste (Red and Orange Layered) = Red + Orange	potion
 53	Heroism (Red and Purple Layered) = Red + Purple	potion
 54	Bless (Red and Green Layered) = Red + Green	potion
 55	Preservation (Blue and Orange Layered) = Blue + Orange	potion
 56	Shield (Blue and Purple Layered) = Blue + Purple	potion
-57	Recharge Item (Blue and Green Layered) = Blue + Green	potion
+57	Recharge (Blue and Green Layered) = Blue + Green	potion
 58	Stoneskin (Yellow and Orange Layered) = Yellow + Orange	potion
 59	Water Breathing (Yellow and Purple Layered) = Yellow + Purple	potion
 60	Harden Item (Yellow and Green Layered) = Yellow + Green	potion
@@ -78,8 +78,8 @@ Note bit	Autonote Text	Category
 77	Shocking Potion (White) = Orange + Red and Purple Layered	potion
 78	Swift Potion (White) = Green + Blue and Purple Layered	potion
 79	Swift Potion (White) = Purple + Blue and Green Layered	potion
-80	Cure Paralysis (White) = Green + Yellow and Orange Layered	potion
-81	Cure Paralysis (White) = Orange + Yellow and Green Layered	potion
+80	Stone to Flesh (White) = Green + Yellow and Orange Layered	potion
+81	Stone to Flesh (White) = Orange + Yellow and Green Layered	potion
 82	Divine Restoration (White) = Red and Orange Layered + Blue and Green Layered	potion
 83	Divine Restoration (White) = Blue and Purple Layered + Yellow and Orange Layered	potion
 84	Divine Restoration (White) = Red and Purple Layered + Yellow and Green Layered	potion
@@ -92,7 +92,7 @@ Note bit	Autonote Text	Category
 91	Poison Resistance (White) = Blue and Green Layered + Yellow and Orange Layered	potion
 92	Mind Resistance (White) = Red and Purple Layered + Blue and Green Layered	potion
 93	Magic Resistance (White) = Red and Purple Layered + Yellow and Orange Layered	potion
-94	Stone to Flesh (Black) = Red and Purple Layered + Cure Paralysis (White)	potion
+94	Raise Dead (Black) = Red and Purple Layered + Stone to Flesh (White)	potion
 95	Slaying Potion (Black) = Blue and Purple Layered + Flaming Potion (White)	potion
 96	Pure Luck (Black) = Yellow and Orange Layered + Swift Potion (White)	potion
 97	Pure Speed (Black) = Purple Potion + Speed Boost (White)	potion

@@ -91,6 +91,7 @@ Wearer resistant to Dispel Magic.	of Permanence	0	0	0	0	10	10	0	0	0	0	10	10	0	10
 +10 Poison Resistance and +2 Body Magic skill.	of Body Affinity	0	10	0	0	0	0	0	0	0	0	0	5	10	5	1000	B	Body skill +2 (non-cumulative), Poison Res +10
 Attracts monster attacks.	of Taunting	0	0	0	10	10	10	0	10	10	10	0	0	0	0	1000	B	+1 to aggro counter, cumulative
 Adds 6-10 points of Mind damage and attracts monster attacks.	of The Jester	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1500	C	(6-10) mind damage and +1 to aggro counter, cumulative
+Adds 3-18 points of Fire damage.	of Infernos	0	0	0	0	0	0	0	0	0	0	0	0	0	0	x2	D	exclusive to GM Fire Aura (price nerf)
 
 		610	620	575	375	355	330	260	325	245	225	405	430	480	390	
 

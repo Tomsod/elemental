@@ -142,7 +142,8 @@ enum spcitems_txt
     SPC_BODY_AFFINITY = 87,
     SPC_TAUNTING = 88,
     SPC_JESTER = 89,
-    SPC_COUNT = 89
+    SPC_INFERNOS_2 = 90,
+    SPC_COUNT = 90
 };
 
 enum player_stats
@@ -2599,6 +2600,7 @@ static int __thiscall can_add_temp_enchant(struct item *weapon, int enchant)
 
 // Handle weapon-enchanting spells.  If an artifact or an enchanted item
 // is targeted by a GM-level spell, it's enchanted temporarily.
+// Also here: nerf price of weapons enchanted by GM Fire Aura.
 static void __declspec(naked) enchant_weapon(void)
 {
     asm
@@ -2609,6 +2611,10 @@ static void __declspec(naked) enchant_weapon(void)
         cmp dword ptr [esi+12], 0
         jnz temporary
         mov eax, dword ptr [esp+4]
+        cmp eax, SPC_INFERNOS
+        jne ok
+        mov eax, SPC_INFERNOS_2
+        ok:
         mov dword ptr [esi+12], eax
         ret 4
         temporary:
@@ -4489,7 +4495,7 @@ static void __declspec(naked) enchant_item_noon_check(void)
         gm:
         inc dword ptr [enchant_item_gm_noon]
         quit:
-        lea eax, [edi+edi*4] ; replaced code
+        lea eax, [edi+edi] ; calculate price reduction (used below)
         ret
       }
 }
@@ -5271,6 +5277,30 @@ static void __declspec(naked) cumulative_recovery(void)
       }
 }
 
+// Make EI min value variable, at 500 - 8 * skill.
+// NB: reduction is calculated partly in enchant_item_noon_check().
+static void __declspec(naked) enchant_item_min_value(void)
+{
+    asm
+      {
+        add eax, dword ptr [ebp-12] ; only 4 * skill here
+        add eax, dword ptr [ebp-12] ; hence twice
+        cmp eax, 500
+        ret
+      }
+}
+
+// Ditto, but for weapons: 250 - 4 * skill.
+static void __declspec(naked) enchant_item_weapon_value(void)
+{
+    asm
+      {
+        add eax, dword ptr [ebp-12] ; calculated earlier
+        cmp eax, 250
+        ret
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -5397,6 +5427,16 @@ static inline void misc_spells(void)
     patch_byte(0x427cd8, 2); // targets a pc
     hook_call(0x434702, alternative_spell_mode_hook, 7);
     hook_call(0x428295, cumulative_recovery, 6);
+    hook_call(0x42abbf, enchant_item_min_value, 5); // GM
+    hook_call(0x42abcd, enchant_item_weapon_value, 5); // GM
+    erase_code(0x42abde, 23); // remove old failure chance (GM)
+    hook_call(0x42ae4f, enchant_item_min_value, 5); // Master
+    hook_call(0x42ae5d, enchant_item_weapon_value, 5); // Master
+    erase_code(0x42ae6e, 23); // remove old failure chance (Master)
+    hook_call(0x42b0f3, enchant_item_min_value, 5); // Expert (unused)
+    erase_code(0x42b101, 23); // remove old failure chance (Expert)
+    hook_call(0x42b367, enchant_item_min_value, 5); // Normal (unused)
+    erase_code(0x42b378, 23); // remove old failure chance (Normal)
 }
 
 // For consistency with players, monsters revived with Reanimate now have
@@ -10005,7 +10045,8 @@ static void __declspec(naked) jump_over_specitems(void)
 
 // Let Headache deal extra Mind damage on hit.  Also here: Storm Trident has
 // the same bonus damage as Iron Feather, and Viper deals 15 poison damage.
-// Items "of The Jester" also do bonus Mind damage.
+// Items "of The Jester" also do bonus Mind damage, and Fire Aura-specific
+// nerfed "of Infernos" enchantment does the same 3d6 Fire as the regular one.
 static void __declspec(naked) headache_mind_damage(void)
 {
     asm
@@ -10018,6 +10059,8 @@ static void __declspec(naked) headache_mind_damage(void)
         je skip
         cmp dword ptr [ebx+12], SPC_JESTER
         je jester
+        cmp dword ptr [ebx+12], SPC_INFERNOS_2
+        je infernos
         sub eax, IRON_FEATHER ; replaced code
         skip:
         ret
@@ -10043,6 +10086,11 @@ static void __declspec(naked) headache_mind_damage(void)
         quit:
         push 0x439fe8 ; return from calling func
         ret 4
+        infernos:
+        mov ecx, 3
+        mov edx, 6
+        mov dword ptr [esp], 0x439eb9 ; roll dice code
+        ret
       }
 }
 
@@ -16179,10 +16227,10 @@ static void __declspec(naked) knife_price(void)
 {
     asm
       {
-        mov ecx, 100 ; +0 knives max
+        mov ecx, 150 ; +0 knives min + max
         cmp dword ptr [esi], LIVING_WOOD_KNIVES
         jne multiply
-        mov ecx, 80 ; +3 knives max
+        mov ecx, 120 ; +3 knives min + max
         multiply:
         movzx eax, byte ptr [esi+25] ; max charges
         add eax, dword ptr [esi+16] ; charges
@@ -16224,6 +16272,7 @@ static inline void throwing_knives(void)
     hook_call(0x42ecf9, use_knife_charge, 8);
     hook_call(0x4b954b, knife_repair_dialog, 11);
     // actually repaired in prepare_shop_recharge() and perform_shop_recharge()
+    patch_word(0x4f028c, ITEM_TYPE_MISSILE); // allow EI shop to sell knives
 }
 
 // Draw the right options difficulty button in the settings screen.

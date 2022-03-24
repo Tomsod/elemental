@@ -686,6 +686,7 @@ enum party_buffs
 {
     BUFF_FEATHER_FALL = 5,
     BUFF_IMMOLATION = 10,
+    BUFF_INVISIBILITY = 11,
     BUFF_WATER_WALK = 18,
     BUFF_WIZARD_EYE = 19,
 };
@@ -698,11 +699,14 @@ enum stditems_txt
 
 struct __attribute((packed)) spell_info
 {
-    SKIP(8);
+    uint16_t bits;
+    uint16_t cost_normal;
+    uint16_t cost_expert;
+    uint16_t cost_master;
     uint16_t cost_gm;
     uint16_t delay_normal;
     uint16_t delay_expert;
-    SKIP(2);
+    uint16_t delay_master;
     uint16_t delay_gm;
     uint8_t damage_fixed;
     uint8_t damage_dice;
@@ -720,7 +724,9 @@ enum spells
     SPL_IMMOLATION = 8,
     SPL_WIZARD_EYE = 12,
     SPL_FEATHER_FALL = 13,
+    SPL_SPARKS = 15,
     SPL_LIGHTNING_BOLT = 18,
+    SPL_POISON_SPRAY = 24,
     SPL_RECHARGE_ITEM = 28,
     SPL_ENCHANT_ITEM = 30,
     SPL_ICE_BLAST = 32,
@@ -5301,6 +5307,44 @@ static void __declspec(naked) enchant_item_weapon_value(void)
       }
 }
 
+// Buff Immolation duration to 5/15 min/skill now that it's toggleable.
+static void __declspec(naked) immolation_duration_chunk(void)
+{
+    asm
+      {
+        lea eax, [eax+eax*2] ; gm
+        nop
+        nop
+        imul eax, eax, 5 * 60 ; master
+      }
+}
+
+// Same, but for gamescript (pedestal) code.
+static void __declspec(naked) immolation_duration_pedestal_chunk(void)
+{
+    asm
+      {
+        lea esi, [esi+esi*2] ; gm
+        nop
+        nop
+        imul esi, esi, 5 * 60 ; master
+      }
+}
+
+// Legacy MM6 code (apparently) didn't display GM spell cost properly.
+static void __declspec(naked) fix_gm_spell_cost_display(void)
+{
+    asm
+      {
+        movzx ecx, word ptr [edi+0x120+eax*2] ; spell skill
+        test ch, ch
+        jz skip
+        sub ecx, SKILL_EXPERT ; so that gm == 3 << 6
+        skip:
+        ret
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -5437,6 +5481,31 @@ static inline void misc_spells(void)
     erase_code(0x42b101, 23); // remove old failure chance (Expert)
     hook_call(0x42b367, enchant_item_min_value, 5); // Normal (unused)
     erase_code(0x42b378, 23); // remove old failure chance (Normal)
+    patch_bytes(0x4298b3, immolation_duration_chunk, 11);
+    patch_byte(0x4298ac, 11); // expert jump
+    patch_byte(0x4298af, 8); // master jump
+    patch_byte(0x4298b2, 5); // non-gm jump
+    patch_bytes(0x4495c6, immolation_duration_pedestal_chunk, 11);
+    patch_byte(0x4495bf, 11); // expert jump
+    patch_byte(0x4495c2, 8); // master jump
+    patch_byte(0x4495c5, 5); // non-gm jump
+    patch_dword(0x42a17d, 15 * 60); // nerf invisibility gm duration
+    patch_dword(0x42a197, 5 * 60); // and master, too
+    // Shotgun spells were too cheap for their potential damage at high ranks.
+    SPELL_INFO[SPL_SPARKS].cost_expert = 8;
+    SPELL_INFO[SPL_SPARKS].cost_master = 12;
+    SPELL_INFO[SPL_SPARKS].cost_gm = 16;
+    SPELL_INFO[SPL_POISON_SPRAY].cost_expert = 7;
+    SPELL_INFO[SPL_POISON_SPRAY].cost_master = 14;
+    SPELL_INFO[SPL_POISON_SPRAY].cost_gm = 20;
+    hook_call(0x410d45, fix_gm_spell_cost_display, 8);
+    // Remove variable delay b/c increased projectile count is a change enough.
+    SPELL_INFO[SPL_SPARKS].delay_normal = 100;
+    SPELL_INFO[SPL_SPARKS].delay_master = 100;
+    SPELL_INFO[SPL_SPARKS].delay_gm = 100;
+    SPELL_INFO[SPL_POISON_SPRAY].delay_normal = 100;
+    SPELL_INFO[SPL_POISON_SPRAY].delay_master = 100;
+    SPELL_INFO[SPL_POISON_SPRAY].delay_gm = 100;
 }
 
 // For consistency with players, monsters revived with Reanimate now have
@@ -10662,17 +10731,25 @@ static void __thiscall replace_chest(int id)
 }
 
 // If we're opening the actual chest 0, restore it beforehand.
+// Also here: break invisibility on looting (regular) chests.
 static void __declspec(naked) open_regular_chest(void)
 {
     asm
       {
         cmp ecx, ebx ; ebx == 0
-        jnz quit
+        jnz skip
         dec ecx
         call replace_chest
         xor ecx, ecx
+        skip:
+        call dword ptr ds:open_chest ; replaced call
+        test eax, eax
+        jz quit
+        mov ecx, PARTY_BUFF_ADDR + BUFF_INVISIBILITY * 16
+        call dword ptr ds:remove_buff
+        or eax, 1
         quit:
-        jmp dword ptr ds:open_chest ; replaced call
+        ret
       }
 }
 

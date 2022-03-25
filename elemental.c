@@ -920,6 +920,7 @@ enum monster_buffs
     MBUFF_CURSED = 0, // my addition
     MBUFF_CHARM = 1,
     MBUFF_FEAR = 4,
+    MBUFF_PARALYSIS = 6,
     MBUFF_SLOW = 7,
     MBUFF_BERSERK = 9,
     MBUFF_MASS_DISTORTION = 10, // also used for eradication in the mod
@@ -5345,6 +5346,61 @@ static void __declspec(naked) fix_gm_spell_cost_display(void)
       }
 }
 
+// For the two hooks below.
+static void *souldrinker_hp_pointer;
+static int souldrinker_old_hp;
+
+// Before damaging each monster, take note of its HP.
+static void __declspec(naked) souldrinker_remember_monster_hp(void)
+{
+    asm
+      {
+        add edi, MAP_MONSTERS_ADDR + 40 ; monster hp address
+        mov dword ptr [souldrinker_hp_pointer], edi
+        movzx eax, word ptr [edi]
+        mov dword ptr [souldrinker_old_hp], eax
+        jmp dword ptr ds:launch_object ; replaced call
+      }
+}
+
+// Now compare with HP after damage and update stolen HP pool accordingly.
+static void __declspec(naked) souldrinker_calculate_damage(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [souldrinker_hp_pointer]
+        xor eax, eax
+        cmp word ptr [ecx], ax
+        cmovg ax, word ptr [ecx]
+        sub eax, dword ptr [souldrinker_old_hp]
+        jae skip
+        sub dword ptr [ebp-44], eax ; hp pool
+        skip:
+        mov dword ptr [ebp-8], edi ; replaced code
+        cmp edi, dword ptr [ebp-12] ; ditto
+        ret
+      }
+}
+
+// Paralysis nerf: each time a monster is hit, it has a 20% chance to wear off.
+static void __declspec(naked) wear_off_paralysis(void)
+{
+    asm
+      {
+        call dword ptr ds:random
+        xor edx, edx
+        mov ecx, 5
+        div ecx
+        test edx, edx
+        jnz skip
+        lea ecx, [ebx+0xd4+MBUFF_PARALYSIS*16]
+        call dword ptr ds:remove_buff
+        skip:
+        lea ecx, [ebx+0xd4+MBUFF_FEAR*16] ; replaced code
+        ret
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -5506,6 +5562,10 @@ static inline void misc_spells(void)
     SPELL_INFO[SPL_POISON_SPRAY].delay_normal = 100;
     SPELL_INFO[SPL_POISON_SPRAY].delay_master = 100;
     SPELL_INFO[SPL_POISON_SPRAY].delay_gm = 100;
+    erase_code(0x42e591, 13); // old souldrinker healed hp
+    hook_call(0x42e60c, souldrinker_remember_monster_hp, 5);
+    hook_call(0x42e630, souldrinker_calculate_damage, 6);
+    hook_call(0x403100, wear_off_paralysis, 6);
 }
 
 // For consistency with players, monsters revived with Reanimate now have

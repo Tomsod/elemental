@@ -234,6 +234,7 @@ enum new_strings
     STR_CANNOT_KNIVES,
     STR_REPAIR_KNIVES,
     STR_AURA_OF_CONFLICT,
+    STR_CANNOT_RECALL,
     NEW_STRING_COUNT
 };
 
@@ -558,6 +559,7 @@ enum face_animations
 };
 
 #define SOUND_BUZZ 27
+#define SOUND_TURN_PAGE_UP 204
 #define SOUND_SPELL_FAIL 209
 #define SOUND_DIE 18100
 
@@ -615,6 +617,8 @@ static struct elemdata
     struct map_chest extra_chests[EXTRA_CHEST_COUNT];
     // Difficulty level!  Yes, it's stored in the savegame.
     int difficulty;
+    // Last region visited for Master Town Portal purposes.
+    int last_region;
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -5401,6 +5405,112 @@ static void __declspec(naked) wear_off_paralysis(void)
       }
 }
 
+// On Master, always town portal to the last visited region like in MM6.
+static void __declspec(naked) master_town_portal(void)
+{
+    asm
+      {
+        cmp dword ptr [ebp-24], GM
+        jae skip
+        mov eax, dword ptr [elemdata.last_region]
+        test eax, eax
+        js fail
+        mov dword ptr [esp+4], 183 ; town portal teleport action
+        mov dword ptr [esp+8], eax ; param 1 (town id)
+        skip:
+        jmp dword ptr ds:add_action ; replaced call
+        fail:
+        mov dword ptr [esp], 0x4290c1 ; fail without wasting a turn
+        ret 12
+      }
+}
+
+// Do not issue exit action if already in main screen.
+static void __declspec(naked) town_portal_from_main_screen(void)
+{
+    asm
+      {
+        cmp dword ptr [CURRENT_SCREEN], ebx ; == 0
+        jz main
+        mov eax, 0x4333af ; replaced jump
+        jmp eax
+        main:
+        mov eax, 0x4314ca ; skip exit action
+        jmp eax
+      }
+}
+
+// Fix a segfault if Master Town Portal is cast with no active dialog.
+static void __declspec(naked) town_portal_without_dialog(void)
+{
+    asm
+      {
+        cmp eax, ebx ; == 0 if no dialog
+        jz skip
+        mov eax, dword ptr [eax+72] ; replaced code
+        cmp eax, ebx ; ditto
+        skip:
+        ret
+      }
+}
+
+// Appropriate an unused spell counter for
+// Lloyd's Beacon recalls, which are now limited.
+static void __declspec(naked) lloyd_increase_recall_count(void)
+{
+    asm
+      {
+        cmp byte ptr [0x5063ec], bl ; replaced code
+        jz skip
+        mov ecx, dword ptr [esp+20] ; pc
+        inc byte ptr [ecx+0x1b3b] ; unused counter
+        skip:
+        ret
+      }
+}
+
+// Set to 1 if the recall page should be disabled.
+static int cannot_recall;
+
+// If already at the recall limit, always show the place beacon tab.
+static void __declspec(naked) lloyd_starting_tab(void)
+{
+    asm
+      {
+        xor edx, edx
+        mov dword ptr [cannot_recall], edx
+        movzx eax, byte ptr [eax+0x1b3b] ; our counter
+        inc eax
+        lea eax, [eax+eax*2]
+        cmp eax, dword ptr [ebp-56] ; spell skill
+        jbe ok
+        mov byte ptr [0x5063ec], dl ; lloyd page flag
+        inc edx
+        mov dword ptr [cannot_recall], edx
+        ok:
+        mov ecx, 0x50ba60 ; replaced code
+        ret
+      }
+}
+
+// Disable switching to the recall tab if our flag is set.
+static void __declspec(naked) lloyd_disable_recall(void)
+{
+    asm
+      {
+        test dword ptr [cannot_recall], eax
+        jnz disable ; if both == 1
+        mov byte ptr [0x5063ec], al ; replaced code
+        ret
+        disable:
+        mov ecx, dword ptr [new_strings+STR_CANNOT_RECALL*4]
+        mov edx, 2
+        call dword ptr ds:show_status_text
+        mov eax, SOUND_BUZZ - SOUND_TURN_PAGE_UP
+        ret
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -5566,6 +5676,17 @@ static inline void misc_spells(void)
     hook_call(0x42e60c, souldrinker_remember_monster_hp, 5);
     hook_call(0x42e630, souldrinker_calculate_damage, 6);
     hook_call(0x403100, wear_off_paralysis, 6);
+    // Rehaul Town Portal.
+    erase_code(0x42b4d9, 2); // 10% -> 5% success chance per skill
+    patch_byte(0x42b4f7, 0x75); // jz -> jnz (nearby enemies check)
+    hook_jump(0x42b4f9, (void *) 0x42b51c); // always succeed if no enemies
+    hook_jump(0x42b512, (void *) 0x42a8aa); // waste a turn on failure
+    hook_call(0x42b530, master_town_portal, 5);
+    hook_jump(0x4339f9, town_portal_from_main_screen);
+    hook_call(0x4339d0, town_portal_without_dialog, 5);
+    hook_call(0x433612, lloyd_increase_recall_count, 6);
+    hook_call(0x42b570, lloyd_starting_tab, 5);
+    hook_call(0x433433, lloyd_disable_recall, 5);
 }
 
 // For consistency with players, monsters revived with Reanimate now have
@@ -6155,6 +6276,7 @@ static void new_game_data(void)
     reputation_group[0] = 0; // will be set on map load
     reputation_index = 0;
     replaced_chest = -1;
+    elemdata.last_region = -1;
 }
 
 // Hook for the above.
@@ -6228,12 +6350,25 @@ static void __declspec(naked) save_game_hook(void)
 }
 
 // Set the map's default reputation group and update current reputation.
+// Also here: update the Master Town Portal destination.
 static void load_map_rep(void)
 {
     reputation_index = 0;
     int map_index = get_map_index(MAPSTATS, CUR_MAP_FILENAME);
-    reputation_group[0] = MAPSTATS[map_index].reputation_group;
-    CURRENT_REP = elemdata.reputation[reputation_group[0]];
+    int group = MAPSTATS[map_index].reputation_group;
+    reputation_group[0] = group;
+    CURRENT_REP = elemdata.reputation[group];
+    static const int tp_qbits[12] = { 0, 0, 206, 207, 208, 210, 209, 0, 211 };
+    static const int tp_order[9] = { -1, -1, 0, 2, 1, 5, 4, -1, 3 };
+    int qbit = tp_qbits[group];
+    if (!qbit)
+        return;
+    int index = tp_order[group];
+    // NB: this hook is before the gamescript is run,
+    // so on the first visit to a portal-able location a qbit check might fail;
+    // to correct for that, we check if town portal destination matches
+    if (check_qbit(QBITS, qbit) || map_index == word(0x4eca70 + index * 20))
+        elemdata.last_region = index;
 }
 
 // Used below to track the bow GM mini-quest.

@@ -851,6 +851,8 @@ struct __attribute__((packed)) spell_queue_item
     SKIP(4);
 };
 
+#define STATE_BITS 0xad45b0
+
 #define SPELL_QUEUE ((struct spell_queue_item *) 0x50bf48)
 
 struct __attribute__((packed)) mapstats_item
@@ -5129,7 +5131,7 @@ static int accumulated_recovery;
 // TODO: should we disable permanent weapon enchantment here?
 static int __stdcall alternative_spell_mode(int player_id, int spell)
 {
-    int unsafe = byte(0xad45b0) & 0x30;
+    int unsafe = byte(STATE_BITS) & 0x30;
     struct player *player = PARTY + player_id;
     int enchant, flags = 0x820, items[8], pcs[8] = { 0, 1, 2, 3 }, count = 4;
     switch (spell)
@@ -5511,6 +5513,31 @@ static void __declspec(naked) lloyd_disable_recall(void)
       }
 }
 
+// Clear water walk bit before checking for lava.
+static void __declspec(naked) reset_lava_walking(void)
+{
+    asm
+      {
+        and word ptr [STATE_BITS], ~0x280 ; both ww and lava flags
+        ret
+      }
+}
+
+// Let GM Water Walking protect from lava damage.
+static void __declspec(naked) lava_walking(void)
+{
+    asm
+      {
+        cmp word ptr [PARTY_BUFF_ADDR+BUFF_WATER_WALK*16+10], GM
+        jb skip
+        or byte ptr [STATE_BITS], 0x80 ; water walk state flag
+        ret
+        skip:
+        or byte ptr [STATE_BITS+1], 2 ; replaced code (lava bit)
+        ret
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -5687,6 +5714,10 @@ static inline void misc_spells(void)
     hook_call(0x433612, lloyd_increase_recall_count, 6);
     hook_call(0x42b570, lloyd_starting_tab, 5);
     hook_call(0x433433, lloyd_disable_recall, 5);
+    hook_call(0x4737f2, reset_lava_walking, 7);
+    hook_call(0x47382f, lava_walking, 7);
+    erase_code(0x42a9c7, 17); // old gm water walk perk (no sp drain)
+    patch_dword(0x429972, 10); // nerf master meteor shower (16 -> 10 rocks)
 }
 
 // For consistency with players, monsters revived with Reanimate now have
@@ -16565,7 +16596,7 @@ static void __declspec(naked) change_difficulty(void)
 {
     asm
       {
-        test byte ptr [0xad45b0], 0x30 ; if enemies are near
+        test byte ptr [STATE_BITS], 0x30 ; if enemies are near
         jnz forbid
         shr ecx, 6
         neg ecx

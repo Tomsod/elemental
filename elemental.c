@@ -5538,6 +5538,83 @@ static void __declspec(naked) lava_walking(void)
       }
 }
 
+// Don't limit stun knockback at 10 (it's now set at 40).
+static void __declspec(naked) increase_stun_knockback(void)
+{
+    asm
+      {
+        jle skip ; replaced jump
+        cmp dword ptr [ebp-32], 0 ; stun flag
+        jnz skip
+        mov dword ptr [ebp-28], eax ; replaced code (set kb to 10)
+        skip:
+        ret
+      }
+}
+
+// Greatly increase monster recovery after stun, but prevent it from stacking.
+static void __declspec(naked) stun_recovery(void)
+{
+    asm
+      {
+        lea eax, [eax+eax*4] ; 20 -> 100
+        mov ecx, dword ptr [esi+124] ; current recovery
+        shr ecx, 1
+        sub eax, ecx ; diminishing returns, always below 200
+        jbe skip
+        add dword ptr [esi+124], eax
+        skip:
+        cmp dword ptr [0xacd6b4], ebx ; turn-based flag
+        jz quit
+        mov edx, dword ptr [ebp-24] ; monster id
+        shl edx, 3
+        add edx, TGT_MONSTER
+        mov eax, 0x4f86d8 + 16 ; tb queue
+        mov ecx, dword ptr [eax-4]
+        test ecx, ecx
+        jle quit
+        next_actor:
+        add eax, 16
+        cmp dword ptr [eax], edx ; tb actor id
+        loopne next_actor
+        jne quit
+        mov edx, dword ptr [eax+4] ; current recovery
+        shr edx, 1
+        sub edx, 100
+        jae quit
+        neg edx
+        mov dword ptr [eax+4], edx
+        quit:
+        cmp dword ptr [0x6be1f8], ebx ; replaced code
+        ret
+      }
+}
+
+// Remember the power of Stun spell.
+static void __declspec(naked) stun_power_chunk(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ebx+76] ; projectile spell power
+        inc eax
+        mov dword ptr [ebp-32], eax ; stun flag - now stores power
+      }
+}
+
+// The same resist roll is shared by weapon stun and the Stun spell.
+// We need to change the element to Physical for the former.
+static void __declspec(naked) stun_element(void)
+{
+    asm
+      {
+        cmp dword ptr [ebp-32], 1 ; stun flag / power
+        ja skip
+        mov dword ptr [esp+8], PHYSICAL
+        skip:
+        jmp dword ptr ds:monster_resists_condition ; replaced call
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -5718,6 +5795,16 @@ static inline void misc_spells(void)
     hook_call(0x47382f, lava_walking, 7);
     erase_code(0x42a9c7, 17); // old gm water walk perk (no sp drain)
     patch_dword(0x429972, 10); // nerf master meteor shower (16 -> 10 rocks)
+    patch_dword(0x439c64, 40); // stun knockback
+    hook_call(0x439d74, increase_stun_knockback, 5);
+    hook_call(0x439c7b, stun_recovery, 9);
+    hook_jump(0x439744, (void *) 0x43989e); // skip to-hit roll for stun spell
+    // Let Earth rank actually do something.
+    SPELL_INFO[SPL_STUN].delay_expert = 70;
+    SPELL_INFO[SPL_STUN].delay_master = 60;
+    SPELL_INFO[SPL_STUN].delay_gm = 50;
+    patch_bytes(0x43973d, stun_power_chunk, 7);
+    hook_call(0x439c4f, stun_element, 5);
 }
 
 // For consistency with players, monsters revived with Reanimate now have
@@ -8855,8 +8942,14 @@ static void __declspec(naked) pierce_debuff_resistance(void)
         mov esi, dword ptr [debuff_penetration]
         test esi, esi
         jnz not_spell
-        cmp dword ptr [ebp+4], 0x439c54 ; weapon stun
-        je weapon
+        cmp dword ptr [ebp+4], 0x439c54 ; weapon / spell stun
+        jne not_stun
+        mov esi, dword ptr [ebp] ; old ebp
+        mov esi, dword ptr [esi-32] ; stun power + 1
+        dec esi
+        jz weapon
+        jmp not_spell
+        not_stun:
         cmp dword ptr [ebp+4], 0x439cdf ; mace paralysis
         je weapon
         cmp dword ptr [ebp+4], PATCH_CODE_BASE + PATCH_AXE_HOOK_OFFSET + 29

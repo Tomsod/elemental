@@ -726,6 +726,7 @@ enum spells
     SPL_FIRE_AURA = 4,
     SPL_FIREBALL = 6,
     SPL_IMMOLATION = 8,
+    SPL_INCINERATE = 11,
     SPL_WIZARD_EYE = 12,
     SPL_FEATHER_FALL = 13,
     SPL_SPARKS = 15,
@@ -837,6 +838,7 @@ enum condition
     COND_DEAD = 14,
     COND_STONED = 15,
     COND_ERADICATED = 16,
+    COND_INCINERATED = 18, // my addition
 };
 
 struct __attribute__((packed)) spell_queue_item
@@ -973,7 +975,8 @@ struct __attribute__((packed)) map_object
     SKIP(4);
     struct item item;
     uint32_t spell_type;
-    SKIP(36);
+    uint32_t spell_power;
+    SKIP(32);
 };
 
 #define AI_REMOVED 11
@@ -1565,7 +1568,9 @@ static int __thiscall condition_immunity(struct player *player, int condition,
       {
         int bit = 1 << condition;
         int element = -1;
-        if (bit & 0x540) // poisoned 1, 2, 3
+        if (condition == COND_INCINERATED) // like instadeath but not "magical"
+            element = FIRE;
+        else if (bit & 0x540) // poisoned 1, 2, 3
             element = POISON;
         else if (bit & 0x1028) // afraid, insane, paralyzed
             element = MIND;
@@ -1574,11 +1579,13 @@ static int __thiscall condition_immunity(struct player *player, int condition,
         if (element != -1 && is_immune(player, element))
             return FALSE;
         // Preservation now gives a 50% chance to avoid instant death.
-        if ((bit & 0x14000) // dead or eradicated
+        if ((bit & 0x54000) // dead (incl. incinerated) or eradicated
             && (player->spell_buffs[PBUFF_PRESERVATION].expire_time || robe)
             && random() & 1)
             return FALSE;
       }
+    if (condition == COND_INCINERATED) // fake condition
+        condition = COND_DEAD; // is actually death
     int result = inflict_condition(player, condition, can_resist);
     if (condition == COND_ERADICATED && result
         && (check_qbit(QBITS, QBIT_BLASTER_GM_QUEST_ACTIVE_LIGHT)
@@ -5615,6 +5622,56 @@ static void __declspec(naked) stun_element(void)
       }
 }
 
+// Make Armageddon damage depend on monster to party distance.
+static void __declspec(naked) armageddon_distance(void)
+{
+    asm
+      {
+        movsx ecx, word ptr [ebx+142] ; monster.x
+        sub ecx, dword ptr [0xacd4ec] ; party.x
+        jge got_x
+        neg ecx
+        got_x:
+        movsx eax, word ptr [ebx+144] ; monster.y
+        sub eax, dword ptr [0xacd4f0] ; party.y
+        jge got_y
+        neg eax
+        got_y:
+        movsx edx, word ptr [ebx+146] ; monster.z
+        sub edx, dword ptr [0xacd4f4] ; party.z
+        jge got_z
+        neg edx
+        got_z:
+        cmp eax, edx
+        jae y_bigger
+        xchg eax, edx
+        y_bigger:
+        cmp ecx, eax
+        jae ordered
+        xchg ecx, eax
+        cmp eax, edx
+        jae ordered
+        xchg eax, edx
+        ordered:
+        ; approximation of euclid metric used for the danger gem
+        shr edx, 2
+        add ecx, edx
+        lea edx, [eax+eax*2]
+        shl edx, 2
+        sub edx, eax
+        shr edx, 5
+        add ecx, edx
+        mov eax, 0x1600 ; safe (green gem) distance
+        cmp ecx, eax
+        jbe nearby
+        mul edi
+        div ecx
+        mov dword ptr [esp+12], eax
+        nearby:
+        ret
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -5805,6 +5862,12 @@ static inline void misc_spells(void)
     SPELL_INFO[SPL_STUN].delay_gm = 50;
     patch_bytes(0x43973d, stun_power_chunk, 7);
     hook_call(0x439c4f, stun_element, 5);
+    hook_call(0x401b76, armageddon_distance, 5);
+    // Increase number of Armageddon casts to 5/10 per day.
+    erase_code(0x42e73b, 2); // e jump
+    erase_code(0x42e73e, 2); // m jump
+    patch_dword(0x42e744, 10); // gm constant
+    patch_word(0x42e74a, 0x6dd1); // halve below gm
 }
 
 // For consistency with players, monsters revived with Reanimate now have
@@ -6751,7 +6814,7 @@ static void __declspec(naked) pickpocket_rep(void)
 static void armageddon_rep(void)
 {
     uint32_t *rep = &CURRENT_REP;
-    *rep += 20;
+    *rep += 10;
     if ((signed) *rep > 10000) // vanilla rep code often has this limit
         *rep = 10000;
 }
@@ -14471,12 +14534,23 @@ static void __declspec(naked) lenient_alchemy(void)
 // Let a GM blaster shot have a small chance to eradicate the target,
 // killing it without leaving a corpse.  For testing purposes,
 // blasters of Carnage (unobtainable) always trigger this effect.
+// Also here: Incinerate effect (also instadeath, but less fancy).
 // Called from add_to_damage() above.
 static void __stdcall blaster_eradicate(struct player *player,
                                         struct map_monster *monster,
                                         struct map_object *projectile)
 {
-    if (!projectile || projectile->spell_type != SPL_BLASTER)
+    if (!projectile)
+        return;
+    if (projectile->spell_type == SPL_INCINERATE)
+      {
+        int power = projectile->spell_power;
+        if (power > random() % 50 && monster->hp <= random() % monster->max_hp
+            && elemdata.difficulty <= random() % 4
+            && debuff_monster(monster, FIRE, power))
+            monster->hp = 0;
+      }
+    if (projectile->spell_type != SPL_BLASTER)
         return;
     int skill = get_skill(player, SKILL_BLASTER);
     if (skill > SKILL_GM && (skill & SKILL_MASK) > random() % 200
@@ -14954,7 +15028,7 @@ static int __thiscall absorb_spell(struct player *player, int spell)
     if (skill < SKILL_MASTER || (skill & SKILL_MASK) <= random() % 100)
         return 0;
     // TODO: support variable cost
-    int new_sp = player->sp + SPELL_INFO[spell].cost_gm;
+    int new_sp = player->sp + SPELL_INFO[spell].cost_normal;
     if (new_sp <= get_full_sp(player))
       {
         player->sp = new_sp;
@@ -14966,7 +15040,7 @@ static int __thiscall absorb_spell(struct player *player, int spell)
     return 0;
 }
 
-// Hook for monster spells.
+// Hook for monster spells.  Also here: instadeath from monster Incinerate.
 static void __declspec(naked) absorb_monster_spell(void)
 {
     asm
@@ -14979,11 +15053,39 @@ static void __declspec(naked) absorb_monster_spell(void)
         call absorb_spell
         test eax, eax
         jz hit
-        push 0x43a99a ; skip hit code
-        ret 4
+        mov dword ptr [esp], 0x43a99a ; skip hit code
+        ret
         hit:
-        push 0x43a5ac ; replaced jump
-        ret 4
+        cmp dword ptr [ebx+72], SPL_INCINERATE
+        jne skip
+        call dword ptr ds:random
+        xor edx, edx
+        mov ecx, 50
+        div ecx
+        cmp dword ptr [ebx+76], edx ; spell power
+        jbe skip
+        ; now we make a debuff resistance roll
+        push STAT_FIRE_RES
+        mov ecx, edi
+        call dword ptr ds:get_resistance
+        mov ebx, eax
+        mov ecx, edi
+        call dword ptr ds:get_luck
+        push eax
+        call dword ptr ds:get_effective_stat
+        lea ebx, [ebx+eax*2+30]
+        call dword ptr ds:random
+        xor edx, edx
+        div ebx
+        cmp edx, 30
+        jae skip
+        push 1 ; can resist through preservation etc.
+        push COND_INCINERATED
+        mov ecx, edi
+        call condition_immunity ; inflict condition
+        skip:
+        mov dword ptr [esp], 0x43a5ac ; replaced jump
+        ret
       }
 }
 

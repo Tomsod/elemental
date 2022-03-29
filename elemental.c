@@ -143,7 +143,9 @@ enum spcitems_txt
     SPC_TAUNTING = 88,
     SPC_JESTER = 89,
     SPC_INFERNOS_2 = 90,
-    SPC_COUNT = 90
+    SPC_ELEMENTAL_SLAYING = 91,
+    SPC_BLESSED = 92,
+    SPC_COUNT = 92
 };
 
 enum player_stats
@@ -169,6 +171,7 @@ enum player_stats
     STAT_DISARM = 18,
     STAT_MELEE_ATTACK = 25,
     STAT_MELEE_DAMAGE_BASE = 26,
+    STAT_RANGED_ATTACK = 29,
     STAT_HOLY_RES = 33,
     STAT_FIRE_MAGIC = 34,
     STAT_LIGHT_MAGIC = 41,
@@ -461,6 +464,7 @@ enum items
     TITANS_BELT = 524,
     TWILIGHT = 525,
     JUSTICE = 527,
+    MEKORIGS_HAMMER = 528,
     LAST_OLD_ARTIFACT = 528,
     HERMES_SANDALS = 529,
     ELFBANE = 531,
@@ -830,6 +834,7 @@ enum target
 
 enum condition
 {
+    COND_CURSED = 0,
     COND_WEAK = 1,
     COND_AFRAID = 3,
     COND_INSANE = 5,
@@ -1558,6 +1563,7 @@ static int __thiscall __declspec(naked) inflict_condition(void *player,
 // a corresponding immunity will apply to them as well.
 // Update: also put Preservation's new effect here.
 // Also check for Blaster GM quest and Ellinger's Robe's effects.
+// Finally, Blessed weapons' curse immunity is also handled here.
 static int __thiscall condition_immunity(struct player *player, int condition,
                                          int can_resist)
 {
@@ -1582,6 +1588,9 @@ static int __thiscall condition_immunity(struct player *player, int condition,
         if ((bit & 0x54000) // dead (incl. incinerated) or eradicated
             && (player->spell_buffs[PBUFF_PRESERVATION].expire_time || robe)
             && random() & 1)
+            return FALSE;
+        if (condition == COND_CURSED
+            && has_enchanted_item(player, SPC_BLESSED))
             return FALSE;
       }
     if (condition == COND_INCINERATED) // fake condition
@@ -2325,11 +2334,23 @@ static void __declspec(naked) temp_bane_bow_1(void)
 
 // Check monster bane twice for both possible enchants.
 // Also lower Undead Slaying extra damage to 150%.
+// This hook also implements Elemental Slaying bows.
 static void __declspec(naked) temp_bane_bow_2(void)
 {
     asm
       {
         mov edi, eax
+        cmp ebx, SPC_ELEMENTAL_SLAYING
+        jne not_elemental
+        cmp ecx, 34 ; first elemental
+        jb not_elemental
+        cmp ecx, 48 ; last elemental
+        ja not_elemental
+        xor ebx, ebx
+        xor eax, eax
+        inc eax
+        jmp quit
+        not_elemental:
         cmp edx, MG_UNDEAD
         sete bl
         call dword ptr ds:monster_in_group
@@ -2378,7 +2399,7 @@ static void __declspec(naked) temp_bane_melee_1(void)
 }
 
 // Check bane twice for melee weapons.
-// We also check for backstab damage here.
+// We also check for backstab damage and Elemental Slaying weapons here.
 // Also, ensures that Undead Slaying only adds +50% damage.
 static void __declspec(naked) temp_bane_melee_2(void)
 {
@@ -2400,9 +2421,21 @@ static void __declspec(naked) temp_bane_melee_2(void)
         jne no_backstab
         backstab:
         test byte ptr [esp+44], 2 ; 1st param, backstab bit
+        jz no_backstab
+        doubled:
         mov eax, 1 ; return true
-        jnz quit
+        jmp quit
         no_backstab:
+        cmp eax, SPC_ELEMENTAL_SLAYING
+        je elemental
+        cmp ebp, MEKORIGS_HAMMER
+        jne not_elemental
+        elemental:
+        cmp ecx, 34 ; first elemental
+        jb not_elemental
+        cmp ecx, 48 ; last elemental
+        jbe doubled
+        not_elemental:
         cmp edx, MG_UNDEAD
         jne not_undead
         inc dword ptr [esp] ; undead flag
@@ -9333,6 +9366,10 @@ static void __declspec(naked) new_prefixes(void)
         cmp eax, SPC_SOUL_STEALING
         je quit
         cmp eax, SPC_LIGHTWEIGHT
+        je quit
+        cmp eax, SPC_ELEMENTAL_SLAYING
+        je quit
+        cmp eax, SPC_BLESSED
         quit:
         ret ; zf will be checked shortly
       }
@@ -9923,6 +9960,54 @@ static void __declspec(naked) dont_lower_magic_bonus(void)
       }
 }
 
+// Add +10 to-hit to wielded Blessed weapons.  This hook is for main hand.
+static void __declspec(naked) blessed_rightnand_weapon(void)
+{
+    asm
+      {
+        cmp esi, STAT_MELEE_ATTACK
+        jne skip
+        cmp dword ptr [ebx+0x214+eax*4-36+12], SPC_BLESSED
+        jne skip
+        add dword ptr [esp+20], 10 ; stat bonus
+        skip:
+        mov eax, dword ptr [ebx+0x214+eax*4-36] ; replaced code
+        ret
+      }
+}
+
+// Same, but for the offhand.
+static void __declspec(naked) blessed_offhand_weapon(void)
+{
+    asm
+      {
+        cmp esi, STAT_MELEE_ATTACK
+        jne skip
+        cmp dword ptr [ebx+0x214+eax*4-36+12], SPC_BLESSED
+        jne skip
+        add dword ptr [esp+20], 10 ; stat bonus
+        skip:
+        mov ebx, dword ptr [ebx+0x214+eax*4-36] ; replaced code
+        ret
+      }
+}
+
+// Same, but for the missile weapon.
+static void __declspec(naked) blessed_missile_weapon(void)
+{
+    asm
+      {
+        cmp esi, STAT_RANGED_ATTACK
+        jne skip
+        cmp dword ptr [ebx+0x214+eax*4-36+12], SPC_BLESSED
+        jne skip
+        add dword ptr [esp+20], 10 ; stat bonus
+        skip:
+        mov ebx, dword ptr [ebx+0x214+eax*4-36] ; replaced code
+        ret
+      }
+}
+
 // Let's add some new item enchantments.
 static inline void new_enchants(void)
 {
@@ -9973,6 +10058,9 @@ static inline void new_enchants(void)
     hook_call(0x48f1db, dont_lower_magic_bonus, 7);
     hook_call(0x48f1f4, dont_lower_magic_bonus, 7);
     patch_byte(0x48ed15, 3); // nerf "of power" ench bonus
+    hook_call(0x48eca3, blessed_rightnand_weapon, 7);
+    hook_call(0x48ecf1, blessed_offhand_weapon, 7);
+    hook_call(0x48f5f6, blessed_missile_weapon, 7);
 }
 
 // Let the Elven Chainmail also improve bow skill.

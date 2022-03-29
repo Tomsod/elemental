@@ -110,9 +110,9 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 106	Монах	Monk A	8	30	16	144	5%L1Misc	1	N	Long	Normal	2	200	100	M	0	Phys	2D8+4	0	0	0	0	0	10	"Fate,N,3"	50	"Hammerhands,E,3"	5	5	5	0	10	Imm	10	5	0
 107	Посвящённый 	Monk B	16	73	19	416	5%L2Misc	1	N	Long	Aggress	2	220	90	M	0	Phys	2D8+12	0	0	0	0	0	10	"Harm,E,6"	50	"Hammerhands,E,6"	10	10	10	5	15	Imm	15	10	0
 108	Мастер	Monk C	27	153	28	999	10%L3Misc	1	N	Long	Suicidal	2	240	80	M	0	Phys	2D8+20	0	0	0	0	0	10	"Mind Blast,E,9"	50	"Hammerhands,E,9"	15	15	15	5	25	Imm	25	15	0
-109	Некромант	Necromancer A	25	137	14	875	10%15D12+L3Boots	1	N	Med	Aggress	4	200	90	P	0	Magic	9D4	Dark	0	0	0	0	20	"Toxic Cloud,E,4"	0	0	20	20	20	20	15	Imm	30	10	"Summon,ground,Ghost A"
-110	Повелительница Мёртвых	Necromancer B	35	227	18	1575	10%25D12+L4Boots	1	N	Med	Aggress	4	220	80	P	0	Magic	12D4	Dark	0	0	0	0	30	"Shrapmetal,M,8"	0	0	30	30	30	30	20	Imm	40	20	"Summon,ground,Ghost B"
-111	Королева Мёртвых	Necromancer C	50	400	30	3000	30%40D12+L5Boots	1	N	Short	Aggress	4	240	70	P	0	Magic	16D4	Dark	0	0	0	0	30	"Dragon Breath,M,10"	50	"Pain Reflection,M,10"	40	40	40	40	25	Imm	50	30	"Summon,ground,Ghost C"
+109	Некромант	Necromancer A	25	137	14	875	10%15D12+L3Boots	1	N	Med	Aggress	4	200	90	P	Curse	Magic	9D4	Dark	0	0	0	0	20	"Toxic Cloud,E,4"	0	0	20	20	20	20	15	Imm	30	10	"Summon,ground,Ghost A"
+110	Повелительница Мёртвых	Necromancer B	35	227	18	1575	10%25D12+L4Boots	1	N	Med	Aggress	4	220	80	P	Cursex2	Magic	12D4	Dark	0	0	0	0	30	"Shrapmetal,M,8"	0	0	30	30	30	30	20	Imm	40	20	"Summon,ground,Ghost B"
+111	Королева Мёртвых	Necromancer C	50	400	30	3000	30%40D12+L5Boots	1	N	Short	Aggress	4	240	70	P	Cursex3	Magic	16D4	Dark	0	0	0	0	30	"Dragon Breath,M,10"	50	"Pain Reflection,M,10"	40	40	40	40	25	Imm	50	30	"Summon,ground,Ghost C"
 112	Изумрудный слизень	Ooze A	12	50	8	264	5%L2	0	N	Free	Normal	1	120	100	0	Brkweapon	Pois	1D6	0	0	0	0	0	0	0	0	0	0	0	0	Imm	Imm	Imm	0	Imm	0
 113	Сапфировый слизень	Ooze B	18	86	10	504	5%L3	0	N	Free	Suicidal	1	140	100	0	BrkArmor	Pois	3D6	0	0	0	0	0	10	"Toxic Cloud,E,1"	0	0	0	0	0	Imm	Imm	Imm	0	Imm	0
 114	Кровавый слизень	Ooze C	25	137	12	875	5%L4	0	N	Free	Suicidal	1	160	100	0	BrkItem	Pois	5D6	0	0	0	0	0	15	"Toxic Cloud,E,2"	0	0	0	0	0	Imm	Imm	Imm	0	Imm	0

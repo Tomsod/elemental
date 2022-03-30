@@ -184,10 +184,12 @@ enum class
     CLASS_CHAMPION = 2,
     CLASS_BLACK_KNIGHT = 3,
     CLASS_THIEF = 4,
+    CLASS_ASSASSIN = 7,
     CLASS_MONK = 8,
     CLASS_MASTER = 10,
     CLASS_SNIPER = 19,
     CLASS_RANGER = 20,
+    CLASS_BOUNTY_HUNTER = 23,
     CLASS_DRUID = 28,
     CLASS_LICH = 35,
     CLASS_COUNT = 36,
@@ -370,7 +372,9 @@ struct __attribute__((packed)) player
     uint16_t magic_res_base;
     SKIP(26);
     struct spell_buff spell_buffs[24];
-    SKIP(32);
+    SKIP(24);
+    uint32_t skill_points;
+    SKIP(4);
     int32_t sp;
     SKIP(4);
     uint32_t equipment[16];
@@ -858,6 +862,9 @@ struct __attribute__((packed)) spell_queue_item
     SKIP(4);
 };
 
+#define SPELL_ANIM_SPARKLES 13
+#define SPELL_ANIM_SWIRLY 19
+
 #define STATE_BITS 0xad45b0
 
 #define SPELL_QUEUE ((struct spell_queue_item *) 0x50bf48)
@@ -1170,6 +1177,7 @@ static void *__thiscall (*load_bitmap)(void *lod, char *name, int lod_type)
     = (funcptr_t) 0x40fb2c;
 static void __fastcall (*aim_spell)(int spell, int pc, int skill, int flags,
                                     int unknown) = (funcptr_t) 0x427734;
+#define SPELL_ANIM_THIS ((void *) dword(dword(0x71fe94) + 0xe50))
 static void __thiscall (*spell_face_anim)(void *this, short anim, short pc)
     = (funcptr_t) 0x4a894d;
 #define ACTION_THIS_ADDR 0x50ca50
@@ -5155,7 +5163,7 @@ static void __declspec(naked) aura_of_conflict(void)
         lea ecx, [ecx+0x17a0+PBUFF_AURA_OF_CONFLICT*16]
         call dword ptr ds:add_buff
         push edi
-        push 19 ; generic swirly animation
+        push SPELL_ANIM_SWIRLY
         mov ecx, dword ptr [0x71fe94]
         mov ecx, dword ptr [ecx+0xe50]
         call dword ptr ds:spell_face_anim
@@ -6864,11 +6872,21 @@ static void __declspec(naked) armageddon_hook(void)
 }
 
 // Let the town hall bounties affect reputation slightly.
+// Also, Bounty Hunters may get a small skill point bonus.
 static void __stdcall bounty_rep(int level)
 {
     int rep = (level + 10) / 20; // 0 to 5
     if (rep)
         CURRENT_REP -= rep;
+    rep /= 2;
+    if (rep)
+        for (int i = 0; i < 4; i++)
+            if (PARTY[i].class == CLASS_BOUNTY_HUNTER)
+              {
+                PARTY[i].skill_points += rep;
+                spell_face_anim(SPELL_ANIM_THIS, SPELL_ANIM_SPARKLES, i);
+                show_face_animation(PARTY + i, ANIM_SMILE, 0);
+              }
 }
 
 // Hook for the above.
@@ -11097,7 +11115,7 @@ static void __declspec(naked) new_temple_in_bottle(void)
         mov eax, dword ptr [ebp+8] ; player id
         dec eax
         push eax
-        push 13 ; sparkles animation
+        push SPELL_ANIM_SPARKLES
         call dword ptr ds:spell_face_anim
         ; one unused parameter
         push 21 ; learn spell
@@ -13082,6 +13100,7 @@ static int __thiscall get_new_full_hp(struct player *player)
 
 // Ditto, but for get_full_sp(), spellcasting stats, and Meditation.
 // NB: goblins get one less SP per 2 levels, so we operate in half-points.
+// Same is true for DP Thieves and LP monks (they trade 1 HP for 1/2 SP).
 static int __thiscall get_new_full_sp(struct player *player)
 {
     int stat = CLASS_SP_STATS[player->class];
@@ -13096,6 +13115,8 @@ static int __thiscall get_new_full_sp(struct player *player)
     if (stat != 0)
         bonus += get_effective_stat(get_personality(player));
     int base = CLASS_SP_FACTORS[player->class] * 2;
+    if (player->class == CLASS_ASSASSIN || player->class == CLASS_MASTER)
+        base--;
     int race = get_race(player);
     if (race == RACE_ELF)
         base += 2;
@@ -14469,7 +14490,7 @@ static inline void class_changes(void)
           {1, 2, 2, 2, 2, 2, 0, 2, 0, 2, 2, 0, 1, 2, 1, 1, 0, 0, 0,
             0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 1, 2, 1, 0, 2, 0, 0, 2},
           {1, 2, 2, 2, 3, 3, 0, 3, 0, 3, 3, 0, 2, 3, 2, 2, 0, 0, 0,
-            0, 0, 0, 2, 2, 2, 2, 3, 0, 0, 1, 2, 1, 0, 2, 0, 0, 3},
+            0, 0, 0, 2, 2, 2, 2, 3, 0, 0, 2, 2, 1, 0, 2, 0, 0, 3},
           {1, 2, 2, 2, 3, 4, 0, 4, 0, 3, 4, 0, 3, 4, 4, 3, 0, 0, 0,
             2, 0, 0, 2, 2, 2, 2, 4, 0, 0, 2, 2, 1, 0, 2, 0, 0, 3},
           {1, 2, 2, 2, 3, 4, 0, 4, 0, 3, 4, 0, 4, 4, 3, 3, 0, 0, 0,
@@ -14478,8 +14499,8 @@ static inline void class_changes(void)
             0, 0, 1, 1, 1, 2, 0, 2, 2, 0, 2, 2, 1, 2, 2, 2, 1, 2},
           {1, 2, 2, 3, 3, 3, 0, 3, 2, 3, 3, 0, 2, 0, 2, 3, 2, 2, 0,
             0, 0, 1, 1, 1, 2, 1, 3, 2, 0, 2, 2, 1, 3, 2, 2, 1, 2},
-          {1, 2, 2, 4, 3, 3, 0, 3, 2, 3, 3, 0, 2, 0, 3, 4, 3, 2, 0,
-            0, 0, 2, 2, 2, 2, 1, 4, 2, 0, 2, 2, 1, 4, 3, 2, 2, 2},
+          {1, 3, 2, 4, 3, 3, 0, 3, 2, 3, 4, 0, 2, 0, 3, 4, 3, 2, 0,
+            0, 0, 1, 1, 1, 2, 1, 4, 2, 0, 2, 2, 1, 4, 3, 2, 1, 2},
           {1, 2, 2, 4, 3, 3, 0, 3, 2, 3, 3, 0, 2, 0, 2, 4, 3, 3, 0,
             0, 0, 1, 1, 1, 2, 1, 4, 2, 0, 3, 2, 1, 4, 3, 3, 1, 2},
           {2, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 1, 0, 0, 0, 0, 2, 2, 2,
@@ -14493,11 +14514,11 @@ static inline void class_changes(void)
           {1, 0, 2, 0, 0, 0, 2, 2, 2, 2, 0, 0, 2, 2, 2, 2, 2, 2, 2,
             0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 0, 1, 0, 2, 1, 0, 2, 2},
           {1, 0, 3, 0, 0, 0, 2, 3, 2, 3, 0, 0, 2, 3, 3, 3, 2, 3, 3,
-            0, 0, 2, 2, 0, 0, 3, 2, 0, 0, 0, 1, 0, 3, 1, 0, 3, 3},
+            0, 0, 2, 2, 0, 0, 3, 2, 0, 0, 0, 2, 0, 3, 1, 0, 3, 3},
           {1, 0, 3, 0, 0, 0, 2, 3, 2, 3, 0, 0, 2, 4, 4, 3, 3, 3, 4,
-            0, 0, 2, 2, 0, 0, 4, 2, 0, 0, 0, 1, 0, 4, 1, 0, 4, 3},
+            0, 0, 2, 2, 0, 0, 4, 2, 0, 0, 0, 2, 0, 4, 1, 0, 4, 3},
           {1, 0, 3, 0, 0, 0, 2, 3, 2, 3, 0, 0, 3, 3, 3, 4, 2, 4, 3,
-            0, 3, 2, 2, 0, 0, 4, 2, 0, 0, 0, 1, 0, 3, 1, 0, 4, 3},
+            0, 3, 2, 2, 0, 0, 4, 2, 0, 0, 0, 2, 0, 3, 1, 0, 4, 3},
           {2, 0, 2, 0, 0, 0, 0, 2, 0, 2, 0, 0, 2, 2, 2, 2, 0, 0, 0,
             0, 0, 2, 1, 2, 0, 2, 2, 1, 0, 0, 1, 0, 2, 0, 0, 2, 2},
           {3, 0, 2, 0, 0, 0, 0, 3, 0, 2, 0, 0, 3, 3, 3, 3, 0, 0, 0,
@@ -14523,10 +14544,15 @@ static inline void class_changes(void)
     // Enable class hints on the stats screen.
     patch_dword(0x418088, dword(0x418088) + 8);
     hook_call(0x44a8c8, set_light_dark_path, 5);
-    // Make Masters a little bit more magic-capable.
+    // Make Masters and Assassins a little bit more magic-capable.
+    CLASS_HP_FACTORS[CLASS_ASSASSIN] = 7;
+    CLASS_SP_FACTORS[CLASS_ASSASSIN] = 2; // actually 1.5
     CLASS_HP_FACTORS[CLASS_MASTER] = 7;
-    CLASS_SP_FACTORS[CLASS_MASTER] = 2;
+    CLASS_SP_FACTORS[CLASS_MASTER] = 2; // same here
     hook_call(0x492c8d, equip_aligned_relic, 10);
+    // Replace starting Spirit with Mind for Druids.
+    byte(STARTING_SKILLS + CLASS_DRUID / 4 * SKILL_COUNT + SKILL_SPIRIT) = 0;
+    byte(STARTING_SKILLS + CLASS_DRUID / 4 * SKILL_COUNT + SKILL_MIND) = 1;
 }
 
 // Let the Perception skill increase gold looted from monsters.

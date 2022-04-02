@@ -169,6 +169,8 @@ enum player_stats
     STAT_ALCHEMY = 16,
     STAT_THIEVERY = 17,
     STAT_DISARM = 18,
+    STAT_ARMSMASTER = 21,
+    STAT_UNARMED = 23,
     STAT_MELEE_ATTACK = 25,
     STAT_MELEE_DAMAGE_BASE = 26,
     STAT_RANGED_ATTACK = 29,
@@ -701,12 +703,6 @@ enum party_buffs
     BUFF_INVISIBILITY = 11,
     BUFF_WATER_WALK = 18,
     BUFF_WIZARD_EYE = 19,
-};
-
-enum stditems_txt
-{
-    STD_ARMS = 22,
-    STD_FIST = 24,
 };
 
 struct __attribute((packed)) spell_info
@@ -3691,6 +3687,54 @@ static void __declspec(naked) starting_robe(void)
       }
 }
 
+// In additional to vanilla Arms, Dodging, and Fist,
+// also halve HP, SP, Thievery, and Disarm enchantments.
+static void __declspec(naked) halve_more_ench(void)
+{
+    asm
+      {
+        je quit ; replaced jump
+        cmp ecx, STAT_UNARMED ; replaced code
+        je quit
+        cmp ecx, STAT_HP
+        je quit
+        cmp ecx, STAT_SP
+        je quit
+        cmp ecx, STAT_THIEVERY
+        je quit
+        cmp ecx, STAT_DISARM
+        quit:
+        ret
+      }
+}
+
+// For halved std enchs, double the price to 200 gold per point.
+static void __declspec(naked) double_halved_ench_price(void)
+{
+    asm
+      {
+        mov eax, dword ptr [esi+8] ; replaced code
+        imul eax, eax, 100 ; replaced code
+        mov ecx, dword ptr [esi+4] ; bonus type
+        cmp ecx, STAT_HP + 1
+        je doubled
+        cmp ecx, STAT_SP + 1
+        je doubled
+        cmp ecx, STAT_THIEVERY + 1
+        je doubled
+        cmp ecx, STAT_DISARM + 1
+        je doubled
+        cmp ecx, STAT_ARMSMASTER + 1
+        jb quit
+        cmp ecx, STAT_UNARMED + 1
+        ja quit
+        doubled:
+        shl eax, 1
+        quit:
+        ret
+      }
+}
+
 // Misc item tweaks.
 static inline void misc_items(void)
 {
@@ -3749,6 +3793,11 @@ static inline void misc_items(void)
     patch_word(0x4f03f0, ITEM_TYPE_ROBE); // castle std
     patch_word(0x4f0630, ITEM_TYPE_ROBE); // castle spc
     patch_pointer(0x497929, starting_robe);
+    hook_call(0x456b57, halve_more_ench, 5);
+    patch_dword(0x48f3da, 0x48f532 - 0x48f3de); // of earth: 10 -> 5 HP
+    patch_byte(0x48f42e, 39); // of life: 10 -> 5 HP
+    patch_byte(0x48f442, 19); // of eclipse/sky: 10 -> 5 SP
+    hook_call(0x45649a, double_halved_ench_price, 6);
 }
 
 static uint32_t potion_damage;
@@ -4578,17 +4627,27 @@ static void __declspec(naked) enchant_item_noon_numeric(void)
       }
 }
 
-// Halve "of Arms", "of Dodging", and "of the Fist".
+// Halve certain standard bonuses that are penalized when generated normally.
 // This branch of code may be unused in practice, but whatever.
 static void __declspec(naked) enchant_item_halve_expert(void)
 {
     asm
       {
         add edx, ecx ; replaced code
-        cmp dword ptr [esi+4], STD_ARMS
+        mov ecx, dword ptr [esi+4]
+        cmp ecx, STAT_HP + 1
+        je halve
+        cmp ecx, STAT_SP + 1
+        je halve
+        cmp ecx, STAT_THIEVERY + 1
+        je halve
+        cmp ecx, STAT_DISARM + 1
+        je halve
+        cmp ecx, STAT_ARMSMASTER + 1
         jb normal
-        cmp dword ptr [esi+4], STD_FIST
+        cmp ecx, STAT_UNARMED + 1
         ja normal
+        halve:
         ; note that the minimum is 3, so we don`t need to check for zero
         shr edx, 1
         normal:
@@ -4597,17 +4656,27 @@ static void __declspec(naked) enchant_item_halve_expert(void)
       }
 }
 
-// Halve "of Arms", "of Dodging", and "of the Fist".
+// Halve certain standard bonuses that are penalized when generated normally.
 // Covers both the Master and GM cases, and also the unused Normal case.
 static void __declspec(naked) enchant_item_halve_others(void)
 {
     asm
       {
         add edx, ecx ; replaced code
-        cmp dword ptr [edi+4], STD_ARMS
+        mov ecx, dword ptr [edi+4]
+        cmp ecx, STAT_HP + 1
+        je halve
+        cmp ecx, STAT_SP + 1
+        je halve
+        cmp ecx, STAT_THIEVERY + 1
+        je halve
+        cmp ecx, STAT_DISARM + 1
+        je halve
+        cmp ecx, STAT_ARMSMASTER + 1
         jb normal
-        cmp dword ptr [edi+4], STD_FIST
+        cmp ecx, STAT_UNARMED + 1
         ja normal
+        halve:
         ; note that the minimum is 3, so we don`t need to check for zero
         shr edx, 1
         normal:
@@ -10109,7 +10178,7 @@ static void __declspec(naked) artifact_stat_bonus(void)
         jne not_dagger
         cmp esi, STAT_SP
         jne quit
-        add edi, 30
+        add edi, 20
         ret
         not_dagger:
         cmp eax, HEADACHE

@@ -16152,6 +16152,36 @@ static void __declspec(naked) level_skill_bonus(void)
       }
 }
 
+// To transfer data between the two hooks below.
+static char weapon_mod2;
+
+// When calculating skill bonus to AC, take note of weapon quality (mod2).
+static void __declspec(naked) store_weapon_quality_bonus(void)
+{
+    asm
+      {
+        movzx edx, byte ptr [ITEMS_TXT_ADDR+eax+29] ; replaced code
+        cmp edx, SKILL_BLASTER
+        cmovbe ecx, dword ptr [ITEMS_TXT_ADDR+eax+32] ; mod2 (can`t cmov cl)
+        mov byte ptr [weapon_mod2], cl
+        xor ecx, ecx ; restore
+        ret
+      }
+}
+
+// Now add weapon quality to AC along with the skill (if applicable).
+static void __declspec(naked) add_weapon_quality_bonus_to_ac(void)
+{
+    asm
+      {
+        and edi, SKILL_MASK ; replaced code
+        xor ecx, ecx ; replaced code
+        movzx edx, byte ptr [weapon_mod2] ; stored quality (or 0 for armor)
+        add edi, edx ; to ac bonus
+        ret
+      }
+}
+
 // Tweak various skill effects.
 static inline void skill_changes(void)
 {
@@ -16236,6 +16266,8 @@ static inline void skill_changes(void)
     hook_call(0x41eb30, train_id_monster, 6);
     patch_byte(0x491307, 0xc6); // multiply disarm bonus by mastery
     hook_call(0x48fbd5, level_skill_bonus, 8);
+    hook_call(0x48ffdc, store_weapon_quality_bonus, 7);
+    hook_call(0x49005b, add_weapon_quality_bonus_to_ac, 5);
 }
 
 // Switch off some of MM7Patch's features to ensure compatibility.

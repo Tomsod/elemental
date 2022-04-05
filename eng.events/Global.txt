@@ -720,3 +720,4 @@ Global Text
 717	"I can repair these %s, yielding %d knives, for only %d gold."
 718	Aura of Conflict
 719	"You cannot recall anymore beacons today!"
+720	Botched

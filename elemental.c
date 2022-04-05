@@ -242,6 +242,7 @@ enum new_strings
     STR_REPAIR_KNIVES,
     STR_AURA_OF_CONFLICT,
     STR_CANNOT_RECALL,
+    STR_BOTCHED,
     NEW_STRING_COUNT
 };
 
@@ -14687,27 +14688,120 @@ static void __declspec(naked) double_total_damage(void)
       }
 }
 
+// For use below.
+static int alchemy_result, botched_potion;
+
 // Let potions be brewable even without the requisite Alchemy skill,
 // but with a possibility of explosion (up to 83% for black).
-static void __declspec(naked) lenient_alchemy(void)
+// Additionally, such potions are 'botched' and have lowered power.
+// This hook remembers the mix result before skill is checked.
+static void __declspec(naked) lenient_alchemy_remember(void)
 {
     asm
       {
-        push eax
+        mov dword ptr [ebp-4], edx ; replaced code
+        mov dword ptr [alchemy_result], edx ; store the mix
+        cmp dword ptr [ebp-44], ebx ; replaced code
+        ret
+      }
+}
+
+// This one gives a chance for a brew to succeed without the skill.
+static void __declspec(naked) lenient_alchemy_allow(void)
+{
+    asm
+      {
+        mov dword ptr [botched_potion], ebx ; == 0
+        cmp dword ptr [ebp-4], 1
+        jb skip
+        cmp dword ptr [ebp-4], 4
+        ja skip
+        cmp dword ptr [alchemy_result], POTION_BOTTLE
+        jbe skip
         call dword ptr ds:random
         xor edx, edx
         mov ecx, 6
         div ecx
-        dec edx
-        pop eax
-        cmp eax, edx
-        cmovl eax, edx
-        cmp edx, ebx ; ebx == 0
-        jbe quit
-        inc dword ptr [ebp-44] ; alchemy flag
-        quit:
-        mov ecx, dword ptr [MOUSE_ITEM] ; replaced code
+        cmp edx, dword ptr [ebp-4]
+        jbe skip
+        mov eax, dword ptr [alchemy_result]
+        mov dword ptr [ebp-4], eax
+        mov dword ptr [botched_potion], edx ; not zero here
+        skip:
+        lea eax, [esi+0x157c] ; replaced code
         ret
+      }
+}
+
+// This hook reduces the skill-less potion's power by 25%.
+static void __declspec(naked) botched_potion_power(void)
+{
+    asm
+      {
+        sub eax, edx ; replaced code
+        sar eax, 1 ; replaced code
+        mov dword ptr [ecx], eax ; replaced code
+        cmp dword ptr [botched_potion], ebx ; == 0
+        jz skip
+        sar eax, 2
+        sub dword ptr [ecx], eax
+        or byte ptr [ecx-4+20+1], 0x20 ; unused flag
+        skip:
+        ret
+      }
+}
+
+// When mixing a botched potion with a catalyst, also apply the penalty.
+// This hook is for when the botched potion is held in cursor.
+static void __declspec(naked) botched_potion_catalyst_1(void)
+{
+    asm
+      {
+        mov dword ptr [eax+0x214], ecx ; replaced code
+        test byte ptr [MOUSE_ITEM+20+1], 0x20 ; our flag
+        jz skip
+        or byte ptr [eax+0x214+20+1], 0x20
+        mov ecx, dword ptr [eax+0x214+4]
+        shr ecx, 2
+        sub dword ptr [eax+0x214+4], ecx
+        skip:
+        ret
+      }
+}
+
+// This one is for when the catalyst is in cursor.
+static void __declspec(naked) botched_potion_catalyst_2(void)
+{
+    asm
+      {
+        mov dword ptr [eax+0x214+4], ecx ; replaced code
+        test byte ptr [eax+0x214+20+1], 0x20
+        jz skip
+        shr ecx, 2
+        sub dword ptr [eax+0x214+4], ecx
+        skip:
+        ret
+      }
+}
+
+// Mark a botched potion in its description, like 'stolen' or 'hardened'.
+static void __declspec(naked) display_botched_potion(void)
+{
+    asm
+      {
+        mov eax, dword ptr [eax+20] ; replaced code
+        test ah, 0x20
+        jnz display
+        test ah, 1 ; replaced code
+        ret
+        display:
+        pop eax
+        push ebx
+        push ebx
+        push ebx
+        push dword ptr [new_strings+STR_BOTCHED*4]
+        add eax, 12 ; skip over stolen code
+        jmp eax
       }
 }
 
@@ -16071,7 +16165,12 @@ static inline void skill_changes(void)
     erase_code(0x491276, 12); // remove 100% chance on GM
     // thievery backstab is checked in check_backstab() above
     hook_call(0x48d087, double_total_damage, 5);
-    hook_call(0x4162ac, lenient_alchemy, 6);
+    hook_call(0x41641d, lenient_alchemy_remember, 6);
+    hook_call(0x4164d9, lenient_alchemy_allow, 6);
+    hook_call(0x416570, botched_potion_power, 6);
+    hook_call(0x4165a5, botched_potion_catalyst_1, 6);
+    hook_call(0x4165b3, botched_potion_catalyst_2, 6);
+    hook_call(0x41e266, display_botched_potion, 6);
     hook_call(0x402e18, preserve_mdist_on_death, 5);
     hook_call(0x4401df, draw_erad_hook, 6);
     hook_call(0x47b9ee, draw_erad_hook_out, 6);

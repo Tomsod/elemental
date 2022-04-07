@@ -422,6 +422,7 @@ enum items
     BLASTER = 64,
     BLASTER_RIFLE = 65,
     LAST_BODY_ARMOR = 78, // noble plate armor
+    LAST_OLD_PREFIX = 134, // before robes and knives were added
     FIRST_WAND = 135,
     LAST_WAND = 159,
     FIRST_ROBE = 160,
@@ -579,6 +580,7 @@ enum face_animations
 // my additions
 #define EVT_REP_GROUP 400
 #define EVT_DISABLED_SPELL 401
+#define EVT_MOUSE_ITEM_CONDITION 402
 
 enum gender
 {
@@ -3736,6 +3738,50 @@ static void __declspec(naked) double_halved_ench_price(void)
       }
 }
 
+// Count robes and knives as breakable.
+static void __declspec(naked) break_new_items(void)
+{
+    asm
+      {
+        cmp ecx, FIRST_ROBE ; first new equipment
+        jge new
+        cmp ecx, LAST_OLD_PREFIX ; replaced code
+        ret
+        new:
+        cmp ecx, LAST_PREFIX
+        ret
+      }
+}
+
+// To make Repair more relevant, generate items occasionally broken.
+static void __declspec(naked) generate_broken_items(void)
+{
+    asm
+      {
+        mov eax, dword ptr [esi] ; replaced code
+        cmp eax, LAST_OLD_PREFIX
+        jbe breakable
+        cmp eax, LAST_PREFIX
+        ja skip
+        cmp eax, FIRST_ROBE
+        jb skip
+        breakable:
+        call dword ptr ds:random
+        xor edx, edx
+        mov ecx, 100
+        div ecx
+        add edx, dword ptr [ebp+8] ; treasure level
+        cmp edx, 6 ; 6% - tlvl chance
+        jae fail
+        or byte ptr [esi+20], IFLAGS_BROKEN
+        fail:
+        mov eax, dword ptr [esi] ; restore
+        skip:
+        lea eax, [eax+eax*2] ; replaced code
+        ret
+      }
+}
+
 // Misc item tweaks.
 static inline void misc_items(void)
 {
@@ -3799,6 +3845,10 @@ static inline void misc_items(void)
     patch_byte(0x48f42e, 39); // of life: 10 -> 5 HP
     patch_byte(0x48f442, 19); // of eclipse/sky: 10 -> 5 SP
     hook_call(0x45649a, double_halved_ench_price, 6);
+    hook_call(0x41611a, break_new_items, 6); // alchemy explosion
+    hook_call(0x48dd6f, break_new_items, 6); // monster attack
+    hook_call(0x456a15, generate_broken_items, 5);
+    erase_code(0x41da49, 3); // do not auto-id repaired items
 }
 
 static uint32_t potion_damage;
@@ -6891,6 +6941,8 @@ static void __declspec(naked) evt_set_hook(void)
         je rep
         cmp eax, EVT_DISABLED_SPELL
         je spell
+        cmp eax, EVT_MOUSE_ITEM_CONDITION
+        je condition
         sub eax, 307 ; replaced code
         ret
         rep:
@@ -6900,9 +6952,13 @@ static void __declspec(naked) evt_set_hook(void)
         spell:
         push dword ptr [ebp+12]
         call disable_spell
+        jmp quit
+        condition:
+        mov eax, dword ptr [ebp+12]
+        mov dword ptr [MOUSE_ITEM+20], eax
         quit:
-        push 0x44af3b
-        ret 4
+        mov dword ptr [esp], 0x44af3b
+        ret
       }
 }
 

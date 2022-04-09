@@ -94,8 +94,9 @@ Adds 6-10 points of Mind damage and attracts monster attacks.	of The Jester	20	1
 Adds 3-18 points of Fire damage.	of Infernos	0	0	0	0	0	0	0	0	0	0	0	0	0	0	x2	D	exclusive to GM Fire Aura (price nerf)
 Double Damage vs. Elelementals.	Elemental Slaying	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	A	"x2 damage on Fire, Air, Water, Earth, Light elementals."
 Protects from Curses and +10 to Attack Bonus.	Blessed	10	10	10	0	0	0	0	0	0	0	0	0	0	0	1500	B	(+10) to melee or ranged attack and immune to cursed condition
+Makes monsters hit in melee Afraid.	Terrifying	0	0	0	0	0	20	0	0	0	0	0	0	0	20	2000	D	Inflicts Afraid on monster upon a melee hit (Mind attack)
 
-		640	640	605	375	355	330	260	325	245	225	405	430	480	390	
+		640	640	605	375	355	350	260	325	245	225	405	430	480	410	
 
 Treasure Level	If treasure Level = 3 add all A and B															
 A= 3 to 4	If treasure Level = 4 add all A and B and C

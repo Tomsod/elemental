@@ -145,7 +145,8 @@ enum spcitems_txt
     SPC_INFERNOS_2 = 90,
     SPC_ELEMENTAL_SLAYING = 91,
     SPC_BLESSED = 92,
-    SPC_COUNT = 92
+    SPC_TERRIFYING = 93,
+    SPC_COUNT = 93
 };
 
 enum player_stats
@@ -467,6 +468,7 @@ enum items
     CHARELE = 509,
     ETHRICS_STAFF = 515,
     OLD_NICK = 517,
+    AMUCK = 518,
     KELEBRIM = 520,
     PHYNAXIAN_CROWN = 523,
     TITANS_BELT = 524,
@@ -9514,6 +9516,8 @@ static void __declspec(naked) new_prefixes(void)
         cmp eax, SPC_ELEMENTAL_SLAYING
         je quit
         cmp eax, SPC_BLESSED
+        je quit
+        cmp eax, SPC_TERRIFYING
         quit:
         ret ; zf will be checked shortly
       }
@@ -9626,13 +9630,61 @@ static void __declspec(naked) mon_res_roll_chunk(void)
       }
 }
 
+// Let Terrifying helmets inflict Afraid.  Called in cursed_weapon() below.
+static void __stdcall terrifying_helmet(struct player *player,
+                                        struct map_monster *monster)
+{
+    // we want highest weapon skill here
+    int skill = 0, mastery = 0;
+    int mainhand = player->equipment[SLOT_MAIN_HAND];
+    if (mainhand)
+      {
+        struct item *weapon = &player->items[mainhand-1];
+        if (!(weapon->flags & IFLAGS_BROKEN))
+          {
+            skill = get_skill(player, ITEMS_TXT[weapon->id].skill);
+            mastery = skill_mastery(skill);
+            skill &= SKILL_MASK;
+          }
+      }
+    int offhand = player->equipment[SLOT_OFFHAND];
+    if (offhand)
+      {
+        struct item *weapon = &player->items[offhand-1];
+        int offhand_skill = ITEMS_TXT[weapon->id].skill;
+        if (!(weapon->flags & IFLAGS_BROKEN) && offhand_skill < SKILL_BLASTER)
+          {
+            int skill2 = get_skill(player, offhand_skill);
+            int mastery2 = skill_mastery(skill2);
+            skill2 &= SKILL_MASK;
+            if (skill < skill2)
+                skill = skill2;
+            if (mastery < mastery2)
+                mastery = mastery2;
+          }
+      }
+    if (!mastery) // shouldn't remain zero if we have a weapon
+      {
+        skill = get_skill(player, SKILL_UNARMED);
+        mastery = skill_mastery(skill);
+        skill &= SKILL_MASK;
+      }
+    int minutes = mastery <= 1 ? 5 : 15 << (mastery - 2); // 5, 15, 30, an hour
+    if (debuff_monster(monster, MIND, skill))
+        add_buff(monster->spell_buffs + MBUFF_FEAR,
+                 CURRENT_TIME + minutes * 60 * 128 / 30, mastery, 0, 0, 0);
+}
+
 // Defined below.
 static void __stdcall headache_berserk(struct player *, struct map_monster *);
 static void __stdcall viper_slow(struct player *, struct map_monster *);
+static void multihit_message_check(void);
 
 // Implement cursed weapons; the debuff is inflicted with a 20% chance.
 // Black Knights treat all melee weapons as cursed.
-// Headache berserk effect is also triggered here.
+// Headache berserk and Viper slow effects are also triggered here.
+// One of multihit message hooks is also here.
+// Finally, Terrifying helmets (plus Amuck) are also implemented here.
 // TODO: should it make a sound?
 static void __declspec(naked) cursed_weapon(void)
 {
@@ -9649,6 +9701,22 @@ static void __declspec(naked) cursed_weapon(void)
         xor ecx, ecx
         jmp check
         melee:
+        push SPC_TERRIFYING
+        mov ecx, edi
+        call dword ptr ds:has_enchanted_item
+        test eax, eax
+        jnz fear
+        push SLOT_MAIN_HAND
+        push AMUCK
+        mov ecx, edi
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        jz no_fear
+        fear:
+        push esi
+        push edi
+        call terrifying_helmet
+        no_fear:
         mov ecx, 2
         mov eax, dword ptr [edi+0x194c] ; main hand
         check:
@@ -9715,25 +9783,24 @@ static void __declspec(naked) cursed_weapon(void)
         call debuff_monster
         test eax, eax
         jz fail
-        xor ebx, ebx
+        xor ecx, ecx
         mov eax, 128 * 60 * 20 / 30 ; 20 min
         mov edx, dword ptr [CURRENT_TIME_ADDR+4]
         add eax, dword ptr [CURRENT_TIME_ADDR]
-        adc edx, ebx
-        lea ecx, [esi+212] ; cursed debuff
-        push ebx
-        push ebx
-        push ebx
-        push ebx
+        adc edx, ecx
+        push ecx
+        push ecx
+        push ecx
+        push ecx
         push edx
         push eax
+        lea ecx, [esi+212] ; cursed debuff
         call dword ptr ds:add_buff
-        push ebx
+        push 0
         push esi
         call dword ptr ds:magic_sparkles
         fail:
-        mov ecx, 0x5c5c30 ; replaced code
-        ret
+        jmp multihit_message_check ; other hook at this address
       }
 }
 
@@ -10171,7 +10238,7 @@ static inline void new_enchants(void)
     patch_bytes(0x4275cd, mon_res_roll_chunk, 3);
     patch_bytes(0x4275dd, mon_res_roll_chunk, 3);
     // condition resistance is handled in pierce_debuff_resistance() above
-    hook_call(0x439bf2, cursed_weapon, 5);
+    hook_call(0x439bb3, cursed_weapon, 7);
     // For symmetry, indirectly penalize cursed players' resistances
     // through reducing luck to 10% of base.
     patch_byte(0x4ede62, 10);
@@ -12981,7 +13048,7 @@ static inline void damage_messages(void)
     patch_byte(0x439d63, 20); // call fixup
     hook_call(0x439b56, multihit_message_check, 6);
     patch_byte(0x439b77, -16); // total damage  == [ebp-16]
-    hook_call(0x439bb3, multihit_message_check, 7);
+    // also called from cursed_weapon() above
     patch_byte(0x439bc5, -16); // total damage  == [ebp-16]
     hook_call(0x42ef8a, splitter_fireball_message, 7);
 }

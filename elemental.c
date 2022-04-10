@@ -8857,6 +8857,29 @@ static void __declspec(naked) increase_training_price(void)
       }
 }
 
+// Let temple heal price depend on PC level.
+static void __declspec(naked) temple_heal_price(void)
+{
+    asm
+      {
+        fild word ptr [edi+0xda] ; pc level
+        fsqrt
+        fmulp
+        jmp dword ptr ds:ftol ; replaced call
+      }
+}
+
+// Multiply Arena money reward by 5.
+static void __declspec(naked) increase_arena_reward(void)
+{
+    asm
+      {
+        lea eax, [eax+eax*4]
+        mov dword ptr [0xf8b034], eax ; replaced code
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -8948,6 +8971,8 @@ static inline void misc_rules(void)
     patch_byte(0x49129e, 0x90); // multiply total perception by mastery
     hook_call(0x4b4b93, reduce_training_time, 5);
     hook_call(0x4b474f, increase_training_price, 5);
+    hook_call(0x4b8052, temple_heal_price, 5);
+    hook_call(0x4bc3b3, increase_arena_reward, 5);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

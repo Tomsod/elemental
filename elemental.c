@@ -13329,11 +13329,16 @@ static int __thiscall get_new_full_sp(struct player *player)
 }
 
 // Instead of HP/SP boni, let humans gain an extra skill point on level up.
+// Also here: every 10th level, reset +2 stat wells.
 static void __declspec(naked) human_skill_point(void)
 {
     asm
       {
         add dword ptr [ebx+0x1938], eax ; replaced code
+        test edx, edx ; edx == new_level % 10
+        jnz skip
+        and dword ptr [ebx+0x1a50], ~0x24c360 ; reset player bits
+        skip:
         call dword ptr ds:get_race
         cmp eax, RACE_HUMAN
         jne not_human

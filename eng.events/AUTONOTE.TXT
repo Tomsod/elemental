@@ -22,8 +22,8 @@ Note bit	Autonote Text	Category
 21	2 Skill Points from the well near Offerings and Blessings in Damocles in Mount Nighon. 	Stat	10
 22	2 points of permanent Personality from the well near Fortune's Folly in Damocles in Mount Nighon.	Stat	10
 23	"20 points of temporary Fire, Cold, Shock, Poison, Magic, and Mind resistances from the well near the Fire Guild in Damocles in Mount Nighon."	Stat	10
-24	50 Spell Points recovered from the well in the eastern village in Mount Nighon.	Stat	10
-25	50 Hit Points recovered from the well in the western village in Mount Nighon.	Stat	10
+24	25 Spell Points recovered from the well in the western village in Mount Nighon.	Stat	10
+25	25 Hit Points recovered from the well in the eastern village in Mount Nighon.	Stat	10
 26	25 points of temporary Fire resistance from the well in the southwestern village in the Barrow Downs.	Stat	11
 27	2 points of permanent Speed from the well in the western section of Tidewater in Tatalia.	Stat	13
 28	20 points of temporary Shock resistance from the well in the eastern section of Tidewater in Tatalia.	Stat	13
@@ -42,7 +42,7 @@ Note bit	Autonote Text	Category
 41	Frosty liquid grants Cold Resistance.	Misc	
 42	Shocking liquid grants Shock Resistance.	Misc	
 43	Noxious liquid grants Poison Resistance.	Misc	
-44	0	Stat	
+44	2 points of permanent Luck from the well in the western section of Stone City.	Stat	11
 45	Catalyst (Grey) = Mushrooms + Empty Bottle.  Different grey reagents can be used for increased effect.	potion
 46	Cure Wounds (Red) = Widoweeps Berries + Empty Bottle.  Different red reagents can be used for increased effect.	potion
 47	Awaken (Blue) = Phirna Root + Empty Bottle.  Different blue reagents can be used for increased effect.	potion

@@ -898,3 +898,15 @@ Also, bring our half of the key to us, as well.  It is enshrined in the Temple o
 832	"I currently research petrification magic, but this side of Karigor turning people to stone is considered passe, so I don't have a lot of sources.  However, there's been a Medusa infestation in the Red Dwarf Mines in Bracada recently, and I've heard rumors that the Medusa Empress has some kind of magical talisman that is related to her powers.  If you manage to obtain it, I'm willing to exchange it for another magical item from my collection."	First time dagger quest	Amber Pebble
 833	"Be careful around Medusas, they're notoriously immune to almost any magic.  You'll need good weapons and perhaps some anti-petrification wards."	Fail dagger quest	Amber Pebble
 834	"You got it?  Wonderful!  Yes, this mirror positvely reeks with the kind of magic I'm after.  Thank you!  Here, take this dagger like I've promised.  It's my family heirloom, but the comsumables it requires are rather expensive nowadays, so I hardly use it anymore."	Success dagger quest	Amber Pebble
+835	"As Lords of Harmondale, you're entitled to a portion of the monthly taxes collected in the region.  I'll be honest -- our people are notorious for evading tax collectors, so don't expect to get rich quick!  Although, if you manage to win their trust, we might see better numbers."	Taxes intro	Harmondale Townhall
+836	"Sorry, my lords, we haven't obtained any more money since your last visit.  Come back next month."	Taxes too soon	Harmondale Townhall
+837	"My lords, the tax money for the last month is here."	Taxes begin	Harmondale Townhall
+838	"Unfortunately, we managed to collect very little.  People appear to be actively sabotaging our efforts.  I wonder why?.."	Taxes hated	Harmondale Townhall
+839	"The yield is lower than expected, as nobody seems to be home when the tax collectors arrive.  Townsfolk is still wary of your rule."	Taxes unfriendly	Harmondale Townhall
+840	"Thankfully, we met the minimum quota this month, although not without some effort."	Taxes neutral	Harmondale Townhall
+841	"The numbers for this month are rather good.  Many of our residents have managed to pay on time."	Taxes friendly	Harmondale Townhall
+842	"I'm proud to say we've far exceeded the expected sum!  It seems you've managed to endear yourselves to the populace."	Taxes liked	Harmondale Townhall
+843	"Anyway, after sending Erathia its share, you're left with %u gold."	Taxes Erathia	Harmondale Townhall
+844	"In any case, a portion of the money goes to King Parson now, but we still have %u gold left for you."	Taxes Avlee	Harmondale Townhall
+845	"Either way, since we're now independent, you get the entire sum of %u gold."	Taxes independent	Harmondale Townhall
+846	"Please sing here and here…  All done!  You can collect your money at The Vault or any other bank on the continent."	Taxes end	Harmondale Townhall

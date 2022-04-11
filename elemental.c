@@ -244,6 +244,7 @@ enum new_strings
     STR_AURA_OF_CONFLICT,
     STR_CANNOT_RECALL,
     STR_BOTCHED,
+    STR_TAXES,
     NEW_STRING_COUNT
 };
 
@@ -634,28 +635,35 @@ static struct elemdata
     int difficulty;
     // Last region visited for Master Town Portal purposes.
     int last_region;
+    // For Harmondale taxes.
+    int last_tax_month, last_tax_fame;
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
 #define WOM_BARREL_CNT 15
 
-#define QBIT_LIGHT_PATH 99
-#define QBIT_DARK_PATH 100
-#define QBIT_FOUND_OBELISK_TREASURE 178
-#define QBIT_DUMMY 245
-// my additions
-#define QBIT_REFILL_WOM_BARRELS 350
-#define QBIT_BOW_GM_QUEST_ACTIVE 367
-#define QBIT_BOW_GM_QUEST 368
-#define QBIT_BLASTER_GM_QUEST_ACTIVE_LIGHT 369
-#define QBIT_BLASTER_GM_QUEST_ACTIVE_DARK 370
-#define QBIT_BLASTER_GM_QUEST 371
-#define QBIT_BODYBUIDING_GM_QUEST_ACTIVE 372
-#define QBIT_BODYBUIDING_GM_QUEST 373
-#define QBIT_MEDITATION_GM_QUEST_ACTIVE 374
-#define QBIT_MEDITATION_GM_QUEST 375
-#define QBIT_ALCHEMY_GM_QUEST_ACTIVE 376
-#define QBIT_ALCHEMY_GM_QUEST 377
+enum qbits
+{
+    QBIT_LIGHT_PATH = 99,
+    QBIT_DARK_PATH = 100,
+    QBIT_FOUND_OBELISK_TREASURE = 178,
+    QBIT_DUMMY = 245,
+    // my additions
+    QBIT_REFILL_WOM_BARRELS = 350,
+    QBIT_ELVES_WON = 361,
+    QBIT_HARMONDALE_INDEPENDENT = 362,
+    QBIT_BOW_GM_QUEST_ACTIVE = 367,
+    QBIT_BOW_GM_QUEST = 368,
+    QBIT_BLASTER_GM_QUEST_ACTIVE_LIGHT = 369,
+    QBIT_BLASTER_GM_QUEST_ACTIVE_DARK = 370,
+    QBIT_BLASTER_GM_QUEST = 371,
+    QBIT_BODYBUIDING_GM_QUEST_ACTIVE = 372,
+    QBIT_BODYBUIDING_GM_QUEST = 373,
+    QBIT_MEDITATION_GM_QUEST_ACTIVE = 374,
+    QBIT_MEDITATION_GM_QUEST = 375,
+    QBIT_ALCHEMY_GM_QUEST_ACTIVE = 376,
+    QBIT_ALCHEMY_GM_QUEST = 377,
+};
 
 #define ITEM_TYPE_WEAPON 1
 #define ITEM_TYPE_WEAPON2 2
@@ -957,7 +965,7 @@ enum monster_buffs
 // new NPC topic count
 #define TOPIC_COUNT 604
 // count of added NPC text entries
-#define NEW_TEXT_COUNT 45
+#define NEW_TEXT_COUNT 57
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658
@@ -1186,6 +1194,7 @@ static void __thiscall (*spell_face_anim)(void *this, short anim, short pc)
 static void __thiscall (*add_action)(void *this, int action, int param1,
                                      int param2) = (funcptr_t) 0x42eb69;
 static void __thiscall (*rest_party)(void *this) = (funcptr_t) 0x490cfa;
+static int __thiscall (*get_fame)(void *this) = (funcptr_t) 0x491356;
 static int __thiscall (*open_chest)(int chest) = (funcptr_t) 0x4203c7;
 static void __thiscall (*resurrect_monster)(int mon_id) = (funcptr_t) 0x402f27;
 static int __thiscall (*identify_price)(void *player, float shop_multiplier)
@@ -8880,6 +8889,128 @@ static void __declspec(naked) increase_arena_reward(void)
       }
 }
 
+// For Harmondale town hall, add an option to collect taxes.
+static void __declspec(naked) add_tax_reply(void)
+{
+    asm
+      {
+        cmp dword ptr [0xae3060], 0 ; replaced code
+        jz no_fine
+        mov edx, 100 ; fine payment reply
+        mov ecx, esi
+        inc esi
+        call dword ptr ds:add_reply
+        no_fine:
+        mov ecx, dword ptr [0x507a40] ; dialogue
+        cmp dword ptr [ecx+28], 102 ; harmondale townhall id
+        jne skip
+        mov edx, 101 ; hitherto unused
+        mov ecx, esi
+        inc esi
+        call dword ptr ds:add_reply
+        skip:
+        xor eax, eax ; set zf
+        ret
+      }
+}
+
+// Actually print the taxes reply.
+static void __declspec(naked) print_tax_reply(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [0x507a40] ; dialogue
+        cmp dword ptr [ecx+28], 102 ; harmondale townhall id
+        jne skip
+        mov eax, dword ptr [new_strings+STR_TAXES*4]
+        mov dword ptr [0xf8b038+ebx*4], eax ; replies array
+        inc ebx
+        skip:
+        xor esi, esi ; replaced code
+        ret
+      }
+}
+
+// Used below.
+static char tax_text[500];
+static int in_tax_dialog;
+
+// Generate the tax status reply (and perhaps add tax money to bank).
+static void generate_tax_text(void)
+{
+    int month = (dword(0xacd544) - 1168) * 12 + dword(0xacd548) + 1;
+    int fame = get_fame(PARTY_BIN);
+    if (!elemdata.last_tax_month) // first time ever
+      {
+        elemdata.last_tax_month = month;
+        strcpy(tax_text, new_npc_text[835-790]);
+        return;
+      }
+    if (elemdata.last_tax_month == month || elemdata.last_tax_fame == fame)
+      {
+        strcpy(tax_text, new_npc_text[836-790]);
+        return;
+      }
+    elemdata.last_tax_month = month;
+    int attitude = 0;
+    int reputation = CURRENT_REP;
+    if (reputation >= 25)
+        attitude = -2;
+    else if (reputation > 5)
+        attitude = -1;
+    else if (reputation <= -25)
+        attitude = 2;
+    else if (reputation < -5)
+        attitude = 1;
+    int fealty = 0;
+    if (check_qbit(QBITS, QBIT_ELVES_WON))
+        fealty = 1;
+    else if (check_qbit(QBITS, QBIT_HARMONDALE_INDEPENDENT))
+        fealty = 2;
+    int tax_money = (fame - elemdata.last_tax_fame) * 20;
+    elemdata.last_tax_fame = fame;
+    if (fealty == 2)
+        tax_money *= 2;
+    if (elemdata.difficulty == 2)
+        tax_money /= 2;
+    else if (elemdata.difficulty == 1)
+        tax_money -= tax_money / 4;
+    if (reputation > 0)
+        tax_money = tax_money * 10 / (10 + reputation);
+    else if (reputation < 0)
+        tax_money += tax_money * -reputation / 20;
+    char buffer[200];
+    sprintf(buffer, new_npc_text[843+fealty-790], tax_money);
+    sprintf(tax_text, "%s  %s  %s  %s", new_npc_text[837-790],
+            new_npc_text[840+attitude-790], buffer, new_npc_text[846-790]);
+    dword(0xacd570) += tax_money; // bank gold
+}
+
+// Print the tax status reply (called each tick).
+static void __declspec(naked) tax_dialog(void)
+{
+    asm
+      {
+        mov eax, dword ptr [0xf8b01c] ; replaced code
+        cmp eax, 1 ; main dialog
+        jne no_reset
+        and dword ptr [in_tax_dialog], 0
+        no_reset:
+        cmp eax, 101 ; our reply
+        jne quit
+        cmp dword ptr [in_tax_dialog], 0
+        jnz repeat
+        call generate_tax_text
+        inc dword ptr [in_tax_dialog]
+        repeat:
+        mov ebx, offset tax_text
+        mov esi, dword ptr [0x507a3c] ; skipped instruction
+        mov dword ptr [esp], 0x4b7acb ; print dialog code
+        quit:
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -8973,6 +9104,9 @@ static inline void misc_rules(void)
     hook_call(0x4b474f, increase_training_price, 5);
     hook_call(0x4b8052, temple_heal_price, 5);
     hook_call(0x4bc3b3, increase_arena_reward, 5);
+    hook_call(0x4b3c04, add_tax_reply, 7);
+    hook_call(0x4b7bea, print_tax_reply, 6);
+    hook_call(0x4b7901, tax_dialog, 5);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

@@ -721,3 +721,4 @@ Global Text
 718	Aura of Conflict
 719	"You cannot recall anymore beacons today!"
 720	Botched
+721	Taxes

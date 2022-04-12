@@ -393,10 +393,12 @@ struct __attribute__((packed)) player
 enum player_buffs
 {
     PBUFF_SHOCK_RES = 0,
+    PBUFF_BLESS = 1,
     PBUFF_POISON_RES = 2,
     PBUFF_MAGIC_RES = 3,
     PBUFF_AURA_OF_CONFLICT = 4,
     PBUFF_FIRE_RES = 5,
+    PBUFF_HAMMERHANDS = 6,
     PBUFF_MIND_RES = 9,
     PBUFF_PAIN_REFLECTION = 10,
     PBUFF_PRESERVATION = 11,
@@ -5844,6 +5846,56 @@ static void __declspec(naked) armageddon_distance(void)
       }
 }
 
+// Blink mass buff icons when they've got less than 10 minutes left.
+static void __declspec(naked) blink_mass_buffs(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [PARTY_BUFF_ADDR+eax]
+        mov edx, dword ptr [PARTY_BUFF_ADDR+eax+4]
+        sub ecx, dword ptr [CURRENT_TIME_ADDR]
+        sbb edx, dword ptr [CURRENT_TIME_ADDR+4]
+        jb skip
+        ja ok
+        cmp ecx, 128 * 60 * 10 / 30 ; 10 min
+        jae ok
+        test byte ptr [0x50ba5c], 0x40
+        jnz ok
+        mov dword ptr [0x576eac], 1 ; refresh screen
+        skip:
+        cmp ebx, esi ; set flags
+        ret
+        ok:
+        xor ecx, ecx ; set zf
+        ret
+      }
+}
+
+// Same, but with per-PC buffs.  Called four times with different eax.
+static void __declspec(naked) blink_pc_buffs(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [edi+0x17a0+eax]
+        mov edx, dword ptr [edi+0x17a0+eax+4]
+        sub ecx, dword ptr [CURRENT_TIME_ADDR]
+        sbb edx, dword ptr [CURRENT_TIME_ADDR+4]
+        jb skip
+        ja ok
+        cmp ecx, 128 * 60 * 10 / 30 ; 10 min
+        jae ok
+        mov dword ptr [0x576eac], 1 ; refresh screen
+        test byte ptr [0x50ba5c], 0x40
+        jnz ok
+        skip:
+        xor ecx, ecx ; set zf
+        ret
+        ok:
+        cmp edi, ebp ; set flags
+        ret
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -6040,6 +6092,20 @@ static inline void misc_spells(void)
     erase_code(0x42e73e, 2); // m jump
     patch_dword(0x42e744, 10); // gm constant
     patch_word(0x42e74a, 0x6dd1); // halve below gm
+    hook_call(0x441688, blink_mass_buffs, 6);
+    erase_code(0x441690, 10); // rest of old duration check
+    patch_byte(0x4417c2, 0xb8); // mov eax, dword
+    patch_dword(0x4417c3, PBUFF_HAMMERHANDS * 16);
+    hook_call(0x4417c7, blink_pc_buffs, 11);
+    patch_byte(0x441800, 0xb8); // mov eax, dword
+    patch_dword(0x441801, PBUFF_BLESS * 16);
+    hook_call(0x441805, blink_pc_buffs, 11);
+    patch_byte(0x44183e, 0xb8); // mov eax, dword
+    patch_dword(0x44183f, PBUFF_PRESERVATION * 16);
+    hook_call(0x441843, blink_pc_buffs, 11);
+    patch_byte(0x44187c, 0xb8); // mov eax, dword
+    patch_dword(0x44187d, PBUFF_PAIN_REFLECTION * 16);
+    hook_call(0x441881, blink_pc_buffs, 11);
 }
 
 // For consistency with players, monsters revived with Reanimate now have

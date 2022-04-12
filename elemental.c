@@ -9011,6 +9011,94 @@ static void __declspec(naked) tax_dialog(void)
       }
 }
 
+// Do not allow flight above max altitude or in turn-based mode,
+// except in movement phase wherein it'll consume one step.
+static void __declspec(naked) restrict_flying_up(void)
+{
+    asm
+      {
+        jge disable ; if too high
+        cmp dword ptr [0xacd6b4], ecx ; test for TB mode
+        jz ok
+        cmp dword ptr [0x4f86dc], 3 ; TB phase
+        jne fail
+        cmp dword ptr [0x4f86ec], ecx ; remaining movement
+        jle fail
+        sub dword ptr [0x4f86ec], 26 ; one step
+        ok:
+        test ebp, ebp ; clear zf
+        ret
+        disable:
+        cmp dword ptr [ebp-76], ecx ; replaced code
+        jnz fail
+        mov dword ptr [0xacd53c], ecx ; disable flight
+        fail:
+        test ecx, ecx ; set zf
+        ret
+      }
+}
+
+// Same for flying down.
+static void __declspec(naked) restrict_flying_down(void)
+{
+    asm
+      {
+        cmp dword ptr [0xacd4f4], 4005 ; party.z (account for bobbling)
+        jge fail
+        cmp dword ptr [0xacd6b4], ecx ; test for TB mode
+        jz ok
+        cmp dword ptr [0x4f86dc], 3 ; TB phase
+        jne fail
+        cmp dword ptr [0x4f86ec], ecx ; remaining movement
+        jle fail
+        sub dword ptr [0x4f86ec], 26 ; one step
+        ok:
+        sub dword ptr [ebp-32], 30 ; replaced code
+        sub dword ptr [ebp-72], 30 ; ditto
+        ret
+        fail:
+        mov dword ptr [esp], 0x4742ce ; no action
+        ret
+      }
+}
+
+// Turning off flight instead consumes the entire move for the turn.
+static void __declspec(naked) restrict_free_fall(void)
+{
+    asm
+      {
+        cmp dword ptr [0xacd53c], eax ; replaced code
+        jz quit
+        cmp dword ptr [0xacd6b4], eax ; test for TB mode
+        jz ok
+        cmp dword ptr [0x4f86dc], 3 ; TB phase
+        jne fail
+        cmp dword ptr [0x4f86ec], 130 ; remaining movement
+        jl fail
+        mov dword ptr [0x4f86ec], eax ; consume all of it
+        ok:
+        test ebp, ebp ; clear zf
+        quit:
+        ret
+        fail:
+        mov dword ptr [esp], 0x4742ce ; no action
+        ret
+      }
+}
+
+// Disable flight conditionally instead of enabling it conditionally later.
+static void __declspec(naked) disable_flight(void)
+{
+    asm
+      {
+        cmp dword ptr [PARTY_ADDR+eax-0x1b3c+0x1940], ecx ; replaced code
+        jg skip
+        mov dword ptr [0xacd53c], ecx ; disable flight
+        skip:
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -9107,6 +9195,13 @@ static inline void misc_rules(void)
     hook_call(0x4b3c04, add_tax_reply, 7);
     hook_call(0x4b7bea, print_tax_reply, 6);
     hook_call(0x4b7901, tax_dialog, 5);
+    hook_call(0x473c6e, restrict_flying_up, 5);
+    hook_call(0x473d5e, restrict_flying_down, 8);
+    hook_call(0x4742df, restrict_free_fall, 6);
+    hook_call(0x473c57, disable_flight, 6); // flying up
+    erase_code(0x473c39, 6); // old disable
+    hook_call(0x473d52, disable_flight, 6); // flying down
+    erase_code(0x473d34, 6); // old disable
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

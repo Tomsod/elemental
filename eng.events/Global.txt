@@ -722,3 +722,6 @@ Global Text
 719	"You cannot recall anymore beacons today!"
 720	Botched
 721	Taxes
+722	Can learn
+723	Cannot learn
+724	Already learned

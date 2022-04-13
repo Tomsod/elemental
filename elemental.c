@@ -245,6 +245,9 @@ enum new_strings
     STR_CANNOT_RECALL,
     STR_BOTCHED,
     STR_TAXES,
+    STR_CAN_LEARN,
+    STR_CANNOT_LEARN,
+    STR_ALREADY_LEARNED,
     NEW_STRING_COUNT
 };
 
@@ -1113,8 +1116,9 @@ static void __fastcall (*add_reply)(int number, int action)
     = (funcptr_t) 0x4b362f;
 static void __fastcall (*spend_gold)(int amount) = (funcptr_t) 0x492bae;
 static void __thiscall (*init_item)(void *item) = (funcptr_t) 0x402f07;
-static int __thiscall (*get_attack_delay)(void *player, int ranged)
-    = (funcptr_t) 0x48e19b;
+static void __fastcall (*print_text)(int *bounds, void *font, int x, int y,
+                                     int color, char *text, int unknown)
+    = (funcptr_t) 0x44d432;
 static int __thiscall (*get_race)(void *player) = (funcptr_t) 0x490101;
 static int __thiscall (*get_might)(void *player) = (funcptr_t) 0x48c922;
 static int __thiscall (*get_intellect)(void *player) = (funcptr_t) 0x48c9a8;
@@ -5896,6 +5900,60 @@ static void __declspec(naked) blink_pc_buffs(void)
       }
 }
 
+// When browsing guild shelves, mark which spells are or can be learned.
+static void __declspec(naked) mark_learned_guild_spells(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [CURRENT_PLAYER]
+        test ecx, ecx
+        jz skip
+        mov ecx, dword ptr [0xa74f44+ecx*4] ; PC pointers
+        cmp byte ptr [ecx+0x192+esi-1], 0 ; known spell flag
+        jnz known
+        mov eax, dword ptr [ebp-20] ; school x 4
+        lea edx, [eax+eax*2]
+        shr eax, 2
+        sub edx, eax
+        mov ax, word ptr [ecx+0x108+SKILL_FIRE*2+eax*2]
+        test eax, eax
+        jz cannot
+        sub esi, edx
+        cmp esi, 4
+        jbe can
+        cmp eax, SKILL_EXPERT
+        jb cannot
+        cmp esi, 7
+        jbe can
+        cmp eax, SKILL_MASTER
+        jb cannot
+        cmp esi, 10
+        jbe can
+        cmp eax, SKILL_GM
+        jb cannot
+        can:
+        mov eax, dword ptr [new_strings+STR_CAN_LEARN*4]
+        jmp print
+        cannot:
+        mov eax, dword ptr [new_strings+STR_CANNOT_LEARN*4]
+        jmp print
+        known:
+        mov eax, dword ptr [new_strings+STR_ALREADY_LEARNED*4]
+        print:
+        push 3
+        push eax
+        push edi
+        push 14
+        push 12
+        mov edx, dword ptr [0x5c3488] ; font
+        lea ecx, [ebp-104]
+        call dword ptr ds:print_text
+        skip:
+        mov edx, dword ptr [0x5c3484] ; replaced code
+        ret
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -6106,6 +6164,7 @@ static inline void misc_spells(void)
     patch_byte(0x44187c, 0xb8); // mov eax, dword
     patch_dword(0x44187d, PBUFF_PAIN_REFLECTION * 16);
     hook_call(0x441881, blink_pc_buffs, 11);
+    hook_call(0x4b16be, mark_learned_guild_spells, 6);
 }
 
 // For consistency with players, monsters revived with Reanimate now have

@@ -102,6 +102,7 @@ enum elements
     HOLY = 6,
     MIND = 7,
     MAGIC = 8,
+    PHYS_SPELL = 9, // like physical, but medusae resist a lot
     FIRE_POISON = 10,
     ENERGY = 12, // conforming to mmpatch
 };
@@ -1259,8 +1260,9 @@ static inline void spells_txt(void)
     patch_pointer(0x45398e, elements[POISON]);
     patch_pointer(0x4539a7, elements[HOLY]);
     patch_pointer(0x4539d9, elements[PHYSICAL]);
-    patch_byte(0x4539ea, PHYSICAL);
+    patch_byte(0x4539ea, PHYS_SPELL); // separate from weapon to handle medusae
     patch_pointer(0x4539f2, elements[ENERGY]);
+    patch_byte(0x453a03, ENERGY);
     patch_pointer(0x453a0b, elements[FIRE_POISON]);
     patch_byte(0x453a39, MAGIC); // was unused (5)
 }
@@ -1281,9 +1283,9 @@ static int __fastcall attack_type(const char *attack)
 // and change the possible attack elements.
 static inline void monsters_txt(void)
 {
-    patch_byte(0x455108, byte(0x455108) - 2); // two less fields now
-    patch_dword(0x4563fe, dword(0x456406)); // tweaking the jumptable
-    patch_dword(0x456402, dword(0x45640a)); // ditto
+    patch_byte(0x455108, byte(0x455108) - 1); // one less field now
+    patch_dword(0x456402, dword(0x456406)); // tweaking the jumptable
+    patch_dword(0x456406, dword(0x45640a)); // ditto
     hook_jump(0x454ce0, attack_type); // replace the old function entirely
 }
 
@@ -1407,6 +1409,7 @@ static void __declspec(naked) fire_poison_monster(void)
 }
 
 // Recognise element 10 (fire-poison) as the stat 47 (hitherto unused).
+// Also here: equal element 9 (physical spells) with physical damage.
 static void __declspec(naked) fire_poison_stat(void)
 {
     asm
@@ -1416,14 +1419,17 @@ static void __declspec(naked) fire_poison_stat(void)
         ret
         not_magic:
         dec eax
+        jz phys_spell
         dec eax
-        jz fire_poison
-        xor edi, edi
-        push 0x48d4e4
-        ret
-        fire_poison:
+        jnz skip
         push STAT_FIRE_POISON_RES
         push 0x48d4db
+        ret
+        phys_spell:
+        mov dword ptr [ebp+8], PHYSICAL
+        skip:
+        xor edi, edi
+        push 0x48d4e4
         ret
       }
 }
@@ -1448,7 +1454,6 @@ static int __thiscall fire_poison_player(const void *player, int stat)
 // So far only used by Dragon Breath.
 static inline void fire_poison(void)
 {
-    patch_dword(0x427611, dword(0x427601)); // disable Light resistance
     patch_pointer(0x427615, fire_poison_monster); // patch jumptable
     hook_jump(0x48d4bb, fire_poison_stat);
     hook_call(0x48d4dd, fire_poison_player, 5);

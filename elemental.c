@@ -718,6 +718,7 @@ enum objlist
 enum party_buffs
 {
     BUFF_FEATHER_FALL = 5,
+    BUFF_FLY = 7,
     BUFF_IMMOLATION = 10,
     BUFF_INVISIBILITY = 11,
     BUFF_WATER_WALK = 18,
@@ -5959,6 +5960,47 @@ static void __declspec(naked) mark_learned_guild_spells(void)
       }
 }
 
+// Do not drain SP for Water Walk cast from a scroll.
+static void __declspec(naked) ww_scroll_chunk(void)
+{
+    asm
+      {
+        cmp word ptr [ebx+10], 0
+        jz skip + 7
+        nop
+        nop
+        nop
+        skip:
+      }
+}
+
+// Allow casting WW or Fly from a scroll without a SP pool.
+static void __declspec(naked) ww_fly_scroll_no_sp(void)
+{
+    asm
+      {
+        cmp word ptr [ebx+10], si ; == 0
+        jnz skip
+        jmp dword ptr ds:get_full_sp ; replaced call
+        skip:
+        xor eax, eax
+        inc eax
+        ret
+      }
+}
+
+// Do not drain SP for Fly cast from a scroll.
+static void __declspec(naked) fly_scroll_chunk(void)
+{
+    asm
+      {
+        cmp word ptr [ebx+10], si
+        jz skip
+        mov byte ptr [PARTY_BUFF_ADDR+BUFF_FLY*16+15], 1
+        skip:
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -6137,7 +6179,6 @@ static inline void misc_spells(void)
     hook_call(0x433433, lloyd_disable_recall, 5);
     hook_call(0x4737f2, reset_lava_walking, 7);
     hook_call(0x47382f, lava_walking, 7);
-    erase_code(0x42a9c7, 17); // old gm water walk perk (no sp drain)
     patch_dword(0x429972, 10); // nerf master meteor shower (16 -> 10 rocks)
     patch_dword(0x439c64, 40); // stun knockback
     hook_call(0x439d74, increase_stun_knockback, 5);
@@ -6170,6 +6211,11 @@ static inline void misc_spells(void)
     patch_dword(0x44187d, PBUFF_PAIN_REFLECTION * 16);
     hook_call(0x441881, blink_pc_buffs, 11);
     hook_call(0x4b16be, mark_learned_guild_spells, 6);
+    patch_bytes(0x42a9c7, ww_scroll_chunk, 10);
+    hook_call(0x42a8a1, ww_fly_scroll_no_sp, 5); // WW
+    hook_call(0x42a273, ww_fly_scroll_no_sp, 5); // Fly
+    patch_bytes(0x42a2d4, fly_scroll_chunk, 13);
+    erase_code(0x42a2e1, 13); // rest of pointless old code
 }
 
 // For consistency with players, monsters revived with Reanimate now have
@@ -6268,6 +6314,9 @@ static void __declspec(naked) zombificable_chunk(void)
       }
 }
 
+// Save monster HP before instadeath effects for later.
+static int old_monster_hp;
+
 // Let the Undead Slaying weapons attack with Holy instead of Physical
 // when it's preferable.  Together with ghosts now immune to Physical,
 // makes holy water useful.  If dual-wielding, only 50% of damage is affected.
@@ -6279,6 +6328,8 @@ static void __declspec(naked) undead_slaying_element(void)
 {
     asm
       {
+        movsx edx, word ptr [esi+40] ; monster hp
+        mov dword ptr [old_monster_hp], edx ; store for later
         and dword ptr [ebp-20], 0 ; zero out the damage just in case
         cmp dword ptr [ebp-8], PHYSICAL ; main attack element
         jne skip
@@ -9229,6 +9280,41 @@ static void __declspec(naked) disable_flight(void)
       }
 }
 
+// Cap vampiric weapon heal at 20% of monster's remaining HP.
+static void __declspec(naked) vampiric_cap(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ebp-20] ; damage dealt
+        cmp eax, dword ptr [old_monster_hp]
+        cmovg eax, dword ptr [old_monster_hp]
+        ret
+      }
+}
+
+// Prevent berserked monsters (except peasants) from fleeing due to low HP.
+static void __declspec(naked) berserk_no_run_away(void)
+{
+    asm
+      {
+        movzx eax, byte ptr [ebx+60] ; replaced code
+        dec eax ; ditto
+        jz quit
+        cmp dword ptr [ebx+212+MBUFF_BERSERK*16], 0
+        jnz berserk
+        cmp dword ptr [ebx+212+MBUFF_BERSERK*16+4], 0
+        jz skip
+        berserk:
+        xor eax, eax ; suicidal
+        dec eax
+        quit:
+        ret
+        skip:
+        test eax, eax ; clear zf
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -9332,6 +9418,10 @@ static inline void misc_rules(void)
     erase_code(0x473c39, 6); // old disable
     hook_call(0x473d52, disable_flight, 6); // flying down
     erase_code(0x473d34, 6); // old disable
+    hook_call(0x439939, vampiric_cap, 10); // ranged
+    hook_call(0x4399ca, vampiric_cap, 10); // melee
+    hook_call(0x402277, berserk_no_run_away, 5);
+    hook_call(0x406e84, berserk_no_run_away, 5);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -10354,6 +10444,10 @@ static void __declspec(naked) turn_afraid_monster(void)
         cmp byte ptr [ebx+60], 1 ; ai type
         jb skip ; suicidal
         je turn ; wimp
+        cmp dword ptr [ebx+212+MBUFF_BERSERK*16], 0
+        jnz skip
+        cmp dword ptr [ebx+212+MBUFF_BERSERK*16+4], 0
+        jnz skip
         movzx edx, word ptr [ebx+40] ; monster hp
         lea edx, [edx+edx*4] ; 1/5th == 20%
         cmp byte ptr [ebx+60], 3 ; aggressive

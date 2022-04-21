@@ -603,3 +603,7 @@
 602	Великий магистр алхимии	GM mini-quest in progress
 603	Квест	Sacrificial Dagger quest
 604	Квест	Sacrificial Dagger quest in progress
+605	Открыть сумку	Cavalier Steed
+606	Открыть левую сумку	Cavalier Steed
+607	Открыть правую сумку	Cavalier Steed
+608	Начать полёт	Cavalier Steed

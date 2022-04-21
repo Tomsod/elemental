@@ -725,3 +725,4 @@ Global Text
 722	Can learn
 723	Cannot learn
 724	Already learned
+725	Buy Horse %d Gold

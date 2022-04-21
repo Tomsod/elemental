@@ -18,13 +18,13 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 16	Seknit Undershadow	17	0	0	0	345	0	40	0	48	49	0	0	0	0	Evil Thief promoter	5
 17	Sir Charles Quixote	36	0	0	0	303	0	43	0	51	0	0	0	0	0	Good Paladin promoter	3
 18	William Setag	40	0	0	0	0	0	49	0	56	0	0	0	0	0	Evil Paladin promoter	5
-19	Margaret the Docent	162	0	0	0	0	0	18	0	0	0	0	0	0	0	Docent for the tour 1	
-20	Margaret the Docent	162	0	0	0	0	0	19	0	0	0	0	0	0	0	Docent for the tour 2	
-21	Margaret the Docent	162	0	0	0	0	0	20	0	0	0	0	0	0	0	Docent for the tour 3	
-22	Margaret the Docent	162	0	0	0	0	0	21	0	0	0	0	0	0	0	Docent for the tour 4	
-23	Margaret the Docent	162	0	0	0	0	0	22	0	0	0	0	0	0	0	Docent for the tour 5	
-24	Margaret the Docent	162	0	0	0	0	0	23	0	0	0	0	0	0	0	Docent for the tour 6	
-25	Margaret the Docent	162	0	0	0	0	0	24	0	0	0	0	0	0	0	Docent for the tour 7	
+19	Oscar the Donkey	967	0	0	0	0	0	222	0	606	607	0	0	0	0	Cavalier horse	2
+20	Whisper the Horse	968	0	0	0	0	0	222	0	605	0	0	0	0	0	Cavalier horse	3
+21	Star the Horse	969	0	0	0	0	0	222	0	605	0	0	0	0	0	Cavalier horse	4
+22	Spirit the Horse	970	0	0	0	0	0	223	0	606	607	0	0	0	0	Cavalier horse	5
+23	Silver the Pegasus	971	0	0	0	0	0	222	0	608	0	0	0	0	0	Cavalier horse	6
+24	Dusty the Warhorse	972	0	0	0	0	0	222	0	0	0	0	0	0	0	Cavalier horse	13
+25	Charlie the Unicorn	973	0	0	0	0	0	222	0	0	0	0	0	0	0	Cavalier horse	14
 26	Margaret the Docent	162	0	0	0	0	0	25	0	0	0	0	0	0	0	Docent for the tour 8	
 27	Margaret the Docent	162	0	0	0	0	0	26	0	0	0	0	0	0	0	Docent for the tour 9	
 28	Margaret the Docent	162	0	0	0	0	0	27	0	0	0	0	0	0	0	Docent for the tour 10	
@@ -446,13 +446,13 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 444	Harli Quinn	536	0	0	0	340	0	190	0	572	529	0	0	0	0	Hint NPC in Deyja (5)
 445	Madigan Tarent	166	0	0	0	429	0	180	0	571	529	0	0	0	0	Hint NPC in Celeste (7)
 446	Garion Ramiez	17	0	0	0	430	0	180	0	572	444	0	0	0	0	Hint NPC in Celeste (7)
-447	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0
-448	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0
-449	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0
-450	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0
-451	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0
-452	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0
-453	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+447	Margaret the Docent	162	0	0	0	0	0	18	0	0	0	0	0	0	0	Docent for the tour 1	
+448	Margaret the Docent	162	0	0	0	0	0	19	0	0	0	0	0	0	0	Docent for the tour 2	
+449	Margaret the Docent	162	0	0	0	0	0	20	0	0	0	0	0	0	0	Docent for the tour 3	
+450	Margaret the Docent	162	0	0	0	0	0	21	0	0	0	0	0	0	0	Docent for the tour 4	
+451	Margaret the Docent	162	0	0	0	0	0	22	0	0	0	0	0	0	0	Docent for the tour 5	
+452	Margaret the Docent	162	0	0	0	0	0	23	0	0	0	0	0	0	0	Docent for the tour 6	
+453	Margaret the Docent	162	0	0	0	0	0	24	0	0	0	0	0	0	0	Docent for the tour 7	
 454	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0
 455	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0
 456	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0

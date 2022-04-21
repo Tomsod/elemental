@@ -185,6 +185,7 @@ enum player_stats
 
 enum class
 {
+    CLASS_KNIGHT = 0,
     CLASS_CHAMPION = 2,
     CLASS_BLACK_KNIGHT = 3,
     CLASS_THIEF = 4,
@@ -249,6 +250,7 @@ enum new_strings
     STR_CAN_LEARN,
     STR_CANNOT_LEARN,
     STR_ALREADY_LEARNED,
+    STR_BUY_HORSE,
     NEW_STRING_COUNT
 };
 
@@ -622,7 +624,7 @@ struct __attribute__((packed)) map_chest
 };
 
 #define MAP_CHESTS ((struct map_chest *) 0x5e4fd0)
-#define EXTRA_CHEST_COUNT 5
+#define EXTRA_CHEST_COUNT 7
 
 // All the stuff I need to preserve across save/loads (except WoM barrels).
 static struct elemdata
@@ -669,6 +671,8 @@ enum qbits
     QBIT_MEDITATION_GM_QUEST = 375,
     QBIT_ALCHEMY_GM_QUEST_ACTIVE = 376,
     QBIT_ALCHEMY_GM_QUEST = 377,
+    QBIT_CAVALIER_HORSE = 383,
+    QBIT_USED_PEGASUS = 384,
 };
 
 #define ITEM_TYPE_WEAPON 1
@@ -907,6 +911,7 @@ enum profession
     NPC_QUARTER_MASTER = 30,
     NPC_COOK = 33,
     NPC_CHEF = 34,
+    NPC_WIND_MASTER = 39,
     NPC_PIRATE = 45,
     NPC_GYPSY = 48,
     NPC_DUPER = 50,
@@ -968,11 +973,11 @@ enum monster_buffs
 #define HIRELING_REPLY 0xf8b06c
 
 // new NPC greeting count (starting from 1)
-#define GREET_COUNT 221
+#define GREET_COUNT 223
 // new NPC topic count
-#define TOPIC_COUNT 604
+#define TOPIC_COUNT 608
 // count of added NPC text entries
-#define NEW_TEXT_COUNT 57
+#define NEW_TEXT_COUNT 64
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658
@@ -1060,6 +1065,21 @@ struct __attribute__((packed)) patch_options
 //vanilla
 #define ACTION_EXIT 113
 
+// Cavalier horse NPCs.
+enum horses
+{
+    HORSE_HARMONDALE = 19,
+    HORSE_ERATHIA,
+    HORSE_TULAREAN,
+    HORSE_DEYJA,
+    HORSE_BRACADA,
+    HORSE_TATALIA,
+    HORSE_AVLEE,
+};
+
+#define NPC_ADDR 0x72d50c
+#define NPC_HIRED 0x80
+
 static int __cdecl (*uncased_strcmp)(const char *left, const char *right)
     = (funcptr_t) 0x4caaf0;
 static int __thiscall (*get_resistance)(const void *player, int stat)
@@ -1111,7 +1131,8 @@ static char *__thiscall (*load_from_lod)(void *lod, char *filename,
                                          int use_malloc)
     = (funcptr_t) 0x410897;
 static void (*mm7_free)(void *ptr) = (funcptr_t) 0x4caefc;
-#define QBITS ((void *) 0xacd59d)
+#define QBITS_ADDR 0xacd59d
+#define QBITS ((void *) QBITS_ADDR)
 static int __fastcall (*check_qbit)(void *qbits, int bit)
     = (funcptr_t) 0x449b7a;
 static void __fastcall (*add_reply)(int number, int action)
@@ -1246,6 +1267,11 @@ static int __thiscall (*repair_price)(void *player, int item_value,
                                       float shop_multiplier)
     = (funcptr_t) 0x4b8126;
 static void __thiscall (*set_gold)(int value) = (funcptr_t) 0x492b68;
+static int __fastcall (*get_text_height)(void *font, char *string, int *bounds,
+                                         int unknown, int unknown2)
+    = (funcptr_t) 0x44c5c9;
+static void __fastcall (*change_bit)(void *bits, int bit, int set)
+    = (funcptr_t) 0x449ba1;
 
 //---------------------------------------------------------------------------//
 
@@ -1565,7 +1591,9 @@ static int __thiscall is_immune(struct player *player, unsigned int element)
             return 1;
         break;
     case MAGIC:
-        if (has_item_in_slot(player, WITCHBANE, SLOT_AMULET))
+        if (has_item_in_slot(player, WITCHBANE, SLOT_AMULET)
+            || (player->class & -4) == CLASS_KNIGHT
+               && byte(NPC_ADDR + HORSE_AVLEE * 76 + 8) & NPC_HIRED)
             return 1;
         break;
       }
@@ -8936,6 +8964,7 @@ static void __declspec(naked) dont_reset_cooks(void)
         right:
         mov dword ptr [0xad4540+68], edx ; replaced code
         skip_right:
+        cmp dword ptr [0x73c014], edx ; replaced code
         ret
       }
 }
@@ -9390,7 +9419,7 @@ static inline void misc_rules(void)
     erase_code(0x4021d9, 23); // rest of old code
     hook_call(0x43420f, tavern_rest_buff, 5);
     hook_call(0x490d79, tavern_buff_on_rest, 5);
-    hook_call(0x494148, dont_reset_cooks, 12);
+    hook_call(0x494142, dont_reset_cooks, 18);
     hook_call(0x445f0f, invert_cook_check, 5);
     hook_call(0x4bc56a, toggle_cook_reply, 6);
     hook_call(0x445523, print_cook_reply, 7);
@@ -10180,6 +10209,11 @@ static void __declspec(naked) cursed_weapon(void)
         call dword ptr ds:has_enchanted_item
         test eax, eax
         jnz fear
+        cmp byte ptr [edi+0xb9], CLASS_BLACK_KNIGHT
+        ja no_zombie
+        test byte ptr [NPC_ADDR+HORSE_DEYJA*76+8], NPC_HIRED
+        jnz fear
+        no_zombie:
         push SLOT_MAIN_HAND
         push AMUCK
         mov ecx, edi
@@ -17939,6 +17973,356 @@ static inline void difficulty_level(void)
     patch_pointer(0x417d78, "%s: %+d"); // display penalty correctly
 }
 
+// Holds an unused travel reply that can be replaced with ours.
+static void *empty_reply;
+static int empty_reply_index;
+
+// Reset the above variable before cycling through replies.
+static void __declspec(naked) reset_empty_reply(void)
+{
+    asm
+      {
+        and dword ptr [empty_reply], 0
+        lea eax, [ebp-636] ; replaced code
+        ret
+      }
+}
+
+// Whenever a reply is skipped, note it down.
+static void __declspec(naked) remember_empty_reply(void)
+{
+    asm
+      {
+        mov dword ptr [empty_reply], ebx
+        mov edx, dword ptr [ebp-8] ; reply index + 1
+        dec edx
+        mov dword ptr [empty_reply_index], edx
+        mov dword ptr [ebx+20], eax ; replaced code
+        mov dword ptr [ebx+12], eax ; ditto
+        ret
+      }
+}
+
+// Used to hold the buy horse reply w/o formatting.
+static char *horse_buffer[100];
+// Used below.
+STATIC const int horses_cost[9] = { 1000, 2000, 3000, 3000, 4000, 4000, 5000 };
+FIX(horses_cost);
+
+// Replace the empty reply with ours, for buying a horse, if applicable.
+static void __declspec(naked) add_horse_reply(void)
+{
+    asm
+      {
+        cmp dword ptr [empty_reply], 0
+        jz skip
+        mov ecx, QBITS_ADDR
+        mov edx, QBIT_CAVALIER_HORSE
+        call dword ptr ds:check_qbit
+        test eax, eax
+        jz skip
+        mov ecx, dword ptr [0x507a40] ; parent dialog
+        mov eax, dword ptr [ecx+28] ; house id
+        cmp eax, 63 ; first boat
+        jae skip
+        sub eax, 54 ; first stables
+        jb skip ; just in case
+        push dword ptr [REF(horses_cost)+eax*4]
+        push dword ptr [new_strings+STR_BUY_HORSE*4]
+#ifdef __clang__
+        mov eax, offset horse_buffer
+        push eax
+#else
+        push offset horse_buffer
+#endif
+        call dword ptr ds:sprintf
+        mov ecx, dword ptr [0x507a3c] ; dialog
+        mov eax, dword ptr [empty_reply_index]
+        cmp eax, dword ptr [ecx+44]
+        cmove eax, dword ptr [colors+CLR_ITEM*4]
+        cmovne eax, dword ptr [colors+CLR_WHITE*4]
+        push eax
+        push 0x4e2da8 ; color format string
+        push dword ptr [ebp-12] ; reply buffer
+        call dword ptr ds:sprintf
+#ifdef __clang__
+        mov eax, offset horse_buffer
+        push eax
+#else
+        push offset horse_buffer
+#endif
+        push dword ptr [ebp-12]
+        call dword ptr ds:strcat_ptr
+        add esp, 32
+        push 0
+        push 0
+        lea eax, [ebp-136]
+        push eax
+        mov edx, offset horse_buffer
+        mov ecx, dword ptr [0x5c3468] ; font
+        call dword ptr ds:get_text_height
+        mov ecx, dword ptr [empty_reply]
+        mov edx, dword ptr [ebp-16]
+        mov dword ptr [ecx+12], eax
+        mov dword ptr [ecx+4], edx
+        add edx, eax
+        dec edx
+        mov dword ptr [ecx+36], 109 ; hitherto unused
+        mov dword ptr [ecx+20], edx
+        add eax, dword ptr [ebp-52]
+        add dword ptr [ebp-16], eax
+        ret ; zf is unset, so we skip the no routes message
+        skip:
+        mov eax, dword ptr [ebp-48] ; replaced code
+        cmp dword ptr [ebp-16], eax ; this too
+        ret
+      }
+}
+
+// Actually buy the horse if clicked on the reply.
+static void __declspec(naked) horse_buy_action(void)
+{
+    asm
+      {
+        jle skip
+        cmp eax, 109 ; our reply (last one)
+        je horse
+        ret ; flags are set
+        skip:
+        cmp esi, ebx ; set flags
+        ret
+        horse:
+        mov ecx, dword ptr [0x507a40] ; parent dialog
+        mov edi, dword ptr [ecx+28] ; house id
+        mov ecx, dword ptr [REF(horses_cost)+edi*4-54*4]
+        cmp ecx, dword ptr [0xacd56c] ; party gold
+        jbe buy
+        mov dword ptr [esp], 0x4b6a32 ; not enough gold branch
+        ret
+        buy:
+        call dword ptr ds:spend_gold
+        imul edi, edi, 76
+        or byte ptr [NPC_ADDR+edi-54*76+HORSE_HARMONDALE*76+8], NPC_HIRED
+        inc byte ptr [0xacd542] ; quest hireling count
+        push QBIT_CAVALIER_HORSE
+        push EVT_QBITS
+        mov ecx, esi
+        call dword ptr ds:evt_sub
+        mov dword ptr [esp], 0x4b6a50 ; quit subdialog branch
+        ret
+      }
+}
+
+// Show a description of the horse NPC on a right-click.
+static void __declspec(naked) horse_rmb(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ebp-12] ; NPC id
+        cmp eax, 57 ; dragon familiar (replaced)
+        je quit
+        cmp eax, HORSE_HARMONDALE ; first horse
+        jb skip
+        cmp eax, HORSE_AVLEE ; last horse
+        ja skip
+        mov eax, dword ptr [REF(new_npc_text)+57*4+eax*4-HORSE_HARMONDALE*4]
+        add dword ptr [esp], 6 ; skip dragon code
+        quit:
+        ret
+        skip:
+        add dword ptr [esp], 8 ; to hireling code
+        ret
+      }
+}
+
+// Open bags or cast Fly when talking with the horse.
+static void __declspec(naked) horse_topics(void)
+{
+    asm
+      {
+        cmp ecx, 605 ; first new topic
+        jge horse
+        skip:
+        cmp ecx, 200 ; replaced code
+        ret
+        horse:
+        cmp ecx, 608
+        jg skip
+        mov esi, ecx
+        push 0
+        push 0
+        push ACTION_EXIT
+        mov ecx, ACTION_THIS_ADDR
+        call dword ptr ds:add_action
+        cmp esi, 607
+        jg fly
+        push 1
+        je right
+        push 5
+        jmp open
+        right:
+        push 6
+        open:
+        push ACTION_EXTRA_CHEST
+        mov ecx, ACTION_THIS_ADDR
+        call dword ptr ds:add_action
+        jmp quit
+        fly:
+        mov ecx, NPC_WIND_MASTER
+        call dword ptr ds:hireling_action
+        push 1
+        mov edx, QBIT_USED_PEGASUS
+        mov ecx, QBITS_ADDR
+        call dword ptr ds:change_bit
+        quit:
+        mov dword ptr [esp], 0x4bc81e ; after action code
+        ret
+      }
+}
+
+// Reset pegasus flight at the beginning of a new day (3 AM).
+static void __declspec(naked) reset_pegasus_wait(void)
+{
+    asm
+      {
+        push edx ; == 0
+        mov edx, QBIT_USED_PEGASUS
+        mov ecx, QBITS_ADDR
+        call dword ptr ds:change_bit
+        inc byte ptr [0xacd59c] ; replaced code
+        ret
+      }
+}
+
+// Also reset it after a timeskip (travel, train etc.)
+static void __declspec(naked) reset_pegasus_timeskip(void)
+{
+    asm
+      {
+        adc dword ptr [CURRENT_TIME_ADDR+4], edx ; replaced code
+        push 0
+        mov edx, QBIT_USED_PEGASUS
+        mov ecx, QBITS_ADDR
+        call dword ptr ds:change_bit
+        ret
+      }
+}
+
+// Some horses also decrease foot travel time.
+static void __declspec(naked) horse_foot_travel(void)
+{
+    asm
+      {
+        mov esi, dword ptr [0x6bcefc] ; replaced code
+        dec esi
+        test byte ptr [NPC_ADDR+HORSE_TULAREAN*76+8], NPC_HIRED
+        jnz reduce
+        test byte ptr [NPC_ADDR+HORSE_BRACADA*76+8], NPC_HIRED
+        jnz reduce
+        inc esi
+        test byte ptr [NPC_ADDR+HORSE_ERATHIA*76+8], NPC_HIRED
+        jnz reduce
+        test byte ptr [NPC_ADDR+HORSE_TATALIA*76+8], NPC_HIRED
+        jnz reduce
+        test byte ptr [NPC_ADDR+HORSE_AVLEE*76+8], NPC_HIRED
+        jz skip
+        reduce:
+        dec esi
+        dec esi
+        skip:
+        ret
+      }
+}
+
+// Same for travelling via stables.
+static void __declspec(naked) horse_stable_travel(void)
+{
+    asm
+      {
+        dec esi
+        test byte ptr [NPC_ADDR+HORSE_TULAREAN*76+8], NPC_HIRED
+        jnz reduce
+        inc esi
+        test byte ptr [NPC_ADDR+HORSE_ERATHIA*76+8], NPC_HIRED
+        jnz reduce
+        test byte ptr [NPC_ADDR+HORSE_TATALIA*76+8], NPC_HIRED
+        jnz reduce
+        test byte ptr [NPC_ADDR+HORSE_AVLEE*76+8], NPC_HIRED
+        jz skip
+        reduce:
+        dec esi
+        dec esi
+        skip:
+        mov dword ptr [ebp-16], 71 ; replaced code
+        ret
+      }
+}
+
+// We also need to adjust the stable dialog.
+static void __declspec(naked) horse_stable_dialog(void)
+{
+    asm
+      {
+        cmp dword ptr [eax+28], 63 ; replaced code
+        jge quit
+        test byte ptr [NPC_ADDR+HORSE_TULAREAN*76+8], NPC_HIRED
+        jz no_three
+        sub dword ptr [ebp-4], 3
+        jmp skip
+        no_three:
+        test byte ptr [NPC_ADDR+HORSE_ERATHIA*76+8], NPC_HIRED
+        jnz reduce
+        test byte ptr [NPC_ADDR+HORSE_TATALIA*76+8], NPC_HIRED
+        jnz reduce
+        test byte ptr [NPC_ADDR+HORSE_AVLEE*76+8], NPC_HIRED
+        jz skip
+        reduce:
+        sub dword ptr [ebp-4], 2
+        skip:
+        cmp esp, ebp ; set flags
+        quit:
+        ret 12 ; we replaced a stack fixup
+      }
+}
+
+// Tatalia warhorse improves Armsmaster for all Knights.
+static void __declspec(naked) warhorse_armsmaster_bonus(void)
+{
+    asm
+      {
+        jz skip ; replaced jump
+        add esi, 3 ; replaced code
+        skip:
+        test byte ptr [NPC_ADDR+HORSE_TATALIA*76+8], NPC_HIRED
+        jz quit
+        mov ecx, dword ptr [ebp-4] ; PC
+        cmp byte ptr [ecx+0xb9], CLASS_BLACK_KNIGHT
+        ja quit
+        add esi, 3
+        quit:
+        ret
+      }
+}
+
+// Cavaliers may purchase a steed that can grant a number of benefits.
+static inline void horses(void)
+{
+    hook_call(0x4b6cad, reset_empty_reply, 6);
+    hook_call(0x4b6e81, remember_empty_reply, 6);
+    hook_call(0x4b6e9f, add_horse_reply, 6);
+    hook_call(0x4b6979, horse_buy_action, 9);
+    hook_call(0x416b79, horse_rmb, 6);
+    hook_call(0x4bc79e, horse_topics, 6);
+    hook_call(0x494169, reset_pegasus_wait, 6);
+    hook_call(0x4b1b80, reset_pegasus_timeskip, 6);
+    hook_call(0x444da4, horse_foot_travel, 6);
+    hook_call(0x4b6b08, horse_stable_travel, 7);
+    hook_call(0x4b6d73, horse_stable_dialog, 7);
+    // zombie horse fear is in cursed_weapon() above
+    hook_call(0x48fae3, warhorse_armsmaster_bonus, 5);
+    // unicorn magic immunity is in is_immune() above
+}
+
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
                     LPVOID const reserved)
 {
@@ -17979,6 +18363,7 @@ BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
         new_enchant_item_types();
         throwing_knives();
         difficulty_level();
+        horses();
       }
     return TRUE;
 }

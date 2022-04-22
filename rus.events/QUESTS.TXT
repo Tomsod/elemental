@@ -383,7 +383,7 @@ Q Bit	Quest Note Text	Notes	Owner
 382	"Отберите волшебный талисман у Медузы-владычицы в Копях красных гномов, и вернитесь с ним к Эмбер Пеббл на болотах Дейи."	Goblin dagger quest	0	0
 383	"Купите коня в конюшнях по вашему выбору."	Cavalier horse perk	0	0
 384		Used Pegasus ability today	0	0
-385	0	0	0	0
+385		Got Elfbane	0	0
 386	0	0	0	0
 387	0	0	0	0
 388	0	0	0	0

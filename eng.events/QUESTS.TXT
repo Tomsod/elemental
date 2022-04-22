@@ -383,7 +383,7 @@ Q Bit	Quest Note Text	Notes	Owner
 382	"Obtain a magical talisman from the Empress Medusa in Red Dwarf Mines and return it to Amber Pebble in the Deyja Moors."	Goblin dagger quest	0	0
 383	"Purchase a steed from a stables of your choosing."	Cavalier horse perk	0	0
 384		Used Pegasus ability today	0	0
-385	0	0	0	0
+385		Got Elfbane	0	0
 386	0	0	0	0
 387	0	0	0	0
 388	0	0	0	0

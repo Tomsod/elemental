@@ -18,19 +18,19 @@ Button
 
 
 
-Ambush
+
 This Door is Locked
 
 
 
-Hall of the Pit
-Watchtower 6
+Stone City
+Dwarven Barrow
+Mansion
 
 
-
-Enter the Hall of the Pit
-Enter Watchtower 6
-
+Enter Stone City
+Enter Dwarven Barrow
+Enter Mansion
 
 
 Temple
@@ -49,7 +49,7 @@ Harmondale
 
 
 Obelisk
- a_eetcoa
+ivg_whn_
 Shrine
 Altar
 You Pray
@@ -58,24 +58,24 @@ You Pray
 
 
 
-
-
+Fruit Tree
+You received an apple
 Sword in Stone
 The sword won't budge!
-The sword hurts to the touch!
 
 
 
 
 
-+2 Intellect (Permanent)
-+5 Fire Resistance (Permanent)
-+10 Personality (Temporary)
-You Feel Great!!
-+10 Fire Resistance (Temporary)
-Haven't you had enough ?
-Do you think that's such a good idea ?
-+10 Poison, Mind, and Magic Resistance(Permanent)
+
++25 Fire Resistance (Temporary)
+Paralysis Relieved
+
+
+
+
++10 Endurance and Might(Permanent)
+
 
 
 

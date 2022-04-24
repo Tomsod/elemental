@@ -164,7 +164,7 @@ Global Text
 161	Steal
 162	Paralyzed
 163	Personality
-164	%s hits %s for %lu damage
+164	%s %s %s for %lu damage
 165	Please Wait
 166	Poison
 167	- The Might and Magic VII Development Team.
@@ -189,7 +189,7 @@ Global Text
 186	Time in Erathia
 187	Stolen
 188	Saturday
-189	%s shoots %s for %lu points
+189	%s %s %s for %lu points
 190	Saving
 191	You've been banned from this shop!
 192	Scroll Up
@@ -726,3 +726,8 @@ Global Text
 723	Cannot learn
 724	Already learned
 725	Buy Horse %d Gold
+726	hits
+727	critically hits
+728	backstabs
+729	shoots
+730	critically shoots

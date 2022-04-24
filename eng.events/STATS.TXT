@@ -5,7 +5,7 @@ Personality	"Personality represents both a character's strength of will and pers
 Endurance	Endurance is a measure of the physical toughness and durability of a character.  A high endurance gives a character more hit points.
 Accuracy	Accuracy represents a character's precision and hand-eye coordination.  A high accuracy will allow a character to hit monsters more frequently in combat.
 Speed	Speed is a measure of how quick a character is.  A high speed statistic will increase a character's armor class and the rate with which the character recovers from attacks.
-Luck	"Luck has a subtle influence throughout the game, but is most visible in the ability of a character to reduce damage and notice more treasure."
+Luck	"Luck has a subtle influence throughout the game, but is most visible in the ability of a character to occasionally deal double-damage critical hits."
 Hit Points	Hit points indicate how much damage your character can sustain before falling unconscious or dying.  A character is unconscious at zero hit points or less.  Hit points return after 8 hours of uninterrupted rest.  While some magical effects can increase a character's hit points above their normal maximum, the excess will quickly dissipate.
 Armor Class	"Armor Class is a measure of how difficult it is for a monster to hit a character.  The higher the armor class, the better the chance of avoiding an attack."
 Spell Points	Spell points are needed to cast spells.  Every spell has a spell point cost that is deducted from this statistic when it's cast.  Spell points return after 8 hours of uninterrupted rest.  While some magical effects can increase a character's spell points above their normal maximum, the excess will quickly dissipate.

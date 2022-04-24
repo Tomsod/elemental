@@ -251,6 +251,11 @@ enum new_strings
     STR_CANNOT_LEARN,
     STR_ALREADY_LEARNED,
     STR_BUY_HORSE,
+    STR_HITS,
+    STR_CRITICALLY_HITS,
+    STR_BACKSTABS,
+    STR_SHOOTS,
+    STR_CRITICALLY_SHOOTS,
     NEW_STRING_COUNT
 };
 
@@ -1737,7 +1742,6 @@ static void __declspec(naked) holy_is_not_magic_base(void)
 // number 200 is only respected for monsters.
 
 // Replace the old code described above with the new immunity check.
-// Also here: directly decrease damage by luck rating %.
 static void __declspec(naked) immune_to_damage(void)
 {
     asm
@@ -1750,26 +1754,9 @@ static void __declspec(naked) immune_to_damage(void)
         pop eax
         jnz immune
         test eax, eax
-        jnz reduce
         ret
         immune:
         xor eax, eax
-        ret
-        reduce:
-        cmp dword ptr [ebp+8], ENERGY
-        je skip
-        mov ecx, esi
-        call dword ptr ds:get_luck
-        push eax
-        call dword ptr ds:get_effective_stat
-        neg eax
-        mov ecx, 100
-        add eax, ecx
-        mul dword ptr [ebp+12] ; base damage
-        div ecx
-        mov dword ptr [ebp+12], eax
-        skip:
-        test esi, esi ; clear zf
         ret
       }
 }
@@ -2463,11 +2450,6 @@ static void __declspec(naked) temp_bane_melee_2(void)
 {
     asm
       {
-        test byte ptr [esp+40], 4 ; 1st param, double damage flag
-        jz check_bane
-        xor eax, eax ; double damage doesn`t stack
-        ret
-        check_bane:
         push 0 ; undead flag
         cmp ebp, CORSAIR
         je backstab
@@ -7818,6 +7800,8 @@ static char *__stdcall resistance_hint(char *description, int resistance)
             return description;
       }
     int total = get_resistance(current, resistance - 9);
+    if (total)
+        total += get_effective_stat(get_luck(current));
     strcpy(buffer, description);
     if (total > 0 && !is_immune(current, element))
       {
@@ -9029,22 +9013,6 @@ static void __declspec(naked) print_cook_reply(void)
       }
 }
 
-// Add luck rating to effective perception.  Also, affect NPC bonus by mastery.
-static void __declspec(naked) luck_perception_bonus(void)
-{
-    asm
-      {
-        mov ebx, eax
-        mov ecx, edi
-        call dword ptr ds:get_luck
-        push eax
-        call dword ptr ds:get_effective_stat
-        mov esi, eax
-        mov eax, ebx ; restore
-        ret
-      }
-}
-
 // Make training sessions always last 8 days, like in MM6.
 static void __declspec(naked) reduce_training_time(void)
 {
@@ -9423,16 +9391,6 @@ static inline void misc_rules(void)
     hook_call(0x445f0f, invert_cook_check, 5);
     hook_call(0x4bc56a, toggle_cook_reply, 6);
     hook_call(0x445523, print_cook_reply, 7);
-    // remove old luck bonus to damage resistance
-    patch_dword(0x48d51a, 0x901e5f8d); // lea ebx, [edi+30]; nop
-    patch_dword(0x48d542, 0x901e5f8d);
-    patch_dword(0x48d565, 0x901e5f8d);
-    patch_dword(0x48d588, 0x901e5f8d);
-    patch_byte(0x48def9, 0x43); // double luck effect on condition resistance
-    patch_byte(0x405482, 0x47); // same for dispel magic
-    hook_call(0x49125e, luck_perception_bonus, 9);
-    erase_code(0x49126b, 3); // allow negative bonus
-    patch_byte(0x49129e, 0x90); // multiply total perception by mastery
     hook_call(0x4b4b93, reduce_training_time, 5);
     hook_call(0x4b474f, increase_training_price, 5);
     hook_call(0x4b8052, temple_heal_price, 5);
@@ -9451,6 +9409,13 @@ static inline void misc_rules(void)
     hook_call(0x4399ca, vampiric_cap, 10); // melee
     hook_call(0x402277, berserk_no_run_away, 5);
     hook_call(0x406e84, berserk_no_run_away, 5);
+    // Increase Luck effect on resistance rolls fourfold.
+    patch_byte(0x48def9, 0x83); // conditions
+    patch_byte(0x405482, 0x87); // dispel
+    patch_byte(0x48d51c, 0x87); // damage (roll 1)
+    patch_byte(0x48d544, 0x87); // damage (roll 2)
+    patch_byte(0x48d567, 0x87); // damage (roll 3)
+    patch_byte(0x48d58a, 0x87); // damage (roll 4)
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -10386,66 +10351,33 @@ static void __declspec(naked) soul_stealing_weapon(void)
       }
 }
 
+// Used for weapon attacks.  0 if regular hit, 1 if critical, 2 if backstab.
+static int critical_hit;
+
+// Reset the above variable.
+static void __declspec(naked) reset_critical_hit(void)
+{
+    asm
+      {
+        mov dword ptr [critical_hit], eax ; == 0
+        mov dword ptr [ebp-32], eax ; replaced code
+        cmp ebx, eax ; repalced code
+        ret
+      }
+}
+
 // If the monster can be backstabbed, add 2 to the first parameter
-// of melee damage function.  If skill-based backstab triggers,
-// add 4 instead.  Clover's double damage is also checked here.
+// of melee damage function and set the backstab critical flag.
 static void __declspec(naked) check_backstab(void)
 {
     asm
       {
-        push SLOT_MAIN_HAND
-        push CLOVER
-        call dword ptr ds:has_item_in_slot
-        mov ecx, edi ; restore
-        test eax, eax
-        jz no_clover
-        call dword ptr ds:get_luck
-        push eax
-        call dword ptr ds:get_effective_stat
-        push eax
-        call dword ptr ds:random
-        xor edx, edx
-        mov ecx, 100
-        div ecx
-        pop eax
-        mov ecx, edi ; restore
-        cmp eax, edx
-        jle no_clover
-        add dword ptr [esp+4], 4 ; double total damage flag
-        jmp quit
-        no_clover:
         mov edx, dword ptr [0xacd4f8] ; party direction
         sub dx, word ptr [esi+154] ; monster direction
         test dh, 6 ; we want no more than +/-512 mod 2048 difference
         jnp quit ; PF == 1 will match 0x000 and 0x110 only
         add dword ptr [esp+4], 2 ; backstab flag
-        push SKILL_THIEVERY
-        call dword ptr ds:get_skill
-        mov edx, eax
-        and edx, SKILL_MASK
-        jz no_thievery
-        mov ecx, edx
-        cmp eax, SKILL_EXPERT
-        jb roll
-        add edx, ecx
-        cmp eax, SKILL_MASTER
-        jb roll
-        add edx, ecx
-        cmp eax, SKILL_GM
-        jb roll
-        lea edx, [edx+ecx*2]
-        roll:
-        push edx
-        call dword ptr ds:random
-        xor edx, edx
-        mov ecx, 100
-        div ecx
-        pop ecx
-        cmp edx, ecx
-        jae no_thievery
-        add dword ptr [esp+4], 2 ; 4 = double total damage flag
-        no_thievery:
-        mov ecx, edi ; restore
+        mov dword ptr [critical_hit], 2
         quit:
         mov dword ptr [ebp-8], 4 ; replaced code
         ret
@@ -10755,6 +10687,7 @@ static inline void new_enchants(void)
     // through reducing luck to 10% of base.
     patch_byte(0x4ede62, 10);
     hook_call(0x439b0b, soul_stealing_weapon, 5);
+    hook_call(0x439536, reset_critical_hit, 5);
     hook_call(0x439863, check_backstab, 7);
     // backstab damage doubled in temp_bane_melee_2() above
     patch_bytes(0x48d04f, melee_might_check_chunk, 5);
@@ -13550,8 +13483,24 @@ static void __declspec(naked) splitter_fireball_message(void)
       }
 }
 
+// Print "critically hits" / "backstabs" / "critically shoots"
+// instead of "hits" / "shoots" as appropriate.
+static void __declspec(naked) hit_qualifier(void)
+{
+    asm
+      {
+        pop edx
+        mov ecx, dword ptr [critical_hit]
+        cmovz ecx, dword ptr [REF(new_strings)+STR_HITS*4+ecx*4]
+        cmovnz ecx, dword ptr [REF(new_strings)+STR_SHOOTS*4+ecx*4]
+        push ecx
+        lea eax, dword ptr [edi+168] ; replaced code
+        jmp edx
+      }
+}
+
 // Condense consecutive damage messages for AOE spells and the like
-// into a single message for each cast.
+// into a single message for each cast, plus handle crits and backstabs.
 static inline void damage_messages(void)
 {
     hook_call(0x439c93, stun_message, 6);
@@ -13563,6 +13512,8 @@ static inline void damage_messages(void)
     // also called from cursed_weapon() above
     patch_byte(0x439bc5, -16); // total damage  == [ebp-16]
     hook_call(0x42ef8a, splitter_fireball_message, 7);
+    hook_call(0x439bce, hit_qualifier, 6);
+    patch_byte(0x439bf1, 24); // stack fixup
 }
 
 // Provide the address of the above buffer to the parsing function.
@@ -14984,10 +14935,85 @@ static void __declspec(naked) champion_leadership(void)
 }
 
 // Implement Sniper special ability: 100% chance to hit with a bow.
+// Also here: double damage from backstabs and luck, and critical misses.
 static void __declspec(naked) sniper_accuracy(void)
 {
     asm
       {
+        test ebx, ebx
+        jz weapon
+        cmp dword ptr [ebx+72], SPL_ARROW
+        jb quit ; blades spell etc.
+        weapon:
+        mov ecx, edi
+        call dword ptr ds:get_luck
+        push eax
+        call dword ptr ds:get_effective_stat
+        test eax, eax
+        jge crit
+        push eax
+        call dword ptr ds:random
+        xor edx, edx
+        mov ecx, 100
+        div ecx
+        pop eax
+        add eax, edx
+        jge hit
+        jmp no_crit
+        crit:
+        push eax
+        mov ecx, edi
+        push SLOT_MAIN_HAND
+        push CLOVER
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        jz no_clover
+        shl dword ptr [esp], 1
+        no_clover:
+        call dword ptr ds:random
+        xor edx, edx
+        mov ecx, 100
+        div ecx
+        pop eax
+        cmp eax, edx
+        jbe hit
+        mov dword ptr [critical_hit], 1
+        hit:
+        cmp dword ptr [critical_hit], 2
+        jne check_crit
+        mov ecx, edi
+        push SKILL_THIEVERY
+        call dword ptr ds:get_skill
+        mov edx, eax
+        and edx, SKILL_MASK
+        jz no_thievery
+        mov ecx, edx
+        cmp eax, SKILL_EXPERT
+        jb roll
+        add edx, ecx
+        cmp eax, SKILL_MASTER
+        jb roll
+        add edx, ecx
+        cmp eax, SKILL_GM
+        jb roll
+        lea edx, [edx+ecx*2]
+        roll:
+        push edx
+        call dword ptr ds:random
+        xor edx, edx
+        mov ecx, 100
+        div ecx
+        pop ecx
+        cmp edx, ecx
+        jae check_crit
+        no_thievery:
+        and dword ptr [critical_hit], 0
+        check_crit:
+        xor eax, eax ; to distinguish from critical miss
+        cmp dword ptr [critical_hit], eax
+        jz no_crit
+        shl dword ptr [ebp-12], 1 ; total damage
+        no_crit:
         test ebx, ebx
         jz not_it
         cmp dword ptr [ebx+72], SPL_ARROW
@@ -14997,6 +15023,10 @@ static void __declspec(naked) sniper_accuracy(void)
         mov eax, 1
         ret
         not_it:
+        test eax, eax ; < 0 if critical miss
+        jz quit
+        ret
+        quit:
         push 0x4272ac ; replaced call
         ret
       }
@@ -15308,22 +15338,6 @@ static void __declspec(naked) perception_extra_item(void)
         add eax, 50
         mul edx
         cmp esi, eax
-        ret
-      }
-}
-
-// Double total melee damage if the flag is set.
-// Currently used by Thievery backstab and Clover.
-static void __declspec(naked) double_total_damage(void)
-{
-    asm
-      {
-        add esi, eax ; replaced code, sorta
-        add esi, ebx ; ditto
-        test byte ptr [esp+40], 4
-        jz no_double
-        add esi, esi
-        no_double:
         ret
       }
 }
@@ -16834,7 +16848,6 @@ static inline void skill_changes(void)
     hook_call(0x426c07, perception_extra_item, 12);
     erase_code(0x491276, 12); // remove 100% chance on GM
     // thievery backstab is checked in check_backstab() above
-    hook_call(0x48d087, double_total_damage, 5);
     hook_call(0x41641d, lenient_alchemy_remember, 6);
     hook_call(0x4164d9, lenient_alchemy_allow, 6);
     hook_call(0x416570, botched_potion_power, 6);
@@ -16904,7 +16917,8 @@ static inline void skill_changes(void)
     // id item and repair training is in raise_ench_item_difficulty() above
     hook_call(0x42046d, train_disarm, 7);
     hook_call(0x41eb30, train_id_monster, 6);
-    patch_byte(0x491307, 0xc6); // multiply disarm bonus by mastery
+    patch_byte(0x4912a1, 0xc6); // multiply perception bonus by mastery
+    patch_byte(0x491307, 0xc6); // same with disarm
     hook_call(0x48fbd5, level_skill_bonus, 8);
     hook_call(0x48ffdc, store_weapon_quality_bonus, 7);
     hook_call(0x49005b, add_weapon_quality_bonus_to_ac, 5);

@@ -109,7 +109,7 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 105	Царь минотавров	Minotaur C	79	861	40	7031	20%50D20+L6Axe	1	N	Short	Suicidal	2	300	60	0	Dead	Phys	3D7+60	0	0	0	0	0	0	0	0	0	30	30	30	15	30	Imm	15	30	30	0
 106	Монах	Monk A	8	30	16	144	5%L1Misc	1	N	Long	Normal	2	200	100	M	0	Phys	2D8+4	0	0	0	0	0	10	"Fate,N,3"	50	"Hammerhands,E,3"	5	5	5	0	10	Imm	10	5	5	0
 107	Посвящённый 	Monk B	16	73	19	416	5%L2Misc	1	N	Long	Aggress	2	220	90	M	0	Phys	2D8+12	0	0	0	0	0	10	"Harm,E,6"	50	"Hammerhands,E,6"	10	10	10	5	15	Imm	15	10	10	0
-108	Мастер	Monk C	27	153	28	999	10%L3Misc	1	N	Long	Suicidal	2	240	80	M	0	Phys	2D8+20	0	0	0	0	0	10	"Mind Blast,E,9"	50	"Hammerhands,E,9"	15	15	15	5	25	Imm	25	15	15	0
+108	Мастер	Monk C	27	153	28	999	10%L3Misc	1	N	Long	Suicidal	2	240	80	M	0	Phys	2D8+20	0	0	0	0	0	10	"Flying Fist,M,9"	50	"Hammerhands,E,9"	15	15	15	5	25	Imm	25	15	15	0
 109	Некромант	Necromancer A	25	137	14	875	10%15D12+L3Boots	1	N	Med	Aggress	4	200	90	P	Curse	Magic	9D4	Dark	0	0	0	0	20	"Toxic Cloud,E,4"	0	0	20	20	20	20	15	Imm	30	10	10	"Summon,ground,Ghost A"
 110	Повелительница Мёртвых	Necromancer B	35	227	18	1575	10%25D12+L4Boots	1	N	Med	Aggress	4	220	80	P	Cursex2	Magic	12D4	Dark	0	0	0	0	30	"Shrapmetal,M,8"	0	0	30	30	30	30	20	Imm	40	20	20	"Summon,ground,Ghost B"
 111	Королева Мёртвых	Necromancer C	50	400	30	3000	30%40D12+L5Boots	1	N	Short	Aggress	4	240	70	P	Cursex3	Magic	16D4	Dark	0	0	0	0	30	"Dragon Breath,M,10"	50	"Pain Reflection,M,10"	40	40	40	40	25	Imm	50	30	30	"Summon,ground,Ghost C"

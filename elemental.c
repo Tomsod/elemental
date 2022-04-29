@@ -9422,6 +9422,8 @@ static inline void misc_rules(void)
     patch_byte(0x48d544, 0x87); // damage (roll 2)
     patch_byte(0x48d567, 0x87); // damage (roll 3)
     patch_byte(0x48d58a, 0x87); // damage (roll 4)
+    // Remove multiloot.
+    erase_code(0x426da3, 22);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

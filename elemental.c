@@ -685,6 +685,8 @@ enum qbits
 #define ITEM_TYPE_MISSILE 3
 #define ITEM_TYPE_ARMOR 4
 #define ITEM_TYPE_HELM 6
+#define ITEM_TYPE_WAND 13
+#define ITEM_TYPE_POTION 15
 // my addition
 #define ITEM_TYPE_ROBE 47
 
@@ -8700,14 +8702,18 @@ static void __declspec(naked) recharge_spent_charges_sub_potion(void)
       }
 }
 
-// Second part of above.
+// Second part of above.  Also here: do not lower max charges below 1.
 static void __declspec(naked) recharge_spent_charges_add_potion(void)
 {
     asm
       {
         movzx eax, al ; replaced code
         add eax, dword ptr [esi+16] ; previous charges
+        jle min
         mov byte ptr [esi+25], al ; replaced code
+        ret
+        min:
+        mov byte ptr [esi+25], 1
         ret
       }
 }
@@ -9318,6 +9324,44 @@ static void __declspec(naked) berserk_no_run_away(void)
       }
 }
 
+// Some areas have 0/0 charge wands on the ground.  Charge these wands.
+// NB: this will run on every map reload, but normal wands can't get to 0/0.
+static void __declspec(naked) charge_zero_wands(void)
+{
+    asm
+      {
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+28], ITEM_TYPE_WAND - 1
+        je wand
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+28], ITEM_TYPE_POTION - 1 ; replaced
+        ret
+        wand:
+        cmp eax, DRAGONS_WRATH * 48 ; initialized separately, a bit later
+        je skip
+        cmp byte ptr [edi+25], 0
+        jnz quit
+        mov al, byte ptr [ITEMS_TXT_ADDR+eax+32] ; mod2 (max charges)
+        inc al
+        mov byte ptr [edi+25], al ; max charges
+        call dword ptr ds:random
+        mov ecx, 6
+        xor edx, edx
+        div ecx
+        add byte ptr [edi+25], dl ; + 0 to 5
+        call dword ptr ds:random
+        movzx ecx, byte ptr [edi+25]
+        mov dword ptr [edi+16], ecx ; current charges
+        xor edx, edx
+        shr ecx, 1 ; preused up to 50%
+        div ecx
+        inc edx
+        sub dword ptr [edi+16], edx
+        skip:
+        test edi, edi ; clear zf
+        quit:
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -9424,6 +9468,9 @@ static inline void misc_rules(void)
     patch_byte(0x48d58a, 0x87); // damage (roll 4)
     // Remove multiloot.
     erase_code(0x426da3, 22);
+    // Do not lower max charges to 0 on recharge (at least 0/1 charges).
+    patch_dword(0x42aaaa, 0x11941c6); // mov byte ptr [ecx+25], 1
+    hook_call(0x47f28a, charge_zero_wands, 7);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

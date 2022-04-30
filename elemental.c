@@ -9471,6 +9471,12 @@ static inline void misc_rules(void)
     // Do not lower max charges to 0 on recharge (at least 0/1 charges).
     patch_dword(0x42aaaa, 0x11941c6); // mov byte ptr [ecx+25], 1
     hook_call(0x47f28a, charge_zero_wands, 7);
+    // Fix some forbidden bounty monsters.
+    patch_word(0x4bd122, 232); // harmondale: forbid all peasants (a typo)
+    patch_word(0x4bd128, 249); // and allow trolls (still the same typo)
+    patch_word(0x4bcead, 1); // celeste: forbid angels (an omission)
+    patch_word(0x4bceb3, 3); // second angel check
+    patch_word(0x4bcea3, 186); // and restore the overwritten peasant check
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

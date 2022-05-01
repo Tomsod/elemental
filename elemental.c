@@ -9422,6 +9422,25 @@ static void __declspec(naked) lich_mental_age(void)
       }
 }
 
+// Do not make the PC smile when subtracting a QBit that was unset or hidden.
+static void __declspec(naked) check_subtracted_qbit(void)
+{
+    asm
+      {
+        call dword ptr ds:check_qbit
+        test eax, eax
+        jz skip
+        mov edx, dword ptr [ebp+12] ; the bit
+        cmp dword ptr [0x722d90+edx*4], ebx ; quest log msg?
+        jz skip
+        mov ecx, QBITS_ADDR
+        jmp dword ptr ds:change_bit ; replaced call
+        skip:
+        add dword ptr [esp], 15 ; skip the smile
+        ret 4
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -9545,6 +9564,7 @@ static inline void misc_rules(void)
     hook_call(0x48cb2a, lich_physical_age, 7); // accuracy
     hook_call(0x48cba7, lich_physical_age, 7); // speed
     // and luck doesn't depend on age
+    hook_call(0x44bb93, check_subtracted_qbit, 5);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

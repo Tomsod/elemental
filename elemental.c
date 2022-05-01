@@ -1029,6 +1029,7 @@ enum colors
     CLR_ITEM,
     CLR_RED,
     CLR_YELLOW,
+    CLR_PALE_YELLOW,
     CLR_GREEN,
     CLR_BLUE,
     CLR_PURPLE,
@@ -9362,6 +9363,65 @@ static void __declspec(naked) charge_zero_wands(void)
       }
 }
 
+// Temporary age was colored green, even though it's bad.
+// Redo this so that a small aging is yellow, and 50+ is red.
+static void __declspec(naked) age_color(void)
+{
+    asm
+      {
+        cmp ecx, edx
+        jb green ; hypothetical
+        je white
+        cmp ecx, 50
+        jb yellow
+        mov eax, dword ptr [colors+CLR_RED*4]
+        ret
+        yellow:
+        mov eax, dword ptr [colors+CLR_PALE_YELLOW*4]
+        ret
+        green:
+        mov eax, dword ptr [colors+CLR_GREEN*4]
+        ret
+        white:
+        xor eax, eax
+        ret
+      }
+}
+
+// Liches should never get stat penalties for old age.
+static void __declspec(naked) lich_physical_age(void)
+{
+    asm
+      {
+        cmp byte ptr [esi+0xb9], CLASS_LICH
+        je lich
+        movsx ecx, word ptr [esi+0xde] ; replaced code
+        ret
+        lich:
+        mov eax, 25 ; young age
+        xor ecx, ecx
+        ret
+      }
+}
+
+// And for mental stats, they get the bonus at 50+, and it stays.
+static void __declspec(naked) lich_mental_age(void)
+{
+    asm
+      {
+        movsx ecx, word ptr [esi+0xde] ; replaced code
+        add eax, ecx ; replaced code
+        cmp byte ptr [esi+0xb9], CLASS_LICH
+        je lich
+        ret
+        lich:
+        mov ecx, 50 ; no more than this
+        cmp eax, ecx
+        cmova eax, ecx
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -9477,6 +9537,14 @@ static inline void misc_rules(void)
     patch_word(0x4bcead, 1); // celeste: forbid angels (an omission)
     patch_word(0x4bceb3, 3); // second angel check
     patch_word(0x4bcea3, 186); // and restore the overwritten peasant check
+    hook_call(0x418ac8, age_color, 5);
+    hook_call(0x48c930, lich_physical_age, 7); // might
+    hook_call(0x48c9b3, lich_mental_age, 9); // intellect
+    hook_call(0x48ca30, lich_mental_age, 9); // personality
+    hook_call(0x48caad, lich_physical_age, 7); // endurance
+    hook_call(0x48cb2a, lich_physical_age, 7); // accuracy
+    hook_call(0x48cba7, lich_physical_age, 7); // speed
+    // and luck doesn't depend on age
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -14521,6 +14589,7 @@ static void set_colors(void)
     colors[CLR_ITEM] = rgb_color(255, 255, 155);
     colors[CLR_RED] = rgb_color(255, 0, 0);
     colors[CLR_YELLOW] = rgb_color(255, 255, 0);
+    colors[CLR_PALE_YELLOW] = rgb_color(255, 255, 100);
     colors[CLR_GREEN] = rgb_color(0, 255, 0);
     colors[CLR_BLUE] = rgb_color(0, 255, 255);
     colors[CLR_PURPLE] = rgb_color(255, 0, 255);

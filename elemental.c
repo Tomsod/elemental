@@ -388,7 +388,9 @@ struct __attribute__((packed)) player
     uint16_t magic_res_base;
     SKIP(26);
     struct spell_buff spell_buffs[24];
-    SKIP(24);
+    SKIP(20);
+    uint16_t recovery;
+    SKIP(2);
     uint32_t skill_points;
     SKIP(4);
     int32_t sp;
@@ -6848,7 +6850,8 @@ static void __declspec(naked) new_game_hook(void)
 // On a new game it's lowered to the current week, which is also 0.
 static int last_bank_week;
 
-// Load mod data from the savegame, if said data exists.  Also reset some vars.
+// Load mod data from the savegame, if said data exists.
+// Also reset some vars and fix recovery after saving in TB mode.
 static void load_game_data(void)
 {
     void *file = find_in_lod(SAVEGAME_LOD, "elemdata.bin", 1);
@@ -6861,6 +6864,12 @@ static void load_game_data(void)
     last_bank_week = 0;
     last_hit_player = 0;
     replaced_chest = -1;
+    if (dword(0xacd6b4)) // game was saved in TB mode
+      {
+        for (struct player *player = PARTY; player < PARTY + 4; player++)
+            player->recovery = player->recovery * 32 * 32 / 15 / 15; // adjust
+        dword(0xacd6b4) = 0; // reset TB mode to prevent garbage recovery
+      }
 }
 
 // Hook for the above.

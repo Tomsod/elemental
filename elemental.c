@@ -16354,21 +16354,24 @@ static void __declspec(naked) id_monster_normal(void)
       }
 }
 
+// Used below (no free registers).
+static const int ten = 10;
+
 // Master ID Monster bonus: monster only deals 90% damage to party.
-// TODO: should this affect energy attacks?
 static void __declspec(naked) id_monster_master(void)
 {
     asm
       {
-        call dword ptr ds:monster_attack_damage
         cmp byte ptr [esi+182], MASTER
         jb no_bonus
-        mov edx, 9
-        mov ecx, 10
-        mul edx
-        div ecx
+        cmp dword ptr [esp+8], ENERGY ; energy damage is an exception
+        jae no_bonus
+        mov eax, 9
+        mul dword ptr [esp+4] ; damage
+        div dword ptr [ten]
+        mov dword ptr [esp+4], eax
         no_bonus:
-        ret
+        jmp dword ptr ds:damage_player ; replaced call
       }
 }
 
@@ -17059,8 +17062,8 @@ static inline void skill_changes(void)
     hook_call(0x41eb81, sync_monster_id, 7);
     hook_call(0x4272bc, id_monster_normal, 6);
     // expert bonus handled in maybe_cover_ally_hook() above
-    hook_call(0x43a0fd, id_monster_master, 5);
-    hook_call(0x43a480, id_monster_master, 5);
+    hook_call(0x43a181, id_monster_master, 5);
+    hook_call(0x43a69f, id_monster_master, 5);
     // gm bonus applied in pierce_debuff_resistance()
     // and cursed_monster_resists_damage() above
     hook_call(0x4b268f, gm_teaching_conditions_hook, 6);

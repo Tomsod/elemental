@@ -9574,6 +9574,9 @@ static inline void misc_rules(void)
     hook_call(0x48cba7, lich_physical_age, 7); // speed
     // and luck doesn't depend on age
     hook_call(0x44bb93, check_subtracted_qbit, 5);
+    // Fix HP/SP regen during a 1 hour rest (increment time by 5, not 6, min).
+    patch_byte(0x41f577, 5);
+    patch_byte(0x41f584, 5);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

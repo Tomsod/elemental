@@ -7403,13 +7403,15 @@ static void __declspec(naked) mp_regen_chunk(void)
 // Like with HP above, decrease excess SP by 25% instead of regeneration.
 // Jar-less liches have halved maximum, zombies can hold no SP.
 // Also here: handle SP regen from GM Meditation
-// and Grim Reaper and Eloquence Talisman's SP drain.
+// and Grim Reaper (only near hostiles) and Eloquence Talisman's SP drain.
 static void __declspec(naked) sp_burnout(void)
 {
     asm
       {
         cmp dword ptr [esi+6464], 0
         jz no_drain
+        test byte ptr [STATE_BITS], 0x30 ; if enemies are near
+        jz no_reaper
         mov ecx, esi
         push SLOT_MAIN_HAND
         push GRIM_REAPER
@@ -7417,6 +7419,7 @@ static void __declspec(naked) sp_burnout(void)
         or dword ptr [ebp-4], eax ; sp maybe changed
         sub dword ptr [esi+6464], eax
         jz no_drain
+        no_reaper:
         mov ecx, esi
         push SLOT_AMULET
         push ELOQUENCE_TALISMAN
@@ -12219,13 +12222,16 @@ static void __declspec(naked) eloquence_merchant_bonus(void)
       }
 }
 
-// Massively increase Ethric's Staff's HP drain (x5).
+// Massively increase Ethric's Staff's HP drain (x5), but only in combat.
 // TODO: should we make an exception for liches?
 static void __declspec(naked) higher_ethric_drain(void)
 {
     asm
       {
+        test byte ptr [STATE_BITS], 0x30 ; if enemies are near
+        jz quit
         sub dword ptr [esi+0x193c], 5
+        quit:
         ret
       }
 }

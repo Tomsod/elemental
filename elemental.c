@@ -9580,6 +9580,8 @@ static inline void misc_rules(void)
     // Fix HP/SP regen during a 1 hour rest (increment time by 5, not 6, min).
     patch_byte(0x41f577, 5);
     patch_byte(0x41f584, 5);
+    // Fix some buffs not disappearing on rest.
+    patch_byte(0x490d25, 24);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

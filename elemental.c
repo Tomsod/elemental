@@ -9453,6 +9453,17 @@ static void __declspec(naked) check_subtracted_qbit(void)
       }
 }
 
+// A small fix: reset the 'more information' hireling flag on dialog exit.
+static void __declspec(naked) reset_hireling_reply(void)
+{
+    asm
+      {
+        and dword ptr [0x590f10], 0 ; replaced code
+        mov byte ptr [HIRELING_REPLY], 0
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -9582,6 +9593,7 @@ static inline void misc_rules(void)
     patch_byte(0x41f584, 5);
     // Fix some buffs not disappearing on rest.
     patch_byte(0x490d25, 24);
+    hook_call(0x446066, reset_hireling_reply, 7);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

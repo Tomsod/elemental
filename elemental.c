@@ -5091,12 +5091,14 @@ static void __declspec(naked) wizard_eye_cast(void)
 {
     asm
       {
+        test byte ptr [ebx+9], 4 ; turn off flag
+        jnz remove
         cmp dword ptr [ebp-24], GM
-        je permanent
+        je remove ; but then re-add
         shl eax, 7 ; replaced code
         mov dword ptr [ebp-20], eax ; replaced code
         ret
-        permanent:
+        remove:
         mov ecx, PARTY_BUFF_ADDR + 16 * BUFF_WIZARD_EYE
         call dword ptr ds:remove_buff
         mov dx, GM
@@ -5398,8 +5400,7 @@ static int __stdcall alternative_spell_mode(int player_id, int spell)
                 return FALSE;
             break;
         case SPL_WIZARD_EYE:
-            if (player->skills[SKILL_AIR] < SKILL_GM
-                || PARTY_BUFFS[BUFF_WIZARD_EYE].skill < GM)
+            if (PARTY_BUFFS[BUFF_WIZARD_EYE].skill < GM)
                 return FALSE;
             goto turn_off;
         case SPL_IMMOLATION:
@@ -5408,8 +5409,7 @@ static int __stdcall alternative_spell_mode(int player_id, int spell)
         turn_off:
             count = 1;
             flags = 0x400; // turn off for free
-            unsafe = FALSE;
-            break;
+            goto past_checks; // allow unsafe, don't check SP
         case SPL_BLESS:
             if (player->skills[SKILL_SPIRIT] >= SKILL_EXPERT)
                 return FALSE;
@@ -5439,6 +5439,7 @@ static int __stdcall alternative_spell_mode(int player_id, int spell)
         return FALSE;
     if (count > max_count)
         count = max_count;
+    past_checks:
     accumulated_recovery = 0;
     int id = 0;
     for (int target = 0; target < count; target++)

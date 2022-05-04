@@ -576,8 +576,6 @@ struct __attribute__((packed)) items_txt_item
 #define ITEMS_TXT_ADDR 0x5d2864
 #define ITEMS_TXT ((struct items_txt_item *) ITEMS_TXT_ADDR)
 
-#define AUTONOTES ((uint8_t *) 0xacd636)
-
 enum face_animations
 {
     ANIM_ID_FAIL = 9,
@@ -1143,7 +1141,8 @@ static char *__thiscall (*load_from_lod)(void *lod, char *filename,
 static void (*mm7_free)(void *ptr) = (funcptr_t) 0x4caefc;
 #define QBITS_ADDR 0xacd59d
 #define QBITS ((void *) QBITS_ADDR)
-static int __fastcall (*check_qbit)(void *qbits, int bit)
+#define AUTONOTES ((void *) 0xacd636)
+static int __fastcall (*check_bit)(void *bits, int bit)
     = (funcptr_t) 0x449b7a;
 static void __fastcall (*add_reply)(int number, int action)
     = (funcptr_t) 0x4b362f;
@@ -1665,9 +1664,9 @@ static int __thiscall condition_immunity(struct player *player, int condition,
         condition = COND_DEAD; // is actually death
     int result = inflict_condition(player, condition, can_resist);
     if (condition == COND_ERADICATED && result
-        && (check_qbit(QBITS, QBIT_BLASTER_GM_QUEST_ACTIVE_LIGHT)
-            || check_qbit(QBITS, QBIT_BLASTER_GM_QUEST_ACTIVE_DARK))
-        && !check_qbit(QBITS, QBIT_BLASTER_GM_QUEST)
+        && (check_bit(QBITS, QBIT_BLASTER_GM_QUEST_ACTIVE_LIGHT)
+            || check_bit(QBITS, QBIT_BLASTER_GM_QUEST_ACTIVE_DARK))
+        && !check_bit(QBITS, QBIT_BLASTER_GM_QUEST)
         && player->skills[SKILL_BLASTER] >= SKILL_MASTER)
       {
         evt_set(player, EVT_QBITS, QBIT_BLASTER_GM_QUEST);
@@ -3071,7 +3070,7 @@ static int recursive_brew(struct player *player, int potion,
     for (int i = 0; i < recipes[potion-FIRST_COMPLEX_POTION].count; i++)
       {
         int note = recipes[potion-FIRST_COMPLEX_POTION].variants[i].note - 1;
-        if (!(AUTONOTES[note >> 3] & (128 >> (note & 7))))
+        if (!check_bit(AUTONOTES, note))
             continue;
         int left = 0, right = 0;
         int rcleft = recipes[potion-FIRST_COMPLEX_POTION].variants[i].left;
@@ -3374,7 +3373,8 @@ static void __thiscall read_recipe(void *player, int id)
     int potion = ITEMS_TXT[id].mod2 + 200;
     struct recipe *this = &recipes[potion-FIRST_COMPLEX_POTION];
     for (int i = 0; i < this->count; i++)
-        evt_set(player, EVT_AUTONOTES, this->variants[i].note);
+        if (!check_bit(AUTONOTES, this->variants[i].note))
+            evt_set(player, EVT_AUTONOTES, this->variants[i].note);
 }
 
 // Hook for the above.
@@ -3642,7 +3642,7 @@ static void load_wom_barrels(void)
 {
     if (uncased_strcmp(CUR_MAP_FILENAME, "d11.blv")) // walls of mist
         return;
-    if (check_qbit(QBITS, QBIT_REFILL_WOM_BARRELS))
+    if (check_bit(QBITS, QBIT_REFILL_WOM_BARRELS))
         return;
     void *file = find_in_lod(SAVEGAME_LOD, "barrels.bin", 1);
     // barrel data occupies map vars 75 to 89
@@ -6929,7 +6929,7 @@ static void load_map_rep(void)
     // NB: this hook is before the gamescript is run,
     // so on the first visit to a portal-able location a qbit check might fail;
     // to correct for that, we check if town portal destination matches
-    if (check_qbit(QBITS, qbit) || map_index == word(0x4eca70 + index * 20))
+    if (check_bit(QBITS, qbit) || map_index == word(0x4eca70 + index * 20))
         elemdata.last_region = index;
 }
 
@@ -9166,9 +9166,9 @@ static void generate_tax_text(void)
     else if (reputation < -5)
         attitude = 1;
     int fealty = 0;
-    if (check_qbit(QBITS, QBIT_ELVES_WON))
+    if (check_bit(QBITS, QBIT_ELVES_WON))
         fealty = 1;
-    else if (check_qbit(QBITS, QBIT_HARMONDALE_INDEPENDENT))
+    else if (check_bit(QBITS, QBIT_HARMONDALE_INDEPENDENT))
         fealty = 2;
     int tax_money = (fame - elemdata.last_tax_fame) * 20;
     elemdata.last_tax_fame = fame;
@@ -9439,7 +9439,7 @@ static void __declspec(naked) check_subtracted_qbit(void)
 {
     asm
       {
-        call dword ptr ds:check_qbit
+        call dword ptr ds:check_bit
         test eax, eax
         jz skip
         mov edx, dword ptr [ebp+12] ; the bit
@@ -15361,13 +15361,13 @@ static int __fastcall equip_aligned_relic(struct player *player, int align)
         case 2:
             return align == QBIT_LIGHT_PATH;
         case 1:
-            if (check_qbit(QBITS,
-                           quests[align==QBIT_LIGHT_PATH][player->class/4]))
+            if (check_bit(QBITS,
+                          quests[align==QBIT_LIGHT_PATH][player->class/4]))
                 return 0;
             /* else fallthrough */
         case 0:
         default:
-            return check_qbit(QBITS, align);
+            return check_bit(QBITS, align);
       }
 }
 
@@ -16422,12 +16422,12 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
             train_req = 50;
             break;
         case SKILL_BOW:
-            if (check_qbit(QBITS, QBIT_BOW_GM_QUEST))
+            if (check_bit(QBITS, QBIT_BOW_GM_QUEST))
                 return DEFAULT;
             gm_quest = 593;
             break;
         case SKILL_BLASTER:
-            if (check_qbit(QBITS, QBIT_BLASTER_GM_QUEST))
+            if (check_bit(QBITS, QBIT_BLASTER_GM_QUEST))
                 return DEFAULT;
             gm_quest = 595;
             break;
@@ -16490,8 +16490,8 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
         case SKILL_DARK:
             if ((player->skills[skill] & SKILL_MASK) < 12)
                 return REFUSE;
-            if (check_qbit(QBITS, skill == SKILL_LIGHT ? QBIT_LIGHT_PATH
-                                                       : QBIT_DARK_PATH))
+            if (check_bit(QBITS, skill == SKILL_LIGHT ? QBIT_LIGHT_PATH
+                                                      : QBIT_DARK_PATH))
               {
                 *new_skill_cost = 0;
                 return ACCEPT;
@@ -16513,17 +16513,17 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
             train_req = 25;
             break;
         case SKILL_BODYBUILDING:
-            if (check_qbit(QBITS, QBIT_BODYBUIDING_GM_QUEST))
+            if (check_bit(QBITS, QBIT_BODYBUIDING_GM_QUEST))
                 return DEFAULT;
             gm_quest = 597;
             break;
         case SKILL_MEDITATION:
-            if (check_qbit(QBITS, QBIT_MEDITATION_GM_QUEST))
+            if (check_bit(QBITS, QBIT_MEDITATION_GM_QUEST))
                 return DEFAULT;
             gm_quest = 599;
             break;
         case SKILL_PERCEPTION:
-            if (check_qbit(QBITS, QBIT_FOUND_OBELISK_TREASURE))
+            if (check_bit(QBITS, QBIT_FOUND_OBELISK_TREASURE))
                 return DEFAULT;
             return REFUSE;
         case SKILL_DISARM_TRAPS:
@@ -16561,7 +16561,7 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
               }
             return REFUSE;
         case SKILL_ALCHEMY:
-            if (check_qbit(QBITS, QBIT_ALCHEMY_GM_QUEST))
+            if (check_bit(QBITS, QBIT_ALCHEMY_GM_QUEST))
               {
                 *new_skill_cost = 0;
                 return ACCEPT;
@@ -16742,8 +16742,8 @@ static void __stdcall kill_checks(struct player *player,
             int new_time = dword(dword(0xacd6b4) ? 0x50ba5c : 0x50ba84)
                            - proj->age;
             if (new_player == bow_kill_player && new_time == bow_kill_time
-                && check_qbit(QBITS, QBIT_BOW_GM_QUEST_ACTIVE)
-                && !check_qbit(QBITS, QBIT_BOW_GM_QUEST))
+                && check_bit(QBITS, QBIT_BOW_GM_QUEST_ACTIVE)
+                && !check_bit(QBITS, QBIT_BOW_GM_QUEST))
               {
                 evt_set(player, EVT_QBITS, QBIT_BOW_GM_QUEST);
                 // make the quest book blink
@@ -16782,8 +16782,8 @@ static void __stdcall kill_checks(struct player *player,
 // Trigger the Bodybuilding GM quest completion when appropriate.
 static void bb_quest(void)
 {
-    if (check_qbit(QBITS, QBIT_BODYBUIDING_GM_QUEST_ACTIVE)
-        && !check_qbit(QBITS, QBIT_BODYBUIDING_GM_QUEST))
+    if (check_bit(QBITS, QBIT_BODYBUIDING_GM_QUEST_ACTIVE)
+        && !check_bit(QBITS, QBIT_BODYBUIDING_GM_QUEST))
       {
         evt_set(PARTY, EVT_QBITS, QBIT_BODYBUIDING_GM_QUEST);
         // make the quest book blink, and also sparkles
@@ -16812,8 +16812,8 @@ static void __declspec(naked) bb_quest_hook(void)
 // Meditation GM quest: check if we're resting on top of Mt. Nighon.
 static void meditation_quest(void)
 {
-    if (check_qbit(QBITS, QBIT_MEDITATION_GM_QUEST_ACTIVE)
-        && !check_qbit(QBITS, QBIT_MEDITATION_GM_QUEST)
+    if (check_bit(QBITS, QBIT_MEDITATION_GM_QUEST_ACTIVE)
+        && !check_bit(QBITS, QBIT_MEDITATION_GM_QUEST)
         && !uncased_strcmp(CUR_MAP_FILENAME, "out10.odm") // nighon
         && dword(0xacd4f4) >= 7999) // z coord (only the volcano is that high)
       {
@@ -16841,8 +16841,8 @@ static void __declspec(naked) meditation_quest_hook(void)
 // Alchemy GM quest: brew a rejuvenation potion (ID checked in the hook).
 static void __thiscall alchemy_quest(struct player *player)
 {
-    if (check_qbit(QBITS, QBIT_ALCHEMY_GM_QUEST_ACTIVE)
-        && !check_qbit(QBITS, QBIT_ALCHEMY_GM_QUEST))
+    if (check_bit(QBITS, QBIT_ALCHEMY_GM_QUEST_ACTIVE)
+        && !check_bit(QBITS, QBIT_ALCHEMY_GM_QUEST))
       {
         evt_set(player, EVT_QBITS, QBIT_ALCHEMY_GM_QUEST);
         // make the quest book blink
@@ -18217,7 +18217,7 @@ static void __declspec(naked) add_horse_reply(void)
         jz skip
         mov ecx, QBITS_ADDR
         mov edx, QBIT_CAVALIER_HORSE
-        call dword ptr ds:check_qbit
+        call dword ptr ds:check_bit
         test eax, eax
         jz skip
         mov ecx, dword ptr [0x507a40] ; parent dialog

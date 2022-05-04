@@ -17962,6 +17962,9 @@ static void __declspec(naked) change_difficulty(void)
         push SOUND_BUZZ
         mov ecx, SOUND_THIS_ADDR
         call dword ptr ds:make_sound
+        mov ecx, dword ptr [GLOBAL_TXT+638*4] ; "hostiles nearby"
+        mov edx, 2
+        call dword ptr ds:show_status_text
         ret
       }
 }

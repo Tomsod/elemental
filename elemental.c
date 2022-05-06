@@ -5164,6 +5164,7 @@ static void __declspec(naked) switch_off_spells_for_free(void)
 }
 
 // Allow cancelling Immolation by ctrl-clicking on it in the spellbook.
+// Also here: remember Immolation caster for damage messages.
 static void __declspec(naked) switch_off_immolation(void)
 {
     asm
@@ -5173,6 +5174,8 @@ static void __declspec(naked) switch_off_immolation(void)
         cast:
         shl eax, 7 ; replaced code
         mov dword ptr [ebp-44], eax ; replaced code
+        movsx eax, word ptr [ebx+2] ; caster
+        mov dword ptr [esp+4], eax ; last pushed
         ret
         remove:
         mov ecx, PARTY_BUFF_ADDR + 16 * BUFF_IMMOLATION
@@ -13681,6 +13684,34 @@ static void __declspec(naked) hit_qualifier(void)
       }
 }
 
+// As Immolation does not use the cast spell routine,
+// its cumulative messages weren't reset.
+static void __declspec(naked) reset_immolation_message(void)
+{
+    asm
+      {
+        mov dword ptr [last_hit_player], edi ; == 0
+        jmp dword ptr ds:init_item ; replaced call
+      }
+}
+
+// Supply the current PC as the caster for Immolation pedestal.
+// Relevant for damage messages.  See also switch_off_immolation() above.
+static void __declspec(naked) evt_immolation_caster(void)
+{
+    asm
+      {
+        mov dword ptr [ebp+8], esi ; replaced code
+        fild dword ptr [ebp+8] ; replaced code
+        mov eax, dword ptr [CURRENT_PLAYER]
+        dec eax
+        jl quit
+        mov dword ptr [esp+12], eax ; pushed caster
+        quit:
+        ret
+      }
+}
+
 // Condense consecutive damage messages for AOE spells and the like
 // into a single message for each cast, plus handle crits and backstabs.
 static inline void damage_messages(void)
@@ -13696,6 +13727,8 @@ static inline void damage_messages(void)
     hook_call(0x42ef8a, splitter_fireball_message, 7);
     hook_call(0x439bce, hit_qualifier, 6);
     patch_byte(0x439bf1, 24); // stack fixup
+    hook_call(0x493a68, reset_immolation_message, 5);
+    hook_call(0x44962c, evt_immolation_caster, 6);
 }
 
 // Provide the address of the above buffer to the parsing function.

@@ -16976,7 +16976,7 @@ static void __declspec(naked) train_id_monster(void)
 }
 
 // Let temporary levels boost skills slightly.
-// Learning gets special treatment because of how it handles boni.
+// NB: Learning doesn't scale bonus with mastery, so the effect is lower.
 // Also here: penalize most skills based on difficulty.
 static void __declspec(naked) level_skill_bonus(void)
 {
@@ -16998,12 +16998,6 @@ static void __declspec(naked) level_skill_bonus(void)
         and edx, SKILL_MASK
         mul edx
         div ecx
-        add esi, eax
-        cmp edi, SKILL_LEARNING
-        jne skip
-        mov edx, ebx
-        shr edx, 6 ; conveniently 1/2/4 for E/M/G
-        mul edx
         add esi, eax
         skip:
         mov eax, ebx

@@ -5637,6 +5637,36 @@ static void __declspec(naked) master_town_portal(void)
       }
 }
 
+// When adding a town portal quest bit, also update last TP region.
+static void __declspec(naked) update_new_tp_region(void)
+{
+    asm
+      {
+        cmp eax, 211 ; last TP qbit
+        ja quit
+        sub eax, 206 ; first TP qbit
+        jb skip
+        jz update
+        cmp eax, 2
+        je decrease
+        cmp eax, 5
+        jne increase
+        dec eax
+        decrease:
+        dec eax
+        dec eax
+        increase:
+        inc eax
+        update:
+        mov dword ptr [elemdata.last_region], eax
+        skip:
+        mov eax, dword ptr [ebp+12]
+        quit:
+        cmp dword ptr [0x722d90+eax*4], 0 ; replaced code
+        ret
+      }
+}
+
 // Do not issue exit action if already in main screen.
 static void __declspec(naked) town_portal_from_main_screen(void)
 {
@@ -6191,6 +6221,7 @@ static inline void misc_spells(void)
     hook_jump(0x42b4f9, (void *) 0x42b51c); // always succeed if no enemies
     hook_jump(0x42b512, (void *) 0x42a8aa); // waste a turn on failure
     hook_call(0x42b530, master_town_portal, 5);
+    hook_call(0x44b2b4, update_new_tp_region, 8);
     hook_jump(0x4339f9, town_portal_from_main_screen);
     hook_call(0x4339d0, town_portal_without_dialog, 5);
     hook_call(0x433612, lloyd_increase_recall_count, 6);
@@ -6930,14 +6961,8 @@ static void load_map_rep(void)
     static const int tp_qbits[12] = { 0, 0, 206, 207, 208, 210, 209, 0, 211 };
     static const int tp_order[9] = { -1, -1, 0, 2, 1, 5, 4, -1, 3 };
     int qbit = tp_qbits[group];
-    if (!qbit)
-        return;
-    int index = tp_order[group];
-    // NB: this hook is before the gamescript is run,
-    // so on the first visit to a portal-able location a qbit check might fail;
-    // to correct for that, we check if town portal destination matches
-    if (check_bit(QBITS, qbit) || map_index == word(0x4eca70 + index * 20))
-        elemdata.last_region = index;
+    if (qbit && check_bit(QBITS, qbit))
+        elemdata.last_region = tp_order[group];
 }
 
 // Used below to track the bow GM mini-quest.
@@ -9447,16 +9472,16 @@ static void __declspec(naked) check_subtracted_qbit(void)
     asm
       {
         call dword ptr ds:check_bit
+        mov edx, dword ptr [ebp+12] ; the bit
         test eax, eax
         jz skip
-        mov edx, dword ptr [ebp+12] ; the bit
         cmp dword ptr [0x722d90+edx*4], ebx ; quest log msg?
-        jz skip
-        mov ecx, QBITS_ADDR
-        jmp dword ptr ds:change_bit ; replaced call
+        jnz ok
         skip:
         add dword ptr [esp], 15 ; skip the smile
-        ret 4
+        ok:
+        mov ecx, QBITS_ADDR ; restore
+        jmp dword ptr ds:change_bit ; replaced call
       }
 }
 

@@ -6652,6 +6652,7 @@ static int __thiscall __declspec(naked) monster_considers_spell(void *this,
 
 // Monsters can now cast turn undead (only on party, only if liches or zombies
 // present) and destoy undead (on any undead PC or monster).
+// Also here: fix dispel magic on party from non-hostile monsters.
 static int __thiscall consider_new_spells(void *this,
                                           struct map_monster *monster,
                                           int spell)
@@ -6662,18 +6663,18 @@ static int __thiscall consider_new_spells(void *this,
       {
         // Make sure we're targeting the party (no effect on monsters so far).
         if (target != TGT_PARTY)
-            return 0;
+            return FALSE;
 
         // I *think* this is the line-of-sight bit,
         // although it's inconsistent on peaceful monsters.
         if (!(monster->bits & 0x200000))
-            return 0;
+            return FALSE;
 
         for (int i = 0; i < 4; i++)
             if (is_undead(&PARTY[i]) && player_active(&PARTY[i])
                 && !PARTY[i].conditions[COND_AFRAID])
-                return 1;
-        return 0;
+                return TRUE;
+        return FALSE;
       }
     else if (spell == SPL_DESTROY_UNDEAD)
       {
@@ -6683,14 +6684,16 @@ static int __thiscall consider_new_spells(void *this,
                 return 0;
             for (int i = 0; i < 4; i++)
                 if (is_undead(&PARTY[i]) && player_active(&PARTY[i]))
-                    return 1;
-            return 0;
+                    return TRUE;
+            return FALSE;
           }
         else if ((target & 7) == TGT_MONSTER) 
             return MAP_MONSTERS[target>>3].holy_resistance != IMMUNE;
         else // shouldn't happen
-            return 0;
+            return FALSE;
       }
+    else if (spell == SPL_DISPEL_MAGIC && target != TGT_PARTY)
+        return FALSE; // would target the party even if not hostile
     else
         return monster_considers_spell(this, monster, spell);
 }

@@ -14792,153 +14792,90 @@ static void __declspec(naked) teacher_skill_promotion_check(void)
       }
 }
 
-// Check if a skill can be learned.  Racial skills always can be,
-// although only Monks don't have them pre-learned.
-static void __declspec(naked) learn_skill_check(void)
+// Display Axe skill for dwarven monks in weapon shops.
+// This is the only situation wherein a racial skill is not given at start.
+static void __declspec(naked) dwarf_monk_axe_show(void)
 {
     asm
       {
-        cmp byte ptr [CLASS_SKILLS_ADDR+ecx+eax], 0 ; replaced code
+        cmp byte ptr [CLASS_SKILLS_ADDR+ecx+eax], bl ; replaced code
         jnz quit
-        cmp eax, SKILL_LEARNING
-        je human
-        cmp eax, SKILL_BOW
-        je elf
-        cmp eax, SKILL_SWORD
-        je goblin
         cmp eax, SKILL_AXE
-        je dwarf
+        jne skip
+        mov ecx, dword ptr [ebp-16] ; player
+        mov dl, byte ptr [ecx+0xb9] ; class
+        and edx, -4
+        cmp dl, CLASS_MONK
+        jne skip
+        call dword ptr ds:get_race
+        cmp eax, RACE_DWARF
+        mov eax, SKILL_AXE ; restore
+        je ok
+        skip:
         xor edx, edx ; set zf
+        ret
+        ok:
+        test edi, edi ; clear zf
         quit:
         ret
-        human:
-        mov edx, RACE_HUMAN
-        jmp check
-        elf:
-        mov edx, RACE_ELF
-        jmp check
-        goblin:
-        mov edx, RACE_GOBLIN
-        jmp check
-        dwarf:
-        mov edx, RACE_DWARF
-        check:
-        push eax
-        mov ecx, ebx
+      }
+}
+
+// Also actually let them buy the skill.
+static void __declspec(naked) dwarf_monk_axe_buy_1(void)
+{
+    asm
+      {
+        cmp byte ptr [CLASS_SKILLS_ADDR+eax+esi], 0 ; replaced code
+        jnz quit
+        cmp esi, SKILL_AXE
+        jne skip
+        mov dl, byte ptr [edi+0xb9] ; class
+        and edx, -4
+        cmp dl, CLASS_MONK
+        jne skip
+        mov edx, ecx
+        mov ecx, edi
         call dword ptr ds:get_race
-        cmp eax, edx
-        pop eax
-        sete dl ; invert zf
-        test edx, edx
-        ret
-      }
-}
-
-// Same, but registers are different here.
-static void __declspec(naked) learn_skill_check_2(void)
-{
-    asm
-      {
-        mov ebx, dword ptr [ebp-12] ; player
-        call learn_skill_check
-        mov ebx, 0 ; restore
-        ret
-      }
-}
-
-// Another variation.
-static void __declspec(naked) learn_skill_check_3(void)
-{
-    asm
-      {
-        mov ebx, esi ; player
-        call learn_skill_check
-        mov ebx, 0 ; restore
-        ret
-      }
-}
-
-// There's a lot of them.
-static void __declspec(naked) learn_skill_check_4(void)
-{
-    asm
-      {
-        mov ebx, dword ptr [ebp-24] ; player
-        call learn_skill_check
-        mov ebx, 0 ; restore
-        ret
-      }
-}
-
-// There's a lot of duplicate code!
-static void __declspec(naked) learn_skill_check_5(void)
-{
-    asm
-      {
-        mov ebx, dword ptr [ebp-16] ; player
-        call learn_skill_check
-        mov ebx, 0 ; restore
-        ret
-      }
-}
-
-// Apparently there's a separate function for each type of building.
-static void __declspec(naked) learn_skill_check_6(void)
-{
-    asm
-      {
-        mov ebx, dword ptr [ebp-20] ; player
-        call learn_skill_check
-        mov ebx, 0 ; restore
-        ret
-      }
-}
-
-// This one is for actually buying, and it differs a lot.
-static void __declspec(naked) learn_skill_check_7(void)
-{
-    asm
-      {
-        push ecx
-        mov ecx, eax
-        mov eax, esi
-        mov ebx, edi
-        call learn_skill_check
-        pop ecx
-        ret
-      }
-}
-
-// This one doesn't even convert dialog parameter to skill.
-static void __declspec(naked) learn_skill_check_8(void)
-{
-    asm
-      {
-        mov ebx, ecx
         mov ecx, edx
-        sub eax, 36
-        call learn_skill_check
-        mov ecx, ebx
-        mov ebx, 0
-        lea eax, [eax+36]
+        cmp eax, RACE_DWARF
+        je ok
+        skip:
+        xor edx, edx ; set zf
+        ret
+        ok:
+        test edi, edi ; clear zf
+        quit:
         ret
       }
 }
 
 // Another location related to buying.
-static void __declspec(naked) learn_skill_check_9(void)
+static void __declspec(naked) dwarf_monk_axe_buy_2(void)
 {
     asm
       {
-        push ecx
-        push ebx
-        mov ebx, edi
+        cmp byte ptr [CLASS_SKILLS_ADDR+edx+eax-36], 0 ; replaced code
+        jnz quit
+        cmp eax, SKILL_AXE + 36
+        jne skip
+        mov dl, byte ptr [edi+0xb9] ; class
+        and edx, -4
+        cmp dl, CLASS_MONK
+        jne skip
+        mov edx, ecx
+        mov ecx, edi
+        call dword ptr ds:get_race
         mov ecx, edx
-        sub eax, 36
-        call learn_skill_check
-        lea eax, [eax+36]
-        pop ebx
-        pop ecx
+        cmp eax, RACE_DWARF
+        mov eax, SKILL_AXE + 36
+        je ok
+        skip:
+        xor edx, edx ; set zf
+        ret
+        ok:
+        test edi, edi ; clear zf
+        quit:
         ret
       }
 }
@@ -15123,24 +15060,10 @@ static inline void racial_traits(void)
     hook_call(0x4b254a, teacher_skill_check, 8);
     hook_call(0x4b2569, teacher_skill_promotion_check, 5);
     erase_code(0x4b256e, 55); // unused now
-    hook_call(0x4b4836, learn_skill_check, 8);
-    hook_call(0x4b492a, learn_skill_check, 8);
-    hook_call(0x4b550c, learn_skill_check_2, 7);
-    hook_call(0x4b55ff, learn_skill_check_2, 7);
-    hook_call(0x4b70fe, learn_skill_check_3, 7);
-    hook_call(0x4b71fb, learn_skill_check_3, 7);
-    hook_call(0x4b83b7, learn_skill_check_4, 7);
-    hook_call(0x4b84b0, learn_skill_check_4, 7);
-    hook_call(0x4b9638, learn_skill_check_5, 7);
-    hook_call(0x4b972b, learn_skill_check_5, 7);
-    hook_call(0x4b9d52, learn_skill_check_6, 7);
-    hook_call(0x4b9e45, learn_skill_check_6, 7);
-    hook_call(0x4bae54, learn_skill_check, 8);
-    hook_call(0x4baf48, learn_skill_check, 8);
-    hook_call(0x4be1bb, learn_skill_check_7, 8);
-    hook_call(0x4b617e, learn_skill_check_8, 7);
-    hook_call(0x4b6298, learn_skill_check_8, 7);
-    hook_call(0x4bd485, learn_skill_check_9, 8);
+    hook_call(0x4b9638, dwarf_monk_axe_show, 7);
+    hook_call(0x4b972b, dwarf_monk_axe_show, 7);
+    hook_call(0x4be1bb, dwarf_monk_axe_buy_1, 8);
+    hook_call(0x4bd485, dwarf_monk_axe_buy_2, 8);
     hook_call(0x417372, race_hint, 6);
     hook_call(0x48e8a3, racial_resistances, 5);
     patch_word(0x48e87f, 0x15eb); // dwarf poison res used different var

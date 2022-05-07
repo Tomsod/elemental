@@ -10,6 +10,10 @@ offsets.CurrentEvtLines = mem.u4[0x446904]
 -- the new address, the greetings won't be displayed at all.
 rawset(Game.NPCGreet, "?ptr", mem.u4[0x476e3a] - 8)
 
+-- Another relocated structure is the generated artifacts array.
+-- Not a big deal, but still better to inform MMExtension about it.
+rawset(Party.ArtifactsFound, "?ptr", mem.u4[0x4568f7])
+
 -- The mod overwrites some exe data that is exposed by MMExtension tables.
 -- Since pre-existing tables would take higher precedence than elemental.dll,
 -- and outright deleting them is impossible as the mod is distributed

@@ -739,10 +739,17 @@ enum party_buffs
 struct __attribute((packed)) spell_info
 {
     uint16_t bits;
-    uint16_t cost_normal;
-    uint16_t cost_expert;
-    uint16_t cost_master;
-    uint16_t cost_gm;
+    union
+      {
+        struct
+          {
+            uint16_t cost_normal;
+            uint16_t cost_expert;
+            uint16_t cost_master;
+            uint16_t cost_gm;
+          };
+        uint16_t cost[4];
+      };
     uint16_t delay_normal;
     uint16_t delay_expert;
     uint16_t delay_master;
@@ -793,6 +800,7 @@ enum spells
     SPL_SHRINKING_RAY = 92,
     SPL_CONTROL_UNDEAD = 94,
     SPL_PAIN_REFLECTION = 95,
+    SPL_ARMAGEDDON = 98,
     LAST_REAL_SPELL = 99,
     SPL_ARROW = 100, // pseudo-spell for bows
     SPL_KNIFE = 101, // for throwing knives (my addition)
@@ -6747,7 +6755,7 @@ static void __fastcall __declspec(naked) monster_casts_spell(int monster,
 }
 
 //Defined below.
-static int __thiscall absorb_spell(struct player *player, int spell);
+static int __thiscall absorb_spell(struct player *player, int spell, int rank);
 
 // Turn undead scares all undead PCs, with no chance to resist.
 // Destroy undead damages one undead PC or monster with Holy.
@@ -6768,7 +6776,7 @@ static void __fastcall cast_new_spells(int monster, void *vector, int spell,
         // we must be targeting the party
         for (int i = 0; i < 4; i++)
             if (is_undead(&PARTY[i]) && player_active(&PARTY[i])
-                && !absorb_spell(&PARTY[i], spell))
+                && !absorb_spell(&PARTY[i], spell, NORMAL))
                 inflict_condition(&PARTY[i], COND_AFRAID, 0);
         make_sound(SOUND_THIS, spell_sound, 0, 0, -1, 0, 0, 0, 0);
       }
@@ -6783,7 +6791,7 @@ static void __fastcall cast_new_spells(int monster, void *vector, int spell,
                 if (is_undead(&PARTY[i]) && player_active(&PARTY[i])
                     && !(random() % ++count)) // randomly choose one player
                     target_player = &PARTY[i];
-            if (count && !absorb_spell(target_player, spell))
+            if (count && !absorb_spell(target_player, spell, NORMAL))
               {
                 int mastery = skill_mastery(skill);
                 skill &= SKILL_MASK;
@@ -10717,6 +10725,7 @@ static void __declspec(naked) dispel_immunity(void)
         dec eax ; set flags
         jz immune
         mov ecx, dword ptr [esi]
+        push NORMAL ; does not matter
         push SPL_DISPEL_MAGIC
         call absorb_spell
         dec eax ; set flags
@@ -16126,31 +16135,30 @@ static void __declspec(naked) recall_covered_ac_chunk(void)
 
 // New Master Leather perk: chance to absorb enemy spells, restoring SP.
 // Only works if SP won't overflow the natural limit.
-static int __thiscall absorb_spell(struct player *player, int spell)
+static int __thiscall absorb_spell(struct player *player, int spell, int rank)
 {
     if (spell == SPL_LIGHT_BOLT)
-        return 0; // can't be blocked by anything
+        return FALSE; // can't be blocked by anything
     int body = player->equipment[SLOT_BODY_ARMOR];
     if (!body)
-        return 0;
+        return FALSE;
     struct item *armor = &player->items[body-1];
     if (armor->flags & IFLAGS_BROKEN
         || ITEMS_TXT[armor->id].skill != SKILL_LEATHER)
-        return 0;
+        return FALSE;
     int skill = get_skill(player, SKILL_LEATHER);
     if (skill < SKILL_MASTER || (skill & SKILL_MASK) <= random() % 100)
-        return 0;
-    // TODO: support variable cost
-    int new_sp = player->sp + SPELL_INFO[spell].cost_normal;
+        return FALSE;
+    int new_sp = player->sp + SPELL_INFO[spell].cost[rank-1];
     if (new_sp <= get_full_sp(player))
       {
         player->sp = new_sp;
         static char message[128];
         sprintf(message, new_strings[STR_ABSORB_SPELL], player->name);
         show_status_text(message, 2);
-        return 1;
+        return TRUE;
       }
-    return 0;
+    return FALSE;
 }
 
 // Hook for monster spells.  Also here: instadeath from monster Incinerate.
@@ -16161,7 +16169,10 @@ static void __declspec(naked) absorb_monster_spell(void)
         jnz spell
         ret
         spell:
+        mov ecx, dword ptr [ebx+76] ; spell skill
+        call dword ptr ds:skill_mastery
         mov ecx, edi
+        push eax
         push dword ptr [ebx+72] ; spell id
         call absorb_spell
         test eax, eax
@@ -16175,7 +16186,9 @@ static void __declspec(naked) absorb_monster_spell(void)
         xor edx, edx
         mov ecx, 50
         div ecx
-        cmp dword ptr [ebx+76], edx ; spell power
+        mov eax, dword ptr [ebx+76] ; spell power
+        and eax, SKILL_MASK
+        cmp eax, edx
         jbe skip
         ; now we make a debuff resistance roll
         push STAT_FIRE_RES
@@ -16207,6 +16220,7 @@ static void __declspec(naked) absorb_other_spell(void)
 {
     asm
       {
+        push dword ptr [ebx+80] ; spell rank
         push dword ptr [ebx+72] ; spell id
         call absorb_spell
         test eax, eax
@@ -16216,6 +16230,23 @@ static void __declspec(naked) absorb_other_spell(void)
         hit:
         mov ecx, dword ptr [ebp+12] ; restore
         jmp dword ptr ds:get_full_hp ; replaced call
+      }
+}
+
+// Hook for Armageddon.
+static void __declspec(naked) absorb_armageddon(void)
+{
+    asm
+      {
+        or eax, dword ptr [ecx+COND_ERADICATED*8+4] ; replaced code
+        jnz quit
+        push MASTER ; does not matter
+        push SPL_ARMAGEDDON
+        call absorb_spell
+        mov ecx, dword ptr [esi] ; restore
+        test eax, eax
+        quit:
+        ret
       }
 }
 
@@ -17066,6 +17097,7 @@ static inline void skill_changes(void)
     patch_bytes(0x4274e5, recall_covered_ac_chunk, 5);
     hook_call(0x43a4cf, absorb_monster_spell, 6);
     // absorb_other_spell() called from damage_potions_player()
+    hook_call(0x401bf2, absorb_armageddon, 6);
     // Also see cast_new_spells() and dispel_immunity() above.
     patch_byte(0x49002c, 0x4d); // remove old leather & shield M boni
     patch_dword(0x490097, 0xf08bce8b); // swap instructions

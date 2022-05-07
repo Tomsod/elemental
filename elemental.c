@@ -15876,13 +15876,28 @@ static void __declspec(naked) raise_ench_item_difficulty(void)
       {
         xor eax, eax
         mov ecx, dword ptr [esp+24] ; item
-        cmp dword ptr [ecx+4], 0
+        mov edx, dword ptr [ecx+4]
+        test edx, edx
         jz no_std
-        cmp dword ptr [ecx+4], TEMP_ENCH_MARKER
+        cmp edx, TEMP_ENCH_MARKER
         je no_std
         mov eax, dword ptr [ecx+8]
         add eax, eax
         mov ecx, 5
+        cmp edx, STAT_HP + 1
+        je doubled
+        cmp edx, STAT_SP + 1
+        je doubled
+        cmp edx, STAT_THIEVERY + 1
+        je doubled
+        cmp edx, STAT_DISARM + 1
+        je doubled
+        cmp edx, STAT_ARMSMASTER + 1
+        jb divide
+        cmp edx, STAT_UNARMED + 1
+        ja divide
+        doubled:
+        add eax, eax
         jmp divide
         no_std:
         mov edx, dword ptr [ecx+12]

@@ -9322,8 +9322,11 @@ static void __declspec(naked) restrict_flying_down(void)
 {
     asm
       {
-        cmp dword ptr [0xacd4f4], 4005 ; party.z (account for bobbling)
-        jge fail
+        cmp dword ptr [0xacd4f4], 4000 ; party.z
+        jl low
+        cmp dword ptr [0xacd53c], ecx ; if already flying
+        jz fail
+        low:
         cmp dword ptr [0xacd6b4], ecx ; test for TB mode
         jz ok
         cmp dword ptr [0x4f86dc], 3 ; TB phase

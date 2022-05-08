@@ -2,13 +2,39 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef CHECK_OVERWRITE
+#include <stdio.h>
+#endif
 
 #define byte(address) (*(uint8_t *) (address))
 #define word(address) (*(uint16_t *) (address))
 #define dword(address) (*(uint32_t *) (address))
 
+#ifdef CHECK_OVERWRITE
+static FILE *owlog, *binary;
+static uint8_t owbuffer[100];
+
+static void check_overwrite(uintptr_t address, size_t size)
+{
+    if (address < 0x400000 || address >= 0x4f6000)
+        return;
+    fseek(binary, address - 0x400000, SEEK_SET);
+    fread(owbuffer, 1, size, binary);
+    for (int i = 0; i < size; i++)
+        if (owbuffer[i] != byte(address + i))
+            fprintf(owlog, "Overwriting patched byte %.2x (was %.2x) "
+                           "at address %.6x!\n",
+                    byte(address + i), owbuffer[i], address + i);
+}
+#else
+static inline void check_overwrite(uintptr_t address, size_t size)
+{
+}
+#endif
+
 static void patch_byte(uintptr_t address, uint8_t value)
 {
+    check_overwrite(address, 1);
     DWORD OldProtect;
     VirtualProtect((LPVOID) address, 1, PAGE_EXECUTE_READWRITE, &OldProtect);
     byte(address) = value;
@@ -17,6 +43,7 @@ static void patch_byte(uintptr_t address, uint8_t value)
 
 static void patch_word(uintptr_t address, uint16_t value)
 {
+    check_overwrite(address, 2);
     DWORD OldProtect;
     VirtualProtect((LPVOID) address, 2, PAGE_EXECUTE_READWRITE, &OldProtect);
     word(address) = value;
@@ -25,6 +52,7 @@ static void patch_word(uintptr_t address, uint16_t value)
 
 static void patch_dword(uintptr_t address, uint32_t value)
 {
+    check_overwrite(address, 4);
     DWORD OldProtect;
     VirtualProtect((LPVOID) address, 4, PAGE_EXECUTE_READWRITE, &OldProtect);
     dword(address) = value;
@@ -38,6 +66,7 @@ static inline void patch_pointer(uintptr_t address, const void *value)
 
 static void patch_bytes(uintptr_t address, const void *src, size_t size)
 {
+    check_overwrite(address, size);
     DWORD OldProtect;
     VirtualProtect((LPVOID) address, size, PAGE_EXECUTE_READWRITE,
                    &OldProtect);
@@ -55,6 +84,7 @@ static void hook_jump(uintptr_t address, funcptr_t func)
 
 static void hook_call(uintptr_t address, funcptr_t func, int length)
 {
+    check_overwrite(address, length);
     DWORD OldProtect;
     VirtualProtect((LPVOID) address, length, PAGE_EXECUTE_READWRITE,
                    &OldProtect);
@@ -67,6 +97,7 @@ static void hook_call(uintptr_t address, funcptr_t func, int length)
 
 static void erase_code(uintptr_t address, int length)
 {
+    check_overwrite(address, length);
     DWORD OldProtect;
     VirtualProtect((LPVOID) address, length, PAGE_EXECUTE_READWRITE,
                    &OldProtect);
@@ -1095,6 +1126,11 @@ enum horses
 
 #define NPC_ADDR 0x72d50c
 #define NPC_HIRED 0x80
+
+#ifdef CHECK_OVERWRITE
+#define sprintf sprintf_mm7
+#define fread fread_mm7
+#endif
 
 static int __cdecl (*uncased_strcmp)(const char *left, const char *right)
     = (funcptr_t) 0x4caaf0;
@@ -2995,6 +3031,9 @@ static struct recipe {
 // Fill the recipes array.  I wanted to make this fastcall, but clang is buggy.
 static void __stdcall add_recipe(int result, int note, int row, int column)
 {
+#ifdef CHECK_OVERWRITE
+    return; // no idea why, but it crashes here
+#endif
     struct recipe *this = &recipes[result-FIRST_COMPLEX_POTION];
     for (int i = 0; i < this->count; i++)
         if (note == this->variants[i].note)
@@ -3077,7 +3116,7 @@ static int recursive_brew(struct player *player, int potion,
     int unbrewable = potion;
     for (int i = 0; i < recipes[potion-FIRST_COMPLEX_POTION].count; i++)
       {
-        int note = recipes[potion-FIRST_COMPLEX_POTION].variants[i].note - 1;
+        int note = recipes[potion-FIRST_COMPLEX_POTION].variants[i].note;
         if (!check_bit(AUTONOTES, note))
             continue;
         int left = 0, right = 0;
@@ -4618,6 +4657,10 @@ static void spell_elements(void)
     // Not sure if the next two do anything, but just in case.
     patch_byte(0x46c9ea, ELEMENT(SPL_PARALYZE));
     patch_byte(0x46c9e6, ELEMENT(SPL_SHRINKING_RAY));
+#ifdef CHECK_OVERWRITE
+    fclose(owlog);
+    fclose(binary);
+#endif
 }
 
 // Defined below.
@@ -5812,12 +5855,13 @@ static void __declspec(naked) lava_walking(void)
 {
     asm
       {
+        test byte ptr [ecx+eax+31], 0x40 ; replaced code
+        jz quit
         cmp word ptr [PARTY_BUFF_ADDR+BUFF_WATER_WALK*16+10], GM
-        jb skip
+        jb quit
         or byte ptr [STATE_BITS], 0x80 ; water walk state flag
-        ret
-        skip:
-        or byte ptr [STATE_BITS+1], 2 ; replaced code (lava bit)
+        xor eax, eax ; set zf
+        quit:
         ret
       }
 }
@@ -6272,7 +6316,7 @@ static inline void misc_spells(void)
     hook_call(0x42b570, lloyd_starting_tab, 5);
     hook_call(0x433433, lloyd_disable_recall, 5);
     hook_call(0x4737f2, reset_lava_walking, 7);
-    hook_call(0x47382f, lava_walking, 7);
+    hook_call(0x473828, lava_walking, 5);
     patch_dword(0x429972, 10); // nerf master meteor shower (16 -> 10 rocks)
     patch_dword(0x439c64, 40); // stun knockback
     hook_call(0x439d74, increase_stun_knockback, 5);
@@ -13154,11 +13198,9 @@ static inline void ranged_blasters(void)
     patch_dword(0x42ee6d, dword(0x42ee6d) + 4); // main hand -> missile slot
     patch_dword(0x42ee89, 0x1950);
     patch_dword(0x42ee9b, 0x1950);
-    patch_dword(0x42eeb7, 0x1950);
     patch_dword(0x42f02f, 0x1950);
     patch_dword(0x42f055, 0x1950);
     patch_dword(0x42f067, 0x1950);
-    patch_dword(0x42f085, 0x1950);
     patch_byte(0x469863, 2); // equip wands in missile slot
     patch_byte(0x4e8354, 2); // ditto
     patch_byte(0x45f2ed, 2); // fix no sound (preload wand sound on game load)
@@ -13568,7 +13610,7 @@ static inline void wand_charges(void)
     patch_byte(0x41de29, 20); // call fixup
     hook_call(0x456a78, preused_wands, 6);
     hook_call(0x44b357, preused_wands_2, 6);
-    hook_call(0x48da1a, preused_wands_3, 7);
+    hook_call(0x48da1a, preused_wands_3, 7); // this overwrites mm7patch
     hook_call(0x415c93, preused_wands_4, 8);
     hook_call(0x426b36, preused_wands_5, 6);
     hook_call(0x4b8ebd, charge_shop_wands_standard, 11);
@@ -18595,6 +18637,10 @@ BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
 {
     if (reason == DLL_PROCESS_ATTACH)
       {
+#ifdef CHECK_OVERWRITE
+        owlog = fopen("overwrt.log", "w");
+        binary = fopen("mm7.exe", "rb");
+#endif
         spells_txt();
         monsters_txt();
         skip_monster_res();

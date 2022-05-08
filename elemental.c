@@ -3630,6 +3630,28 @@ static void __declspec(naked) prefix_hook(void)
       }
 }
 
+// For items.txt, allow using any of gender-specific prefix variants.
+static int __cdecl compare_special_item_prefix(char *prefix, char *text)
+{
+    if (have_itemgend)
+      {
+        char *format = strstr(prefix, "^R[");
+        if (format)
+          {
+            int result = strncmp(text, prefix, format - prefix);
+            if (result)
+                return result;
+            // we assume here that variable parts are word endings
+            char *next_word = strchr(format, ' ');
+            char *rest_of_text = strchr(text + (format - prefix), ' ');
+            if (next_word && rest_of_text)
+                return strcmp(rest_of_text, next_word);
+            return !!next_word - !!rest_of_text;
+          }
+      }
+    return uncased_strcmp(text, prefix); // replaced call
+}
+
 // Exploit fix: barrels in Walls of Mist were refilled on each visit.
 // Now the barrel contents are stored in the savefile.
 // Called in save_game_hook() below.
@@ -3855,6 +3877,7 @@ static inline void misc_items(void)
     hook_call(0x45647e, potion_price, 6);
     erase_code(0x456624, 3); // do not multiply ench id
     hook_call(0x456633, prefix_hook, 6);
+    hook_call(0x4578cf, compare_special_item_prefix, 5);
     hook_call(0x46825f, lamp_quadruple, 5);
     // Change genie lamp rewards alike MM6: first six months are base stats
     // (Int and Per share a month), last six months are resistances.

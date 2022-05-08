@@ -3850,6 +3850,18 @@ static void __declspec(naked) generate_broken_items(void)
       }
 }
 
+// Starting rings occasionally generated broken.
+static void __declspec(naked) repair_starting_items(void)
+{
+    asm
+      {
+        jz quit ; replaced jump
+        mov dword ptr [eax], IFLAGS_ID ; erase broken flag
+        quit:
+        ret
+      }
+}
+
 // Misc item tweaks.
 static inline void misc_items(void)
 {
@@ -3918,6 +3930,7 @@ static inline void misc_items(void)
     hook_call(0x48dd6f, break_new_items, 6); // monster attack
     hook_call(0x456a15, generate_broken_items, 5);
     erase_code(0x41da49, 3); // do not auto-id repaired items
+    hook_call(0x497873, repair_starting_items, 5);
 }
 
 static uint32_t potion_damage;

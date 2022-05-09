@@ -5855,7 +5855,7 @@ static void __declspec(naked) lava_walking(void)
 {
     asm
       {
-        test byte ptr [ecx+eax+31], 0x40 ; replaced code
+        test byte ptr [ecx+eax+47], 0x40 ; replaced code
         jz quit
         cmp word ptr [PARTY_BUFF_ADDR+BUFF_WATER_WALK*16+10], GM
         jb quit

@@ -709,6 +709,7 @@ enum qbits
     QBIT_ALCHEMY_GM_QUEST = 377,
     QBIT_CAVALIER_HORSE = 383,
     QBIT_USED_PEGASUS = 384,
+    QBIT_TEMPLE_UNDERWATER = 386,
 };
 
 #define ITEM_TYPE_WEAPON 1
@@ -11898,6 +11899,8 @@ static void save_temple_beacon(void)
     elemdata.direction = dword(0xacd4f8);
     elemdata.look_angle = dword(0xacd4fc);
     elemdata.map_index = get_map_index(MAPSTATS, CUR_MAP_FILENAME);
+    change_bit(QBITS, QBIT_TEMPLE_UNDERWATER,
+               !uncased_strcmp(CUR_MAP_FILENAME, "out15.odm"));
 }
 
 // Hook for the above.

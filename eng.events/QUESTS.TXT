@@ -384,7 +384,7 @@ Q Bit	Quest Note Text	Notes	Owner
 383	"Purchase a steed from a stables of your choosing."	Cavalier horse perk	0	0
 384		Used Pegasus ability today	0	0
 385		Got Elfbane	0	0
-386	0	0	0	0
+386		Used temple in a bottle in Shoals	0	0
 387	0	0	0	0
 388	0	0	0	0
 389	0	0	0	0

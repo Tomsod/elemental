@@ -268,3 +268,5 @@ Dragon Scales	150	128	128	-	-	-	-	-	-	-	x	-	-	-	objscal	0	0	0	0	0	0
 Bag of Holding	151	64	64	-	-	-	-	-	-	-	x	-	-	-	objboh	0	0	0	0	0	0
 Knife	12050	16	16	-	-	x	-	x	-	x	-	-	-	-	knife	768	2000	0	0	0	0
 Blaster Eradication	12060	16	16	-	-	x	x	x	x	-	-	-	-	-	blserad	56	0	0	0	0	0
+Robe	152	64	64	-	-	-	-	-	-	-	x	-	-	-	objrobe	0	0	0	0	0	0
+Throwing Knives	153	64	64	-	-	-	-	-	-	-	x	-	-	-	objknife	0	0	0	0	0	0

@@ -479,6 +479,7 @@ enum items
     WIZARDS_ROBE = 162,
     THROWING_KNIVES = 163,
     LIVING_WOOD_KNIVES = 164,
+    BOOMERANG_KNIFE = 165,
     LAST_PREFIX = 165, // last enchantable item
     FIRST_REAGENT = 200,
     LAST_REAGENT = 214, // not counting gray
@@ -6263,6 +6264,8 @@ static inline void misc_spells(void)
     patch_byte(0x4e2ac6, byte(0x4e2ad5));
     patch_pointer(0x42ea51, aura_of_conflict);
     patch_byte(0x427cd8, 2); // targets a pc
+    patch_dword(0x4e22b8, 276); // spellbook icon x
+    patch_dword(0x4e22bc, 5); // spellbook icon y
     hook_call(0x434702, alternative_spell_mode_hook, 7);
     hook_call(0x428295, cumulative_recovery, 6);
     hook_call(0x42abbf, enchant_item_min_value, 5); // GM
@@ -11144,25 +11147,29 @@ static const int rdsm_arm1_xy[] = { 582, 104, 580, 106, 577, 135, 593, 144, };
 static const int rdsm_arm2_xy[] = { 530, 105, 541, 108, 529, 137, 533, 143, };
 static char robp_body[] = "itemrobpv0";
 static char robp_arm1[] = "itemrobpv0a1";
-static const int robp_body_xy[] = { 526, 103, 534, 105, 523, 137, 533, 145, };
-static const int robp_arm1_xy[] = { 582, 104, 577, 107,   0,   0,   0,   0, };
+static char robp_arm2[] = "itemrobpv0a2";
+static const int robp_body_xy[] = { 493, 102, 495, 106, 488, 138, 495, 140, };
+static const int robp_arm1_xy[] = { 598, 110, 592, 110, 601, 144, 600, 146, };
+static const int robp_arm2_xy[] = { 530, 102, 537, 106, 530, 139, 531, 140, };
 static char robm_body[] = "itemrobmv0";
 static char robm_arm1[] = "itemrobmv0a1";
 static char robm_arm2[] = "itemrobmv0a2";
-static const int robm_body_xy[] = { 525, 100, 532, 104, 522, 134, 531, 142, };
-static const int robm_arm1_xy[] = { 591, 116, 578, 106, 595, 141, 591, 146, };
-static const int robm_arm2_xy[] = { 581, 105, 577, 108, 595, 141, 595, 145, };
+static const int robm_body_xy[] = { 493,  99, 495, 101, 488, 134, 495, 139, };
+static const int robm_arm1_xy[] = { 598, 110, 592, 110, 602, 144, 599, 147, };
+static const int robm_arm2_xy[] = { 531, 100, 537, 106, 530, 137, 535, 139, };
 static char robw_body[] = "itemrobwv0";
 static char robw_arm1[] = "itemrobwv0a1";
 static char robw_arm2[] = "itemrobwv0a2";
-static const int robw_body_xy[] = { 501, 102, 517, 103, 499, 135, 514, 139, };
-static const int robw_arm1_xy[] = { 589, 104, 577, 105, 587, 137, 592, 145, };
-static const int robw_arm2_xy[] = { 581, 104, 575, 105, 579, 137, 584, 143, };
+static const int robw_body_xy[] = { 494, 100, 496, 105, 487, 136, 494, 139, };
+static const int robw_arm1_xy[] = { 598, 107, 592, 110, 602, 144, 600, 145, };
+static const int robw_arm2_xy[] = { 529, 100, 538, 107, 528, 137, 530, 139, };
+// the next two are recolors and so use the same xy
 static char robe_body[] = "itemrobev0";
 static char robe_arm1[] = "itemrobev0a1";
 static char robe_arm2[] = "itemrobev0a2";
-// xy are the same as robw (it's a recolor)
-// grey's robe has the same gfx as ellinger's for now, later will add another
+static char roba_body[] = "itemrobav0";
+static char roba_arm1[] = "itemrobav0a1";
+static char roba_arm2[] = "itemrobav0a2";
 
 // Substitute our graphics and coordinates for worn RDSM/robe (w/o right arm).
 static void __declspec(naked) display_worn_rdsm_body(void)
@@ -11180,7 +11187,7 @@ static void __declspec(naked) display_worn_rdsm_body(void)
         cmp ecx, ELLINGERS_ROBE
         je robe
         cmp ecx, ROBE_OF_THE_ARCHMAGISTER
-        je robe
+        je roba
         sub eax, GOVERNORS_ARMOR ; replaced code
         ret
         rdsm:
@@ -11200,6 +11207,9 @@ static void __declspec(naked) display_worn_rdsm_body(void)
         jmp robw_xy
         robe:
         mov ecx, offset robe_body
+        jmp robw_xy
+        roba:
+        mov ecx, offset roba_body
         robw_xy:
         mov edi, offset robw_body_xy
         coords:
@@ -11227,6 +11237,7 @@ static void __declspec(naked) display_worn_rdsm_body(void)
 #define ROBM_INDEX 20
 #define ROBW_INDEX 21
 #define ROBE_INDEX 22
+#define ROBA_INDEX 23
 
 // Pass the check for displaying armor left arm.
 static void __declspec(naked) display_worn_rdsm_arm(void)
@@ -11244,7 +11255,7 @@ static void __declspec(naked) display_worn_rdsm_arm(void)
         cmp ecx, ELLINGERS_ROBE
         je robe
         cmp ecx, ROBE_OF_THE_ARCHMAGISTER
-        je robe
+        je roba
         sub eax, GOVERNORS_ARMOR ; replaced code
         ret
         rdsm:
@@ -11261,6 +11272,9 @@ static void __declspec(naked) display_worn_rdsm_arm(void)
         jmp quit
         robe:
         mov edi, ROBE_INDEX
+        jmp quit
+        roba:
+        mov edi, ROBA_INDEX
         quit:
         push 0x43db65 ; code after choosing index
         ret 4
@@ -11284,6 +11298,8 @@ static void __declspec(naked) display_worn_rdsm_arm_2h(void)
         je robw
         cmp edi, ROBE_INDEX
         je robe
+        cmp edi, ROBA_INDEX
+        je roba
         imul eax, eax, 17 ; replaced code
         add edi, eax ; replaced code
         ret
@@ -11292,8 +11308,8 @@ static void __declspec(naked) display_worn_rdsm_arm_2h(void)
         mov ebx, offset rdsm_arm2_xy
         jmp coords
         robp:
-        mov edx, offset robp_arm1 ; currently no arm2
-        mov ebx, offset robp_arm1_xy
+        mov edx, offset robp_arm2 ; currently no arm2
+        mov ebx, offset robp_arm2_xy
         jmp coords
         robm:
         mov edx, offset robm_arm2
@@ -11304,6 +11320,9 @@ static void __declspec(naked) display_worn_rdsm_arm_2h(void)
         jmp robw_xy
         robe:
         mov edx, offset robe_arm2
+        jmp robw_xy
+        roba:
+        mov edx, offset roba_arm2
         robw_xy:
         mov ebx, offset robw_arm2_xy
         coords:
@@ -11342,6 +11361,8 @@ static void __declspec(naked) display_worn_rdsm_arm_idle(void)
         je robw
         cmp edi, ROBE_INDEX
         je robe
+        cmp edi, ROBA_INDEX
+        je roba
         imul eax, eax, 17 ; replaced code
         add edi, eax ; replaced code
         ret
@@ -11362,6 +11383,9 @@ static void __declspec(naked) display_worn_rdsm_arm_idle(void)
         jmp robw_xy
         robe:
         mov edx, offset robe_arm1
+        jmp robw_xy
+        roba:
+        mov edx, offset roba_arm1
         robw_xy:
         mov ecx, offset robw_arm1_xy
         coords:
@@ -12377,11 +12401,11 @@ static void __declspec(naked) higher_ethric_drain(void)
       }
 }
 
-// Worn Gadgeteer's Belt data (same as Silver Belt for now!)
-STATIC const int gadgeteers_belt_xy[] = { 539, 185, 539, 177,
-                                          538, 214, 541, 213, };
+// Worn Gadgeteer's Belt data.
+STATIC const int gadgeteers_belt_xy[] = { 530, 185, 533, 171,
+                                          532, 214, 535, 210, };
 FIX(gadgeteers_belt_xy);
-static char gadgeteers_belt_gfx[] = "item103v0"; // temporary
+static char gadgeteers_belt_gfx[] = "itemgadgv0";
 
 // Draw the new belt on the paperdoll.
 static void __declspec(naked) display_new_belt(void)
@@ -12401,7 +12425,7 @@ static void __declspec(naked) display_new_belt(void)
         and eax, 1 ; no special dwarf gfx
         add eax, '1'
         mov edx, offset gadgeteers_belt_gfx
-        mov byte ptr [edx+8], al ; will probably be +9 later
+        mov byte ptr [edx+9], al
         push 2
         push edx
         mov ecx, 0x6d0490 ; icons.lod
@@ -17570,8 +17594,11 @@ static void __declspec(naked) equipped_knife_sprite(void)
 {
     asm
       {
+        cmp dword ptr [edi], BOOMERANG_KNIFE ; an exception
+        je skip
         cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_DAGGER
         je knife
+        skip:
         pop edx
         push dword ptr [ITEMS_TXT_ADDR+eax] ; replaced code
         jmp edx

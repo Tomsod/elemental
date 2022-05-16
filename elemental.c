@@ -14822,7 +14822,7 @@ static void set_colors(void)
     colors[CLR_YELLOW] = rgb_color(255, 255, 0);
     colors[CLR_PALE_YELLOW] = rgb_color(255, 255, 100);
     colors[CLR_GREEN] = rgb_color(0, 255, 0);
-    colors[CLR_BLUE] = rgb_color(0, 255, 255);
+    colors[CLR_BLUE] = rgb_color(0, 251, 251); // 252+ breaks in widescreen
     colors[CLR_PURPLE] = rgb_color(255, 0, 255);
 }
 

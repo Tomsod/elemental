@@ -18268,6 +18268,25 @@ static void __declspec(naked) difficult_bank_gold(void)
       }
 }
 
+// Fix the statusline message for looting gold and an item.
+static void __declspec(naked) difficult_looted_gold(void)
+{
+    asm
+      {
+        cmp dword ptr [elemdata.difficulty], 0
+        jz skip
+        mov eax, dword ptr [esp+12] ; gold value for display
+        shr eax, 1
+        cmp dword ptr [elemdata.difficulty], 2
+        jae lower
+        shr eax, 1
+        lower:
+        sub dword ptr [esp+12], eax
+        skip:
+        jmp dword ptr ds:sprintf ; replaced call
+      }
+}
+
 // I need to exempt box traders from difficulty gold penalties,
 // as the profit margin is their entire point, so I'll use
 // evt.Sub("Gold", -sell_price) for them, and make it give irreducible gold.
@@ -18307,6 +18326,7 @@ static inline void difficulty_level(void)
     hook_call(0x4b809a, difficult_barter, 6);
     hook_call(0x41d964, difficult_gold_pile, 6);
     hook_call(0x44b854, difficult_bank_gold, 6);
+    hook_call(0x426ad7, difficult_looted_gold, 5);
     hook_call(0x44bbf6, subtract_negative_gold, 6);
     // skill penalty in level_skill_bonus() above
     patch_pointer(0x417d78, "%s: %+d"); // display penalty correctly

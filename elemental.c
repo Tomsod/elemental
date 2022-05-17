@@ -7946,7 +7946,7 @@ static char *__stdcall resistance_hint(char *description, int resistance)
       }
     int total = get_resistance(current, resistance - 9);
     if (total)
-        total += get_effective_stat(get_luck(current));
+        total += get_effective_stat(get_luck(current)) * 4;
     strcpy(buffer, description);
     if (total > 0 && !is_immune(current, element))
       {

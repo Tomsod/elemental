@@ -18060,7 +18060,7 @@ static inline void throwing_knives(void)
     hook_call(0x42ecf9, use_knife_charge, 8);
     hook_call(0x4b954b, knife_repair_dialog, 11);
     // actually repaired in prepare_shop_recharge() and perform_shop_recharge()
-    patch_word(0x4f028c, ITEM_TYPE_MISSILE); // allow EI shop to sell knives
+    patch_word(0x4f028e, ITEM_TYPE_MISSILE); // allow EI shop to sell knives
 }
 
 // Draw the right options difficulty button in the settings screen.

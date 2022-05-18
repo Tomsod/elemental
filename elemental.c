@@ -5450,17 +5450,22 @@ static int __stdcall alternative_spell_mode(int player_id, int spell)
               {
                 struct player *current = PARTY + pc;
                 int right = current->equipment[SLOT_MAIN_HAND];
-                if (right
-                    && can_add_temp_enchant(&current->items[right-1], enchant))
+                if (right)
                   {
-                    pcs[count] = pc;
-                    items[count] = right - 1;
-                    count++;
+                    struct item *weapon = &current->items[right-1];
+                    expire_temp_bonus(weapon, CURRENT_TIME);
+                    if (can_add_temp_enchant(weapon, enchant))
+                      {
+                        pcs[count] = pc;
+                        items[count] = right - 1;
+                        count++;
+                      }
                   }
                 int left = current->equipment[SLOT_OFFHAND];
                 if (left)
                   {
                     struct item *weapon = &current->items[left-1];
+                    expire_temp_bonus(weapon, CURRENT_TIME);
                     if (ITEMS_TXT[weapon->id].equip_stat < ITEM_TYPE_MISSILE
                         && can_add_temp_enchant(weapon, enchant))
                       {
@@ -5478,6 +5483,7 @@ static int __stdcall alternative_spell_mode(int player_id, int spell)
                     if (missile)
                       {
                         struct item *bow = &current->items[missile-1];
+                        expire_temp_bonus(bow, CURRENT_TIME);
                         if (ITEMS_TXT[bow->id].equip_stat < ITEM_TYPE_MISSILE
                             && ITEMS_TXT[bow->id].skill != SKILL_BLASTER
                             && can_add_temp_enchant(bow, enchant))

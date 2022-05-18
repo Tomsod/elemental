@@ -1,6 +1,428 @@
 This is the change log for the Elemental Mod.  It's quite descriptive,
 and can be viewed as the chief source of information on the mod's features.
 
+== Elemental Mod ver. 3.0 beta ==
+
+This release chiefly concerns party composition.  Characters are now defined by
+more than just class, with race and light/dark path choice being more
+significant, skill advancement is (mostly) more lenient, skill effects are
+rebalanced, and hybrid classes are hopefully more viable now.  Also, I added a
+bunch of new artifacts and some other items, tweaked spells some more, made a
+number of other changes to game mechanics, and fixed some more bugs.
+
+Currently we're still in the playtesting phase.  New bugs may be uncovered,
+and, more importantly, I will likely tweak some numerical constants for the
+sake of balance.  But adding or removing major features is unlikely.
+
+
+=== Race and class changes ===
+
+This is the first core part of the release.  While before you could have nine
+different kinds of characters, as only the class mattered, now each of four
+races brings significant changes, and a choice of light or dark promotion also
+impacts the PC's abilities, for a total of 72 possible combinations.
+
+First off, race now has a more lasting impact on primary stats: instead of
+doubling or halving them at the start only, they're now increased by 40% or
+decreased by 30% respectively throughout the game, like a status condition.
+To make humans less dull, they now have a similar 20% bonus to Luck.
+
+Race now also affects HP and SP, like in earlier MM games: dwarves get +1 HP
+per level, goblins get +1 HP/level but -1 SP per two levels, elves get -1 HP
+but +1 SP each level, and humans instead get an extra skill point per level.
+
+Next, each race gets a boost to a single skill, generally being able to
+advance it one rank higher than usual.  This works even if the base class
+cannot learn the skill at all.  Goblins have Sword, dwarves have Axe, elves
+have Bow, and humans get Learning.  For the first three, the boosted skill
+usually replaces the weapon skill a class starts with; humans instead get
+their Learning as a fifth bonus starting skill, which fits the scholar theme.
+
+Finally, the racial bonus to resistances now increases with character level.
+Humans are again special, as they now get a bonus to Holy resistance in
+addition to Magic, although it's only relevant to liches and zombies.
+
+Classes are now more varied, too.  Basically, I tried to make skill ranks more
+permissive, especially magic grandmasteries -- hopefully clerics and sorcerers
+are less indispensable now.  Hybrid classes like thieves, rangers and monks
+should be more useful now, too.  Some classes even got special abilities.
+Later I'll make a comprehensive party creation spoiler, but for now you can
+read the class hints (right click on the class title in the stats screen),
+and there's a skill advancement table in Data/Tables.
+
+Importantly, all classes have skills that can be advanced upon a light or dark
+promotion only.  What really makes this flexible is the fact that you can now
+mix light and dark promotions within the same party!  Basically, if you
+complete all elf/human war quests on time, you'll get a short window of
+opportunity where you can initiate both light and dark promotion quests at
+your discretion.  That said, you'll now have to earn the ability to get a
+promotion quest by completing other quests; before having to choose a side
+formally, you can complete a total of two light and two dark quests, and
+afterwards you're limited to the path you've chosen only.  Nevertheless, this
+is enough to have any combination of promotions in your party, which allows to
+"plug holes" WRT skill ranks -- e.g. only light path Archers can GM Water, and
+only dark path Thieves can GM Alchemy.  It's better to plan this in advance.
+
+
+=== Skill tweaks ===
+
+As part of the class rebalance, some skill effects were changed, either to
+make skills more useful, or to make a class more unique.  Here's a list:
+
+Bodybuilding and Meditation are now more relevant on higher levels, as their
+effect grows by 5% for each level after 20.  This means that each point of the
+skill (multiplied by rank) adds 5% to base level-dependent HP or SP (past
+level 20, that is).  Also, the effect of Endurance, Intellect and Personality
+now works the same way.  To counterbalance it a bit, GM at the both skills no
+longer increases their effect to 5x; instead, it adds HP or SP regeneration,
+at one point per 5 minutes per 5 or 6 points of skill, respectively.
+
+Perception is now more useful, as it increases loot from monsters: both the
+amount of gold and the chance of an item are increased by 2% per point of
+skill (multiplied by rank).  To keep it interesting, dragons and other
+monsters with formerly a 100% chance of an item are now capped at 80%, so the
+skill is still useful.  Also, GM now grants a 5x skill effect, as a
+"100% chance" wouldn't make sense with this new loot increase.  Finally,
+bonuses to Perception from hired NPCs are now properly multiplied by rank.
+
+Stealing is renamed to Thievery, and it now also allows performing backstabs.
+It works similar to Backstabbing weapons from 2.0: only in melee and only when
+the monster is turned away from party.  But unlike the weapon bonus, a
+successful skill-based backstab doubles the entire damage of the attack,
+including skill, spell, and stat bonuses (but not the elemental damage).  The
+chance to backstab is 1% per skill, multiplied by rank.
+
+Alchemy is now a bit more lenient, in that it's technically possible to brew
+any potion at any skill level (or even without the skill).  However, there's a
+chance of an explosion (based on the potion tier), and even if it succeeds,
+the potion is marked as "botched", which decreases its power by 25% and makes
+catalysts mixed with it 25% less effective.  So, the skill is still helpful.
+
+Blaster skill is now limited by class.  But those classes who can achieve GM
+can enjoy a new perk: a small chance to eradicate the target on hit.
+Eradicated monsters disappear without leaving a corpse, though, and it doesn't
+happen often: the base chance is 0.5% per skill point, monsters can resist vs.
+Magic, and it can also fail with a (monster HP) / (monster max HP) chance.
+
+ID Item and Repair are now more useful, as I've raised the ID/repair
+difficulty of many items, and item enchantments further increase it now.  So,
+raising them to GM is actually beneficial now.  Also, unidentified items are
+considered unenchanted when determining the selling price to shops, and it's
+no longer possible to read unknown scrolls and spellbooks -- as such, ID Item
+now brings an actual in-game (rather than meta-game) benefit.  And to make
+Repair more relevant, items are now rarely generated broken (except in shops).
+
+I also tweaked some armor skills.  Master Shield now grants a skill-based
+chance to cover an ally in combat instead of a modest AC bonus.  What this
+means: if any PC is attacked, with a (skill * 1%) chance the AC of the
+shield-wearer is used instead of the hit PC's AC (unless it's lower).  If the
+AC roll then fails, the original PC is hit as normal.
+
+GM Shield now lowers all physical damage by 25% instead of the old half
+missile damage bonus.  The old bonus wasn't actually all that bad, as unlike
+the common opinion, it did stack with the Shield spell, and also affected the
+elemental projectiles, but it was still inferior to an off-hand sword.  The
+new bonus can stack with Master Plate for a total of 75% reduction, making a
+Knight or a Paladin a very good tank (see notes on the aggro system below).
+
+Master Leather is now limited to magical classes, as its new ability is
+hostile spell absorption: any time the wearer is hit by a spell (including
+friendly fire), there's a (skill * 1%) chance of negating its effects (on this
+PC) and adding its cost to the PC's SP pool instead.  Importantly, it will
+fail if there's not enough "empty space" for the absorbed SP, which is why
+Knights can no longer learn this.  Light Bolt is the only spell that cannot be
+absorbed, and magical projectiles that aren't spells also don't count.
+
+I've also shuffled the GM effects of a few skills: the GM effect of Leather is
+replaced by the GM effect of Dodging (dodging in leather armor), the GM effect
+of Dodging is replaced by the Unarmed effect (the ability to dodge any hit) --
+and by the way, I've fixed it so that ANY hit can be dodged, melee or ranged,
+not just arrows (which might've been a vanilla bug); spells can't be dodged,
+though, -- and the new GM effect of Unarmed is "death touch": 0.5% * skill
+chance to instakill a monster on hit.  Like blaster eradication, this can fail
+either because of monster's Physical resistance, or with a HP-based chance.
+Also, undead, golems and other non-living monsters are immune to this effect.
+
+Next, ID Monster is improved.  One, the game now remembers whether a monster
+was identified (and at which rank), like with items, and subsequently shows
+its stats to any PC.  Two, identifying a monster also works like a minor
+debuff: at Normal, party has +5 to armor penetration agains the monster.  At
+Expert, the monster also gets negative 5 armor penetration vs. the party.  At
+Master, the monster also deals 10% less damage to the party (except with
+Energy attacks).  And at GM, party also gets +5 resistance penetration vs. it.
+
+Magic skills are not changed in behavoir, but you now need skill level 8 to
+train to Master and 12, to GM, unlike 7 and 10 resp. for all other skills.
+
+I've also buffed Axes a bit by doubling the skill's Expert recovery bonus.
+
+Finally, the AC bonuses of Staff, Sword, and Spear skill are boosted a little
+by adding the weapon's quality (i.e. its to-hit, usually) to the skill.
+
+
+=== Artifacts and other items ===
+
+Another large part of the release is artifact-related.  I've added 15 brand
+new artifacts and relics, 16 if you include a former specitem that basically
+only retained its appearance.  The total number of obtainable artifacts have
+also been increased to 20, but I've removed the ability to get an artifact
+beyond this limit from some chests (Clanker's, Hive, and there's a couple of
+new ones); rather, all such artifacts count towards the limit, and you cannot
+get a second one after respawn.  I don't want to describe the artifacts here,
+as it would spoil the fun, but I'll include a separate artifact spoiler in the
+final release (don't feel like writing it out right now).
+
+Some vanilla artifacts have also been tweaked: Titan's Belt now directly
+increases melee damage and lowers recovery instead of the stat bonuses that
+often amounted to little.  Ethric's Staff is now Soul Stealing, and it also
+reanimated monsters slain in melee as loyal zombies.  But, it drains HP at a
+fivefold rate.  The drain turns off when you're in a safe location, though.
+
+Clanker's Amulet now only gives +10 to Alchemy, but this bonus stacks with
+another Alchemy item.  It also empowers Enchant Item, same (and non-stackable
+with) as casting at noon.  Finally, Shadow's Mask skill bonus also stacks.
+
+The relics that are Good or Evil only can be used by Light- and Dark-promoted
+PCs repectively, even if the rest of the party has chosed the other path.
+
+I've also added unique sprites from MM6 and MM8 to many specitems.
+
+Next, I added some new regular items.  The graphics for these (as well as for
+some new artifacts) were drawn by Arakazam, who's pretty cool.  I've botched
+importing them in the game a little, but that will be fixed before release.
+
+The first new item class is robes.  These are equipped in the body armor slot,
+but provide minimal protection.  However, they allow using the Dodging skill,
+and can occasionally be enchanted with magic boosters and other nice bonuses.
+They also don't impact recovery and don't require any skill to use.  There are
+three regular kinds of robes, plus one artifact and one specitem.
+
+The other item class is throwing knives.  They're a missile weapon that uses
+the Dagger skill.  Early on they're inferior to bows, as they fly in an arc,
+deal less damage and can run out of charges, but Sorcerers and Druids have
+few other options as they can't use bows now (unless they're elves).
+Later, knives can shine as they get bonus damage and range from Might, and
+their recovery is very low compared to bows.  Also, the top-tier knives have
+unlimited charges.  There are three kinds of ordinary knives and one specitem.
+
+There are some changes to vanilla items, too.  Notably, crowns and staves now
+have separate enchantment pools, and can be generated with the magic boosting
+bonuses.  Also, these two plus robes have a lower chance to start unenchanted.
+
+Next, to make the above items relevant in the early-midgame, I've added lesser
+magic-school-improving bonuses, that only give +2 to a single school (plus a
+resistance bonus), but can appear much earlier.  Naturally, they don't stack
+with the better "of X magic" ones nor with each other.
+
+Other enchantments I've added: "Elemental Slaying" weapons, like in MM8.
+"Blessed" weapons, which have +10 to-hit and protect against curses.
+"Terrifying" helmets, which cause fear on a melee attack.  Armor "of
+Taunting", which increases aggro (aggro will be explained later).  And weapons
+"of the Jester", which also increase aggro and deal some extra Mind damage.
+
+Mekorig's Hammer is now Elemental Slaying.  The Perfect Bow is either Blessed
+or Cursed, depending on the path.  And Amuck is Terrifying.
+
+Blasters can now be sold, and no NPC besides the Celeste and Pit weaponsmiths
+can repair it (including hirelings).  PCs also need high skill to do it.
+
+And another change: items that increase HP, SP, Thievery and Disarm skills are
+now halved in effect, like the vanilla Armsmaster etc. bonuses.  However, at
+least the Disarm bonus is now multiplied by rank, which compensates for it.
+
+
+=== More spell changes ===
+
+This release also includes a number of spell tweaks that didn't fit into 2.0.
+
+Charm and Enslave now "formally" make the affected monster peaceful, i.e. it
+shows green on the minimap, you can rest next to it, and if it's a peasant,
+you can talk to and hire it.  Vanilla explicitly disabled that, not sure why.
+
+Reanimation now makes the resulting zombies enslaved, so they don't turn
+hostile when damaged and remain peaceful as above.  But, their max HP is
+lowered to the HP you reanimate them with, so they cannot be healed later.
+Also, killing zombies no longer gives XP, but you do get the loot, expect for
+a possible extra reagent (like troll blood), which never appears now.
+
+Recharge Item (and wand recharging in general) now only affects the portion of
+the wand's charge that was already spent, i.e. if you have a 50% spent wand
+and you recharge it to 50% charges, it will only lose 25% of its max charges.
+
+I've also added another new spell: Aura of Conflict, which replaced Telepathy.
+It compels monsters to attack the enchanted PC in preference to the rest of
+the party, so it's good for tanks, who can actually make use of high AC, HP,
+and armor skill perks now.  In more technical terms, this spell adds +1-4 to
+the PC's aggro counter, which is normally 1, but can be higher if the monster
+prefers the PC's class, race, or gender.  Some items (enchanted with "of the
+Jester", "of Taunting", and Gibbet) also add +1 each.  And when the monster
+attacks, the odds of attacking a specific PC are proportional to her aggro.
+Also, Shadow's Mask removes these race-class-gender aggro bonuses when worn.
+
+The old Telepathy spell is still available on scrolls, like Fate.  And by the
+way, the latter turned out to be non-functional when cast on a PC, so it's now
+only castable on monsters (which freed the space for the above Aura buff).
+
+Enchant Item is buffed again, as it never fails now, and higher skill value
+lowers the minimum enchantable item price slightly.
+
+GM Fire Aura is nerfed: the resulting permanent enchantment no longer adds
+2000 gold to the weapon's price; instead, it merely doubles.
+
+Immolation now lasts slightly longer (5 and 15 min/skill on Master and GM).
+
+Invisibility now lasts shorter (same values as above), and opening a chest
+immediately dispels it.  You can still pickup items from the floor.
+
+Sparks and Poison Spray are now much, much more expensive on higher ranks.
+Their damage is still obscene, but at least the SP cost matches it now.
+
+Souldrinker now restores HP equal to the amount actually drained, instead of a
+fixed per-monster value (which didn't even check immunities).
+
+Paralyze effect is nerfed, as it now has a 20% chance to wear off each time
+the affected monster is damaged.  Thus, it's not an instakill spell now.
+
+Town Portal is severely nerfed, as it now only teleports to the last visited
+town on Master, and only at GM you can choose.  Also, the success chance is
+lowered to 5% * skill both at M and GM, but with no monsters nearby it's 100%.
+
+Lloyd Beacon is also nerfed, as a character can only recall one beacon per day
+per 3 points of skill.  Setting new beacons is not restricted, though.
+
+GM Water Walk now allows safely walking on lava (but it drains SP now).
+
+Master Meteor Shower only summons 10 meteors now.
+
+Stun is massively improved: in addition to fixing some related bugs, it now
+inflicts quadruple knockback and quintuple recovery penalty (but, if the
+monster already recovers, it's reduced to prevent stunlock).  Also, Earth rank
+now decreases (the caster's) recovery from the spell.
+
+Armageddon is nerfed again: it only deals full damage to the nearby monsters
+("yellow gem" distance), and further away it's linearly reduced.  However, it
+can now be cast more times per day, and the reputation penalty is lowered.
+
+Incinerate (including when cast by monsters) now has a small instakill chance.
+
+Flight is nerfed: it can no longer be initiated above the usual max altitude,
+and in turn-based mode it's restricted much like in Merge.
+
+Finally, I've added the ability to auto-cast some normally single-player buffs
+like Regeneration and Fire Aura on all PCs at once by Ctrl-clicking the spell
+icon.  It only works with no monsters nearby, and SP cost and recovery are
+multiplied appropriately.  This doesn't work on every buff.  Also,
+Ctrl-clicking Immolation and GM Wizard Eye icons now turns them off.
+
+
+=== Other gameplay changes ===
+
+There's a bunch of other assorted mechanical changes and new features in 3.0.
+
+First of all, I've added a difficulty level switch!  It's accessible throuh
+the Controls menu and can be changed anytime except in combat.  You're advised
+to play with the setting and find what you're most comfortable with, as the
+vanilla game gets boring once you know how to play it well.  The default level
+is "easy", and it has no special effects.  On the "medium" level:
+* monsters have a 25% lower recovery (pause between actions);
+* monsters receive 25% less damage from any source;
+* monsters have a 25% chance to resist instant death effects;
+* the party gets 25% MORE experience for defeating monsters;
+* the party gets 25% less gold from almost any source (including sell prices);
+* and most PC skills are reduced by 25% (rounded down) of their base value.
+On the "hard" level, all those changes are increased to 50%.  Note that the
+lowered recovery doesn't always work in real-time mode, as monsters still need
+to complete their attack animation before they can attack again.
+
+Next, I've slightly changed the main questline.  As noted above, it's now
+possible to complete light and dark promotions in the same game (although you
+can't get both for the same class).  It's also possible to join both light and
+dark guilds.  Alternatively, you can refuse this opportunity and gain another
+small bonus later.  Also, you no longer need to wait four months after the
+caster repair for the judge to die: as long as you complete all the related
+quests, you'll need to wait a few days at most.  But if you do procrastinate,
+there will be the wait, and there won't be the light-dark thing as above.
+
+And because you no longer need to kill time, level training now only takes 8
+days no matter the number of levels, like in MM6.  However, training several
+levels at once is progressively more expensive.  Also, after getting each 10th
+level, the PC can visit the permanent "+2 to stat" wells once more, FWIW.
+
+I've also gave all GM teachers varied demands besides just skill and gold.
+Some even give you mini-quests before they can teach you!
+
+Some primary stats now have new effects.  Intellect increases wand damage,
+and Personality improves trading prices; below 30 or so they will actually
+penalize those two compared to vanilla.  And Luck now gives a chance to deal a
+double-damage "critical hit" on a weapon attack.  This does not stack with a
+backstab, and you still need to make a to-hit roll as normal.  Low Luck can
+cause you to miss instead.  Also, its effect on resistances is now quadrupled.
+
+Some hirelings have been redone.  Porters, quartermasters, and gypsies now
+work as "portable chests", carrying some of your loot or other items.  Like
+with most hirelings, two identical professions don't stack here.
+
+Cooks and chefs now give you a moderate stat boost after resting in the field
+(like in MMX!)  You can also get a similar boost by resing in a tavern.
+
+There are two more black potions.  One, "Divine Mastery", increases the PC's
+level by 1% per point of power until next rest.  This not only increases HP
+and SP pools, but can also grant a small (also percentile) bonus to skill
+values.  You can also get a similar effect from resting, as noted above.
+
+The other black potion can raise dead (but not eradicated) PCs, and it
+restores a little HP, too.  It actually replaces the Stone to Flesh potion,
+which is now white, replacing Cure Paralysis, which is now an alternative
+effect of Recharge potion.  I've pilfered the idea from BTB's mod, actually.
+
+Also, I've swapped green and blue potion effects and removed the 10 SP bonus.
+
+Next, spells cast from weapon hits (e.g. Cursed bonus or mace stun) now use
+the weapon's skill to determine resistance penetration and other such effects.
+
+Racial artifacts are no longer awarded for the Arcomage quest, but are instead
+spread around as quest rewards, stealable treasure, or both.  Also, I've
+reintroduced Elfbane, so there are now two goblin artifacts in the game.
+
+Necromancers can now curse on hit, and Droids are vulnerable to lightning.
+
+Medusae are now VERY resistant to Physical-elemental spells (not weapons).
+
+Temple healing price is slightly increased with PC level now.
+
+Arena victories now reward five times as much money.
+
+You can now collect taxes at Harmondale town hall!  Their amount depends on
+your fame gained since last visit, and also on Harmondale reputation.  If you
+arrange Harmondale to become an independent kingdom, taxes will double.
+
+A visual convenience feature: when a buff has less than 10 minutes left, the
+buff icon will blink.  It doesn't work for buffs with huge icons like Water
+Walk, and it's a bit glitchy in the widescreen mode, but it still works there.
+
+Another interface thing: when browsing spellbooks in a guild, it's noted in
+the upper left corner of spell description if the current PC can learn it.
+
+Water Walk and Fly cast from scrolls no longer drain SP.
+
+Vampiric weapons can no longer drain more HP than the late monster had left.
+
+Berserked monsters (except peasants) no longer run away because of low HP.
+
+I've added swords in stone (like in MM6) to a few outdoor locations.
+
+Liches no longer suffer penalties from old age.
+
+Finally, I've completely removed multiloot.  No more 10 relics from Wromthrax!
+
+
+=== Bug fixes ===
+
+Fuq da police, I ain't doing this right now!  Later I'll compile the long,
+long list of fixed bugs, but it can wait until the proper release.
+
+-------------------------------------------------------------------------------
+
 == Elemental Mod ver. 2.1 ==
 
 This release was mostly prompted by my comissioning new graphics for
@@ -228,9 +650,9 @@ Weakness and Remove Fear are improved instead, acting on the entire party on
 GM.  Awaken already had, so I just removed the unlimited delay to keep it
 uniform, but left the shortened recovery in place.
 
-Ressurection merits special mention, as I felt having a slightly improved
+Resurrection merits special mention, as I felt having a slightly improved
 Raise Dead as Spirit's ultimate spell was a bit underwhelming.  Now it's a
-"combat revival" sort of spell, as not only it ressurects, it also doesn't
+"combat revival" sort of spell, as not only it resurrects, it also doesn't
 inflict weakness and restores some HP, leaving the character ready for combat.
 It can still cure eradication like in vanilla, and it remains the only cure
 spell without a time limit.  The only practical downside is the 10-minute
@@ -358,7 +780,7 @@ More wand changes: they no longer disappear when they're out of charges.  You
 can see the maximum possible amount of charges the wand can have in its
 description.  Wands often spawn not fully charged.  Equipped empty wands are
 colored red, as if they were broken.  Wand price also depends on both its
-current and maximun charges.  Finally, magic shops can now recharge wands!
+current and maximum charges.  Finally, magic shops can now recharge wands!
 Fancier shops can restore more charges, up to 80% of maximum.
 
 The next few tweaks are intended to make melee slightly stronger.  Firstly,
@@ -387,7 +809,7 @@ is now meaningful.  The reputation penalties given in the dungeons (for theft,
 murder etc.) now matter as well.  Additionally, having all of a dozen
 different reputation counters made it easier to implement a gamescript command
 to change reputation in another region; many quests have been changed to make
-use of this.  The only places where reputation doesn't matters are Eeofol and
+use of this.  The only places where reputation doesn't matter are Eeofol and
 Shoals, as those regions are unpopulated; it always stays at zero there.
 
 Other reputation changes: almost all quests change it now.  Theft doesn't,
@@ -437,7 +859,7 @@ items) and stat rating (which is used for most stat-related bonuses).
 Dwarven guards have been put on a diet & exercise regimen.  Now they're much
 less likely to get stuck in doorways and block passages with their girth.
 
-Some spell descriptions have been rewritten; notably, spell schools now list
+Some skill descriptions have been rewritten; notably, spell schools now list
 learnable spells.
 
 Rest encounter probabilities are now more varied (used to be 10% almost

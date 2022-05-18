@@ -1,4 +1,12 @@
-Here are the source files for the Elemental Mod.
+This is the repository of source files for the Elemental Mod for the Might and
+Magic VII game.  The mod basically tries to correct the flaws of the original
+game by adding or changing features where it's lacking.  There are basically
+no new monsters or dungeons, as I'm not good at this, although I did add a
+bunch of new artifacts and other items.  But most of the changes concern game
+mechanics, i.e. the game code, as tweaking it is what I enjoy the most.
+
+You can discuss the mod in this Celestial Heavens topic:
+https://www.celestialheavens.com/forum/10/17167
 
 This repository is mostly for source-diving and archival purposes, so there's
 no Makefile or anything.  But if you so wish, you can probably re-compile

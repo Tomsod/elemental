@@ -283,6 +283,8 @@ fixed per-monster value (which didn't even check immunities).
 Paralyze effect is nerfed, as it now has a 20% chance to wear off each time
 the affected monster is damaged.  Thus, it's not an instakill spell now.
 
+Hammerhands now works together with GM Staff.
+
 Town Portal is severely nerfed, as it now only teleports to the last visited
 town on Master, and only at GM you can choose.  Also, the success chance is
 lowered to 5% * skill both at M and GM, but with no monsters nearby it's 100%.
@@ -402,6 +404,11 @@ Walk, and it's a bit glitchy in the widescreen mode, but it still works there.
 
 Another interface thing: when browsing spellbooks in a guild, it's noted in
 the upper left corner of spell description if the current PC can learn it.
+
+In PC skill descriptions, available skill ranks use more descriptive colors:
+white = can learn w/o further promotions, yellow = can learn after the first
+promotion, green = after either second promotion, blue = light promotion only,
+purple = dark promotion only, red = can never learn this rank.
 
 Water Walk and Fly cast from scrolls no longer drain SP.
 

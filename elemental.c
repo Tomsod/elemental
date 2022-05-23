@@ -11101,7 +11101,7 @@ static void __declspec(naked) artifact_stat_bonus(void)
         jne not_clanker
         cmp esi, STAT_ALCHEMY
         jne quit
-        add edi, 10
+        add dword ptr [esp+20], 10
         ret
         not_clanker:
         cmp eax, GARDENERS_GLOVES
@@ -11116,7 +11116,7 @@ static void __declspec(naked) artifact_stat_bonus(void)
         cmp esi, STAT_DISARM
         jne quit
         bonus:
-        add edi, 3
+        add dword ptr [esp+20], 3
         ret
         not_mask:
         sub eax, PUCK ; replaced code

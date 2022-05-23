@@ -13827,9 +13827,9 @@ static void __declspec(naked) hit_qualifier(void)
       {
         pop edx
         mov ecx, dword ptr [critical_hit]
-        cmovz ecx, dword ptr [REF(new_strings)+STR_HITS*4+ecx*4]
-        cmovnz ecx, dword ptr [REF(new_strings)+STR_SHOOTS*4+ecx*4]
-        push ecx
+        cmovz eax, dword ptr [REF(new_strings)+STR_HITS*4+ecx*4]
+        cmovnz eax, dword ptr [REF(new_strings)+STR_SHOOTS*4+ecx*4]
+        push eax
         lea eax, dword ptr [edi+168] ; replaced code
         jmp edx
       }

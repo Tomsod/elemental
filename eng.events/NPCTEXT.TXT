@@ -911,7 +911,7 @@ Also, bring our half of the key to us, as well.  It is enshrined in the Temple o
 843	"Anyway, after sending Erathia its share, you're left with %u gold."	Taxes Erathia	Harmondale Townhall
 844	"In any case, a portion of the money goes to King Parson now, but we still have %u gold left for you."	Taxes Avlee	Harmondale Townhall
 845	"Either way, since we're now independent, you get the entire sum of %u gold."	Taxes independent	Harmondale Townhall
-846	"Please sing here and here…  All done!  You can collect your money at The Vault or any other bank on the continent."	Taxes end	Harmondale Townhall
+846	"Please sign here and here…  All done!  You can collect your money at The Vault or any other bank on the continent."	Taxes end	Harmondale Townhall
 847	"This is your loyal steed.  It can carry a lot of loot, but isn't very useful for much else."	RMB text	Harmondale Cavalier Horse
 848	"This is your loyal steed.  It can carry some stuff, and makes travel on foot and via stables take two days less (but no less than one)."	RMB text	Erathia Cavalier Horse
 849	"This is your loyal steed.  It can carry some stuff, and makes travel on foot and via stables take three days less (but no less than one)."	RMB text	Tularean Cavalier Horse

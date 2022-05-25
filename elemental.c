@@ -2252,7 +2252,7 @@ static inline void new_potions(void)
     int awaken = dword(0x468eda);
     patch_dword(0x468eda, dword(0x468eca)); // swap with magic potion
     patch_dword(0x468eca, awaken); // ditto
-    erase_code(0x4687bc, 3); // nerf magic potions (no +10 bonus)
+    patch_byte(0x4687be, 5); // nerf magic potions (5 less SP per potion)
     patch_dword(0x468ef2, dword(0x468f3a)); // recharge now cures paralysis
     patch_dword(0x468f3a, dword(0x468f66)); // cure paralysis -> stone to flesh
     patch_pointer(0x468f66, raise_dead_potion); // stone to flesh -> raise dead

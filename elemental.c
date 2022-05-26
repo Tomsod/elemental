@@ -505,6 +505,7 @@ enum items
     POTION_DIVINE_MASTERY = 279,
     LAST_POTION = 279,
     HOLY_WATER = 280, // not a potion
+    DIVINE_INTERVENTION_BOOK = 487,
     FIRST_ARTIFACT = 500,
     PUCK = 500,
     IRON_FEATHER = 501,
@@ -692,6 +693,7 @@ enum qbits
     QBIT_LIGHT_PATH = 99,
     QBIT_DARK_PATH = 100,
     QBIT_FOUND_OBELISK_TREASURE = 178,
+    QBIT_LOST_DIVINE_INTERVENTION = 226,
     QBIT_DUMMY = 245,
     // my additions
     QBIT_REFILL_WOM_BARRELS = 350,
@@ -970,7 +972,7 @@ enum profession
 // New max number of global.evt comands (was 4400 before).
 #define GLOBAL_EVT_LINES 5350
 // New max size of global.evt itself (was 46080 bytes before).
-#define GLOBAL_EVT_SIZE 53000
+#define GLOBAL_EVT_SIZE 53500
 
 #define CURRENT_PLAYER 0x507a6c
 
@@ -9597,6 +9599,23 @@ static void __declspec(naked) reset_hireling_reply(void)
       }
 }
 
+// Prevent the exploit that allowed unlimited DI books from the Judge.
+static void __declspec(naked) fix_infinite_di_books(void)
+{
+    asm
+      {
+        cmp dword ptr [0xf8b028], DIVINE_INTERVENTION_BOOK ; returned item
+        jne skip
+        push 0 ; unset
+        mov edx, QBIT_LOST_DIVINE_INTERVENTION
+        mov ecx, QBITS_ADDR
+        call dword ptr ds:change_bit
+        skip:
+        cmp dword ptr [0xf8b028], 601 ; replaced code
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -9727,6 +9746,7 @@ static inline void misc_rules(void)
     // Fix some buffs not disappearing on rest.
     patch_byte(0x490d25, 24);
     hook_call(0x446066, reset_hireling_reply, 7);
+    hook_call(0x4b1ed6, fix_infinite_di_books, 10);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

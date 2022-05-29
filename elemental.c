@@ -697,7 +697,7 @@ enum qbits
     QBIT_DUMMY = 245,
     // my additions
     QBIT_REFILL_WOM_BARRELS = 350,
-    QBIT_ELVES_WON = 361,
+    QBIT_ELVES_WON = 360,
     QBIT_HARMONDALE_INDEPENDENT = 362,
     QBIT_BOW_GM_QUEST_ACTIVE = 367,
     QBIT_BOW_GM_QUEST = 368,
@@ -2761,6 +2761,7 @@ static void __declspec(naked) enchant_weapon(void)
         mov eax, SPC_INFERNOS_2
         ok:
         mov dword ptr [esi+12], eax
+        xor eax, eax ; set zf
         ret 4
         temporary:
         mov ecx, esi

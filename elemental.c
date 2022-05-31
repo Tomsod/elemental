@@ -12634,6 +12634,10 @@ static void __declspec(naked) fix_static_chest_items(void)
         mov ecx, dword ptr [esp+32]
         test byte ptr [ecx+2], 0x40 ; true if chest already checked
         jnz skip
+        test byte ptr [ebx+21], 5 ; set by mm7patch for tlvl6 artifacts
+        jz not_random
+        jp skip ; can appear in this loop, but aren`t preplaced
+        not_random:
         mov eax, dword ptr [ebx]
         cmp eax, FIRST_ARTIFACT
         jb ok

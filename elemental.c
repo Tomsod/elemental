@@ -11967,6 +11967,39 @@ static void __declspec(naked) save_temple_beacon_hook(void)
       }
 }
 
+// Disallow using TiaB in Arena, as this would reset it anyway.
+static void __declspec(naked) bottle_in_arena(void)
+{
+    asm
+      {
+        push dword ptr [esp+8] ; map filename
+        push 0x4e44b0 ; arena filename
+        call dword ptr ds:uncased_strcmp
+        test eax, eax
+        jz forbid
+        mov dword ptr [esp], edi ; bottle temple filename
+        call dword ptr ds:uncased_strcmp
+        test eax, eax
+        jz forbid
+        add esp, 8
+        ret
+        forbid:
+        add esp, 8
+        push eax
+        push eax
+        push eax
+        push eax
+        push -1
+        push eax
+        push eax
+        push SOUND_BUZZ
+        mov ecx, SOUND_THIS_ADDR
+        call dword ptr ds:make_sound
+        xor eax, eax
+        ret
+      }
+}
+
 // Pseudo-map marker for MoveToMap event that is used in temple's exit door.
 static const char leavetiab[] = "leavetiab";
 static int tiab_strcmp; // so as not to compare twice
@@ -12750,6 +12783,7 @@ static inline void new_artifacts(void)
     // Viper swiftness is in temp_swiftness() above
     // poison damage is also in headache_mind_damage()
     hook_call(0x44c2d5, save_temple_beacon_hook, 6);
+    hook_call(0x44c2c7, bottle_in_arena, 5);
     hook_call(0x447f80, movemap_leavetiab, 7);
     hook_call(0x44800a, movemap_immediate, 5);
     hook_call(0x4483f7, movemap_dialog, 5);
@@ -16817,7 +16851,7 @@ static void __declspec(naked) learn_gm_skill(void)
         jnz quest
         ordinary:
         cmp ecx, ebx
-        jz free
+        jz no_money
         jg gold
         mov eax, dword ptr [CURRENT_PLAYER]
         test eax, eax
@@ -16829,7 +16863,7 @@ static void __declspec(naked) learn_gm_skill(void)
         xor ecx, ecx ; no gold cost, but make a sound
         gold:
         call dword ptr ds:spend_gold
-        free:
+        no_money:
         mov eax, dword ptr [CURRENT_PLAYER]
         test eax, eax
         quit:

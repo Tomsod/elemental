@@ -1,0 +1,137 @@
+This is the new artifact spoiler for Elemental Mod, accurate as of v3.0.
+The player is not expected to read it before playing, as discovery is part of
+the fun.  However, you should consult this file if you're unsure precisely how
+the artifact you've found works.
+
+First of all, a total of 45 artifacts and relics exists in the mod, 16 of them
+newly added.  (This does not include various 'special items' that show up at
+predetermined places.)  In a single game, however, it's only possible to
+collect a total of 20 artifacts, 12 of them as random drop from dragons and
+other treasure level 6 generators (including some chests), and 8 more appearing
+in specific chests scattered throughout the game -- these chests always contain
+some kind of artifact or relic, but which one is usually random.  Unlike in
+vanilla, waiting for respawn won't grant you more artifacts from such chests.
+
+Here's the list of those artifact chests:
+* four artifacts in the obelisk treasure;
+* one artifact as part of Arcomage reward;
+* one artifact in Clanker's Laboratory (just like in vanilla);
+* one artifact in Colony Zod (also in vanilla);
+* and one artifact in the Shoals.
+
+Now I'll describe the 16 new artifacts in detail.
+
+1. Dragon's Wrath (wand)
+An artifact wand that shoots Dragon Breath.  It cannot be recharged by external
+means, but instead regenerates one charge every 30 minutes on its own.  It has
+a limit of 17 charges.  It behaves like any other wand otherwise.
+
+2. Headache (axe)
+A relic axe that deals extra Mind damage with a chance of inflicting Berserk,
+but penalizes mental stats.  The Mind damage acts like any other elemental
+damage bonus.  Berserk triggers on 20% of hits, and the power of the spell
+depends on the wielder's Axe skill (acting instead of Mind Magic), including
+duration and the bonus to resistance penetration (yes, it can be resisted).
+
+3. Storm Trident (spear)
+An artifact trident that deals extra Shock damage, grants water walking and
+Shock immunity, and adds a 0 SP Lightning Bolt to the wielder's spellbook.
+The added spell can be cast by anyone, even Knights, and uses Spear skill
+instead of Air Magic for determining damage and recovery.  Note that there's no
+way to cast "ordinary" Air-Magic-dependent LB while the trident is wielded.
+
+4. Ellinger's Robe (robe)
+An artifact robe that provides Preservation (as the spell) and unconditional
+immunity to Weakness (even e.g. from Haste or lack of rest), and adds +2 to
+every magic skill of the wearer.  This last bonus does stack with ordinary
+magic-boosting items.  As a robe, it can be worn by anyone.  It's probably a
+good idea to Harden it, otherwise its Preservation bonus would be unreliable.
+
+5. Viper (staff)
+An artifact staff with a speed bonus, extra Poison damage, and a 20% chance
+to cast Slow on hit.  The spell uses the wielder's Staff skill to determine
+duration, power, and resistance penetration.  This artifact is mostly intended
+for Monks, who lacked a good artifact weapon in vanilla.
+
+6. Temple in a Bottle (misc)
+Previously an entrance to the credits dungeon, it's now actually useful!  The
+bottle teleports the party to a small room with a temple and four chests, and
+exiting it will return to whenever the artifact was used (and give back the
+bottle).  It cannot be used before it's identified, and also in Arena.  Lloyd's
+Beacon and Invisibility cannot be cast inside the bottle.  It can still be
+found in Shoals, but may also appear randomly before that, in which case the
+Shoals chest will contain another random artifact.
+
+7. Sword of Light (sword)
+A relic sword that attacks with Energy, adds +5 to Light Magic, and can only be
+used by Good characters.  The magic bonus stacks with the ordinary "of Light
+Magic" bonus.  Like with other aligned relics, it can be used by Light-promoted
+PCs even if the party as a whole is on the Dark path.  If the sword is wielded
+together with some other weapon, only 50% of the total melee damage is dealt as
+Energy, and the rest depends on the other weapon.  While this relic is mainly
+intended for Paladins, it's also a good fit for Goblin Sorcerers or Clerics.
+
+8. Oghma Infinium (misc)
+A relic book that can be consumed (after it's identified) for a 80 skill point
+bonus, at the cost of 20 permanent age and 20 more temporary (curable) age.
+For Liches in particular, it's purely beneficial, as they don't have age
+penalties.  This relic will usually be found in obelisk treasure, unless it was
+generated somewhere else before the party's first visit to Evenmorn Island.
+
+9. Grim Reaper (poleaxe)
+A relic poleaxe that has a 20% chance each hit to (attempt to) instantly kill
+its target.  This costs 15 SP, or twice as much HP if the wielder is out of SP.
+The relic also passively drains 1 SP per 5 minutes while enemies are nearby.
+The target may resist the death effect, either through Magic resistance (the
+wielder's Axe skill determines resistance penetration), or through HP (with a
+chance equal to (monster's current HP) / (monster's total HP)).  On higher
+difficulties, instant death also has a chance to fail unconditionally.
+
+10. Witchbane (amulet)
+A relic amulet that grants immunity to non-elemental Magic, but sets max SP to
+zero.  This does not disallow spellcasting by itself, but any remaining SP will
+gradually disappear as per the overheal mechanic.  For Knights and other
+non-spellcasters, this item is purely beneficial, but even other classes can
+use it tactically, as Magic immunity protects from most sources of instant
+death, among other things.
+
+11. Bag of Holding (misc)
+An artifact pouch that can be used to open a 9x9 chest-like space.  Works much
+like a porter hireling.  Note that if you sell or lose the bag, the items
+inside are lost forever!  Cannot be used before it's identified.
+
+12. Clover (mace)
+An artifact mace that adds +50 to Luck and doubles the wielder's critical hit
+chance.  Currently, ranged critical chance is affected as well.  Since a
+critical hit is essentially a damage multiplier, this artifact gets more
+effective the higher your base damage (and Luck) is.
+
+13. Flattener (mace)
+A relic hammer with the Spectral property (attacks with either Physical or
+Magic element, whichever is more beneficial) that also has a 10% chance to
+cast Mass Distortion on hit, but requires two hands to wield.  It CAN be used
+in one hand, but this will penalize melee recovery by 20 points.  Mass
+Distortion uses the wielder's Mace skill for determining damage, and like the
+weapon itself, may use either Physical or Magic element, dep. on the monster.
+
+14. Eloquence Talisman (amulet)
+A relic amulet that lowers the recovery of all cast spells by 25% and also adds
++5 to Merchant skill, but drains 1 SP every 5 minutes.  The recovery bonus
+essentially increases the caster's DPS (but also SP expenses) by a third.
+
+15. Gadgeteer's Belt (belt)
+An artifact belt that improves magical consumables: both scrolls and wands are
+cast at GM and get +5 to spell power, and most potions (EXCEPT black) also get
++25% to base power when used.  Thieves get double benefits from this artifact
+(+10 and +50% respectively).
+
+16. Gardener's Gloves (gauntlets)
+Artifact gloves that improve Earth Magic (the usual +50% bonus to skill), but
+also allow any monster to drop a reagent on death.  The monster must be damaged
+by the artifact's wearer at least once (melee, ranged, or magic; Armageddon
+does NOT count), and the chance to drop a reagent is 5%, or 15% if the wearer
+is a Ranger or a Druid.  Reagent's power depends on the late monster's level,
+but the color is random.  70+ level monsters can drop the most powerful
+reagents.  Monsters that already can drop a reagent (e.g. trolls) are
+unaffected by this artifact.  And like with those "natural" reagents,
+reanimated monsters never drop reagents from this artifact either.

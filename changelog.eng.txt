@@ -169,8 +169,8 @@ also been increased to 20, but I've removed the ability to get an artifact
 beyond this limit from some chests (Clanker's, Hive, and there's a couple of
 new ones); rather, all such artifacts count towards the limit, and you cannot
 get a second one after respawn.  I don't want to describe the artifacts here,
-as it would spoil the fun, but I'll include a separate artifact spoiler in the
-final release (don't feel like writing it out right now).
+as it would spoil the fun, but if you're curious about what I've added, visit
+https://github.com/Tomsod/elemental/blob/master/artifacts.eng.txt
 
 Some vanilla artifacts have also been tweaked: Titan's Belt now directly
 increases melee damage and lowers recovery instead of the stat bonuses that

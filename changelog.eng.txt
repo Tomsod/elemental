@@ -156,6 +156,12 @@ train to Master and 12, to GM, unlike 7 and 10 resp. for all other skills.
 
 I've also buffed Axes a bit by doubling the skill's Expert recovery bonus.
 
+Master Dagger bonus is changed, it now adds skill to critical hit chance
+(normally equal to Luck bonus, see below).  Essentially it's a damage
+multiplier, so wielding a good weapon together with an offhand dagger is a bit
+more advantageous if you have Master.  Archers in particular can do it now.
+Wielding two daggers doubles the bonus, and throwing knives are also affected.
+
 Finally, the AC bonuses of Staff, Sword, and Spear skill are boosted a little
 by adding the weapon's quality (i.e. its to-hit, usually) to the skill.
 

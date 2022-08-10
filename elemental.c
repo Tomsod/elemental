@@ -12857,7 +12857,7 @@ static void __declspec(naked) check_missile_skill(void)
 }
 
 // Do not add GM Bow damage if we're using blasters.
-// For throwing knives, add Dagger skill boni and half Might.
+// For throwing knives, add GM Dagger bonus and half Might.
 static void __declspec(naked) check_missile_skill_2(void)
 {
     asm
@@ -12873,23 +12873,10 @@ static void __declspec(naked) check_missile_skill_2(void)
         mov ecx, eax
         push SKILL_DAGGER
         call dword ptr ds:get_skill
-        cmp eax, SKILL_MASTER
-        jb no_skill
-        mov ebx, eax
-        call dword ptr ds:random
-        xor edx, edx
-        mov ecx, 100
-        div ecx
-        mov eax, ebx
+        cmp eax, SKILL_GM
+        jbe no_skill
         and eax, SKILL_MASK
-        cmp eax, edx
-        jbe no_crit
-        lea esi, [esi+esi*2]
-        no_crit:
-        cmp ebx, SKILL_GM
-        jb no_skill
-        and ebx, SKILL_MASK
-        add esi, ebx
+        add esi, eax
         no_skill:
         lea ecx, [edi-0x112] ; PC
         call dword ptr ds:get_might
@@ -15293,39 +15280,76 @@ static void __declspec(naked) sniper_accuracy(void)
         jz weapon
         cmp dword ptr [ebx+72], SPL_ARROW
         jb quit ; blades spell etc.
+        cmp dword ptr [ebx+72], SPL_KNIFE
+        jne not_dagger
         weapon:
+        mov ecx, edi
+        push SKILL_DAGGER
+        call dword ptr ds:get_skill
+        cmp eax, SKILL_MASTER
+        jbe not_dagger
+        and eax, SKILL_MASK
+        test ebx, ebx
+        jz melee
+        mov dword ptr [ebp-36], eax ; unused and zero here
+        jmp not_dagger
+        melee:
+        mov edx, dword ptr [edi+0x1948+SLOT_MAIN_HAND*4]
+        test edx, edx
+        jz offhand
+        lea edx, [edx+edx*8]
+        test byte ptr [edi+0x1f0+edx*4+20], IFLAGS_BROKEN
+        jnz offhand
+        mov ecx, dword ptr [edi+0x1f0+edx*4]
+        lea ecx, [ecx+ecx*2]
+        shl ecx, 4
+        cmp byte ptr [ITEMS_TXT_ADDR+ecx+29], SKILL_DAGGER
+        jne offhand
+        mov dword ptr [ebp-36], eax
+        offhand:
+        mov edx, dword ptr [edi+0x1948+SLOT_OFFHAND*4]
+        test edx, edx
+        jz not_dagger
+        lea edx, [edx+edx*8]
+        test byte ptr [edi+0x1f0+edx*4+20], IFLAGS_BROKEN
+        jnz not_dagger
+        mov ecx, dword ptr [edi+0x1f0+edx*4]
+        lea ecx, [ecx+ecx*2]
+        shl ecx, 4
+        cmp byte ptr [ITEMS_TXT_ADDR+ecx+29], SKILL_DAGGER
+        jne not_dagger
+        add dword ptr [ebp-36], eax
+        not_dagger:
         mov ecx, edi
         call dword ptr ds:get_luck
         push eax
         call dword ptr ds:get_effective_stat
-        test eax, eax
+        add dword ptr [ebp-36], eax
         jge crit
-        push eax
         call dword ptr ds:random
         xor edx, edx
         mov ecx, 100
         div ecx
-        pop eax
-        add eax, edx
+        add edx, dword ptr [ebp-36]
         jge hit
         jmp no_crit
         crit:
-        push eax
+        test ebx, ebx
+        jnz no_clover ; melee only
         mov ecx, edi
         push SLOT_MAIN_HAND
         push CLOVER
         call dword ptr ds:has_item_in_slot
         test eax, eax
         jz no_clover
-        shl dword ptr [esp], 1
+        shl dword ptr [ebp-36], 1
         no_clover:
         call dword ptr ds:random
         xor edx, edx
         mov ecx, 100
         div ecx
-        pop eax
-        cmp eax, edx
-        jbe hit
+        cmp edx, dword ptr [ebp-36]
+        jae hit
         mov dword ptr [critical_hit], 1
         hit:
         cmp dword ptr [critical_hit], 2
@@ -15358,8 +15382,8 @@ static void __declspec(naked) sniper_accuracy(void)
         no_thievery:
         and dword ptr [critical_hit], 0
         check_crit:
-        xor eax, eax ; to distinguish from critical miss
-        cmp dword ptr [critical_hit], eax
+        xor edx, edx ; to distinguish from critical miss
+        cmp dword ptr [critical_hit], edx
         jz no_crit
         shl dword ptr [ebp-12], 1 ; total damage
         no_crit:
@@ -15372,8 +15396,9 @@ static void __declspec(naked) sniper_accuracy(void)
         mov eax, 1
         ret
         not_it:
-        test eax, eax ; < 0 if critical miss
+        test edx, edx ; < 0 if critical miss
         jz quit
+        xor eax, eax
         ret
         quit:
         push 0x4272ac ; replaced call
@@ -15578,17 +15603,17 @@ static inline void class_changes(void)
             0, 2, 0, 3, 4, 3, 2, 1, 4, 0, 0, 0, 1, 0, 3, 2, 0, 1},
           {1, 2, 2, 2, 2, 2, 0, 2, 0, 2, 2, 0, 1, 2, 1, 1, 0, 0, 0,
             0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 1, 2, 1, 0, 2, 0, 0, 2},
-          {1, 2, 2, 2, 3, 3, 0, 3, 0, 3, 3, 0, 2, 3, 2, 2, 0, 0, 0,
+          {1, 2, 3, 2, 3, 3, 0, 3, 0, 3, 3, 0, 2, 3, 2, 2, 0, 0, 0,
             0, 0, 0, 2, 2, 2, 2, 3, 0, 0, 2, 2, 1, 0, 2, 0, 0, 3},
-          {1, 2, 2, 2, 3, 4, 0, 4, 0, 3, 4, 0, 3, 4, 4, 3, 0, 0, 0,
+          {1, 2, 3, 2, 3, 4, 0, 4, 0, 3, 4, 0, 3, 4, 4, 3, 0, 0, 0,
             2, 0, 0, 2, 2, 2, 2, 4, 0, 0, 2, 2, 1, 0, 2, 0, 0, 3},
-          {1, 2, 2, 2, 3, 4, 0, 4, 0, 3, 4, 0, 4, 4, 3, 3, 0, 0, 0,
+          {1, 2, 3, 2, 3, 4, 0, 4, 0, 3, 4, 0, 4, 4, 3, 3, 0, 0, 0,
             0, 2, 0, 2, 2, 2, 2, 4, 0, 0, 2, 2, 1, 0, 2, 0, 0, 3},
           {1, 2, 2, 2, 2, 2, 0, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 1, 1, 1, 2, 0, 2, 2, 0, 2, 2, 1, 2, 2, 2, 1, 2},
           {1, 2, 2, 3, 3, 3, 0, 3, 2, 3, 3, 0, 2, 0, 2, 3, 0, 2, 2,
             0, 0, 1, 1, 1, 2, 1, 3, 2, 0, 2, 2, 1, 3, 2, 2, 1, 2},
-          {1, 3, 2, 4, 3, 3, 0, 3, 2, 3, 4, 0, 2, 0, 3, 4, 0, 2, 4,
+          {1, 2, 2, 4, 3, 3, 0, 3, 2, 3, 4, 0, 2, 0, 3, 4, 0, 2, 4,
             0, 0, 1, 1, 1, 2, 1, 4, 2, 0, 2, 2, 1, 4, 3, 2, 1, 2},
           {1, 2, 2, 4, 3, 3, 0, 3, 2, 3, 3, 0, 2, 0, 3, 4, 0, 3, 3,
             0, 0, 1, 1, 1, 2, 1, 4, 2, 0, 3, 2, 1, 4, 3, 3, 1, 2},
@@ -17306,6 +17331,9 @@ static inline void skill_changes(void)
     hook_call(0x48fbd5, level_skill_bonus, 8);
     hook_call(0x48ffdc, store_weapon_quality_bonus, 7);
     hook_call(0x49005b, add_weapon_quality_bonus_to_ac, 5);
+    // new master dagger bonus is in sniper_accuracy() above
+    patch_byte(0x48cee9, 0xeb); // remove old bonus (main hand)
+    patch_byte(0x48d014, 0xeb); // offhand
 }
 
 // Switch off some of MM7Patch's features to ensure compatibility.

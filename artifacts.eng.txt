@@ -102,9 +102,8 @@ inside are lost forever!  Cannot be used before it's identified.
 
 12. Clover (mace)
 An artifact mace that adds +50 to Luck and doubles the wielder's critical hit
-chance.  Currently, ranged critical chance is affected as well.  Since a
-critical hit is essentially a damage multiplier, this artifact gets more
-effective the higher your base damage (and Luck) is.
+chance (in melee).  Since a critical hit is essentially a damage multiplier,
+this artifact gets more effective the higher your base damage (and Luck) is.
 
 13. Flattener (mace)
 A relic hammer with the Spectral property (attacks with either Physical or

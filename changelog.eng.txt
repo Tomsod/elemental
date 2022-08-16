@@ -194,8 +194,7 @@ PCs repectively, even if the rest of the party has chosed the other path.
 I've also added unique sprites from MM6 and MM8 to many specitems.
 
 Next, I added some new regular items.  The graphics for these (as well as for
-some new artifacts) were drawn by Arakazam, who's pretty cool.  I've botched
-importing them in the game a little, but that will be fixed before release.
+some new artifacts) were drawn by Arakazam, who's pretty cool.
 
 The first new item class is robes.  These are equipped in the body armor slot,
 but provide minimal protection.  However, they allow using the Dodging skill,

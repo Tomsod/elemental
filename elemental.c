@@ -18627,6 +18627,7 @@ static void __declspec(naked) horse_topics(void)
         mov ecx, QBITS_ADDR
         call dword ptr ds:change_bit
         quit:
+        mov dword ptr [0x590f0c], 78 ; fix null pointer reply
         mov dword ptr [esp], 0x4bc81e ; after action code
         ret
       }

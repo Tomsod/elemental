@@ -181,7 +181,7 @@ https://github.com/Tomsod/elemental/blob/master/artifacts.eng.txt
 Some vanilla artifacts have also been tweaked: Titan's Belt now directly
 increases melee damage and lowers recovery instead of the stat bonuses that
 often amounted to little.  Ethric's Staff is now Soul Stealing, and it also
-reanimated monsters slain in melee as loyal zombies.  But, it drains HP at a
+reanimates monsters slain in melee as loyal zombies.  But, it drains HP at a
 fivefold rate.  The drain turns off when you're in a safe location, though.
 
 Clanker's Amulet now only gives +10 to Alchemy, but this bonus stacks with
@@ -229,7 +229,7 @@ Mekorig's Hammer is now Elemental Slaying.  The Perfect Bow is either Blessed
 or Cursed, depending on the path.  And Amuck is Terrifying.
 
 Blasters can now be sold, and no NPC besides the Celeste and Pit weaponsmiths
-can repair it (including hirelings).  PCs also need high skill to do it.
+can ID or repair it (including hirelings).  PCs also need high skill to do it.
 
 And another change: items that increase HP, SP, Thievery and Disarm skills are
 now halved in effect, like the vanilla Armsmaster etc. bonuses.  However, at
@@ -318,8 +318,10 @@ and in turn-based mode it's restricted much like in Merge.
 Finally, I've added the ability to auto-cast some normally single-player buffs
 like Regeneration and Fire Aura on all PCs at once by Ctrl-clicking the spell
 icon.  It only works with no monsters nearby, and SP cost and recovery are
-multiplied appropriately.  This doesn't work on every buff.  Also,
-Ctrl-clicking Immolation and GM Wizard Eye icons now turns them off.
+multiplied appropriately.  This doesn't work on every buff.  Weapon
+enchantments are applied to every wielded melee weapon, or to every wielded
+missile weapon if no melee weapons can be enchanted (or if all already are).
+Also, Ctrl-clicking Immolation and GM Wizard Eye icons now turns them off.
 
 
 === Other gameplay changes ===
@@ -346,7 +348,7 @@ possible to complete light and dark promotions in the same game (although you
 can't get both for the same class).  It's also possible to join both light and
 dark guilds.  Alternatively, you can refuse this opportunity and gain another
 small bonus later.  Also, you no longer need to wait four months after the
-caster repair for the judge to die: as long as you complete all the related
+castle repair for the judge to die: as long as you complete all the related
 quests, you'll need to wait a few days at most.  But if you do procrastinate,
 there will be the wait, and there won't be the light-dark thing as above.
 
@@ -382,7 +384,7 @@ restores a little HP, too.  It actually replaces the Stone to Flesh potion,
 which is now white, replacing Cure Paralysis, which is now an alternative
 effect of Recharge potion.  I've pilfered the idea from BTB's mod, actually.
 
-Also, I've swapped green and blue potion effects and removed the 10 SP bonus.
+Also, I've swapped green and blue potions and reduced the 10 SP bonus to 5.
 
 Next, spells cast from weapon hits (e.g. Cursed bonus or mace stun) now use
 the weapon's skill to determine resistance penetration and other such effects.
@@ -518,7 +520,7 @@ Ghosts and Wraiths, who are now immune to unenchanted weapons.
 
 Swift Potions have also been given a new functionality: drinking them causes
 the character to instantly recover (i.e. get an extra turn).  It's probably a
-suboptimal use of a potion in most cases, but some spells (e.g. Ressurection)
+suboptimal use of a potion in most cases, but some spells (e.g. Resurrection)
 have very long recovery which could make it worthwhile in a combat situation.
 
 There's a number of tweaks as well.  Notably, black potions of Pure Attribute

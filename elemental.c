@@ -7355,17 +7355,16 @@ static void __declspec(naked) armageddon_hook(void)
 static void __stdcall bounty_rep(int level)
 {
     int rep = (level + 10) / 20; // 0 to 5
-    if (rep)
-        CURRENT_REP -= rep;
-    rep /= 2;
-    if (rep)
-        for (int i = 0; i < 4; i++)
-            if (PARTY[i].class == CLASS_BOUNTY_HUNTER)
-              {
-                PARTY[i].skill_points += rep;
-                spell_face_anim(SPELL_ANIM_THIS, SPELL_ANIM_SPARKLES, i);
-                show_face_animation(PARTY + i, ANIM_SMILE, 0);
-              }
+    if (!rep)
+        return;
+    CURRENT_REP -= rep;
+    for (int i = 0; i < 4; i++)
+        if (PARTY[i].class == CLASS_BOUNTY_HUNTER)
+          {
+            PARTY[i].skill_points += rep;
+            spell_face_anim(SPELL_ANIM_THIS, SPELL_ANIM_SPARKLES, i);
+            show_face_animation(PARTY + i, ANIM_SMILE, 0);
+          }
 }
 
 // Hook for the above.

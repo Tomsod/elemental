@@ -731,3 +731,6 @@ Global Text
 728	backstabs
 729	shoots
 730	critically shoots
+731	Critical hit chance
+732	Critical miss chance
+733	Average damage per round

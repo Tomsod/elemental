@@ -287,6 +287,9 @@ enum new_strings
     STR_BACKSTABS,
     STR_SHOOTS,
     STR_CRITICALLY_SHOOTS,
+    STR_CRIT_HIT_CHANCE,
+    STR_CRIT_MISS_CHANCE,
+    STR_AVERAGE_DPR,
     NEW_STRING_COUNT
 };
 
@@ -1254,6 +1257,20 @@ static int __cdecl (*fread)(void *buffer, int size, int count, void *stream)
     = (funcptr_t) 0x4cb8a5;
 static int (*get_eff_reputation)(void) = (funcptr_t) 0x47752f;
 static int __thiscall (*get_full_sp)(void *player) = (funcptr_t) 0x48e55d;
+static int __thiscall (*equipped_item_skill)(void *player, int slot)
+    = (funcptr_t) 0x48d637;
+static int __thiscall (*has_anything_in_slot)(void *player, int slot)
+    = (funcptr_t) 0x48d690;
+static int __thiscall (*get_min_melee_damage)(void *player)
+    = (funcptr_t) 0x48cd2b;
+static int __thiscall (*get_max_melee_damage)(void *player)
+    = (funcptr_t) 0x48cd76;
+static int __thiscall (*get_min_ranged_damage)(void *player)
+    = (funcptr_t) 0x48d10a;
+static int __thiscall (*get_max_ranged_damage)(void *player)
+    = (funcptr_t) 0x48d177;
+static int __thiscall (*get_attack_delay)(void *player, int ranged)
+    = (funcptr_t) 0x48e19b;
 static int __thiscall (*hireling_action)(int id) = (funcptr_t) 0x4bb6b9;
 static int __cdecl (*add_button)(void *dialog, int left, int top, int width,
                                  int height, int unknown1, int hover_action,
@@ -7978,6 +7995,63 @@ static char *__stdcall resistance_hint(char *description, int resistance)
     return buffer;
 }
 
+// Provide additional info for melee and ranged damage, too.
+static char *__stdcall damage_hint(char *description, int ranged)
+{
+    static char buffer[400];
+    struct player *player = &PARTY[dword(CURRENT_PLAYER)-1];
+    int crit = get_effective_stat(get_luck(player));
+    int dagger = get_skill(player, SKILL_DAGGER);
+    if (dagger >= SKILL_MASTER)
+      {
+        dagger &= SKILL_MASK;
+        int equip = player->equipment[ranged?SLOT_MISSILE:SLOT_MAIN_HAND];
+        for (int i = ranged; i < 2; i++)
+          {
+            if (equip)
+              {
+                struct item *weapon = &player->items[equip-1];
+                if (!(weapon->flags & IFLAGS_BROKEN)
+                    && ITEMS_TXT[weapon->id].skill == SKILL_DAGGER)
+                    crit += dagger;
+              }
+            if (!i)
+                equip = player->equipment[SLOT_OFFHAND];
+          }
+      }
+    int display_damage = !ranged || has_anything_in_slot(player, SLOT_MISSILE);
+    if (!crit && !display_damage)
+        return description;
+    strcpy(buffer, description);
+    if (crit > 0)
+      {
+        if (!ranged && has_item_in_slot(player, CLOVER, SLOT_MAIN_HAND))
+            crit *= 2;
+        sprintf(buffer + strlen(buffer), "\n\n%s: %d%%",
+                new_strings[STR_CRIT_HIT_CHANCE], crit);
+      }
+    else if (crit < 0)
+        sprintf(buffer + strlen(buffer), "\n\n%s: %d%%",
+                new_strings[STR_CRIT_MISS_CHANCE], -crit);
+    else strcat(buffer, "\n");
+    if (!display_damage)
+        return buffer;
+    int avg;
+    if (ranged)
+      {
+        avg = get_min_ranged_damage(player) + get_max_ranged_damage(player);
+        if (equipped_item_skill(player, SLOT_MISSILE) == SKILL_BOW
+            && get_skill(player, SKILL_BOW) >= SKILL_MASTER)
+            avg *= 2;
+      }
+    else
+        avg = get_min_melee_damage(player) + get_max_melee_damage(player);
+    double dpr = avg / 2.0 * (100 + crit) / get_attack_delay(player, ranged);
+    sprintf(buffer + strlen(buffer), "\n%s: %.1f",
+            new_strings[STR_AVERAGE_DPR], dpr);
+    return buffer;
+}
+
 // Hook for the above.
 // TODO: could also call stat_hint()
 static void __declspec(naked) display_melee_recovery_hook(void)
@@ -7993,6 +8067,18 @@ static void __declspec(naked) display_melee_recovery_hook(void)
         call resistance_hint
         mov ebx, eax
         not_resistance:
+        xor edx, edx
+        cmp edi, 16 ; melee damage
+        je damage
+        inc edx
+        cmp edi, 18 ; ranged damage
+        jne skip
+        damage:
+        push edx
+        push ebx
+        call damage_hint
+        mov ebx, eax
+        skip:
         mov ecx, dword ptr [ebp-4] ; replaced code
         test ecx, ecx ; replaced code
         ret

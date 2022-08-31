@@ -367,6 +367,10 @@ double-damage "critical hit" on a weapon attack.  This does not stack with a
 backstab, and you still need to make a to-hit roll as normal.  Low Luck can
 cause you to miss instead.  Also, its effect on resistances is now quadrupled.
 
+You can check your critical hit (or miss) chance, and also average damage per
+round (disregarding elemental damage and monster armor class and resistances),
+by right-clicking on the PC's damage values at the stats screen.
+
 Some hirelings have been redone.  Porters, quartermasters, and gypsies now
 work as "portable chests", carrying some of your loot or other items.  Like
 with most hirelings, two identical professions don't stack here.

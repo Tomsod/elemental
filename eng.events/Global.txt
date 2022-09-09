@@ -734,3 +734,4 @@ Global Text
 731	Critical hit chance
 732	Critical miss chance
 733	Average damage per round
+734	Spell power

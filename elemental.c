@@ -290,6 +290,7 @@ enum new_strings
     STR_CRIT_HIT_CHANCE,
     STR_CRIT_MISS_CHANCE,
     STR_AVERAGE_DPR,
+    STR_SPELL_POWER,
     NEW_STRING_COUNT
 };
 
@@ -1257,6 +1258,8 @@ static int __cdecl (*fread)(void *buffer, int size, int count, void *stream)
     = (funcptr_t) 0x4cb8a5;
 static int (*get_eff_reputation)(void) = (funcptr_t) 0x47752f;
 static int __thiscall (*get_full_sp)(void *player) = (funcptr_t) 0x48e55d;
+static int __thiscall (*equipped_item_type)(void *player, int slot)
+    = (funcptr_t) 0x48d612;
 static int __thiscall (*equipped_item_skill)(void *player, int slot)
     = (funcptr_t) 0x48d637;
 static int __thiscall (*has_anything_in_slot)(void *player, int slot)
@@ -8000,6 +8003,21 @@ static char *__stdcall damage_hint(char *description, int ranged)
 {
     static char buffer[400];
     struct player *player = &PARTY[dword(CURRENT_PLAYER)-1];
+    int display_damage = !ranged;
+    if (ranged && has_anything_in_slot(player, SLOT_MISSILE))
+      {
+        if (equipped_item_type(player, SLOT_MISSILE) == ITEM_TYPE_WAND - 1)
+          {
+            strcpy(buffer, description);
+            int power = 5 + (get_effective_stat(get_intellect(player)) >> 1);
+            if (has_item_in_slot(player, GADGETEERS_BELT, SLOT_BELT))
+                power += (player->class & -4) == CLASS_THIEF ? 10 : 5;
+            sprintf(buffer + strlen(buffer), "\n\n%s: %d",
+                    new_strings[STR_SPELL_POWER], power);
+            return buffer;
+          }
+        display_damage = TRUE;
+      }
     int crit = get_effective_stat(get_luck(player));
     int dagger = get_skill(player, SKILL_DAGGER);
     if (dagger >= SKILL_MASTER)
@@ -8019,7 +8037,6 @@ static char *__stdcall damage_hint(char *description, int ranged)
                 equip = player->equipment[SLOT_OFFHAND];
           }
       }
-    int display_damage = !ranged || has_anything_in_slot(player, SLOT_MISSILE);
     if (!crit && !display_damage)
         return description;
     strcpy(buffer, description);

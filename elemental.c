@@ -10443,6 +10443,9 @@ static void __declspec(naked) display_cursed_debuff(void)
       }
 }
 
+// Used in train_armor() below to determine who gets training from the block.
+static struct player *blocker;
+
 // Cursed monsters now miss 50% of their attacks against PCs.
 static void __declspec(naked) cursed_monster_hits_player(void)
 {
@@ -10456,6 +10459,7 @@ static void __declspec(naked) cursed_monster_hits_player(void)
         and eax, 1
         jnz success
         pop ecx
+        mov dword ptr [blocker], eax ; technically not blocked
         ret 8 ; force a miss (eax == 0)
         success:
         pop eax
@@ -16370,9 +16374,6 @@ static void __declspec(naked) resist_phys_damage_hook(void)
       }
 }
 
-// Used below to determine who gets skill training from the block.
-static struct player *blocker;
-
 // Implement M Shield bonus: whenever another party member is attacked,
 // there's a chance to substitute the shield-wearer's AC if it's higher.
 static int __thiscall maybe_cover_ally(struct player *player)
@@ -17203,7 +17204,7 @@ static void __declspec(naked) alchemy_quest_hook(void)
 static int __stdcall train_armor(void *monster, void *player)
 {
     int result = monster_hits_player(monster, player);
-    if (!result)
+    if (!result && blocker)
       {
         int body = blocker->equipment[SLOT_BODY_ARMOR];
         if (body)

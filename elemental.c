@@ -12553,14 +12553,14 @@ static void __declspec(naked) eloquence_merchant_bonus(void)
       }
 }
 
-// Massively increase Ethric's Staff's HP drain (x5), but only in combat.
+// Massively increase Ethric's Staff's HP drain (x5), but disable when resting.
 // TODO: should we make an exception for liches?
 static void __declspec(naked) higher_ethric_drain(void)
 {
     asm
       {
-        test byte ptr [STATE_BITS], 0x30 ; if enemies are near
-        jz quit
+        cmp dword ptr [0x506d94], 2 ; resting flag
+        je quit
         sub dword ptr [esi+0x193c], 5
         quit:
         ret

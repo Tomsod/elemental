@@ -182,7 +182,7 @@ Some vanilla artifacts have also been tweaked: Titan's Belt now directly
 increases melee damage and lowers recovery instead of the stat bonuses that
 often amounted to little.  Ethric's Staff is now Soul Stealing, and it also
 reanimates monsters slain in melee as loyal zombies.  But, it drains HP at a
-fivefold rate.  The drain turns off when you're in a safe location, though.
+fivefold rate.  The drain turns off when you're resting, though.
 
 Clanker's Amulet now only gives +10 to Alchemy, but this bonus stacks with
 another Alchemy item.  It also empowers Enchant Item, same (and non-stackable

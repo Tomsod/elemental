@@ -46,9 +46,8 @@ Classes are now more varied, too.  Basically, I tried to make skill ranks more
 permissive, especially magic grandmasteries -- hopefully clerics and sorcerers
 are less indispensable now.  Hybrid classes like thieves, rangers and monks
 should be more useful now, too.  Some classes even got special abilities.
-Later I'll make a comprehensive party creation spoiler, but for now you can
-read the class hints (right click on the class title in the stats screen),
-and there's a skill advancement table in Data/Tables.
+A comprehensive party creation spoiler is included in the release: see
+party.elemental.txt in the game folder (read it with a fixed-with font!)
 
 Importantly, all classes have skills that can be advanced upon a light or dark
 promotion only.  What really makes this flexible is the fact that you can now
@@ -79,11 +78,12 @@ at one point per 5 minutes per 5 or 6 points of skill, respectively.
 
 Perception is now more useful, as it increases loot from monsters: both the
 amount of gold and the chance of an item are increased by 2% per point of
-skill (multiplied by rank).  To keep it interesting, dragons and other
-monsters with formerly a 100% chance of an item are now capped at 80%, so the
-skill is still useful.  Also, GM now grants a 5x skill effect, as a
-"100% chance" wouldn't make sense with this new loot increase.  Finally,
-bonuses to Perception from hired NPCs are now properly multiplied by rank.
+skill (multiplied by rank).  Note that only the active character's skill is
+checked.  To keep it interesting, dragons and other monsters with formerly a
+100% chance of an item are now capped at 80%, so the skill is still useful.
+Also, GM now grants a 5x skill effect, as a "100% chance" wouldn't make sense
+with this new loot increase.  Finally, bonuses to Perception from hired NPCs
+are now properly multiplied by rank, like with most other skills.
 
 Stealing is renamed to Thievery, and it now also allows performing backstabs.
 It works similar to Backstabbing weapons from 2.0: only in melee and only when

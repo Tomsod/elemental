@@ -1,0 +1,335 @@
+This is the party creation spoiler for the Elemental Mod v3.0.  Usually I
+wouldn't advise reading the information you're supposed to learn as you play
+in advance, but some of the choices you make as you create the party
+(specifically, races and classes) are permanent, and if you want to play an
+optimal party without having to restart the game, you'll want to read this.
+I'll keep spoilers to a necessary minimum, though.  Note: if you want the
+tables below to look aligned, you'll want to read this with a fixed-width font!
+
+First, let's look at the default Knight-Thief-Cleric-Sorcerer party that's
+left unchanged from vanilla.  It's actually perfectly viable still, as each
+character fulfills an important role: Knight absorbs damage, Thief disarms
+chest traps, Cleric heals and prevents status conditions, and Sorcerer
+transports party around through flight, teleportation and other travel spells.
+Note that I don't say anything about dealing damage -- every class is capable
+of that!  But if you want a comfortable game, you'll probably want to also
+have characters who have the above four abilities.  You have options here:
+unlike in vanilla, hybrid classes are perfectly viable substitutes to the four
+default picks.  Below I'll discuss late game class abilities (past second
+promotion); early game is different, but the cost of restarting is much lower.
+Remember that you can mix and match light and dark promotions in your party.
+
+Knight fulfills the role of the tank.  It's actually much more relevant than
+in vanilla, as you can actually incite monsters to attack a specific character
+through Aura of Conflict and similar effects.  Knights have tons of HP, are
+well-armored, and can get up to 75% physical damage reduction with proper
+skills, which makes them better at receiving damage than anyone else.
+Of course, besides this and their obscene melee damage, they're not
+particularly good at anything, so if you want variety, your tank can also be,
+in order of preference, Paladin, Monk, or even Thief.  Paladins have about
+average HP, but otherwise no worse than Knights defensively, and can even cast
+Aura of Conflict on themselves if necessary.  Monks don't get damage reduction
+from armor, but their HP and AC are excellent, and in the late game they can
+dodge any hit, which statistically is equivalent to reducing any (not just
+physical) incoming damage.  Thieves also have good HP and AC, but no special
+perks so they're not as good as the other three options.  Finally, if you
+intend to just avoid tough fights (and the hard difficulty), you don't
+actually need a tank as level-appropriate enemies die rather quickly anyway.
+
+Thief disarms chest traps.  That's it, it's a very specialized role, but the
+game becomes rather frustrating without it, so it's still important.  Thieves
+are the only class that can raise Disarm to GM, but you don't always need it
+this high.  The toughest traps require an effective skill level of 40 (that's
+Expert 20 or Master 14), and you can boost your skill with items, so with some
+luck Master is enough, and even an Expert can open many (but not all) chests
+safely.  Ninjas (Dark Path Monks) and Bounty Hunters (DP Rangers) can both
+attain Master, and other Monks and Rangers, as well as Black Knights (DP)
+and Archers can reach Expert.  Of course, experienced players may avoid the
+need for a disarmer by using Telekinesis, Fly, or even just absorbing the
+damage, but it's generally inconvenient, so I wouldn't advise it for everyone.
+
+Cleric heals the party and cures conditions -- or prevents them outright
+through GM Immutability (was Protection from Magic in vanilla).  You only
+really need GM Body magic for either, other Self schools work OK at Master.
+Unlike in vanilla, both Arch Druids (Light Path) and Ranger Lords (also LP)
+can learn GM Body, so you don't have to stick to Cleric for this.  Their Dark
+variants, as well as Paladins and Masters (LP Monks) are limited to Master
+Body, which is passable, but not as great.  Still, Heroes (LP Paladins) in
+particular make decent Cleric substitutes as they now get both GM Spirit and
+Master Light, which are both useful, especially in tandem with Ranger Lords
+who have Body, but cannot learn the other two schools at all.  In any case,
+unless you're looking for a challenge, secure Master Body at the very least.
+
+Sorcerer casts travel spells.  Yes, most of elemental magic is actually about
+killing your enemies, but again, anyone can kill their enemies, while Fly and
+Town Portal are irreplaceable.  So you'll want GM Air and Water at the least.
+Again, in this mod you have options.  Specifically, both Master Archers (LP)
+and Arch Druids (also LP) can attain both of these GM ranks, and even DP
+Archers still get Air (but only Master Water).  Scraping the bottom of the
+barrel, Spies (LP Thieves) have Master Air and Rangers will eventually get
+Master Water, but really, if you want a comfortable game, get yourself a
+Sorcerer or an Archer or a Druid.  And if you want a fully evil party, you're
+pretty much limited to a Lich, which is a good idea anyway as GM Dark magic
+is the main benefit of the Dark Path and hybrid classes can't learn it.
+Similarly, the healer role above is also limited to bona fide Priests of Dark
+on the evil side, who are again optimal because of their Dark magic anyway.
+
+So there are your four roles.  If you pick hybrids, the same character can
+fulfill two roles at once, albeit sometimes not as good.  Here's a handy
+table with the classes I proposed (VV is a good pick, ?? is a compromise):
+
+          Defend  Disarm  Healer  Travel
+          LP  DP  LP  DP  LP  DP  LP  DP
+Knight    VV  VV  --  ??  --  --  --  --
+Thief     ??  ??  VV  VV  --  --  ??  --
+Monk      VV  VV  ??  VV  ??  --  --  --
+Paladin   VV  VV  --  --  ??  ??  --  --
+Archer    --  --  ??  ??  --  --  VV  ??
+Ranger    --  --  ??  VV  VV  ??  ??  ??
+Cleric    --  --  --  --  VV  VV  --  --
+Druid     --  --  --  --  VV  ??  VV  ??
+Sorcerer  --  --  --  --  --  --  VV  VV
+
+Now let's talk about races.  They're actually important now, so choose
+carefully.  Like in vanilla, race affects the character's primary stats and
+resistances -- except now it matters throughout the entire game, as race bonus
+or penalty will be applied to permanent increases such as barrels or black
+potions, and racial resistances grow with level.  Still, even with this, racial
+stat modifiers are typically only worth a couple points of the stat rating
+(the derivative value that determines stat effect magnitude, shown on a right
+click), so it's still not terribly important.  More importantly, race affects
+level up bonuses (HP, SP, and even skill points), and each race has an
+associated skill that can be raised one rank higher than permitted by class.
+
+Additionally, there are racial artifacts, formerly awarded for the Arcomage
+quest (and now they're found elsewhere).  Dwarven and human ones now give nifty
+elemental immunities, elven chainmail improves bow skill, and goblins get
+another one in addition to their old sword: a dagger that restores SP on kill.
+Whether their existence should affect your race choices is arguable.  I'll also
+note the existence of an artifact sword that gives a stackable bonus to Light
+magic -- it's not restricted by race per se, but read about Goblins below.
+Anyway, I'll now describe the four races in detail, with some commentary.
+
+Goblins get +40% to base Might and Speed and -30% to Intellect and Personality.
+Additionally they get +1 HP per level but -1 SP per two levels (rounded up).
+They get +5 to Fire and Shock resistance and +1 more every two levels.
+Finally, their racial skill is Sword, so goblin Clerics, Druids and Sorcerers
+gain the ability to use swords at the Expert level, and the other classes can
+advance one rank higher.  This is, in fact, the strongest advantage of this
+race, as advancing to Master Sword allows dual-wielding them which is the
+strongest choice for the offhand, and Archers, Rangers, and Monks in particular
+cannot get there without being Goblins.  The fully-magical classes won't get
+an offhand sword even if Goblins, but they still can equip a strong two-handed
+sword which is arguably better than a mace or dual daggers.  The bonus HP is
+also very helpful to them, while the SP penalty is barely felt.  On the other
+hand, melee classes benefit a bit less from this race than in vanilla, as
+Knights already have GM Sword (but the HP and stat bonuses are good), while
+Monks and Thieves have so little base SP that the penalty is very severe, not
+to mention the stat penalties which will decrease it further.  Whether a
+dual-sword Monk is worth halving the PC's SP pool is up for you to decide.
+
+Dwarves get +40% to Might and Endurance but -30% to Accuracy and Speed.  They
+also get +1 HP per level, but without the SP penalty.  Resistance bonuses are
++5 to Poison and Cold and +1 more every even level.  The racial skill is, of
+course, Axe, which is unlocked up to Expert for the classes who don't have it
+normally, and can be advanced one rank higher otherwise.  The unlocked skill
+makes Dwarves a good choice for the magical classes, just like Goblins.  That
+said, axes (one- or two-handed) are probably worse than swords, especially when
+limited to Expert, but this is compensated by the lack of Goblins' SP penalties
+(both direct and indirect).  The classes who already can use axes benefit less
+from this race, as they typically have better right hand weapon choices,
+although Dwarven Knights are in fact a good combination, as they have even
+higher HP than Goblins, and can dual-wield axes and swords at full power.  The
+axe's slow speed, as well as dwarven stat penalties, will be compensated by
+Armsmaster, and lower damage (compared to spears) is offset by the halved armor
+debuff which benefits the entire party.  Anyway, while not necessarily the best
+choice, Dwarves do get the highest HP of any race, which is useful to anyone.
+
+Elves get +40% to Intellect and Accuracy, but -30% to Might and Endurance, and
+also 10 Mind resistance at start and +1 more at each level up.  Unlike other
+races, they get -1 HP penalty each level, but a +1 SP bonus.  Their racial
+skill is predictably Bow.  All if this makes them a very good choice for anyone
+you want to make into a spellcaster -- not just the magical classes!  A fully
+promoted elven Priest will get 6 instead of 5 SP on level up (20% more), but
+an elven Rogue's SP pool will be doubled!  Even more than doubled, considering
+the Intellect bonus.  And a Rogue can weather the HP penalty better than
+a Priest or a Wizard.  Nevertheless, the unlocked Bow skill is still especially
+useful for Clerics, Sorcerers and Druids who ordinarily cannot use bows in this
+mod (although the latter two do get throwing knives, and there are always wands
+and blasters).  Just be aware that making those three classes Elves will turn
+them into glass cannons, which can be frustrating early on.  Overall, Elves can
+be any class expect maybe Knights (unless you want to make them into archers).
+
+Finally, Humans are oddballs in that they lack penalties and get less bonuses:
+they have +20% to base Luck, no HP or SP adjustment, and 5 Magic resistance +1
+per two levels.  They also get the same bonus to Holy resistance, but it's
+rarely noticeable as Holy damage only affects undead.  Still, there are only
+a few ways to raise a Lich's Holy resistance, and being a Human is one of them.
+Anyway, Humans' biggest advantage is that instead of HP or SP, they get an
+extra skill point each level.  It's like a free horseshoe every two level-ups!
+This is useful for any class, of course, but spellcasters will especially
+appreciate the extra skill points.  Furthermore, their racial skill is
+Learning, which any class can get already, but few can master.  In the long
+term, the extra rank in Learning will result in more levels and even more skill
+points.  Add in the lack of any penalties, and this race is suited to anyone.
+
+Summing it up, the point I tried to make is that almost any class-race
+combination is viable, depending on how you want to play the character, so
+don't be afraid to experiment!  Although just making four Humans is also okay.
+
+Now let's look at the classes.  The available skill ranks have changed compared
+to vanilla -- most notably, Master rank is now locked beyond the first
+promotion, and each Light promotion differs from its Dark counterpart in at
+least a few skills.  Some classes also gained unique abilities.
+
+First, here's the new skill advancement table.  (01LD are promotions.)
+
+           Kngt  Thif  Monk  Pala  Arch  Rang  Cler  Drid  Sorc
+           01LD  01LD  01LD  01LD  01LD  01LD  01LD  01LD  01LD
+
+Staff      EEEE  ----  EMGG  NNNN  NNNN  NNNN  EEEE  NNNN  EMMG
+Sword      EMGG  EMMM  EEEE  EMMM  EEEE  EEEE  ----  ----  ----
+\_goblins  EGGG  EMGG  EMMM  EMGG  EMMM  EMMM  NEEE  NEEE  NEEE
+Dagger     EEEE  EMGG  EEEE  EEEE  EMMM  EEEE  ----  EMMM  EEME
+Axe        EMMM  ----  ----  EEEE  EEEE  EMGG  ----  ----  ----
+\_dwarves  EMGG  NEEE  NEEE  EMMM  EMMM  EGGG  NEEE  NEEE  NEEE
+Spear      EMGG  ----  EEEE  EEEE  EMMM  EMMM  ----  ----  ----
+Bow        EEME  EEEE  NNNN  EEEE  EMGG  EMMM  ----  ----  ----
+\_elves    EMGM  EMMM  EEEE  EMMM  EGGG  EMGG  NEEE  NEEE  NEEE
+Mace       EMMM  EEEE  ----  EMGG  ----  ----  EMGM  EEEE  ----
+Blaster    NNNN  EMGG  NNNN  EEEE  EMGG  EMMM  EEEE  EMMM  EMGG
+Shield     EMGG  NNNN  ----  EMGG  ----  EEEE  EMMM  EEEE  ----
+Leather    EEEE  EMGG  EMGG  EEEE  EMMM  EMMM  EEEE  EMMM  EEME
+Chain      EMMM  EEEE  ----  EEEE  EMGG  EMGM  EEEE  ----  ----
+Plate      EMGG  ----  ----  EMMM  ----  ----  NNEN  ----  ----
+
+Fire       ----  -EEM  ----  ----  NEMG  -EEE  ----  EEEM  EMGG
+Air        ----  -EME  ----  ----  EMGG  ----  ----  EMGM  EMGG
+Water      ----  ----  ----  ----  NEGM  -EMM  ----  EMGM  EMGG
+Earth      ----  ----  ----  ----  NEMM  -MGG  ----  EMMG  EMGG
+Spirit     ----  ----  -EME  EMGG  ----  ----  EMGG  EEME  ----
+Mind       ----  ----  ----  NEMM  ----  -EEM  EMGG  EMMG  ----
+Body       ----  ----  -EME  NEMM  ----  -EGM  EMGG  EMGM  ----
+Light      ----  ----  ----  --M-  --E-  ----  --G-  ----  --G-
+Dark       ----  ----  ----  ---E  ---E  ----  ---G  ---M  ---G
+
+ID Item    ----  EMGG  ----  ----  ----  NNNN  ----  EEEE  EMGM
+Merchant   EEEE  EMMM  ----  EMGM  EEEE  NNNN  EMGG  EEEE  NNNN
+Repair     EMGG  NNNN  ----  EMGG  EEEE  NNNN  EMMM  ----  EEEE
+Bodybuild. EMGG  EEEE  EMGG  EMMM  EEEE  EEEE  NNNN  ----  ----
+Meditation ----  ----  ----  EEEE  EEEE  -NNN  EMMG  EMGG  EMMG
+Perception EEEE  EMGM  EEEE  NNNN  EMGG  EMGG  EEEE  EEEE  EEEE
+Disarm     NNNE  EMGG  NEEM  ----  NEEE  EEEM  ----  ----  ----
+Dodging    EEEE  EMMM  EMGG  ----  EEEE  EEEE  ----  NEEE  NNNN
+Unarmed    EEEE  EEEE  EMGG  NNNN  NNNN  NNNN  ----  ----  ---N
+ID Monster ----  ----  EEEE  ----  ----  EMGG  EEEE  EMGM  EMMM
+Armsmaster EMGG  EMMM  EMMM  EEEM  EEEE  EEMM  ----  NNNN  ----
+Thievery   ---N  EMGG  NNNE  ---E  ----  EEEM  ----  ----  ----
+Alchemy    ----  EMMG  ----  ----  ----  NNNN  EEEM  EMGG  EMMM
+Learning   NNNN  EEEE  EMGG  NNNN  EMMM  EEEE  EMMM  EMMM  EMGM
+\_humans   EEEE  EMMM  EGGG  EEEE  EMGG  EMMM  EMGG  EMGG  EMGG
+
+Next I'll examine each class in detail, including Light and Dark differences.
+
+Knights haven't changed much, they still rule melee combat with their doubled
+Armsmaster bonuses.  However, their GM Shield, which was inferior to an offhand
+sword in vanilla, is more competitive now, as together with Master Plate it now
+reduces incoming physical damage by 75%, which is a godsend against tough melee
+enemies (such as minotaurs or behemoths).  As noted above, stacking aggro on
+them makes them excellent tanks, and the sword can be swapped on for the easier
+dungeons.  Another notable change is the ability to buy a steed after the first
+promotion: each of the seven stables offers an animal for sale (mostly horses)
+that will give some kind of bonus (mostly travel-related) to the party.  Second
+promotions will also give unique abilities: Champions (LP) grant +2 to weapon
+and armor skills for the entire party (and this is cumulative if you have
+several of them), while Black Knights (DP) treat every melee weapon as Cursed
+(which means equipping an actually Cursed weapon is redundant).  Skill-wise,
+Champions get Master Bow, and Black Knights have Thievery and Expert Disarm,
+but this is all mostly cosmetic.  Overall, Knights are still straightforward.
+
+Thieves are more of an utility class now, as they can get GM ID Item and either
+Perception (LP) or Alchemy (DP).  Their magic skills are more focused, as they
+only get Fire and Air, but one (Air for LP and Fire for DP) can be advanced to
+Master and another to Expert.  Whether they'll have enough SP to cast several
+Master-level spells is another question, although Assassins now trade one
+HP/level for one SP/2 levels to better utilize Fire's expensive attack spells.
+Also, their Dodging is actually relevant now that dodging in armor is a Leather
+perk (which they have together with Monks), and GM Dagger makes Thieves the
+best at using throwing knives, even if they choose to wield swords in melee.
+Also, GM Thievery can now double melee damage through backstabs (but getting
+the monster to turn its back to you is another story), and Thieves can easily
+get the backstab chance to 100%.  Note that backstabs do not stack with crits.
+
+Monks are still late bloomers, but potentially very strong in the late game,
+as GM Unarmed now gives a chance to instantly kill any enemy.  Also, staff at
+GM level now not only gets both Armsmaster and Unarmed bonuses, but also
+Hammerhands damage, which makes endgame Monks hit very hard!  There's even an
+artifact staff with good on-hit abilities made specifically for this class.
+Their magic is more lenient: although they can't learn Mind, the other two
+schools can be advanced to Expert, and Masters (LP) can further get to Master
+(no pun intended, probably).  They also trade HP for SP, like Assassins, to
+support their high-rank spells.  Ninjas (DP) are still better at thief skills.
+
+Paladins can get the same 75% physical reduction as Knights, which makes them
+second best tanks (they only lack HP).  They can also advance Spirit to GM,
+which gives them the useful combat revival spell, among other things. Heroes
+(LP) can advance Light to Master and Merchant to GM, which makes them decent
+Cleric substitutes.  Villians (DP) can get Master Armsmaster and Expert Dark,
+both of which increase their combat potential (even Expert Shrapmetal is
+deadly!)  They also can learn Expert Thievery for unreliable backstabs.
+
+Archers now get Master Dagger to enhance the spear/dagger dual they're forced
+into (unless they're Goblins).  Both second promotions gain two magic GMs:
+Air (shared), Water (LP), and/or Fire (DP).  This means Master Archers (LP)
+have all the utility spells the Sorcerer was required for in vanilla.  Light
+or Dark (depending on path) can be advanced to Expert, which means Snipers (DP)
+now have the deadly Shrapmetal.  Add in GM Fire and they're rather strong mages
+now.  Also, Snipers can never miss with a bow as a unique class ability.
+
+Rangers suck much less now.  For one, they can attain Master Armsmaster.  Two,
+their magical skills are generally better: while Rangers cannot learn Air and
+Spirit at all, they can get GM Earth, Master Water, and, depending on
+promotion, either (LP) GM Body or (DP) Master Body and Mind.  That GM Body
+actually makes Ranger Lords very good healers, possibly even removing the need
+for a Cleric, and they also get GM Chain for defense.  Bounty Hunters (DP)
+lack either, but they do get Master Disarm and Thievery, and with enough skill
+bonuses can disarm any chest and have 100% backstab chance.  Also, turning in
+a town hall bounty can give them extra skill points as per the class ability.
+
+Clerics haven't changed much, but they notably can now (barely) learn the Plate
+skill.  They will never be able to wear plate without recovery penalty, but as
+it doesn't affect spellcasting speed, it's manageable.  Priests of Light can
+actually advance Plate to Expert and Mace to GM, turning them into miniature
+Paladins, but Priests of Dark are stuck at Normal Plate, which hardly matters
+as they have Shrapmetal!  As a compensation they do get GM Meditation (for SP
+regeneration) and Master Alchemy (second only to Druids and Assassins).  Also,
+Clerics now cannot use bows at all.  Neither can Druids or Sorcerers, but at
+least they got throwing knives, while Clerics can only equip wands or blasters.
+
+Druids can now advance some magic schools to GM.  Arch Druids (LP) get Air,
+Water, and Body, which means they alone can replace both Clerics and Sorcerers,
+at least with regard to their most useful spells.  Warlocks (DP) are much more
+offensive, as they get GM Earth and Mind and even Master Dark -- this is
+inspired by the Ruler's Ring relic which is supposedly made for warlocks.
+Keeping in mind the familiar bonus, Warlocks are probably second only to fully
+promoted Sorcerers in raw spell might.  Both Druid promotions still get GM
+Meditation, which now allows them to regenerate SP, and can advance to Expert
+in Dodging, should they decide to wear robes instead of leather armor.
+
+Sorcerers are still strong in this mod, being able to GM five magic schools,
+but their other skills are shifted.  Archmages (LP) can advance Dagger to
+Master for a sizeable crit chance boost, and can also get Master Leather for
+spell absorption.  Finally, they get GM Learning.  Liches (DP) no longer
+regenerate SP naturally, but must learn GM Meditation for that.  Instead,
+they can drain life (like a Vampiric weapon) on an unarmed attack.  They're
+not good at Unarmed combat, though (limited to Normal), but can get GM Staff
+to combine their vampiric touch (plus Hammerhands bonus) with a staff attack.
+Although melee attacks aren't the defining characteristic of either promotion,
+of course.  Liches also can no longer get to GM in ID Item, and neither
+promotion can get GM in ID Monster now.  Liches do still get their immunities.
+
+And that's it.  Remember that you cannot have both Light and Dark versions of
+the same class in the same party, but you still can make duplicate classes
+unique by choosing different races for them.  Another important tidbit: if you
+have both a Cleric and a Sorcerer, you still won't be able to get both Light
+and Dark GMs, as the requirement for training is loyalty (formal path choice).

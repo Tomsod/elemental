@@ -165,8 +165,9 @@ they have +20% to base Luck, no HP or SP adjustment, and 5 Magic resistance +1
 per two levels.  They also get the same bonus to Holy resistance, but it's
 rarely noticeable as Holy damage only affects undead.  Still, there are only
 a few ways to raise a Lich's Holy resistance, and being a Human is one of them.
-Anyway, Humans' biggest advantage is that instead of HP or SP, they get an
-extra skill point each level.  It's like a free horseshoe every two level-ups!
+Anyway, Humans' biggest advantage is that instead of HP or SP, they get 12.5%
+more skill points each level, rounded up.  Even in the early game, it's like
+a free horseshoe every two level-ups, and this bonus only grows later!
 This is useful for any class, of course, but spellcasters will especially
 appreciate the extra skill points.  Furthermore, their racial skill is
 Learning, which any class can get already, but few can master.  In the long

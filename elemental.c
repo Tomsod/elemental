@@ -14309,39 +14309,61 @@ static int __thiscall get_new_full_sp(struct player *player)
     return total;
 }
 
-// Instead of HP/SP boni, let humans gain an extra skill point on level up.
+// For a div in the below function.
+static const int two_forty = 240;
+// For the level-up message.
+static int added_skill_points;
+
+// Starting from level 20, grant ever more skill points on level up.
+// Humans get additional points as their racial bonus.
 // Also here: every 10th level, reset +2 stat wells.
 static void __declspec(naked) human_skill_point(void)
 {
     asm
       {
-        add dword ptr [ebx+0x1938], eax ; replaced code
         test edx, edx ; edx == new_level % 10
-        jnz skip
+        jnz no_reset
         and dword ptr [ebx+0x1a50], ~0x24c360 ; reset player bits
-        skip:
+        no_reset:
+        cmp eax, 7 ; level 20+
+        jae extra
+        mov edx, eax
+        jmp human
+        extra:
+        movzx eax, word ptr [ebx+218] ; new level
+        lea ecx, [eax-1]
+        mul eax
+        mul ecx
+        cmp ecx, 40
+        ja high
+        cmp ecx, 35
+        jbe low
+        mov edx, 20 ; manually glue together high and low levels
+        jmp human
+        low:
+        add eax, 900 ; bonus at levels 20-36 to preserve sp total
+        high:
+        div dword ptr [two_forty]
+        push eax
+        lea eax, [ecx-1]
+        mul ecx
+        mul ecx
+        div dword ptr [two_forty]
+        pop edx
+        sub edx, eax
+        human:
+        mov ecx, ebx
         call dword ptr ds:get_race
         cmp eax, RACE_HUMAN
         jne not_human
-        inc dword ptr [ebx+0x1938]
+        lea eax, [edx+7]
+        shr eax, 3
+        add edx, eax
         not_human:
+        add dword ptr [ebx+0x1938], edx ; replaced code, almost
+        mov dword ptr [added_skill_points], edx ; for the statusline
         mov ecx, ebx ; restore
         ret
-      }
-}
-
-// Also correct the level-up message.
-static void __declspec(naked) human_skill_point_message(void)
-{
-    asm
-      {
-        lea ecx, [ebx-168]
-        call dword ptr ds:get_race
-        cmp eax, RACE_HUMAN
-        jne not_human
-        inc dword ptr [esp+20] ; skill points count
-        not_human:
-        jmp dword ptr ds:sprintf ; replaced call
       }
 }
 
@@ -15306,7 +15328,6 @@ static inline void racial_traits(void)
     hook_jump(0x48e4f0, get_new_full_hp);
     hook_jump(0x48e55d, get_new_full_sp);
     hook_call(0x4b4b5c, human_skill_point, 6);
-    hook_call(0x4b4c26, human_skill_point_message, 5);
     hook_call(0x490301, init_racial_skill, 8);
     hook_call(0x490465, check_racial_skill, 8);
     hook_call(0x49042f, exclude_racial_skill, 8);
@@ -18879,6 +18900,35 @@ static inline void horses(void)
     // unicorn magic immunity is in is_immune() above
 }
 
+// The new XP requirements for level training, now cubical!
+static int __thiscall get_level_up_xp(int level)
+{
+    if (level <= 0)
+        return 0; // just in case
+    int xp = level * (level + 1) * 25;
+    if (level >= 20)
+        return xp * (level + 1); // cubical growth
+    return xp * 20; // old formula
+}
+
+// Address various balance issues introduced in 3.0.
+static inline void balance_tweaks(void)
+{
+    hook_jump(0x4b465b, get_level_up_xp); // replace old function
+    hook_call(0x4b46dd, get_level_up_xp, 5); // training hall
+    erase_code(0x4b46e2, 14); // rest of old code (likely an inline)
+    patch_dword(0x48d448, 0xd189ce89); // mov esi, ecx; mov ecx, edx
+    hook_call(0x48d44c, get_level_up_xp, 5); // xp/level green/white color
+    patch_word(0x48d451, 0xf189); // mov ecx, esi
+    erase_code(0x48d453, 12); // rest of the inline
+    // extra skill points are in human_skill_point() above
+    // statusline: provide stored sp value instead of recalculating
+    patch_word(0x4b4c06, 0xa190); // nop; mov eax, ...
+    patch_pointer(0x4b4c08, &added_skill_points);
+    erase_code(0x4b4c12, 2); // old code
+    erase_code(0x4b4c19, 3); // ditto
+}
+
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
                     LPVOID const reserved)
 {
@@ -18924,6 +18974,7 @@ BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
         throwing_knives();
         difficulty_level();
         horses();
+        balance_tweaks();
       }
     return TRUE;
 }

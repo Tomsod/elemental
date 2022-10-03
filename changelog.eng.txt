@@ -29,7 +29,7 @@ To make humans less dull, they now have a similar 20% bonus to Luck.
 
 Race now also affects HP and SP, like in earlier MM games: dwarves get +1 HP
 per level, goblins get +1 HP/level but -1 SP per two levels, elves get -1 HP
-but +1 SP each level, and humans instead get an extra skill point per level.
+but +1 SP per level, and humans instead get 12.5% more skill points per level.
 
 Next, each race gets a boost to a single skill, generally being able to
 advance it one rank higher than usual.  This works even if the base class
@@ -370,6 +370,11 @@ cause you to miss instead.  Also, its effect on resistances is now quadrupled.
 You can check your critical hit (or miss) chance, and also average damage per
 round (disregarding elemental damage and monster armor class and resistances),
 by right-clicking on the PC's damage values at the stats screen.
+
+To counterbalance increased stat and skill effects on HP and SP (which had
+resulted in obscene numbers in the late game), the experience thresholds for
+advancing a level now grow cubically after level 20.  I've taken care to
+ensure the skill points to XP ratio remains roughly the same, though.
 
 Some hirelings have been redone.  Porters, quartermasters, and gypsies now
 work as "portable chests", carrying some of your loot or other items.  Like

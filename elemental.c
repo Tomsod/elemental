@@ -9289,29 +9289,38 @@ static void __declspec(naked) reduce_training_time(void)
       }
 }
 
-// However, each successive level trained in a session is 25% more expensive.
+// After level 20, training cost grows as level squared, just like XP delta.
 static void __declspec(naked) increase_training_price(void)
 {
     asm
       {
-        call dword ptr ds:ftol ; replaced call
-        mov ecx, dword ptr [CURRENT_PLAYER]
-        mov ecx, dword ptr [0xf8afc4+ecx*4] ; per-player level counters
-        add ecx, 4
-        mul ecx
-        shrd eax, edx, 2
-        ret
+        movzx eax, word ptr [ebx+0xda] ; player level
+        cmp eax, 20
+        jbe skip
+        mov dword ptr [ebp-20], eax ; unused at this point
+        fimul dword ptr [ebp-20]
+        mov dword ptr [ebp-20], 20
+        fidiv dword ptr [ebp-20]
+        skip:
+        jmp dword ptr ds:ftol ; replaced call
       }
 }
+
+// Used below and also in id_monster_master().
+static const int ten = 10;
 
 // Let temple heal price depend on PC level.
 static void __declspec(naked) temple_heal_price(void)
 {
     asm
       {
-        fild word ptr [edi+0xda] ; pc level
-        fsqrt
+        cmp word ptr [edi+0xda], 10 ; pc level
+        jbe skip
+        fild word ptr [edi+0xda]
+        fidiv dword ptr [ten]
+        fmul st(0), st(0)
         fmulp
+        skip:
         jmp dword ptr ds:ftol ; replaced call
       }
 }
@@ -9405,7 +9414,7 @@ static void generate_tax_text(void)
         fealty = 1;
     else if (check_bit(QBITS, QBIT_HARMONDALE_INDEPENDENT))
         fealty = 2;
-    int tax_money = (fame - elemdata.last_tax_fame) * 20;
+    int tax_money = (fame - elemdata.last_tax_fame) * 5;
     elemdata.last_tax_fame = fame;
     if (fealty == 2)
         tax_money *= 2;
@@ -16730,9 +16739,6 @@ static void __declspec(naked) id_monster_normal(void)
       }
 }
 
-// Used below (no free registers).
-static const int ten = 10;
-
 // Master ID Monster bonus: monster only deals 90% damage to party.
 static void __declspec(naked) id_monster_master(void)
 {
@@ -16744,7 +16750,7 @@ static void __declspec(naked) id_monster_master(void)
         jae no_bonus
         mov eax, 9
         mul dword ptr [esp+4] ; damage
-        div dword ptr [ten]
+        div dword ptr [ten] ; no free registers
         mov dword ptr [esp+4], eax
         no_bonus:
         jmp dword ptr ds:damage_player ; replaced call
@@ -18927,6 +18933,11 @@ static inline void balance_tweaks(void)
     patch_pointer(0x4b4c08, &added_skill_points);
     erase_code(0x4b4c12, 2); // old code
     erase_code(0x4b4c19, 3); // ditto
+    // training price adjusted in increase_training_price() above
+    // Decrease training hall level limits according to the dilated levels.
+    word(0x4f07a0) = word(0x4f07a2) = 100; // was 200
+    word(0x4f07a6) = word(0x4f07a8) = 40; // was 50
+    word(0x4f07aa) = 60; // was 100
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

@@ -353,9 +353,8 @@ quests, you'll need to wait a few days at most.  But if you do procrastinate,
 there will be the wait, and there won't be the light-dark thing as above.
 
 And because you no longer need to kill time, level training now only takes 8
-days no matter the number of levels, like in MM6.  However, training several
-levels at once is progressively more expensive.  Also, after getting each 10th
-level, the PC can visit the permanent "+2 to stat" wells once more, FWIW.
+days no matter the number of levels, like in MM6.  Also, after getting each
+10th level, the PC can visit the permanent "+2 to stat" wells once more, FWIW.
 
 I've also gave all GM teachers varied demands besides just skill and gold.
 Some even give you mini-quests before they can teach you!
@@ -375,6 +374,10 @@ To counterbalance increased stat and skill effects on HP and SP (which had
 resulted in obscene numbers in the late game), the experience thresholds for
 advancing a level now grow cubically after level 20.  I've taken care to
 ensure the skill points to XP ratio remains roughly the same, though.
+
+Adding to the above, training hall prices now grow as level squared past
+level 20.  I've also made the high-end training halls more expensive, and
+lowered the level limit in most halls so as to keep max XP roughly the same.
 
 Some hirelings have been redone.  Porters, quartermasters, and gypsies now
 work as "portable chests", carrying some of your loot or other items.  Like
@@ -406,7 +409,7 @@ Necromancers can now curse on hit, and Droids are vulnerable to lightning.
 
 Medusae are now VERY resistant to Physical-elemental spells (not weapons).
 
-Temple healing price is slightly increased with PC level now.
+Temple healing price is greatly increased for PCs past level 10.
 
 Arena victories now reward five times as much money.
 

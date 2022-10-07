@@ -179,7 +179,7 @@ as it would spoil the fun, but if you're curious about what I've added, visit
 https://github.com/Tomsod/elemental/blob/master/artifacts.eng.txt
 
 Some vanilla artifacts have also been tweaked: Titan's Belt now directly
-increases melee damage and lowers recovery instead of the stat bonuses that
+increases melee damage and worsens recovery instead of the stat bonuses that
 often amounted to little.  Ethric's Staff is now Soul Stealing, and it also
 reanimates monsters slain in melee as loyal zombies.  But, it drains HP at a
 fivefold rate.  The drain turns off when you're resting, though.
@@ -378,6 +378,16 @@ ensure the skill points to XP ratio remains roughly the same, though.
 Adding to the above, training hall prices now grow as level squared past
 level 20.  I've also made the high-end training halls more expensive, and
 lowered the level limit in most halls so as to keep max XP roughly the same.
+
+I've massively nerfed recovery bonuses: they're now multiplicative.  For
+instance, at Expert 7 in Sword or Bow, the PC no longer gets -7 to recovery,
+but instead -7%, i.e. it's multiplied by 0.93.  All skill, stat, and magic
+bonuses are affected, but penalties (e.g. from armor) are still added to base
+weapon recovery (before the multiplication).  This means most classes will
+struggle to get more than 3 attack per round (except with blasters).  Knights,
+with enough Armsmaster bonuses, are still able to reach the recovery limit,
+which is now 10 attacks per round for all weapons.  This was mostly intended
+to nerf melee, so I've also improved base bow recovery to 80 to counteract it.
 
 Some hirelings have been redone.  Porters, quartermasters, and gypsies now
 work as "portable chests", carrying some of your loot or other items.  Like

@@ -7883,41 +7883,6 @@ static void __declspec(naked) temple_other_spells_power(void)
       }
 }
 
-// Since blasters have a different min recovery, we need to check for them.
-static void __declspec(naked) recovery_check_blaster(void)
-{
-    asm
-      {
-        cmp eax, SKILL_BLASTER
-        jne not_it
-        mov dword ptr [ebp+8], 2 ; store in ranged param (which was 1)
-        not_it:
-        movzx eax, word ptr [0x4edd80+eax*2] ; replaced code
-        ret
-      }
-}
-
-// Set min weapon recovery to 10 for blasters and 20 otherwise.
-// TODO: move the hook slightly below once I can disable mm7patch hooks
-static void __declspec(naked) min_weapon_recovery(void)
-{
-    asm
-      {
-        add ecx, dword ptr [ebp-20] ; replaced code
-        add ecx, dword ptr [ebp-4] ; replaced code
-        mov eax, 20
-        cmp dword ptr [ebp+8], 2
-        jne not_blaster
-        mov eax, 10
-        not_blaster:
-        cmp ecx, eax
-        jge quit
-        mov ecx, eax
-        quit:
-        ret
-      }
-}
-
 // Provide more detailed info for elemental resistances.
 static char *__stdcall resistance_hint(char *description, int resistance)
 {
@@ -9739,9 +9704,7 @@ static inline void misc_rules(void)
     hook_call(0x4b73fb, temple_other_spells_power, 6); // immutability (15 rep)
     hook_call(0x4b7429, temple_other_spells_power, 6); // hour of pow. (20 rep)
     hook_call(0x4b7457, temple_other_spells_power, 6); // day of prot. (25 rep)
-    // Lower minimum recovery for weapon attacks.
-    hook_call(0x48e1ff, recovery_check_blaster, 8);
-    hook_call(0x48e4dd, min_weapon_recovery, 6);
+    // Remove the old recovery limit of 30.
     erase_code(0x406498, 8); // turn based recovery limit
     erase_code(0x42efcb, 7); // melee attack recovery limit
     erase_code(0x42ec54, 7); // theft recovery limit
@@ -17477,7 +17440,7 @@ static inline void patch_compatibility(void)
     options->fix_light_bolt = FALSE; // I don't want this!
     options->armageddon_element = MAGIC; // can't read spells.txt this early
     options->keep_empty_wands = FALSE; // my implementation is better
-    patch_byte(0x42efc9, 20); // new melee recovery limit (for the hint)
+    patch_byte(0x42efc9, 10); // new melee recovery limit (for the hint)
 }
 
 // Let robes, crowns and hats have an increased chance to generate enchanted,
@@ -18917,6 +18880,49 @@ static int __thiscall get_level_up_xp(int level)
     return xp * 20; // old formula
 }
 
+// Let the recovery bonuses stack multiplicatively.
+// Also enforces the new recovery limit of 10.
+// NB: this overwrites MM7Patch code for the BlasterRecovery option.
+static void __declspec(naked) multiplicative_recovery(void)
+{
+    asm
+      {
+        mov dword ptr [ebp-12], eax ; swift bonus, stack var unused here
+        mov dword ptr [ebp-20], ecx ; base recovery with all penalties
+        mov dword ptr [ebp-4], 100 ; also unused
+        fld1
+        fild dword ptr [ebp-4]
+        fild dword ptr [ebp-12]
+        fdiv st(0), st(1)
+        fsubr st(0), st(2)
+        fild dword ptr [ebp-16] ; armsmaster bonus
+        fdiv st(0), st(2)
+        fsubr st(0), st(3)
+        fmulp
+        fild dword ptr [ebp-28] ; haste bonus
+        fdiv st(0), st(2)
+        fsubr st(0), st(3)
+        fmulp
+        fild dword ptr [ebp-32] ; weapon skill bonus
+        fdiv st(0), st(2)
+        fsubr st(0), st(3)
+        fmulp
+        fild dword ptr [ebp-36] ; speed bonus
+        fdiv st(0), st(2)
+        fsubp st(3), st(0)
+        fmulp st(2), st(0)
+        fstp st(0)
+        fimul dword ptr [ebp-20]
+        fisttp dword ptr [ebp-4]
+        mov eax, dword ptr [ebp-4]
+        cmp eax, 10 ; new limit (hard to reach in practice)
+        jg quit
+        mov eax, 10
+        quit:
+        ret
+      }
+}
+
 // Address various balance issues introduced in 3.0.
 static inline void balance_tweaks(void)
 {
@@ -18938,6 +18944,9 @@ static inline void balance_tweaks(void)
     word(0x4f07a0) = word(0x4f07a2) = 100; // was 200
     word(0x4f07a6) = word(0x4f07a8) = 40; // was 50
     word(0x4f07aa) = 60; // was 100
+    erase_code(0x48e4cf, 14); // old recovery bonuses
+    hook_call(0x48e4e3, multiplicative_recovery, 6);
+    word(0x4edd8a) = 80; // buff bow recovery
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

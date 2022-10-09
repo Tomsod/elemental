@@ -1615,31 +1615,32 @@ static int __thiscall __declspec(naked) is_undead(void *player)
 }
 
 // Returns 2 for temporary immunity (zombie or potion), 1 for permanent
-// (lich or artifact), 0 if no immunity.
+// (lich or artifact), 3 for both, or 0 if no immunity.
 static int __thiscall is_immune(struct player *player, unsigned int element)
 {
-    // dragon breath; we don't return 2 here
+    // dragon breath; we don't return 2 or 3 here
     if (element == FIRE_POISON)
         return is_immune(player, FIRE) && is_immune(player, POISON);
 
+    int result = 0;
     // elemental resistance/immunity buffs
     static const int buffs[] = { PBUFF_FIRE_RES, PBUFF_SHOCK_RES,
                                  PBUFF_COLD_RES, PBUFF_POISON_RES, -1, -1, -1,
                                  PBUFF_MIND_RES, PBUFF_MAGIC_RES };
     if (element <= MAGIC && buffs[element] != -1
         && player->spell_buffs[buffs[element]].skill == IMMUNITY_MARKER)
-        return 2;
+        result |= 2;
 
     int undead = is_undead(player);
     if (undead)
       {
         if (element == POISON || element == MIND)
-            return undead;
+            result |= undead; // we assume here liches cannot be zombies
       }
     else
       {
         if (element == HOLY)
-            return 1;
+            result |= 1;
       }
 
     switch (element)
@@ -1649,32 +1650,32 @@ static int __thiscall is_immune(struct player *player, unsigned int element)
             || has_item_in_slot(player, FORGE_GAUNTLETS, SLOT_GAUNTLETS)
             || has_item_in_slot(player, RED_DRAGON_SCALE_MAIL, SLOT_BODY_ARMOR)
             || has_item_in_slot(player, RED_DRAGON_SCALE_SHIELD, SLOT_OFFHAND))
-            return 1;
+            result |= 1;
         break;
     case SHOCK:
         if (has_item_in_slot(player, STORM_TRIDENT, SLOT_MAIN_HAND))
-            return 1;
+            result |= 1;
         break;
     case COLD:
         if (has_item_in_slot(player, PHYNAXIAN_CROWN, SLOT_HELM))
-            return 1;
+            result |= 1;
         break;
     case POISON:
         if (has_item_in_slot(player, TWILIGHT, SLOT_CLOAK))
-            return 1;
+            result |= 1;
         break;
     case MIND:
         if (has_item_in_slot(player, MINDS_EYE, SLOT_HELM))
-            return 1;
+            result |= 1;
         break;
     case MAGIC:
         if (has_item_in_slot(player, WITCHBANE, SLOT_AMULET)
             || (player->class & -4) == CLASS_KNIGHT
                && byte(NPC_ADDR + HORSE_AVLEE * 76 + 8) & NPC_HIRED)
-            return 1;
+            result |= 1;
         break;
       }
-    return 0;
+    return result;
 }
 
 // Calls the old, replaced function.
@@ -16741,7 +16742,7 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
         case SKILL_AXE:
         case SKILL_SPEAR:
         case SKILL_MACE:
-            train_req = 50;
+            train_req = 100;
             break;
         case SKILL_BOW:
             if (check_bit(QBITS, QBIT_BOW_GM_QUEST))
@@ -16757,7 +16758,7 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
         case SKILL_LEATHER:
         case SKILL_CHAIN:
         case SKILL_PLATE:
-            train_req = 100;
+            train_req = 200;
             break;
         case SKILL_FIRE:
         case SKILL_AIR:
@@ -16794,16 +16795,15 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
                         element = POISON;
                         break;
                   }
-                // TODO: temporary immunity shouldn't qualify
-                if (get_base_resistance(player, stat) < 50
-                    && !is_immune(player, element))
+                if (get_base_resistance(player, stat) < 40
+                    && !(is_immune(player, element) & 1))
                     return REFUSE;
                 if ((player->skills[skill] & SKILL_MASK) < 12)
                     return REFUSE;
                 return DEFAULT;
               }
         case SKILL_EARTH:
-            if (get_base_ac(player) < 100)
+            if (get_base_ac(player) < 120)
                 return REFUSE;
             if ((player->skills[skill] & SKILL_MASK) < 12)
                 return REFUSE;
@@ -16820,7 +16820,7 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
               }
             return REFUSE;
         case SKILL_IDENTIFY_ITEM:
-            train_req = 100;
+            train_req = 400;
             break;
         case SKILL_MERCHANT:
             leave_map_rep(); // update rep array
@@ -16832,7 +16832,7 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
             *new_skill_cost = 20000;
             return ACCEPT;
         case SKILL_REPAIR:
-            train_req = 25;
+            train_req = 40;
             break;
         case SKILL_BODYBUILDING:
             if (check_bit(QBITS, QBIT_BODYBUIDING_GM_QUEST))
@@ -16849,13 +16849,13 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
                 return DEFAULT;
             return REFUSE;
         case SKILL_DISARM_TRAPS:
-            train_req = 40;
+            train_req = 60;
             break;
         case SKILL_DODGING:
         case SKILL_UNARMED:
             return DEFAULT;
         case SKILL_IDENTIFY_MONSTER:
-            train_req = 100;
+            train_req = 1000;
             break;
         case SKILL_ARMSMASTER:
             for (int i = SKILL_STAFF; i <= SKILL_MACE; i++)

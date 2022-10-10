@@ -397,9 +397,9 @@ Cooks and chefs now give you a moderate stat boost after resting in the field
 (like in MMX!)  You can also get a similar boost by resing in a tavern.
 
 There are two more black potions.  One, "Divine Mastery", increases the PC's
-level by 1% per point of power until next rest.  This not only increases HP
-and SP pools, but can also grant a small (also percentile) bonus to skill
-values.  You can also get a similar effect from resting, as noted above.
+level by 0.2 per point of power until next rest.  This not only increases HP
+and SP pools, but can also grant a small (percentile) bonus to skill values.
+You can also get a similar effect from resting, as noted above.
 
 The other black potion can raise dead (but not eradicated) PCs, and it
 restores a little HP, too.  It actually replaces the Stone to Flesh potion,

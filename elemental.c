@@ -2121,12 +2121,11 @@ static void __declspec(naked) new_potion_effects(void)
         call dword ptr ds:add_buff
         jmp quit
         divine_mastery:
-        movzx eax, word ptr [esi+0xda] ; pc level
-        mul dword ptr [MOUSE_ITEM+4] ; potion power
-        mov ecx, 100
+        mov eax, dword ptr [MOUSE_ITEM+4] ; potion power
+        xor edx, edx
+        mov ecx, 5
         div ecx
-        neg edx ; round up
-        adc eax, ebx
+        inc eax
         cmp ax, word ptr [esi+0xdc] ; level bonus
         jle quit
         mov word ptr [esi+0xdc], ax
@@ -17278,7 +17277,6 @@ static void __declspec(naked) level_skill_bonus(void)
         ja ok
         mov ecx, 20 ; prevent abuse from purposefully staying at level 1
         ok:
-        add ecx, ecx
         mov edx, ebx
         and edx, SKILL_MASK
         mul edx

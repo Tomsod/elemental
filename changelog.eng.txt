@@ -74,7 +74,7 @@ skill (multiplied by rank) adds 5% to base level-dependent HP or SP (past
 level 20, that is).  Also, the effect of Endurance, Intellect and Personality
 now works the same way.  To counterbalance it a bit, GM at the both skills no
 longer increases their effect to 5x; instead, it adds HP or SP regeneration,
-at one point per 5 minutes per 5 or 6 points of skill, respectively.
+at one point per 5 minutes per 2 or 5 points of skill, respectively.
 
 Perception is now more useful, as it increases loot from monsters: both the
 amount of gold and the chance of an item are increased by 2% per point of
@@ -230,6 +230,8 @@ or Cursed, depending on the path.  And Amuck is Terrifying.
 
 Blasters can now be sold, and no NPC besides the Celeste and Pit weaponsmiths
 can ID or repair it (including hirelings).  PCs also need high skill to do it.
+
+Different items that regenerate HP (but not SP!) now stack with each other.
 
 And another change: items that increase HP, SP, Thievery and Disarm skills are
 now halved in effect, like the vanilla Armsmaster etc. bonuses.  However, at

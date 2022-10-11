@@ -7528,9 +7528,7 @@ static void __declspec(naked) hp_burnout(void)
         cmp eax, SKILL_GM
         jb no_bb_regen
         and eax, SKILL_MASK
-        xor edx, edx
-        mov ecx, 5
-        div ecx
+        shr eax, 1
         add ebx, eax
         no_bb_regen:
         test ebx, ebx
@@ -7606,7 +7604,7 @@ static void __declspec(naked) sp_burnout(void)
         jb quit
         and eax, SKILL_MASK
         xor edx, edx
-        mov ecx, 6
+        mov ecx, 5
         div ecx
         cmp eax, edi
         cmova eax, edi
@@ -18945,6 +18943,9 @@ static inline void balance_tweaks(void)
     erase_code(0x48e4cf, 14); // old recovery bonuses
     hook_call(0x48e4e3, multiplicative_recovery, 6);
     word(0x4edd8a) = 80; // buff bow recovery
+    // Let HP regen stack.
+    erase_code(0x493c29, 2);
+    erase_code(0x493c31, 2);
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

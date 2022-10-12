@@ -12297,8 +12297,7 @@ static int __stdcall grim_reaper(struct player *player,
       {
         player->sp = new_sp;
       }
-    if (monster->hp <= random() % monster->max_hp
-        && elemdata.difficulty <= random() % 4
+    if (elemdata.difficulty <= random() % 4
         && debuff_monster(monster, MAGIC,
                           get_skill(player, SKILL_AXE) & SKILL_MASK))
       {
@@ -15947,8 +15946,7 @@ static void __stdcall blaster_eradicate(struct player *player,
     if (projectile->spell_type == SPL_INCINERATE)
       {
         int power = projectile->spell_power;
-        if (power > random() % 50 && monster->hp <= random() % monster->max_hp
-            && elemdata.difficulty <= random() % 4
+        if (power > random() % 50 && elemdata.difficulty <= random() % 4
             && debuff_monster(monster, FIRE, power))
             monster->hp = 0;
       }
@@ -15956,7 +15954,6 @@ static void __stdcall blaster_eradicate(struct player *player,
         return;
     int skill = get_skill(player, SKILL_BLASTER);
     if (skill > SKILL_GM && (skill & SKILL_MASK) > random() % 200
-        && monster->hp <= random() % monster->max_hp
         && elemdata.difficulty <= random() % 4
         && debuff_monster(monster, MAGIC, skill & SKILL_MASK)
         || projectile->item.bonus2 == SPC_CARNAGE)
@@ -16612,7 +16609,6 @@ static int __stdcall maybe_instakill(struct player *player,
         return 0;
     int skill = get_skill(player, SKILL_UNARMED);
     if (skill > SKILL_GM && (skill & SKILL_MASK) > random() % 200
-        && monster->hp <= random() % monster->max_hp
         && elemdata.difficulty <= random() % 4
         && debuff_monster(monster, PHYSICAL, skill & SKILL_MASK))
       {

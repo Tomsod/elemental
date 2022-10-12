@@ -101,8 +101,7 @@ catalysts mixed with it 25% less effective.  So, the skill is still helpful.
 Blaster skill is now limited by class.  But those classes who can achieve GM
 can enjoy a new perk: a small chance to eradicate the target on hit.
 Eradicated monsters disappear without leaving a corpse, though, and it doesn't
-happen often: the base chance is 0.5% per skill point, monsters can resist vs.
-Magic, and it can also fail with a (monster HP) / (monster max HP) chance.
+happen often: the chance is 0.5% per skill and monsters can resist vs. Magic.
 
 ID Item and Repair are now more useful, as I've raised the ID/repair
 difficulty of many items, and item enchantments further increase it now.  So,
@@ -139,9 +138,8 @@ of Dodging is replaced by the Unarmed effect (the ability to dodge any hit) --
 and by the way, I've fixed it so that ANY hit can be dodged, melee or ranged,
 not just arrows (which might've been a vanilla bug); spells can't be dodged,
 though, -- and the new GM effect of Unarmed is "death touch": 0.5% * skill
-chance to instakill a monster on hit.  Like blaster eradication, this can fail
-either because of monster's Physical resistance, or with a HP-based chance.
-Also, undead, golems and other non-living monsters are immune to this effect.
+chance to instakill a monster on hit.  Monsters can avoid this affect through
+Physical resistance; undead, golems and other non-living monsters are immune.
 
 Next, ID Monster is improved.  One, the game now remembers whether a monster
 was identified (and at which rank), like with items, and subsequently shows

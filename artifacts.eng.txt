@@ -82,10 +82,9 @@ generated somewhere else before the party's first visit to Evenmorn Island.
 A relic poleaxe that has a 20% chance each hit to (attempt to) instantly kill
 its target.  This costs 15 SP, or twice as much HP if the wielder is out of SP.
 The relic also passively drains 1 SP per 5 minutes while enemies are nearby.
-The target may resist the death effect, either through Magic resistance (the
-wielder's Axe skill determines resistance penetration), or through HP (with a
-chance equal to (monster's current HP) / (monster's total HP)).  On higher
-difficulties, instant death also has a chance to fail unconditionally.
+The target may avoid the death effect through Magic resistance (the wielder's
+Axe skill determines resistance penetration). On higher difficulties,
+instant death effects also have a chance to fail unconditionally.
 
 10. Witchbane (amulet)
 A relic amulet that grants immunity to non-elemental Magic, but sets max SP to

@@ -274,13 +274,20 @@ lowers the minimum enchantable item price slightly.
 GM Fire Aura is nerfed: the resulting permanent enchantment no longer adds
 2000 gold to the weapon's price; instead, it merely doubles.
 
+Inferno and Prismatic Light are boosted a little (resp. to d2 and d3).  While
+even in vanilla they could be cost-effective, it just wasn't often enough.
+
 Immolation now lasts slightly longer (5 and 15 min/skill on Master and GM).
 
 Invisibility now lasts shorter (same values as above), and opening a chest
 immediately dispels it.  You can still pickup items from the floor.
 
-Sparks and Poison Spray are now much, much more expensive on higher ranks.
-Their damage is still obscene, but at least the SP cost matches it now.
+Sparks and Poison Spray are now a bit more expensive on higher ranks, and no
+longer have lowered recovery.  I only haven't nerfed them more because unlike
+most other spells, they compete with melee weapons instead of bows, but even
+with that, they were way, way too cheap for their late-game effectiveness.
+
+Ice Blast is nerfed again (to d4), as it turned out to be too strong at GM.
 
 Souldrinker now restores HP equal to the amount actually drained, instead of a
 fixed per-monster value (which didn't even check immunities).

@@ -807,6 +807,7 @@ enum spells
     SPL_FIRE_AURA = 4,
     SPL_FIREBALL = 6,
     SPL_IMMOLATION = 8,
+    SPL_INFERNO = 10,
     SPL_INCINERATE = 11,
     SPL_WIZARD_EYE = 12,
     SPL_FEATHER_FALL = 13,
@@ -835,6 +836,7 @@ enum spells
     SPL_DESTROY_UNDEAD = 79,
     SPL_DISPEL_MAGIC = 80,
     SPL_PARALYZE = 81,
+    SPL_PRISMATIC_LIGHT = 84,
     SPL_VAMPIRIC_WEAPON = 91,
     SPL_SHRINKING_RAY = 92,
     SPL_CONTROL_UNDEAD = 94,
@@ -6188,8 +6190,8 @@ static inline void misc_spells(void)
     hook_jump(0x453b35, spells_txt_tail);
     // Poison chest traps are also hardcoded.
     patch_dword(0x438f11, POISON); // was body (8)
-    // Buff Ice Blast a little (d3 -> d6 damage).  Stolen from MM8.
-    SPELL_INFO[SPL_ICE_BLAST].damage_dice = 6;
+    // Buff Ice Blast a little (d3 -> d4 damage).
+    SPELL_INFO[SPL_ICE_BLAST].damage_dice = 4;
     hook_call(0x4742bd, feather_fall_jump, 6); // outdoors
     hook_call(0x47301e, feather_fall_jump, 6); // indoors
     // Remove the shorter delay from GM Feather Fall.
@@ -6318,12 +6320,12 @@ static inline void misc_spells(void)
     patch_dword(0x42a17d, 15 * 60); // nerf invisibility gm duration
     patch_dword(0x42a197, 5 * 60); // and master, too
     // Shotgun spells were too cheap for their potential damage at high ranks.
-    SPELL_INFO[SPL_SPARKS].cost_expert = 8;
-    SPELL_INFO[SPL_SPARKS].cost_master = 12;
-    SPELL_INFO[SPL_SPARKS].cost_gm = 16;
-    SPELL_INFO[SPL_POISON_SPRAY].cost_expert = 7;
-    SPELL_INFO[SPL_POISON_SPRAY].cost_master = 14;
-    SPELL_INFO[SPL_POISON_SPRAY].cost_gm = 20;
+    SPELL_INFO[SPL_SPARKS].cost_expert = 5;
+    SPELL_INFO[SPL_SPARKS].cost_master = 6;
+    SPELL_INFO[SPL_SPARKS].cost_gm = 7;
+    SPELL_INFO[SPL_POISON_SPRAY].cost_expert = 4;
+    SPELL_INFO[SPL_POISON_SPRAY].cost_master = 6;
+    SPELL_INFO[SPL_POISON_SPRAY].cost_gm = 8;
     hook_call(0x410d45, fix_gm_spell_cost_display, 8);
     // Remove variable delay b/c increased projectile count is a change enough.
     SPELL_INFO[SPL_SPARKS].delay_normal = 100;
@@ -6387,6 +6389,9 @@ static inline void misc_spells(void)
     hook_call(0x42a273, ww_fly_scroll_no_sp, 5); // Fly
     patch_bytes(0x42a2d4, fly_scroll_chunk, 13);
     erase_code(0x42a2e1, 13); // rest of pointless old code
+    // Buff the LOS damage spells a little.
+    SPELL_INFO[SPL_INFERNO].damage_dice = 2;
+    SPELL_INFO[SPL_PRISMATIC_LIGHT].damage_dice = 3;
 }
 
 // For consistency with players, monsters revived with Reanimate now have

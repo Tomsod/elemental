@@ -453,7 +453,7 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 451	Маргарита проводница	162	0	0	0	0	0	22	0	0	0	0	0	0	0	Docent for the tour 5	
 452	Маргарита проводница	162	0	0	0	0	0	23	0	0	0	0	0	0	0	Docent for the tour 6	
 453	Маргарита проводница	162	0	0	0	0	0	24	0	0	0	0	0	0	0	Docent for the tour 7	
-454	Пусто	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+454	Гонец	2	0	0	0	0	0	224	0	0	0	0	0	0	0	Probatory access alert
 455	Пусто	0	0	0	0	0	0	0	0	0	0	0	0	0	0
 456	Пусто	0	0	0	0	0	0	0	0	0	0	0	0	0	0
 457	Пусто	0	0	0	0	0	0	0	0	0	0	0	0	0	0

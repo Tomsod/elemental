@@ -284,3 +284,4 @@ Please rescue him!  Not even I can bear to think of my brother in those conditio
 221	"Well met!  I study Earth Magic under Avalanche next door.  Many sorcerers snub the Earth element, but I believe it's the best option for a dedicated battlemage, as it has got both raw destructive power and tactically useful spells.  It just takes some skill to combine them well."	"Hello again.  How do you fare?"	Sacrificial Dagger questgiver
 222	*whickers*	*whickers*	Cavalier horse
 223	*groans*	*groans*	Cavalier zombie horse
+224	"My lords, I urge you to return to Castle Harmondale soon!  There have been some unexpected developments in your domain that require your attention.  I cannot say more here."	"My lords, I urge you to return to Castle Harmondale soon!  There have been some unexpected developments in your domain that require your attention.  I cannot say more here."	Probatory access messenger

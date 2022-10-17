@@ -223,6 +223,8 @@ Other enchantments I've added: "Elemental Slaying" weapons, like in MM8.
 Taunting", which increases aggro (aggro will be explained later).  And weapons
 "of the Jester", which also increase aggro and deal some extra Mind damage.
 
+The "Sturdy" enchantment is removed due to its overall uselessness.
+
 Mekorig's Hammer is now Elemental Slaying.  The Perfect Bow is either Blessed
 or Cursed, depending on the path.  And Amuck is Terrifying.
 
@@ -461,8 +463,44 @@ Finally, I've completely removed multiloot.  No more 10 relics from Wromthrax!
 
 === Bug fixes ===
 
-Fuq da police, I ain't doing this right now!  Later I'll compile the long,
-long list of fixed bugs, but it can wait until the proper release.
+As always, some vanilla bugs were discovered and fixed.  Here's the list:
+
+Fix: the amethyst gem was misspelled as "amythest" in English.
+Fix: all reagents were described as "herbs" in English.
+v1.0 fix: Enchanter NPC description mentioned old elements.
+v1.0 fix: English text for the Glory Shield had "Ego" instead of "Self".
+Exploit fix: Divine Intervention book could be duplicated by Judge and sold.
+Fix: can no longer buy several crates of goods at the same time.
+Fix: peaceful monsters could cast Dispel Magic on party.
+Fix: sometimes the "more information" hireling dialog has to be clicked twice.
+Fix: effects of some potions weren't removed on rest.
+Fix: HP/SP regeneration only triggered every 6 minutes while waiting with 'R'.
+Fix: PC recovery could be set to garbage values on game reload.
+Fix: evt.Sub("QBits") triggered a smile even if no visible changes occured.
+Fix: raised age was highlighted green instead of yellow/red.
+Fix: a chest in Tularean had 0 power potion and 0-charge wand.
+Fix: Harmondale town hall placed bounties on peasants instead of trolls.
+Fix: Celeste town hall placed bounties on angels.
+Fix: some areas had 0-charge wands lying on the ground.
+Fix: restored rubies on Nighon volcano and prevented some from falling in.
+Fix: Nighon HP and SP wells had wrong messages and autonotes.
+Fix: repairing an item no longer IDs it.
+Fix: Stun spell could miss, using the equipped bow's attack value.
+Fix: weapon stun checked for Earth resistance.
+Fix: monsters that attacked a specific class ignored its promotions.
+Fix: monsters with a custom loyalty didn't attack their enemies sometimes.
+v2.0 fix: Spectral weapons didn't account for monster Day of Protection.
+v2.0 fix: shooting wands often made no sound.
+Fix: Russian description of Hareck's Leather listed a boost to a wrong skill.
+Fix: Hammerhands spell description was incorrect (and mentioned old elements).
+Fix: some skill teacher dialogue had typos and wrong skill descriptions.
+v2.0 fix: can mix new black potions with each other (with an explosion).
+v2.1 fix: Backstabbing weapons were broken for a while.
+Fix: Bodybuilding and Meditation had wrong example numbers.
+Fix: unpromoted Rangers could learn Meditation despite having no magic.
+Fix: RMB class descriptions were nonfunctional and often incorrect.
+v2.0 fix: Hammerhands spell didn't work properly.
+Fix: lichification reset the PC race to human.
 
 -------------------------------------------------------------------------------
 

@@ -1112,11 +1112,6 @@ struct __attribute__((packed)) patch_options
     SKIP(16);
 };
 
-// I didn't want to do this, but here's some function offset from v2.5.7.
-// Having the wrong version will not cause crashes, though.
-#define PATCH_CODE_BASE 0x32c1000
-#define PATCH_AXE_HOOK_OFFSET 0x42038
-
 // my addition
 #define ACTION_EXTRA_CHEST 40
 //vanilla
@@ -10057,79 +10052,72 @@ static void __declspec(naked) pierce_debuff_resistance(void)
 {
     asm
       {
-        add ecx, esi
-        mov esi, dword ptr [debuff_penetration]
-        test esi, esi
+        mov eax, dword ptr [debuff_penetration]
+        test eax, eax
         jnz not_spell
         cmp dword ptr [ebp+4], 0x439c54 ; weapon / spell stun
         jne not_stun
-        mov esi, dword ptr [ebp] ; old ebp
-        mov esi, dword ptr [esi-32] ; stun power + 1
-        dec esi
+        mov eax, dword ptr [ebp] ; old ebp
+        mov eax, dword ptr [eax-32] ; stun power + 1
+        dec eax
         jz weapon
         jmp not_spell
         not_stun:
         cmp dword ptr [ebp+4], 0x439cdf ; mace paralysis
         je weapon
-        cmp dword ptr [ebp+4], PATCH_CODE_BASE + PATCH_AXE_HOOK_OFFSET + 29
+        cmp edx, 0x439cdf ; same, but patch-hooked (GM axe)
         jne not_weapon
         weapon:
-        push ecx
-        push eax
         mov ecx, dword ptr [ebp-8] ; stored edi
         ; vanilla debuffs only happen from main hand
-        mov eax, dword ptr [ecx+0x1948+SLOT_MAIN_HAND*4]
-        test eax, eax
-        jz no_weapon
-        lea eax, [eax+eax*8]
-        test byte ptr [ecx+0x214+eax*4-36+20], IFLAGS_BROKEN
-        jnz no_weapon
-        mov eax, dword ptr [ecx+0x214+eax*4-36]
+        mov edx, dword ptr [ecx+0x1948+SLOT_MAIN_HAND*4]
+        test edx, edx
+        jz not_spell
+        lea edx, [edx+edx*8]
+        test byte ptr [ecx+0x214+edx*4-36+20], IFLAGS_BROKEN
+        jnz not_spell
+        not_broken:
+        mov eax, dword ptr [ecx+0x214+edx*4-36]
         lea eax, [eax+eax*2]
         shl eax, 4
         movzx eax, byte ptr [ITEMS_TXT_ADDR+eax+29]
         push eax
         call dword ptr ds:get_skill
         and eax, SKILL_MASK
-        mov esi, eax
-        no_weapon:
-        pop eax
-        pop ecx
         jmp not_spell
         not_weapon:
         cmp dword ptr [ebp+4], 0x46bf98 ; gm shrinking ray code
         jne not_gm_ray
-        mov esi, dword ptr [ebp-8] ; stored edi
+        mov eax, dword ptr [ebp-8] ; stored edi
         jmp shrinking_ray
         not_gm_ray:
         cmp dword ptr [ebp+4], 0x46ca24 ; projectile impact code
         jne not_projectile
-        mov esi, dword ptr [ebp-4] ; stored esi
+        mov eax, dword ptr [ebp-4] ; stored esi
         shrinking_ray:
-        mov esi, dword ptr [esi+76] ; spell skill
+        mov eax, dword ptr [eax+76] ; spell skill
         jmp not_spell
         not_projectile:
         cmp dword ptr [ebp+4], 0x427db8 ; start of cast spell function
         jb not_spell
         cmp dword ptr [ebp+4], 0x42e968 ; end of cast spell function
         ja not_spell
-        mov esi, dword ptr [ebp] ; stored ebp
-        mov esi, dword ptr [esi-56] ; spell skill
+        mov eax, dword ptr [ebp] ; stored ebp
+        mov eax, dword ptr [eax-56] ; spell skill
         not_spell:
-        shl esi, 1 ; double the skill to make the effect noticeable
+        shl eax, 1 ; double the skill to make the effect noticeable
         mov edx, dword ptr [edi+212+MBUFF_CURSED*16]
         or edx, dword ptr [edi+212+MBUFF_CURSED*16+4]
         jz not_cursed
-        add esi, 10 ; effectively lowers res by 25% before skill bonus
+        add eax, 10 ; effectively lowers res by 25% before skill bonus
         not_cursed:
         cmp byte ptr [edi+182], GM
         jb no_id_bonus
-        add esi, 5 ; less than curse, but still something
+        add eax, 5 ; less than curse, but still something
         no_id_bonus:
-        add esi, 30 ; standard difficulty check
-        cdq ; replaced code
-        add ecx, esi
-        ret
+        add esi, eax
+        lea ebp, [eax+30] ; standard difficulty check
+        jmp dword ptr ds:random ; replaced call
       }
 }
 
@@ -10138,7 +10126,7 @@ static void __declspec(naked) debuff_resist_chunk(void)
 {
     asm
       {
-        cmp edx, esi
+        cmp edx, ebp
         nop
       }
 }
@@ -10256,7 +10244,7 @@ static void __declspec(naked) shrinking_ray_duration_chunk(void)
 // TODO: rework mace paralysis as well?  see 0x439cfe
 static inline void debuff_spells(void)
 {
-    hook_call(0x4276a1, pierce_debuff_resistance, 5);
+    hook_call(0x427695, pierce_debuff_resistance, 5);
     erase_code(0x428fc8, 6); // do not multiply shrinking ray's skill by 300
     patch_bytes(0x4276aa, debuff_resist_chunk, 3);
     patch_bytes(0x428d6b, slow_5min_chunk, 6);

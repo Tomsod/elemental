@@ -502,6 +502,7 @@ Fix: RMB class descriptions were nonfunctional and often incorrect.
 v2.0 fix: Hammerhands spell didn't work properly.
 Fix: lichification reset the PC race to human.
 Fix: ID Item and ID Monster appeared the same as chargen skill picks.
+Fix: there was a floating bush in Tularean in summer.
 
 -------------------------------------------------------------------------------
 

@@ -735,3 +735,5 @@ Global Text
 732	Critical miss chance
 733	Average damage per round
 734	Spell power
+735	ID Item
+736	ID Monster

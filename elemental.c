@@ -291,6 +291,8 @@ enum new_strings
     STR_CRIT_MISS_CHANCE,
     STR_AVERAGE_DPR,
     STR_SPELL_POWER,
+    STR_ID_ITEM,
+    STR_ID_MONSTER,
     NEW_STRING_COUNT
 };
 
@@ -9691,6 +9693,32 @@ static void __declspec(naked) fix_infinite_di_books(void)
       }
 }
 
+// ID Item and ID Monster were both shortened to "Identify" as optional picks
+// in the new game screen.  Let's give them distinguishable, but short, names.
+static void __declspec(naked) short_id_skill_names(void)
+{
+    asm
+      {
+        cmp edi, SKILL_IDENTIFY_ITEM
+        je id_item
+        cmp edi, SKILL_IDENTIFY_MONSTER
+        je id_monster
+        mov eax, 0x4caff0 ; replaced call
+        jmp eax
+        id_item:
+        push dword ptr [new_strings+STR_ID_ITEM*4]
+        jmp replace
+        id_monster:
+        push dword ptr [new_strings+STR_ID_MONSTER*4]
+        replace:
+        push eax
+        call dword ptr ds:strcpy_ptr
+        add esp, 8
+        xor eax, eax ; skip the space cutoff
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -9820,6 +9848,7 @@ static inline void misc_rules(void)
     patch_byte(0x490d25, 24);
     hook_call(0x446066, reset_hireling_reply, 7);
     hook_call(0x4b1ed6, fix_infinite_di_books, 10);
+    hook_call(0x49672a, short_id_skill_names, 5);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

@@ -9849,6 +9849,8 @@ static inline void misc_rules(void)
     hook_call(0x446066, reset_hireling_reply, 7);
     hook_call(0x4b1ed6, fix_infinite_di_books, 10);
     hook_call(0x49672a, short_id_skill_names, 5);
+    // Fix floor gold piles not being nerfed by map treasure level.
+    patch_dword(0x450084, 0x9090d889); // mov eax, ebx; nop; nop
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

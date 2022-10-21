@@ -919,3 +919,5 @@ Also, bring our half of the key to us, as well.  It is enshrined in the Temple o
 851	"This is your loyal steed.  It allows you to fly for two hours per day, and makes travel on foot take three days less (but no less than one)."	RMB text	Bracada Cavalier Horse
 852	"This is your loyal steed.  It increases the Armsmaster skill of all Knights in your party by 3, and makes travel on foot and via stables take two days less (but no less than one)."	RMB text	Tatalia Cavalier Horse
 853	"This is your loyal steed.  It gives all Knights in your party immunity to non-elemental magic, and makes travel on foot and via stables take two days less (but no less than one)."	RMB text	Avlee Cavalier Horse
+854	"The Barrows are home for generations of our ancestors, and anything buried along with them is sacred to us.  Foreigners trying to rob sarcophagi usually succumb to powerful curses, and even if they make out with the loot, no self-respecting dwarf would ever associate with such thieves."	Barrows rep hint (pre)	Dwarven NPCs
+855	"Had fun robbing the dead?  *spits*  You're not welcome here anymore."	Barrows rep hint (post)	Dwarven NPCs

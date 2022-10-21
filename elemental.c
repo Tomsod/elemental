@@ -1033,9 +1033,9 @@ enum monster_buffs
 // new NPC greeting count (starting from 1)
 #define GREET_COUNT 224
 // new NPC topic count
-#define TOPIC_COUNT 608
+#define TOPIC_COUNT 609
 // count of added NPC text entries
-#define NEW_TEXT_COUNT 64
+#define NEW_TEXT_COUNT 66
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658

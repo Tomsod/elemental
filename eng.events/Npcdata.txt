@@ -261,7 +261,7 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 259	Pedron Sablewood	3	0	0	0	491	0	0	0	403	468	0	0	0	0	Earth Guild Membership (2)	2
 260	Devon Ivers	405	0	0	0	328	0	0	0	403	456	0	0	0	0	Earth Guild Membership (4)	4
 261	Therese Umberpool	547	0	0	0	435	0	0	0	403	432	455	0	0	0	Earth Guild Membership (8)	8
-262	Feldin Urthsmite	314	0	0	0	420	0	0	0	403	474	0	0	0	0	Earth Guild Membership (39)	39
+262	Feldin Urthsmite	314	0	0	0	420	0	0	0	403	474	609	0	0	0	Earth Guild Membership (39)	39
 263	Alise Nightwood	249	0	0	0	467	0	0	0	408	470	0	0	0	0	Spirit Guild Membership (2)	2
 264	Wilbur Eversmyle	84	0	0	0	294	0	0	0	408	419	0	0	0	0	Spirit Guild Membership (3)	3
 265	Malisha Karrand	212	0	0	0	331	0	0	0	408	489	0	0	0	0	Spirit Guild Membership (5)	5
@@ -398,7 +398,7 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 396	Alik Whitemoon	420	0	0	0	323	0	184	0	448	444	0	0	0	0	Hint NPC in Tularean Forest (4)
 397	Amber Pebble	546	0	0	0	498	0	221	0	603	499	422	0	0	0	Hint NPC in Deyja (5) + Goblin Dagger Quest
 398	Claes Mogren	562	0	0	0	338	0	190	0	423	444	0	0	0	0	Hint NPC in Deyja (5)
-399	Licia Rivenrock	376	0	0	0	520	0	183	0	457	429	0	0	0	0	Hint NPC in Barrow Downs (11)
+399	Licia Rivenrock	376	0	0	0	520	0	183	0	457	609	0	0	0	0	Hint NPC in Barrow Downs (11)
 400	Feldspar Toolmen	324	0	0	0	517	0	183	0	429	439	0	0	0	0	Hint NPC in Barrow Downs (11)
 401	Jasper Fissure	318	0	0	0	518	0	183	0	528	429	0	0	0	0	Hint NPC in Barrow Downs (11)
 402	Kelly Garnet	384	0	0	0	519	0	183	0	529	444	0	0	0	0	Hint NPC in Barrow Downs (11)

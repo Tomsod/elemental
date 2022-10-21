@@ -607,3 +607,4 @@
 606	Open Left Bag	Cavalier Steed
 607	Open Right Bag	Cavalier Steed
 608	Start Flying	Cavalier Steed
+609	Graverobbers	Barrows reputation hint

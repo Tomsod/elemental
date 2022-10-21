@@ -386,7 +386,7 @@ Q Bit	Quest Note Text	Notes	Owner
 385		Got Elfbane	0	0
 386		Used temple in a bottle in Shoals	0	0
 387		Probatory access messenger (out03/04)	0	0
-388	0	0	0	0
+388		Robbed a sarcophagus	0	0
 389	0	0	0	0
 390	0	0	0	0
 391	0	0	0	0

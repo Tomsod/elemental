@@ -607,3 +607,4 @@
 606	Открыть левую сумку	Cavalier Steed
 607	Открыть правую сумку	Cavalier Steed
 608	Начать полёт	Cavalier Steed
+609	Грабители могил	Barrows reputation hint

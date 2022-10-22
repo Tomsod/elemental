@@ -18963,7 +18963,7 @@ static inline void balance_tweaks(void)
     word(0x4f07aa) = 60; // was 100
     erase_code(0x48e4cf, 14); // old recovery bonuses
     hook_call(0x48e4e3, multiplicative_recovery, 6);
-    word(0x4edd8a) = 80; // buff bow recovery
+    word(0x4edd8a) = 90; // buff bow recovery
     // Let HP regen stack.
     erase_code(0x493c29, 2);
     erase_code(0x493c31, 2);

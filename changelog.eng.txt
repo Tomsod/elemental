@@ -396,7 +396,7 @@ weapon recovery (before the multiplication).  This means most classes will
 struggle to get more than 3 attack per round (except with blasters).  Knights,
 with enough Armsmaster bonuses, are still able to reach the recovery limit,
 which is now 10 attacks per round for all weapons.  This was mostly intended
-to nerf melee, so I've also improved base bow recovery to 80 to counteract it.
+to nerf melee, so I've also improved base bow recovery to 90 to counteract it.
 
 Some hirelings have been redone.  Porters, quartermasters, and gypsies now
 work as "portable chests", carrying some of your loot or other items.  Like

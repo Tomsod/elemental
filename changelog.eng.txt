@@ -504,6 +504,7 @@ Fix: lichification reset the PC race to human.
 Fix: ID Item and ID Monster appeared the same as chargen skill picks.
 Fix: there was a floating bush in Tularean in summer.
 Fix: gold piles on the ground could contain too much gold.
+Fix: some Tatalian guard archers had peasant AI.
 
 -------------------------------------------------------------------------------
 

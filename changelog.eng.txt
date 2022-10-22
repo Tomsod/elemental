@@ -505,6 +505,7 @@ Fix: ID Item and ID Monster appeared the same as chargen skill picks.
 Fix: there was a floating bush in Tularean in summer.
 Fix: gold piles on the ground could contain too much gold.
 Fix: some Tatalian guard archers had peasant AI.
+Fix: a male peasant in Celeste had female portrait and name.
 
 -------------------------------------------------------------------------------
 

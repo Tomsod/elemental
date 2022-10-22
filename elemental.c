@@ -12362,6 +12362,7 @@ static void __declspec(naked) open_regular_chest(void)
         mov ecx, PARTY_BUFF_ADDR + BUFF_INVISIBILITY * 16
         call dword ptr ds:remove_buff
         or eax, 1
+        mov dword ptr [0x576eac], eax ; refresh screen
         quit:
         ret
       }

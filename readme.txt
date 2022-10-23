@@ -18,7 +18,8 @@ The subfolders contain the files from the respective *.lod archives.
 If you intend to re-create them, be aware that MM7 does not seem to recognize
 archives newly created by MMArchive (at least not by the version I used).
 Instead, you can copy an existing archive, then delete all files from it.
-That usually works.
+That usually works.  It's also possible to choose the archive type when
+creating a new archive, although some types appear not to be listed.
 
 The tools folder contains tools I used for patching dungeon files
 in games.lod.  See the readme there.  The misc folder has the text files

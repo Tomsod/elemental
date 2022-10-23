@@ -1,7 +1,7 @@
 This is the change log for the Elemental Mod.  It's quite descriptive,
 and can be viewed as the chief source of information on the mod's features.
 
-== Elemental Mod ver. 3.0 beta ==
+== Elemental Mod ver. 3.0 ==
 
 This release chiefly concerns party composition.  Characters are now defined by
 more than just class, with race and light/dark path choice being more
@@ -9,10 +9,6 @@ significant, skill advancement is (mostly) more lenient, skill effects are
 rebalanced, and hybrid classes are hopefully more viable now.  Also, I added a
 bunch of new artifacts and some other items, tweaked spells some more, made a
 number of other changes to game mechanics, and fixed some more bugs.
-
-Currently we're still in the playtesting phase.  New bugs may be uncovered,
-and, more importantly, I will likely tweak some numerical constants for the
-sake of balance.  But adding or removing major features is unlikely.
 
 
 === Race and class changes ===
@@ -138,18 +134,18 @@ of Dodging is replaced by the Unarmed effect (the ability to dodge any hit) --
 and by the way, I've fixed it so that ANY hit can be dodged, melee or ranged,
 not just arrows (which might've been a vanilla bug); spells can't be dodged,
 though, -- and the new GM effect of Unarmed is "death touch": 0.5% * skill
-chance to instakill a monster on hit.  Monsters can avoid this affect through
+chance to instakill a monster on hit.  Monsters can avoid this effect through
 Physical resistance; undead, golems and other non-living monsters are immune.
 
 Next, ID Monster is improved.  One, the game now remembers whether a monster
 was identified (and at which rank), like with items, and subsequently shows
 its stats to any PC.  Two, identifying a monster also works like a minor
-debuff: at Normal, party has +5 to armor penetration agains the monster.  At
+debuff: at Normal, party has +5 to armor penetration against the monster.  At
 Expert, the monster also gets negative 5 armor penetration vs. the party.  At
 Master, the monster also deals 10% less damage to the party (except with
 Energy attacks).  And at GM, party also gets +5 resistance penetration vs. it.
 
-Magic skills are not changed in behavoir, but you now need skill level 8 to
+Magic skills are not changed in behavior, but you now need skill level 8 to
 train to Master and 12, to GM, unlike 7 and 10 resp. for all other skills.
 
 I've also buffed Axes a bit by doubling the skill's Expert recovery bonus.
@@ -170,11 +166,11 @@ Another large part of the release is artifact-related.  I've added 15 brand
 new artifacts and relics, 16 if you include a former specitem that basically
 only retained its appearance.  The total number of obtainable artifacts have
 also been increased to 20, but I've removed the ability to get an artifact
-beyond this limit from some chests (Clanker's, Hive, and there's a couple of
+beyond this limit from some chests (Clanker's, Zod, and there's a couple of
 new ones); rather, all such artifacts count towards the limit, and you cannot
 get a second one after respawn.  I don't want to describe the artifacts here,
 as it would spoil the fun, but if you're curious about what I've added, visit
-https://github.com/Tomsod/elemental/blob/master/artifacts.eng.txt
+https://github.com/Tomsod/elemental/blob/v3.0/artifacts.eng.txt
 
 Some vanilla artifacts have also been tweaked: Titan's Belt now directly
 increases melee damage and worsens recovery instead of the stat bonuses that
@@ -187,7 +183,7 @@ another Alchemy item.  It also empowers Enchant Item, same (and non-stackable
 with) as casting at noon.  Finally, Shadow's Mask skill bonus also stacks.
 
 The relics that are Good or Evil only can be used by Light- and Dark-promoted
-PCs repectively, even if the rest of the party has chosed the other path.
+PCs respectively, even if the rest of the party has chosen the other path.
 
 I've also added unique sprites from MM6 and MM8 to many specitems.
 
@@ -299,7 +295,7 @@ fixed per-monster value (which didn't even check immunities).
 Paralyze effect is nerfed, as it now has a 20% chance to wear off each time
 the affected monster is damaged.  Thus, it's not an instakill spell now.
 
-Hammerhands now works together with GM Staff.
+Hammerhands spell now works together with GM Staff.
 
 Town Portal is severely nerfed, as it now only teleports to the last visited
 town on Master, and only at GM you can choose.  Also, the success chance is
@@ -339,7 +335,7 @@ Also, Ctrl-clicking Immolation and GM Wizard Eye icons now turns them off.
 
 There's a bunch of other assorted mechanical changes and new features in 3.0.
 
-First of all, I've added a difficulty level switch!  It's accessible throuh
+First of all, I've added a difficulty level switch!  It's accessible through
 the Controls menu and can be changed anytime except in combat.  You're advised
 to play with the setting and find what you're most comfortable with, as the
 vanilla game gets boring once you know how to play it well.  The default level
@@ -481,7 +477,7 @@ Fix: sometimes the "more information" hireling dialog has to be clicked twice.
 Fix: effects of some potions weren't removed on rest.
 Fix: HP/SP regeneration only triggered every 6 minutes while waiting with 'R'.
 Fix: PC recovery could be set to garbage values on game reload.
-Fix: evt.Sub("QBits") triggered a smile even if no visible changes occured.
+Fix: evt.Sub("QBits") triggered a smile even if no visible changes occurred.
 Fix: raised age was highlighted green instead of yellow/red.
 Fix: a chest in Tularean had 0 power potion and 0-charge wand.
 Fix: Harmondale town hall placed bounties on peasants instead of trolls.

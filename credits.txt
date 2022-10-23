@@ -5,7 +5,7 @@ I do utilize it while testing, and the documented structs are ever so useful.
 Thank you to the fellows at mm6world.ru for providing a thorough guide
 and being an occasional source of inspiration.
 
-Thank you to Eksekk and my friend Kostya for playtesting
+Thank you to Eksekk and my friends Kostya and Vladimir for playtesting
 and fruitful discussions.
 
 Also thank you to Eksekk for modifying the castle Harmondale map.

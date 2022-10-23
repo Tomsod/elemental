@@ -231,6 +231,8 @@ or Cursed, depending on the path.  And Amuck is Terrifying.
 Blasters can now be sold, and no NPC besides the Celeste and Pit weaponsmiths
 can ID or repair it (including hirelings).  PCs also need high skill to do it.
 
+It's no longer possible to repair items lying on the ground.
+
 Different items that regenerate HP (but not SP!) now stack with each other.
 
 And another change: items that increase HP, SP, Thievery and Disarm skills are

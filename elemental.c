@@ -3927,6 +3927,22 @@ static void __declspec(naked) repair_starting_items(void)
       }
 }
 
+// Do not repair items on the ground (== in the main screen).
+static void __declspec(naked) no_repair_at_distance(void)
+{
+    asm
+      {
+        mov edx, eax ; replaced code
+        and eax, IFLAGS_BROKEN ; ditto
+        jz quit
+        cmp dword ptr [CURRENT_SCREEN], ebx ; == 0
+        jnz quit
+        xor eax, eax ; pretend it`s not broken
+        quit:
+        ret
+      }
+}
+
 // Misc item tweaks.
 static inline void misc_items(void)
 {
@@ -3996,6 +4012,7 @@ static inline void misc_items(void)
     hook_call(0x456a15, generate_broken_items, 5);
     erase_code(0x41da49, 3); // do not auto-id repaired items
     hook_call(0x497873, repair_starting_items, 5);
+    hook_call(0x41d948, no_repair_at_distance, 5);
 }
 
 static uint32_t potion_damage;

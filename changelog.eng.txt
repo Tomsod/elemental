@@ -432,6 +432,9 @@ Temple healing price is greatly increased for PCs past level 10.
 
 Arena victories now reward five times as much money.
 
+Castle Harmondale now has 10 more chests!  The new map was done by Eksekk, and
+my contributions were minimal.  The new chests are spread around the castle.
+
 You can now collect taxes at Harmondale town hall!  Their amount depends on
 your fame gained since last visit, and also on Harmondale reputation.  If you
 arrange Harmondale to become an independent kingdom, taxes will double.

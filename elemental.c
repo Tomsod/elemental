@@ -1319,6 +1319,8 @@ static int __thiscall (*is_bare_fisted)(void *player) = (funcptr_t) 0x48d65c;
 static funcptr_t reset_interface = (funcptr_t) 0x422698;
 static int __thiscall (*get_perception_bonus)(void *player)
     = (funcptr_t) 0x491252;
+static int __thiscall (*get_merchant_bonus)(void *player)
+    = (funcptr_t) 0x4911eb;
 static int __thiscall (*find_objlist_item)(void *this, int id)
     = (funcptr_t) 0x42eb1e;
 #define OBJLIST_THIS ((void *) 0x680630)
@@ -9719,6 +9721,26 @@ static void __declspec(naked) short_id_skill_names(void)
       }
 }
 
+// Do not use the discount merchant dialog line if the discount is negative.
+static void __declspec(naked) check_for_negative_discount(void)
+{
+    asm
+      {
+        push ecx
+        push SKILL_MERCHANT
+        call dword ptr ds:get_skill ; replaced call
+        pop ecx
+        test eax, eax
+        jz quit
+        call dword ptr ds:get_merchant_bonus
+        test eax, eax
+        jge quit
+        xor eax, eax
+        quit:
+        ret 4
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -9851,6 +9873,7 @@ static inline void misc_rules(void)
     hook_call(0x49672a, short_id_skill_names, 5);
     // Fix floor gold piles not being nerfed by map treasure level.
     patch_dword(0x450084, 0x9090d889); // mov eax, ebx; nop; nop
+    hook_call(0x490ef3, check_for_negative_discount, 5);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

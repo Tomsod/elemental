@@ -512,6 +512,7 @@ Fix: gold piles on the ground could contain too much gold.
 Fix: some Tatalian guard archers had peasant AI.
 Fix: a male peasant in Celeste had female portrait and name.
 Fix: shopkeepers used the discount dialog even if the discount was negative.
+Fix: some reagents in Harmondale were unreachable except with Telekinesis.
 
 -------------------------------------------------------------------------------
 

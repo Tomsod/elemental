@@ -17826,6 +17826,8 @@ static inline void new_enchant_item_types(void)
     erase_code(0x42b28f, 8);
     erase_code(0x42b2ba, 2);
     erase_code(0x42b2bf, 13);
+    // Allow HP/SP regen to work on robes.
+    patch_dword(0x493bf8, LAST_PREFIX);
 }
 
 // For the sprite filename.

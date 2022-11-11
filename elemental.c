@@ -78,8 +78,12 @@ typedef void *funcptr_t;
 
 static void hook_jump(uintptr_t address, funcptr_t func)
 {
-    patch_byte(address, 0xe9);
-    patch_dword(address + 1, (uintptr_t) func - address - 5);
+    check_overwrite(address, 5);
+    DWORD OldProtect;
+    VirtualProtect((LPVOID) address, 5, PAGE_EXECUTE_READWRITE, &OldProtect);
+    byte(address) = 0xe9;
+    dword(address + 1) = (uintptr_t) func - address - 5;
+    VirtualProtect((LPVOID) address, 5, OldProtect, &OldProtect);
 }
 
 static void hook_call(uintptr_t address, funcptr_t func, int length)

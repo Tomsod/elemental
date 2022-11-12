@@ -8495,15 +8495,15 @@ static int __stdcall check_skill(int player, int skill, int level, int mastery)
                 break;
               }
             /* else fall through */
-        // these two cap at x3 now
+        // these cap at x3 now
         case SKILL_BODYBUILDING:
         case SKILL_MEDITATION:
+        case SKILL_THIEVERY:
             if (current_mastery == GM)
                 current_mastery = MASTER;
             /* fall through */
         // skills that are x1/2/3/5 dep. on mastery
         case SKILL_PERCEPTION:
-        case SKILL_THIEVERY:
             if (current_mastery == GM)
                 current_mastery++;
             current_skill *= current_mastery;
@@ -10848,10 +10848,13 @@ static void __declspec(naked) check_backstab(void)
 {
     asm
       {
+        cmp word ptr [ecx+0x108+SKILL_THIEVERY*2], SKILL_GM
+        jae backstab
         mov edx, dword ptr [0xacd4f8] ; party direction
         sub dx, word ptr [esi+154] ; monster direction
         test dh, 6 ; we want no more than +/-512 mod 2048 difference
         jnp quit ; PF == 1 will match 0x000 and 0x110 only
+        backstab:
         add dword ptr [esp+4], 2 ; backstab flag
         mov dword ptr [critical_hit], 2
         quit:
@@ -15532,9 +15535,6 @@ static void __declspec(naked) sniper_accuracy(void)
         cmp eax, SKILL_MASTER
         jb roll
         add edx, ecx
-        cmp eax, SKILL_GM
-        jb roll
-        lea edx, [edx+ecx*2]
         roll:
         push edx
         call dword ptr ds:random
@@ -15543,7 +15543,7 @@ static void __declspec(naked) sniper_accuracy(void)
         div ecx
         pop ecx
         cmp edx, ecx
-        jae check_crit
+        jb check_crit
         no_thievery:
         and dword ptr [critical_hit], 0
         check_crit:
@@ -17398,6 +17398,32 @@ static void __declspec(naked) add_weapon_quality_bonus_to_ac(void)
       }
 }
 
+// Add skill bonus to Thievery when stealing an item (bug fix).
+static void __declspec(naked) stealing_skill_bonus(void)
+{
+    asm
+      {
+        push SKILL_THIEVERY
+        call dword ptr ds:get_skill
+        mov ecx, eax
+        ret
+      }
+}
+
+// Do not mark items shoplifted at GM as stolen.
+static void __declspec(naked) flawless_theft(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [ebp-20] ; current pc
+        cmp word ptr [ecx+0x108+SKILL_THIEVERY*2], SKILL_GM
+        jae quit
+        or word ptr [eax+0x1f0+20], IFLAGS_STOLEN ; replaced code, almost
+        quit:
+        ret
+      }
+}
+
 // Tweak various skill effects.
 static inline void skill_changes(void)
 {
@@ -17409,7 +17435,6 @@ static inline void skill_changes(void)
     hook_call(0x426a82, perception_bonus_gold, 5);
     hook_call(0x426c07, perception_extra_item, 12);
     erase_code(0x491276, 12); // remove 100% chance on GM
-    // thievery backstab is checked in check_backstab() above
     hook_call(0x41641d, lenient_alchemy_remember, 6);
     hook_call(0x4164d9, lenient_alchemy_allow, 6);
     hook_call(0x416570, botched_potion_power, 6);
@@ -17488,6 +17513,12 @@ static inline void skill_changes(void)
     // new master dagger bonus is in sniper_accuracy() above
     patch_byte(0x48cee9, 0xeb); // remove old bonus (main hand)
     patch_byte(0x48d014, 0xeb); // offhand
+    // thievery backstab is checked in check_backstab() above
+    patch_dword(0x4edd58, 300); // remove 5x multiplier at GM
+    hook_call(0x48d7ad, stealing_skill_bonus, 7); // steal from shop
+    patch_word(0x48d8ee, 0xce8b); // mov ecx, esi
+    hook_call(0x48d8f0, stealing_skill_bonus, 5); // steal from a monster
+    hook_call(0x4be11b, flawless_theft, 7);
 }
 
 // Switch off some of MM7Patch's features to ensure compatibility.

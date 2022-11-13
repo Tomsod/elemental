@@ -1325,6 +1325,8 @@ static int __thiscall (*get_perception_bonus)(void *player)
     = (funcptr_t) 0x491252;
 static int __thiscall (*get_merchant_bonus)(void *player)
     = (funcptr_t) 0x4911eb;
+static int __thiscall (*get_learning_bonus)(void *player)
+    = (funcptr_t) 0x49130f;
 static int __thiscall (*find_objlist_item)(void *this, int id)
     = (funcptr_t) 0x42eb1e;
 #define OBJLIST_THIS ((void *) 0x680630)
@@ -17424,6 +17426,22 @@ static void __declspec(naked) flawless_theft(void)
       }
 }
 
+// Allow Learning to increase gamescript (quest etc.) XP.
+static void __declspec(naked) learning_quest_xp(void)
+{
+    asm
+      {
+        mov ecx, esi
+        call dword ptr ds:get_learning_bonus
+        mov ecx, 100
+        add eax, ecx
+        mul dword ptr [ebp+12] ; base xp
+        div ecx
+        mov edx, 0x44b24d ; old code after xp read
+        jmp edx
+      }
+}
+
 // Tweak various skill effects.
 static inline void skill_changes(void)
 {
@@ -17519,6 +17537,7 @@ static inline void skill_changes(void)
     patch_word(0x48d8ee, 0xce8b); // mov ecx, esi
     hook_call(0x48d8f0, stealing_skill_bonus, 5); // steal from a monster
     hook_call(0x4be11b, flawless_theft, 7);
+    patch_pointer(0x44b944, learning_quest_xp);
 }
 
 // Switch off some of MM7Patch's features to ensure compatibility.

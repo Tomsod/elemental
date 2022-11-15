@@ -837,6 +837,7 @@ enum spells
     SPL_CURE_WEAKNESS = 67,
     SPL_REGENERATION = 71,
     SPL_HAMMERHANDS = 73,
+    SPL_ELIXIR_OF_LIFE = 74,
     SPL_FLYING_FIST = 76,
     SPL_LIGHT_BOLT = 78,
     SPL_DESTROY_UNDEAD = 79,
@@ -923,12 +924,15 @@ enum condition
     COND_CURSED = 0,
     COND_WEAK = 1,
     COND_AFRAID = 3,
+    COND_DRUNK = 4,
     COND_INSANE = 5,
+    COND_DISEASED_GREEN = 7,
     COND_PARALYZED = 12,
     COND_UNCONSCIOUS = 13,
     COND_DEAD = 14,
     COND_STONED = 15,
     COND_ERADICATED = 16,
+    COND_ZOMBIE = 17,
     COND_INCINERATED = 18, // my addition
 };
 
@@ -1225,6 +1229,9 @@ static void __thiscall (*set_specitem_bonus)(void *items_txt, void *item)
 static int __thiscall (*timed_cure_condition)(void *player, int condition,
                                               int time1, int time2)
     = (funcptr_t) 0x4908a0;
+static void __thiscall (*heal_hp)(void *player, int hp) = (funcptr_t) 0x48db9f;
+static void __fastcall (*update_face)(int player_id, int face)
+    = (funcptr_t) 0x491ddf;
 static int __thiscall (*get_full_hp)(void *player) = (funcptr_t) 0x48e4f0;
 static int __fastcall (*get_monsters_around_party)(int *buffer,
                                                    int buffer_size, int radius)
@@ -1606,9 +1613,9 @@ static int __thiscall __declspec(naked) is_undead(void *player)
     asm
       {
         xor eax, eax
-        cmp dword ptr [ecx+0x88], 0
+        cmp dword ptr [ecx+COND_ZOMBIE*8], 0
         jnz zombie
-        cmp dword ptr [ecx+0x8c], 0
+        cmp dword ptr [ecx+COND_ZOMBIE*8+4], 0
         jnz zombie
         cmp byte ptr [ecx+0xb9], CLASS_LICH
         je lich
@@ -10037,6 +10044,73 @@ static void __declspec(naked) resurrection_chunk(void)
       }
 }
 
+// Allow Elixir of Life to work if low on HP or appropriately ill.
+static void __declspec(naked) elixir_of_life_applicable(void)
+{
+    asm
+      {
+        lea ecx, [PARTY_ADDR+edi]
+        call dword ptr ds:get_full_hp
+        cmp eax, dword ptr [PARTY_ADDR+edi+0x193c]
+        ja ok
+        mov eax, dword ptr [PARTY_ADDR+edi+COND_DRUNK*8]
+        or eax, dword ptr [PARTY_ADDR+edi+COND_DRUNK*8+4]
+        or eax, dword ptr [PARTY_ADDR+edi+COND_ZOMBIE*8]
+        or eax, dword ptr [PARTY_ADDR+edi+COND_ZOMBIE*8+4]
+        or eax, dword ptr [PARTY_ADDR+edi+COND_DISEASED_GREEN*8] ; replaced
+        ok:
+        ret
+      }
+}
+
+// Also cure drunk and zombie with EoL.
+static void __declspec(naked) elixir_of_life_new_cures(void)
+{
+    asm
+      {
+        push edx
+        push eax
+        push edx
+        push eax
+        push COND_DRUNK
+        call dword ptr ds:timed_cure_condition
+        push COND_ZOMBIE
+        lea ecx, [PARTY_ADDR+edi]
+        call dword ptr ds:timed_cure_condition
+        test eax, eax
+        jz not_zombie
+        mov eax, dword ptr [PARTY_ADDR+edi+0x1924] ; old voice
+        mov dword ptr [PARTY_ADDR+edi+0x1920], eax
+        mov edx, dword ptr [PARTY_ADDR+edi+0x1928] ; old face
+        mov byte ptr [PARTY_ADDR+edi+0xba], dl
+        movzx ecx, word ptr [ebx+4] ; pc number
+        call dword ptr ds:update_face
+        not_zombie:
+        lea ecx, [PARTY_ADDR+edi] ; restore
+        jmp dword ptr ds:timed_cure_condition ; replaced call
+      }
+}
+
+// Also heal some HP.
+static void __declspec(naked) elixir_of_life_heal_hp(void)
+{
+    asm
+      {
+        call dword ptr ds:timed_cure_condition ; replaced call
+        cmp word ptr [ebx], SPL_ELIXIR_OF_LIFE ; other spells arrive here
+        jne skip
+        mov eax, dword ptr [ebp-56] ; spell skill
+        lea eax, [eax+eax*2]
+        lea eax, [eax*4+25]
+        lea ecx, [PARTY_ADDR+edi]
+        push eax
+        call dword ptr ds:heal_hp
+        skip:
+        mov eax, 0x42deaa ; post-cast
+        jmp eax
+      }
+}
+
 // Rehaul the condition cure spells.  Generally, GM no longer
 // removes time limit, with most spells' mastery effects shifted.
 static inline void cure_spells(void)
@@ -10108,6 +10182,10 @@ static inline void cure_spells(void)
     erase_code(0x42c069, 6); // old GM check
     erase_code(0x42c13e, 22); // old weakness code
     erase_code(0x42c17f, 5); // fall through to set edi code
+    // Rebrand Cure Disease as Elixir of Life, with extra abilities.
+    hook_call(0x42d016, elixir_of_life_applicable, 6);
+    hook_call(0x42d0b4, elixir_of_life_new_cures, 5);
+    hook_jump(0x42d0ff, elixir_of_life_heal_hp);
 }
 
 // Bonus for mod-triggered debuffs.

@@ -16572,9 +16572,10 @@ static int __thiscall maybe_cover_ally(struct player *player)
         if (offhand && skill >= SKILL_MASTER)
           {
             struct item *shield = &PARTY[i].items[offhand-1];
-            if (!(shield->flags & IFLAGS_BROKEN)
-                && ITEMS_TXT[shield->id].skill == SKILL_SHIELD
-                && (skill & SKILL_MASK) > random() % 100)
+            struct items_txt_item *data = &ITEMS_TXT[shield->id];
+            if (!(shield->flags & IFLAGS_BROKEN) && data->skill == SKILL_SHIELD
+                && (skill & SKILL_MASK) + data->mod1_dice_count + data->mod2
+                   > random() % 100)
               {
                 int new_ac = get_ac(PARTY + i);
                 if (new_ac > ac)

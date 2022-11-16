@@ -652,7 +652,7 @@ enum gender
 #define EVENTS_LOD ((void *) 0x6be8d8)
 #define SAVEGAME_LOD ((void *) 0x6a06a0)
 
-#define MAP_VARS 0x5e4b10
+#define MAP_VARS ((uint8_t *) 0x5e4b10)
 
 #define CURRENT_SCREEN 0x4e28d8
 
@@ -3779,7 +3779,7 @@ static void save_wom_barrels(void)
     if (uncased_strcmp(CUR_MAP_FILENAME, "d11.blv")) // walls of mist
         return;
     static const struct file_header header = { "barrels.bin", WOM_BARREL_CNT };
-    save_file_to_lod(SAVEGAME_LOD, &header, (void *) (MAP_VARS + 75), 0);
+    save_file_to_lod(SAVEGAME_LOD, &header, MAP_VARS + 75, 0);
 }
 
 // Restore the saved barrels, unless a quest bit is set.
@@ -3796,7 +3796,7 @@ static void load_wom_barrels(void)
     // barrel data occupies map vars 75 to 89
     // it would be more proper to dynamically determine barrel count, but eeh
     if (file)
-        fread((void *) (MAP_VARS + 75), 1, WOM_BARREL_CNT, file);
+        fread(MAP_VARS + 75, 1, WOM_BARREL_CNT, file);
 }
 
 // Make the genie lamps give +5 to +20 to stats instead of +1 to +4.
@@ -7427,8 +7427,11 @@ static void __declspec(naked) pickpocket_rep(void)
 // Let's overcompensate by adding an unconditional rep penalty.
 static void armageddon_rep(void)
 {
+    if (MAP_VARS[70]) // unused everywhere
+        return;
+    MAP_VARS[70] = TRUE;
     uint32_t *rep = &CURRENT_REP;
-    *rep += 10;
+    *rep += 20;
     if ((signed) *rep > 10000) // vanilla rep code often has this limit
         *rep = 10000;
 }

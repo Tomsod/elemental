@@ -1211,6 +1211,7 @@ static void __fastcall (*print_text)(int *bounds, void *font, int x, int y,
                                      int color, char *text, int unknown)
     = (funcptr_t) 0x44d432;
 static int __thiscall (*get_race)(void *player) = (funcptr_t) 0x490101;
+static int __thiscall (*get_gender)(void *player) = (funcptr_t) 0x490139;
 static int __thiscall (*get_might)(void *player) = (funcptr_t) 0x48c922;
 static int __thiscall (*get_intellect)(void *player) = (funcptr_t) 0x48c9a8;
 static int __thiscall (*get_personality)(void *player) = (funcptr_t) 0x48ca25;
@@ -1947,6 +1948,41 @@ static void __declspec(naked) display_magic_immunity(void)
       }
 }
 
+// Do not inflict Zombie on liches who fail to Reanimate.
+// This is very important as mixing zombies and liches leads to bugs.
+static void __declspec(naked) fix_lich_reanimate(void)
+{
+    asm
+      {
+        test eax, eax ; result of zombification attempt
+        jz skip
+        jmp dword ptr ds:get_gender ; replaced call
+        skip:
+        add dword ptr [esp], 42 ; skip the zombie condition code
+        ret
+      }
+}
+
+// Cure Zombie status on lichification and make sure that zombie face
+// is not stored as the original face.  Again, very important.
+static void __declspec(naked) unzombie_liches(void)
+{
+    asm
+      {
+        call dword ptr ds:get_gender ; replaced call
+        mov ecx, dword ptr [esi+COND_ZOMBIE*8]
+        or ecx, dword ptr [esi+COND_ZOMBIE*8+4]
+        jnz zombie
+        ret
+        zombie:
+        mov dword ptr [esi+COND_ZOMBIE*8], edi ; == 0
+        mov dword ptr [esi+COND_ZOMBIE*8+4], edi
+        add dword ptr [esp], 27 ; skip the face/voice code
+        cmp eax, edi ; but keep the comparison
+        ret
+      }
+}
+
 // Rewrite and expand the old lich immunity system.  Now one can also
 // get an immunity from zombification, potions, or artifacts.
 static inline void undead_immunities(void)
@@ -1979,6 +2015,10 @@ static inline void undead_immunities(void)
     erase_code(0x418f96, 51); // old mind immunity code
     hook_call(0x41904e, display_magic_immunity, 5);
     erase_code(0x419053, 51); // old body immunity code
+
+    // Make liches consistently immune to Zombie.
+    hook_call(0x42dd5c, fix_lich_reanimate, 5);
+    hook_call(0x44a778, unzombie_liches, 5);
 }
 
 STATIC char *new_strings[NEW_STRING_COUNT];
@@ -15364,32 +15404,17 @@ static void __declspec(naked) base_racial_resistances(void)
       }
 }
 
-// Save the PC's race on lichification
-// (as we cannot determine it from portrait anymore).
-static void __declspec(naked) preserve_lich_race(void)
-{
-    asm
-      {
-        call dword ptr ds:get_race
-        mov word ptr [esi+0x177c], ax ; unused field
-        mov ecx, esi ; restore
-        ret
-      }
-}
-
-// Provide the preserved race value for liches.
+// Provide the preserved race (face, actually) for liches (or zombies).
 static void __declspec(naked) get_lich_race(void)
 {
     asm
       {
         movsx eax, byte ptr [ecx+0xba] ; replaced code, almost
         cmp eax, 19
-        jg lich
+        jle alive
+        movsx eax, byte ptr [ecx+0x1928] ; old face
+        alive:
         mov ecx, eax
-        ret
-        lich:
-        movzx eax, word ptr [ecx+0x177c]
-        pop ecx ; skip a stack frame
         ret
       }
 }
@@ -15485,7 +15510,6 @@ static inline void racial_traits(void)
     hook_call(0x48e8a3, racial_resistances, 5);
     patch_word(0x48e87f, 0x15eb); // dwarf poison res used different var
     hook_call(0x48e79d, base_racial_resistances, 5);
-    hook_call(0x44a76f, preserve_lich_race, 9);
     hook_call(0x490101, get_lich_race, 7);
     hook_call(0x43bd5f, get_lich_paperdoll, 5);
     hook_call(0x43cccc, get_lich_paperdoll, 5);

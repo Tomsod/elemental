@@ -6240,6 +6240,22 @@ static void __declspec(naked) fly_scroll_chunk(void)
       }
 }
 
+// Increase HH bonus to skill*2 for unarmed and skill/2 for other melee.
+static void __declspec(naked) improved_hammerhands(void)
+{
+    asm
+      {
+        test eax, eax ; true if unarmed
+        movzx eax, word ptr [edi+0x17a0+PBUFF_HAMMERHANDS*16+8] ; replaced code
+        jz halve
+        add eax, eax
+        ret
+        halve:
+        shr eax, 1
+        ret
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -6461,6 +6477,9 @@ static inline void misc_spells(void)
     // Buff the LOS damage spells a little.
     SPELL_INFO[SPL_INFERNO].damage_dice = 2;
     SPELL_INFO[SPL_PRISMATIC_LIGHT].damage_dice = 3;
+    // Buff Hammerhands a bit.
+    erase_code(0x4398df, 4); // do not skip for weapon melee
+    hook_call(0x4398f5, improved_hammerhands, 7);
 }
 
 // For consistency with players, monsters revived with Reanimate now have

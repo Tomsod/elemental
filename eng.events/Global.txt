@@ -737,3 +737,4 @@ Global Text
 734	Spell power
 735	ID Item
 736	ID Monster
+737	Click again to dismiss

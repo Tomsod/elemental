@@ -297,6 +297,7 @@ enum new_strings
     STR_SPELL_POWER,
     STR_ID_ITEM,
     STR_ID_MONSTER,
+    STR_CONFIRM_DISMISS,
     NEW_STRING_COUNT
 };
 
@@ -9360,7 +9361,7 @@ static void __declspec(naked) print_cook_reply(void)
 {
     asm
       {
-        mov ecx, dword ptr [0x737aac+eax*4] ; replaced code
+        mov ecx, dword ptr [0x737abc+eax*4-16] ; replaced code
         cmp byte ptr [HIRELING_REPLY], 2
         jne quit
         sub eax, NPC_COOK * 5
@@ -9803,13 +9804,18 @@ static void __declspec(naked) check_subtracted_qbit(void)
       }
 }
 
+// Now the dismiss hireling option must be pressed twice.
+static int confirm_hireling_dismiss = 0;
+
 // A small fix: reset the 'more information' hireling flag on dialog exit.
+// Also here: reset the var that delays the 'dismiss' reply until it's clicked.
 static void __declspec(naked) reset_hireling_reply(void)
 {
     asm
       {
         and dword ptr [0x590f10], 0 ; replaced code
         mov byte ptr [HIRELING_REPLY], 0
+        and dword ptr [confirm_hireling_dismiss], 0
         ret
       }
 }
@@ -9874,6 +9880,49 @@ static void __declspec(naked) check_for_negative_discount(void)
         xor eax, eax
         quit:
         ret 4
+      }
+}
+
+// Align the stack for the following jump.
+static void __declspec(naked) hireling_dismiss_reply_fix_stack_chunk(void)
+{
+    asm
+      {
+        add esp, 16
+      }
+}
+
+// Only show the dismiss dialog if the dismiss command was clicked once.
+static void __declspec(naked) delay_dismiss_hireling_reply(void)
+{
+    asm
+      {
+        cmp dword ptr [confirm_hireling_dismiss], 0
+        jnz ok
+        mov dword ptr [esp], 0x4456fa ; skip any reply
+        ret
+        ok:
+        mov ecx, dword ptr [0x737abc+eax*4-4] ; replaced code
+        ret
+      }
+}
+
+// Only show the reply when the dismiss option is first clicked.
+static void __declspec(naked) hireling_dismiss_warning(void)
+{
+    asm
+      {
+        cmp dword ptr [confirm_hireling_dismiss], 0
+        jnz ok
+        inc dword ptr [confirm_hireling_dismiss]
+        mov ecx, dword ptr [new_strings+STR_CONFIRM_DISMISS*4]
+        mov dword ptr [0x590f0c], 77 ; enable reply
+        mov byte ptr [HIRELING_REPLY], 0 ; choose reply
+        mov dword ptr [esp], 0x4bc6f0 ; show statusline text
+        ret
+        ok:
+        cmp dword ptr [0x73c014], edi ; replaced code
+        ret
       }
 }
 
@@ -10010,6 +10059,11 @@ static inline void misc_rules(void)
     // Fix floor gold piles not being nerfed by map treasure level.
     patch_dword(0x450084, 0x9090d889); // mov eax, ebx; nop; nop
     hook_call(0x490ef3, check_for_negative_discount, 5);
+    // Only show the dismiss hireling reply when actually dismissing them.
+    patch_bytes(0x4455a4, hireling_dismiss_reply_fix_stack_chunk, 3);
+    hook_jump(0x4455a7, (void *) 0x4456fa); // skip initial reply
+    hook_call(0x44551a, delay_dismiss_hireling_reply, 7);
+    hook_call(0x4bc581, hireling_dismiss_warning, 6);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

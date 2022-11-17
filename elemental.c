@@ -8103,6 +8103,8 @@ static char *__stdcall damage_hint(char *description, int ranged)
       {
         if (!ranged && has_item_in_slot(player, CLOVER, SLOT_MAIN_HAND))
             crit *= 2;
+        if (crit > 100) // can happen with stupid high dagger skill
+            crit = 100;
         sprintf(buffer + strlen(buffer), "\n\n%s: %d%%",
                 new_strings[STR_CRIT_HIT_CHANCE], crit);
       }
@@ -8112,6 +8114,16 @@ static char *__stdcall damage_hint(char *description, int ranged)
     else strcat(buffer, "\n");
     if (!display_damage)
         return buffer;
+    int backstab = get_skill(player, SKILL_THIEVERY);
+    if (!ranged && backstab > SKILL_GM)
+      {
+        // essentially also crits at this point
+        int chance = (backstab & SKILL_MASK) * 3;
+        if (chance >= 100)
+            crit = 100;
+        else
+            crit += chance - crit * chance / 100; // rounding is negligible
+      }
     int avg;
     if (ranged)
       {

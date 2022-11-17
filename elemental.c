@@ -12565,6 +12565,25 @@ static void __declspec(naked) new_temple_in_bottle(void)
       }
 }
 
+// Used immediately below.
+static const char nwc_dlv[] = "nwc.dlv";
+
+// Protect the temple inside the bottle from respawning, just like the castle.
+static void __declspec(naked) do_not_respawn_temple(void)
+{
+    asm
+      {
+        pop ebx
+        call dword ptr ds:uncased_strcmp ; replaced call
+        test eax, eax
+        jz quit
+        mov dword ptr [esp+4], offset nwc_dlv ; instead of the castle
+        call dword ptr ds:uncased_strcmp
+        quit:
+        jmp ebx
+      }
+}
+
 // Equipped SoL sprite.
 static const char itemsole[] = "itemsole";
 
@@ -13178,6 +13197,7 @@ static inline void new_artifacts(void)
     hook_call(0x4b6f64, dark_bottle_temple, 6);
     hook_call(0x4b7574, dark_bottle_temple, 6);
     hook_call(0x46816f, new_temple_in_bottle, 5);
+    hook_call(0x49a55c, do_not_respawn_temple, 5);
     hook_call(0x43e380, equipped_sword_of_light, 5);
     hook_call(0x43e590, equipped_sword_of_light, 5);
     // energy attack is in undead_slaying_element() above

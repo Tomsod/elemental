@@ -462,7 +462,7 @@ Global Text
 459	Prot Elec
 460	Prot Cold
 461	Prot Poison
-462	Immutability
+462	Immutability (%d)
 463	Type: %s
 464	Charges
 465	Value

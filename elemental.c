@@ -777,6 +777,7 @@ enum party_buffs
     BUFF_FLY = 7,
     BUFF_IMMOLATION = 10,
     BUFF_INVISIBILITY = 11,
+    BUFF_IMMUTABILITY = 13,
     BUFF_WATER_WALK = 18,
     BUFF_WIZARD_EYE = 19,
 };
@@ -6256,6 +6257,36 @@ static void __declspec(naked) improved_hammerhands(void)
       }
 }
 
+static char immutability_buffer[24];
+static char *const immbuffer_ptr = immutability_buffer;
+
+// Display remaining uses of Immutability along with the duration.
+static void __declspec(naked) display_immutability_charges(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ebp-16] ; replaced code
+        mov dword ptr [ebp-20], ecx ; also replaced code
+        mov ecx, dword ptr [ebp-8]
+        cmp ecx, PARTY_BUFF_ADDR + 16 * BUFF_IMMUTABILITY
+        jne quit
+        movzx ecx, word ptr [ecx+8] ; buff power
+        push ecx
+        push dword ptr [eax]
+#ifdef __clang__
+        push dword ptr [immbuffer_ptr]
+#else
+        push offset immutability_buffer
+#endif
+        call dword ptr ds:sprintf
+        add esp, 12
+        movzx edx, byte ptr [ebx] ; restore
+        mov eax, offset immbuffer_ptr
+        quit:
+        ret
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -6480,6 +6511,7 @@ static inline void misc_spells(void)
     // Buff Hammerhands a bit.
     erase_code(0x4398df, 4); // do not skip for weapon melee
     hook_call(0x4398f5, improved_hammerhands, 7);
+    hook_call(0x41d7e2, display_immutability_charges, 6);
 }
 
 // For consistency with players, monsters revived with Reanimate now have

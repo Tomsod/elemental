@@ -298,6 +298,7 @@ enum new_strings
     STR_ID_ITEM,
     STR_ID_MONSTER,
     STR_CONFIRM_DISMISS,
+    STR_PARRY,
     NEW_STRING_COUNT
 };
 
@@ -631,6 +632,7 @@ enum face_animations
 };
 
 #define SOUND_BUZZ 27
+#define SOUND_WOOD_METAL 105
 #define SOUND_TURN_PAGE_UP 204
 #define SOUND_SPELL_FAIL 209
 #define SOUND_DIE 18100
@@ -16888,10 +16890,38 @@ static int __thiscall maybe_dodge(struct player *player)
            || skill >= SKILL_NONE; // robes and wetsuits
 }
 
+// The new GM Spear and Sword perk, like above but only in melee.
+// This code shows the statusline etc. by itself.
+static int __thiscall maybe_parry(struct player *player)
+{
+    for (int slot = SLOT_MAIN_HAND; slot >= SLOT_OFFHAND; slot--)
+      {
+        int equip = player->equipment[slot];
+        if (!equip)
+            continue;
+        struct item *weapon = &player->items[equip-1];
+        if (weapon->flags & IFLAGS_BROKEN)
+            continue;
+        int type = ITEMS_TXT[weapon->id].skill;
+        if (type != SKILL_SWORD && type != SKILL_SPEAR)
+            continue;
+        int skill = get_skill(player, type);
+        if (skill > SKILL_GM && (skill & SKILL_MASK) > random() % 100)
+          {
+            char buffer[40];
+            sprintf(buffer, new_strings[STR_PARRY], player->name);
+            show_status_text(buffer, 2);
+            make_sound(SOUND_THIS, SOUND_WOOD_METAL, 0, 0, -1, 0, 0, 0, 0);
+            return TRUE;
+          }
+      }
+    return FALSE;
+}
+
 // Defined below.
 static int __stdcall train_armor(void *, void *);
 
-// Hook for the above.
+// Hook for the above.  Also checks parrying for melee.
 static void __declspec(naked) maybe_dodge_hook(void)
 {
     asm
@@ -16900,11 +16930,21 @@ static void __declspec(naked) maybe_dodge_hook(void)
         call maybe_dodge
         test eax, eax
         jnz dodge
+        cmp dword ptr [esp], 0x43a044 ; melee code
+        jne ranged
+        mov ecx, dword ptr [esp+8]
+        call maybe_parry
+        test eax, eax
+        jnz parry
+        ranged:
         jmp train_armor ; includes replaced call
         dodge:
         mov edi, dword ptr [esp+8] ; player
         push 0x43a630 ; dodge code
         ret 12
+        parry:
+        xor eax, eax ; skip the rest of caller
+        ret 8
       }
 }
 
@@ -17742,8 +17782,8 @@ static inline void skill_changes(void)
     hook_call(0x49009b, leather_dodging, 5);
     patch_byte(0x4900ab, 0xfa); // eax -> edx
     erase_code(0x48e7f9, 75); // old Leather GM bonus
-    hook_call(0x43a03f, maybe_dodge_hook, 5);
-    hook_call(0x43a4dc, maybe_dodge_hook, 5);
+    hook_call(0x43a03f, maybe_dodge_hook, 5); // melee
+    hook_call(0x43a4dc, maybe_dodge_hook, 5); // ranged
     hook_call(0x48e43b, double_axe_recovery, 5);
     hook_call(0x41eaa8, monster_already_id, 5);
     hook_call(0x41eb81, sync_monster_id, 7);
@@ -17781,6 +17821,8 @@ static inline void skill_changes(void)
     hook_call(0x48d8f0, stealing_skill_bonus, 5); // steal from a monster
     hook_call(0x4be11b, flawless_theft, 7);
     patch_pointer(0x44b944, learning_quest_xp);
+    // new sword/spear gm bonus is in maybe_parry() above
+    erase_code(0x48ffe9, 8); // erase old bonus
 }
 
 // Switch off some of MM7Patch's features to ensure compatibility.

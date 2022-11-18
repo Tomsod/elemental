@@ -738,3 +738,4 @@ Global Text
 735	ID Item
 736	ID Monster
 737	Click again to dismiss
+738	%s parries the attack

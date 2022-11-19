@@ -182,7 +182,8 @@ enum spcitems_txt
     SPC_ELEMENTAL_SLAYING = 91,
     SPC_BLESSED = 92,
     SPC_TERRIFYING = 93,
-    SPC_COUNT = 93
+    SPC_MASTERFUL = 94,
+    SPC_COUNT = 94
 };
 
 enum player_stats
@@ -479,6 +480,8 @@ enum skill_mastery
 
 enum items
 {
+    FIRST_CLUB = 58,
+    LAST_CLUB = 60,
     BLASTER = 64,
     BLASTER_RIFLE = 65,
     LAST_BODY_ARMOR = 78, // noble plate armor
@@ -10700,6 +10703,8 @@ static void __declspec(naked) new_prefixes(void)
         cmp eax, SPC_BLESSED
         je quit
         cmp eax, SPC_TERRIFYING
+        je quit
+        cmp eax, SPC_MASTERFUL
         quit:
         ret ; zf will be checked shortly
       }
@@ -11338,6 +11343,7 @@ static void __declspec(naked) dont_lower_magic_bonus(void)
 }
 
 // Add +10 to-hit to wielded Blessed weapons.  This hook is for main hand.
+// Also here: add +5 to-hit to Masterful clubs in lieu of skill bonus.
 static void __declspec(naked) blessed_rightnand_weapon(void)
 {
     asm
@@ -11345,10 +11351,19 @@ static void __declspec(naked) blessed_rightnand_weapon(void)
         cmp esi, STAT_MELEE_ATTACK
         jne skip
         cmp dword ptr [ebx+0x214+eax*4-36+12], SPC_BLESSED
-        jne skip
+        jne not_blessed
         add dword ptr [esp+20], 10 ; stat bonus
+        not_blessed:
+        cmp dword ptr [ebx+0x214+eax*4-36+12], SPC_MASTERFUL
         skip:
         mov eax, dword ptr [ebx+0x214+eax*4-36] ; replaced code
+        jne quit
+        cmp eax, FIRST_CLUB
+        jb quit
+        cmp eax, LAST_CLUB
+        ja quit
+        add dword ptr [esp+20], 5
+        quit:
         ret
       }
 }
@@ -11381,6 +11396,44 @@ static void __declspec(naked) blessed_missile_weapon(void)
         add dword ptr [esp+20], 10 ; stat bonus
         skip:
         mov ebx, dword ptr [ebx+0x214+eax*4-36] ; replaced code
+        ret
+      }
+}
+
+// Implement a weapon enchantment that gives +5 to the weapon's skill.
+static int __thiscall masterful_weapon(struct player *player, int skill)
+{
+    if (skill > SKILL_BLASTER)
+        return 0;
+    int bonus = 0;
+    for (int slot = SLOT_OFFHAND; slot <= SLOT_MISSILE; slot++)
+      {
+        int equip = player->equipment[slot];
+        if (!equip)
+            continue;
+        struct item *weapon = &player->items[equip-1];
+        if (weapon->bonus2 != SPC_MASTERFUL || weapon->flags & IFLAGS_BROKEN)
+            continue;
+        if (ITEMS_TXT[weapon->id].skill == skill)
+            bonus += 5;
+      }
+    return bonus;
+}
+
+// Hook for the above.
+// TODO: could combine this with champion_leadership()
+static void __declspec(naked) masterful_weapon_hook(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [ebp-4]
+        push edi
+        call masterful_weapon
+        add esi, eax
+        cmp edi, 20 ; replaced code
+        jle quit
+        add dword ptr [esp], 95 ; replaced jump
+        quit:
         ret
       }
 }
@@ -11439,6 +11492,8 @@ static inline void new_enchants(void)
     hook_call(0x48eca3, blessed_rightnand_weapon, 7);
     hook_call(0x48ecf1, blessed_offhand_weapon, 7);
     hook_call(0x48f5f6, blessed_missile_weapon, 7);
+    hook_call(0x48fb1e, masterful_weapon_hook, 5);
+    // masterful clubs are in blessed_rightnand_weapon()
 }
 
 // Let the Elven Chainmail also improve bow skill.

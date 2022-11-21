@@ -629,6 +629,7 @@ enum face_animations
     ANIM_ID_FAIL = 9,
     ANIM_REPAIR = 10,
     ANIM_REPAIR_FAIL = 11,
+    ANIM_WONT_FIT = 15,
     ANIM_MIX_POTION = 16,
     ANIM_SMILE = 36,
     ANIM_SHAKE_HEAD = 67,
@@ -1294,10 +1295,15 @@ static int __thiscall (*get_attack_delay)(void *player, int ranged)
     = (funcptr_t) 0x48e19b;
 static int __thiscall (*hireling_action)(int id) = (funcptr_t) 0x4bb6b9;
 static int __cdecl (*add_button)(void *dialog, int left, int top, int width,
-                                 int height, int unknown1, int hover_action,
-                                 int action, int action_param, int unknown_2,
-                                 char *text, int unknown_3, int unknown_4)
+                                 int height, int unknown_1, int hover_action,
+                                 int action, int action_param, int key,
+                                 char *text, int unknown_2, int unknown_3)
     = (funcptr_t) 0x41d0d8;
+static void __thiscall (*click_on_portrait)(int player_id)
+    = (funcptr_t) 0x421ca9;
+static int __fastcall (*add_chest_item)(int unused, void *item, int chest_id)
+    = (funcptr_t) 0x41ff4b;
+static void __thiscall (*remove_mouse_item)(int this) = (funcptr_t) 0x4698aa;
 // Technically thiscall, but ecx isn't used.
 static int __stdcall (*monster_resists_condition)(void *monster, int element)
     = (funcptr_t) 0x427619;
@@ -9931,6 +9937,76 @@ static void __declspec(naked) hireling_dismiss_warning(void)
       }
 }
 
+// Register the '5' key for our purposes when a chest is open.
+static void __declspec(naked) add_chest_hotkey(void)
+{
+    asm
+      {
+        mov ebp, 0x5063f0 ; replaced code (empty string)
+        cmp ecx, 20 ; check for chest dialog (others come here)
+        jne quit
+        push edi ; == 0
+        push ebp
+        push 0x35 ; number 5 key
+        push 5 ; our bogus parameter
+        push 110 ; click on portrait action
+        push edi
+        push 1
+        push edi
+        push edi
+        push edi
+        push edi
+        push esi ; dialog
+        call dword ptr ds:add_button
+        add esp, 48
+        quit:
+        ret
+      }
+}
+
+// Move items into an open chest by pressing '5'.
+static void chest_hotkey(void)
+{
+    if (dword(MOUSE_ITEM))
+      {
+        if (add_chest_item(-1, (struct item *) MOUSE_ITEM,
+                           dword(dword(0x507a4c)+28))) // chest id in dialog
+          {
+            remove_mouse_item(dword(0x720808)); // mouse struct
+          }
+        else
+          {
+            if (dword(CURRENT_PLAYER)
+                && player_active(PARTY + dword(CURRENT_PLAYER) - 1))
+              {
+                show_face_animation(PARTY + dword(CURRENT_PLAYER) - 1,
+                                    ANIM_WONT_FIT, 0);
+              }
+            if (dword(CURRENT_SCREEN) == 15) // in backpack
+              {
+                add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
+              }
+          }
+      }
+    else if (dword(CURRENT_SCREEN) == 15) // in backpack
+      {
+        add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
+      }
+}
+
+// Hook for the above.
+static void __declspec(naked) chest_hotkey_hook(void)
+{
+    asm
+      {
+        cmp ecx, 5 ; our parameter
+        jne skip
+        jmp chest_hotkey
+        skip:
+        jmp dword ptr ds:click_on_portrait ; replaced call
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -10069,6 +10145,8 @@ static inline void misc_rules(void)
     hook_jump(0x4455a7, (void *) 0x4456fa); // skip initial reply
     hook_call(0x44551a, delay_dismiss_hireling_reply, 7);
     hook_call(0x4bc581, hireling_dismiss_warning, 6);
+    hook_call(0x41c9f7, add_chest_hotkey, 5);
+    hook_call(0x434d0b, chest_hotkey_hook, 5);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

@@ -2131,14 +2131,28 @@ static const uint32_t new_potion_buffs[] = { PBUFF_FIRE_RES, PBUFF_SHOCK_RES,
 
 static void throw_potions_jump(void); // defined below
 static const int thirty = 30; // for a div below
+static uintptr_t check_inactive_player;
 
 // Add elemental immunity potions and the pain reflection potion.
 // Magic immunity lasts 3 min/level, the rest are 10 min/level.
 // The potion of Divine Mastery is also here.
+// Also here: forbid using potions by recovering PCs (depends on MM7Patch).
 static void __declspec(naked) new_potion_effects(void)
 {
     asm
       {
+        mov ebx, edx
+        mov ecx, dword ptr [ebp-4]
+        call dword ptr ds:check_inactive_player
+        test eax, eax
+        jnz ok
+        mov eax, 0x4685f6 ; inactive pc code
+        jmp eax
+        ok:
+        mov edx, ebx
+        lea eax, [edx-POTION_BOTTLE]
+        mov ecx, 3 ; just in case
+        xor ebx, ebx
         cmp edx, LAST_OLD_POTION
         ja new
         jmp dword ptr [0x468ebe+eax*4]
@@ -2328,6 +2342,7 @@ static inline void new_potions(void)
     hook_call(0x468c50, resistance_replaces_immunity, 6);
     // holy water is handled below but the jump is here
     patch_byte(0x46878a, HOLY_WATER - POTION_BOTTLE);
+    check_inactive_player = dword(0x4685ee) + 0x4685f2; // get mmpatch hook
     hook_jump(0x468791, new_potion_effects);
     hook_call(0x4163b1, mix_new_potions_1, 6);
     hook_call(0x4163d7, mix_new_potions_2, 6);

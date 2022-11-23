@@ -12970,7 +12970,7 @@ static void __declspec(naked) flattener_2h_body_eax(void)
 static int __stdcall flattener(struct player *player,
                                struct map_monster *monster)
 {
-    if (random() % 10)
+    if (random() % 5)
         return 0;
     int mres = monster->magic_resistance;
     if (monster->spell_buffs[MBUFF_DAY_OF_PROTECTION].expire_time)

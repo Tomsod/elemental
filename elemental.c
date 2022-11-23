@@ -16594,6 +16594,9 @@ static void __declspec(naked) raise_ench_item_difficulty(void)
         mov eax, dword ptr [REF(spcitems)+edx-8] ; value
         cmp eax, 10
         ja spc
+        jb ok
+        mov eax, 2 ; antique is a bit too difficult now
+        ok:
         add eax, eax
         jmp no_ench
         spc:

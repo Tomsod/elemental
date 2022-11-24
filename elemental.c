@@ -1304,6 +1304,7 @@ static void __thiscall (*click_on_portrait)(int player_id)
 static int __fastcall (*add_chest_item)(int unused, void *item, int chest_id)
     = (funcptr_t) 0x41ff4b;
 static void __thiscall (*remove_mouse_item)(int this) = (funcptr_t) 0x4698aa;
+static void __stdcall (*start_new_music)(int track) = (funcptr_t) 0x4aa0cf;
 // Technically thiscall, but ecx isn't used.
 static int __stdcall (*monster_resists_condition)(void *monster, int element)
     = (funcptr_t) 0x427619;
@@ -10022,6 +10023,40 @@ static void __declspec(naked) chest_hotkey_hook(void)
       }
 }
 
+// To remember the current music track.
+static int current_track = 0;
+
+// Do not restart music on reloads if the track would be the same.
+// Best used with infinite looping from MM7Patch.
+static void __declspec(naked) dont_restart_music(void)
+{
+    asm
+      {
+        mov edx, dword ptr [esp+4] ; new music
+        cmp dword ptr [esp+8], 0x3000000 ; if called from the patch
+        jae ok
+        cmp edx, dword ptr [current_track]
+        je quit
+        ok:
+        mov dword ptr [current_track], edx
+        jmp dword ptr ds:start_new_music
+        quit:
+        ret 4
+      }
+}
+
+// Title screen also restarts music without calling the above,
+// so zero out the track number to prevent subsequent weirdness.
+static void __declspec(naked) reset_current_track(void)
+{
+    asm
+      {
+        mov dword ptr [current_track], edi ; == 0
+        test byte ptr [0x6be1e4], 16 ; replaced code
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -10162,6 +10197,8 @@ static inline void misc_rules(void)
     hook_call(0x4bc581, hireling_dismiss_warning, 6);
     hook_call(0x41c9f7, add_chest_hotkey, 5);
     hook_call(0x434d0b, chest_hotkey_hook, 5);
+    hook_call(0x4abf76, dont_restart_music, 5);
+    hook_call(0x46305d, reset_current_track, 7);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

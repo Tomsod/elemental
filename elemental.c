@@ -5358,18 +5358,17 @@ static void __declspec(naked) switch_off_spells_for_free(void)
         shr eax, 2
         sub dword ptr [ebp-180], eax ; -25% of base recovery
         no_talisman:
-        test byte ptr [ebx+9], 4 ; turn off flag
-        jnz quit
         cmp word ptr [ebx], SPL_LIGHTNING_BOLT
-        jne set_zf
+        jne not_trident
         mov ecx, dword ptr [ebp-32] ; PC
         push SLOT_MAIN_HAND
         push STORM_TRIDENT
         call dword ptr ds:has_item_in_slot
         test eax, eax
-        ret
-        set_zf:
-        test esi, esi
+        jz not_trident
+        xor byte ptr [ebx+9], 4 ; before this, flag meant 'cast normally' here
+        not_trident:
+        test byte ptr [ebx+9], 4 ; turn off flag
         quit:
         ret
       }
@@ -5635,6 +5634,11 @@ static int __stdcall alternative_spell_mode(int player_id, int spell)
             if (player->skills[SKILL_SPIRIT] >= SKILL_EXPERT)
                 return FALSE;
             break;
+        case SPL_LIGHTNING_BOLT:
+            if (has_item_in_slot(player, STORM_TRIDENT, SLOT_MAIN_HAND))
+                return 0x400; // gotta call aim_spell(), but with extra flags
+            return FALSE;
+            break;
         case SPL_PRESERVATION:
             if (player->skills[SKILL_SPIRIT] >= SKILL_MASTER)
                 return FALSE;
@@ -5693,8 +5697,16 @@ static void __declspec(naked) alternative_spell_mode_hook(void)
         push dword ptr [esp+52] ; player id
         call alternative_spell_mode
         cmp eax, 1 ; skip vanilla code if true
+        ja trident ; > 1 is special case
         quit:
         ret
+        trident:
+        pop edx
+        push ebx ; == 0
+        push eax ; extra flags
+        push ebx
+        add edx, 11 ; past old push-ebx-es
+        jmp edx
       }
 }
 
@@ -12441,10 +12453,7 @@ static void __declspec(naked) lightning_spear_skill(void)
         cmp word ptr [ebx+10], si ; not zero if scroll/wand
         jnz pass
         mov ecx, dword ptr [ebp-32] ; PC
-        push SLOT_MAIN_HAND
-        push STORM_TRIDENT
-        call dword ptr ds:has_item_in_slot
-        test eax, eax
+        test byte ptr [ebx+9], 4 ; flag means 'cast from trident' here
         jnz trident
         cmp byte ptr [ecx+0x192+SPL_LIGHTNING_BOLT-1], 0
         jnz pass

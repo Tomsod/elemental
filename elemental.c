@@ -300,6 +300,8 @@ enum new_strings
     STR_ID_MONSTER,
     STR_CONFIRM_DISMISS,
     STR_PARRY,
+    STR_DEPOSIT_BOX,
+    STR_BUY_DEPOSIT_BOX,
     NEW_STRING_COUNT
 };
 
@@ -637,6 +639,7 @@ enum face_animations
 
 #define SOUND_BUZZ 27
 #define SOUND_WOOD_METAL 105
+#define SOUND_GOLD 200
 #define SOUND_TURN_PAGE_UP 204
 #define SOUND_SPELL_FAIL 209
 #define SOUND_DIE 18100
@@ -679,7 +682,7 @@ struct __attribute__((packed)) map_chest
 };
 
 #define MAP_CHESTS ((struct map_chest *) 0x5e4fd0)
-#define EXTRA_CHEST_COUNT 7
+#define EXTRA_CHEST_COUNT 8
 
 // All the stuff I need to preserve across save/loads (except WoM barrels).
 static struct elemdata
@@ -700,6 +703,8 @@ static struct elemdata
     int last_region;
     // For Harmondale taxes.
     int last_tax_month, last_tax_fame;
+    // Set to true after purchasing a safe deposit box in a bank.
+    int deposit_box;
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -1051,7 +1056,7 @@ enum monster_buffs
 // new NPC topic count
 #define TOPIC_COUNT 609
 // count of added NPC text entries
-#define NEW_TEXT_COUNT 66
+#define NEW_TEXT_COUNT 67
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658
@@ -1235,6 +1240,11 @@ static int __fastcall (*color_stat)(int modified, int base)
     = (funcptr_t) 0x4178a7;
 static void __thiscall (*set_specitem_bonus)(void *items_txt, void *item)
     = (funcptr_t) 0x456d51;
+// Possibly it's not just for buttons.
+static int __thiscall (*remove_button)(void *this, void *button)
+    = (funcptr_t) 0x42641d;
+static void __fastcall (*shop_voice)(int house, int topic)
+    = (funcptr_t) 0x4b1df5;
 static int __thiscall (*timed_cure_condition)(void *player, int condition,
                                               int time1, int time2)
     = (funcptr_t) 0x4908a0;
@@ -4588,7 +4598,7 @@ static void __declspec(naked) add_bless_water_reply(void)
 
 static char reply_buffer[100];
 
-// Supply yhe text to the new "bless water" reply
+// Supply the text to the new "bless water" reply
 // when calculating text position.
 static void __declspec(naked) bless_water_reply_sizing(void)
 {
@@ -4635,9 +4645,13 @@ static void __declspec(naked) bless_water_reply_sizing(void)
         fimul dword ptr [esp]
         fistp dword ptr [esp]
         push dword ptr [new_strings+STR_BLESS_WATER*4]
+#ifdef __clang__
         ; for some reason clang crashes if I try to push offsets directly
         mov eax, offset reply_buffer
         push eax
+#else
+        push offset reply_buffer
+#endif
         call dword ptr ds:sprintf
         add esp, 12
         pop ecx
@@ -7152,6 +7166,7 @@ static void new_game_data(void)
         elemdata.extra_chests[i].picture = 6;
         elemdata.extra_chests[i].bits = 2;
       }
+    elemdata.extra_chests[7].picture = 3; // bank safe
     reputation_group[0] = 0; // will be set on map load
     reputation_index = 0;
     replaced_chest = -1;
@@ -10069,6 +10084,177 @@ static void __declspec(naked) reset_current_track(void)
       }
 }
 
+// Add the safe deposit button/reply to banks.
+// Also remove the buy deposit button if still present.
+static void __declspec(naked) add_deposit_box_reply(void)
+{
+    asm
+      {
+        mov eax, dword ptr [0x507a3c] ; dialog
+        cmp dword ptr [eax+32], 3 ; button count
+        jne ok
+        mov ecx, dword ptr [eax+80] ; the button
+        mov edx, dword ptr [ecx+48] ; next button
+        mov dword ptr [eax+80], edx
+        and dword ptr [edx+52], 0 ; link to the extra button
+        dec dword ptr [eax+32]
+        push ecx
+        mov ecx, 0x7029a8 ; this
+        call dword ptr ds:remove_button
+        xor ecx, ecx ; restore
+        mov edx, 7 ; ditto
+        ok:
+        call dword ptr ds:add_reply ; replaced code
+        mov ecx, 1
+        mov edx, 8
+        call dword ptr ds:add_reply ; skipped code
+        push 9 ; new subaction
+        mov eax, 0x4b3d26 ; three-reply branch
+        jmp eax
+      }
+}
+
+// Print the deposit box reply text and/or the buy box message.
+static void __declspec(naked) print_deposit_box_reply(void)
+{
+    asm
+      {
+        mov eax, dword ptr [0xf8b01c] ; replaced code
+        cmp eax, 9 ; our new conversation node
+        je buy
+        cmp eax, 1
+        jne quit
+        push ebx
+        push dword ptr [new_strings+STR_DEPOSIT_BOX*4]
+        mov eax, dword ptr [0x507a3c] ; dialog
+        cmp dword ptr [eax+44], 4 ; highlighted reply
+        cmove eax, dword ptr [ebp-4] ; hl color
+        cmovne eax, dword ptr [ebp-8] ; regular color
+        push eax
+        push 206
+        push edi
+        mov edx, dword ptr [0x5c3468] ; font
+        lea ecx, [ebp-92]
+        call dword ptr ds:print_text
+        mov eax, 1 ; restore
+        quit:
+        ret
+        buy:
+        push ebx
+        push dword ptr [new_strings+STR_BUY_DEPOSIT_BOX*4]
+        push dword ptr [ebp-4] ; hl color
+        push 146
+        push edi
+        mov edx, dword ptr [0x5c3468] ; font
+        lea ecx, [ebp-92]
+        call dword ptr ds:print_text
+        pop eax
+        pop edi
+        pop esi
+        pop ebx
+        sub esp, 180 ; make space for the new stack vars
+        push ebx
+        push esi
+        push edi
+        mov esi, dword ptr [0x507a40] ; dialog
+        mov ebx, dword ptr [new_npc_text+856*4-790*4] ; buy dep. box text
+        mov eax, 0x4b7acb ; town hall print bottom text code
+        jmp eax
+      }
+}
+
+// Actually open the box when clicked.
+static void __declspec(naked) open_deposit_box(void)
+{
+    asm
+      {
+        mov esi, dword ptr [0x507a40] ; replaced code
+        cmp ecx, 22 ; bank
+        jne quit
+        cmp dword ptr [esp+20], 9 ; open box subaction
+        jne quit
+        cmp dword ptr [elemdata.deposit_box], edi ; == 0
+        jz quit
+        push edi
+        push edi
+        push ACTION_EXIT
+        mov ecx, ACTION_THIS_ADDR
+        call dword ptr ds:add_action
+        push 1 ; preserve action
+        push 7
+        push ACTION_EXTRA_CHEST
+        mov ecx, ACTION_THIS_ADDR
+        call dword ptr ds:add_action
+        mov dword ptr [esp], 0x4bd810 ; skip calling code
+        quit:
+        ret
+      }
+}
+
+// Add a button for buying a deposit box, and also process its click.
+static void __declspec(naked) buy_deposit_box(void)
+{
+    asm
+      {
+        mov eax, dword ptr [0xf8b01c] ; replaced code (current conversation)
+        cmp eax, 9 ; our buy box node
+        jne quit
+        cmp dword ptr [esp+20], 10 ; buy box subaction
+        je buy
+        xor ecx, ecx
+        mov edx, 10 ; the above subaction
+        call dword ptr ds:add_reply
+        mov eax, dword ptr [0x507a3c] ; dialog
+        mov eax, dword ptr [eax+80] ; the new button
+        add dword ptr [eax+12], 30 ; fix height
+        add dword ptr [eax+20], 30 ; also bottom
+        jmp restore
+        buy:
+        mov eax, dword ptr [0xacd56c] ; party gold
+        sub eax, 2500
+        jge ok
+        add eax, dword ptr [0xacd570] ; bank gold
+        jl no_gold
+        mov dword ptr [0xacd570], eax
+        xor eax, eax
+        ok:
+        mov dword ptr [0xacd56c], eax
+        mov dword ptr [elemdata.deposit_box], 1
+        push edi
+        push edi
+        push edi
+        push edi
+        push -1
+        push edi
+        push edi
+        push SOUND_GOLD
+        mov ecx, SOUND_THIS_ADDR
+        call dword ptr ds:make_sound
+        mov ecx, dword ptr [CURRENT_PLAYER]
+        jecxz escape
+        mov ecx, dword ptr [0xa74f44+ecx*4] ; PC pointers
+        push edi
+        push ANIM_SMILE
+        call dword ptr ds:show_face_animation
+        jmp escape
+        no_gold:
+        mov ecx, dword ptr [0x507a40] ; parent dialog
+        mov edx, 2
+        mov ecx, dword ptr [ecx+28] ; bank house id
+        call dword ptr ds:shop_voice
+        escape:
+        push edi
+        push edi
+        push ACTION_EXIT
+        mov ecx, ACTION_THIS_ADDR
+        call dword ptr ds:add_action
+        restore:
+        mov eax, 9 ; restore
+        quit:
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -10211,6 +10397,11 @@ static inline void misc_rules(void)
     hook_call(0x434d0b, chest_hotkey_hook, 5);
     hook_call(0x4abf76, dont_restart_music, 5);
     hook_call(0x46305d, reset_current_track, 7);
+    hook_jump(0x4b3c96, add_deposit_box_reply);
+    patch_dword(0x4b7d63, 250); // shift balance text down
+    hook_call(0x4b7d6d, print_deposit_box_reply, 5);
+    hook_call(0x4bcc13, open_deposit_box, 6);
+    hook_call(0x4bd7f2, buy_deposit_box, 5);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

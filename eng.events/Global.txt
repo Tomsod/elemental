@@ -739,3 +739,5 @@ Global Text
 736	ID Monster
 737	Click again to dismiss
 738	%s parries the attack
+739	Safe Box
+740	Buy Safe Deposit Box 2500 Gold

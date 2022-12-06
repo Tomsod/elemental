@@ -547,6 +547,7 @@ enum items
     MINDS_EYE = 532,
     ELVEN_CHAINMAIL = 533,
     FORGE_GAUNTLETS = 534,
+    LADYS_ESCORT = 536,
     CLANKERS_AMULET = 537,
     SHADOWS_MASK = 544,
     SACRIFICIAL_DAGGER = 553,
@@ -586,6 +587,7 @@ enum item_slot
     SLOT_CLOAK = 6,
     SLOT_GAUNTLETS = 7,
     SLOT_AMULET = 9,
+    SLOT_ANY = 16, // used by has_item_in_slot()
 };
 
 #define BUFF_STRINGS 0x506798
@@ -13512,6 +13514,24 @@ static void __declspec(naked) mark_chest_checked(void)
       }
 }
 
+// Let Lady's Escort halve incoming missile damage.
+static void __declspec(naked) lady_escort_shielding(void)
+{
+    asm
+      {
+        mov ecx, edi ; pc
+        push SLOT_ANY
+        push LADYS_ESCORT
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        jz skip
+        sar dword ptr [ebp-4], 1 ; total damage
+        skip:
+        lea ebx, [edi+0x1948] ; replaced code
+        ret
+      }
+}
+
 // Add the new properties to some old artifacts,
 // and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
@@ -13636,6 +13656,7 @@ static inline void new_artifacts(void)
     hook_call(0x45028f, fix_static_chest_items, 6);
     hook_call(0x45052f, mark_chest_checked, 6);
     patch_byte(0x456935, 12); // reduce max randomly generated artifacts
+    hook_call(0x43a549, lady_escort_shielding, 6);
 }
 
 // When calculating missile damage, take note of the weapon's skill.

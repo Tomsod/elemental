@@ -12989,6 +12989,21 @@ static void __declspec(naked) equipped_sword_of_light(void)
       }
 }
 
+// Also show equipped sprite on a right-click (but only after ID).
+static void __declspec(naked) sword_of_light_rmb(void)
+{
+    asm
+      {
+        cmp dword ptr [eax], SWORD_OF_LIGHT
+        jne not_it
+        test byte ptr [eax+20], IFLAGS_ID
+        jz not_it
+        mov dword ptr [esp+4], offset itemsole
+        not_it:
+        jmp dword ptr ds:load_bitmap ; replaced call
+      }
+}
+
 // Implement Grim Reaper's instadeath effect.
 // Called from lich_vampiric_touch() below.
 static int __stdcall grim_reaper(struct player *player,
@@ -13607,6 +13622,7 @@ static inline void new_artifacts(void)
     hook_call(0x49a55c, do_not_respawn_temple, 5);
     hook_call(0x43e380, equipped_sword_of_light, 5);
     hook_call(0x43e590, equipped_sword_of_light, 5);
+    hook_call(0x41d8ea, sword_of_light_rmb, 5);
     // energy attack is in undead_slaying_element() above
     // light magic bonus is too in artifact_stat_bonus()
     // alignment restriction is in sacrificial_dagger_goblin_only()

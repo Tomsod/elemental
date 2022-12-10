@@ -499,6 +499,7 @@ enum items
     BOOMERANG_KNIFE = 165,
     LAST_PREFIX = 165, // last enchantable item
     FIRST_REAGENT = 200,
+    SULFUR = 212,
     LAST_REAGENT = 214, // not counting gray
     FIRST_GRAY_REAGENT = 215,
     LAST_GRAY_REAGENT = 219,
@@ -746,8 +747,9 @@ enum qbits
 #define ITEM_TYPE_HELM 6
 #define ITEM_TYPE_WAND 13
 #define ITEM_TYPE_POTION 15
-// my addition
+// my additions
 #define ITEM_TYPE_ROBE 47
+#define ITEM_TYPE_SULFUR 48
 
 // Not quite sure what this is, but it holds aimed spell data.
 struct __attribute__((packed)) dialog_param
@@ -1424,14 +1426,43 @@ static int __fastcall attack_type(const char *attack)
     return PHYSICAL;
 }
 
-// Patch monsters.txt parsing: remove two resistance fields
-// and change the possible attack elements.
+const char sulfur_type[] = "SULFUR";
+
+// Parse sulfur pseudo-item-type drop in monsters.txt.
+static void __declspec(naked) sulfur_item_type(void)
+{
+    asm
+      {
+        mov byte ptr [esi+12], cl ; replaced code
+        cmp byte ptr [edi], 0 ; ditto
+        jz quit
+#ifdef __clang__
+        mov eax, offset sulfur_type
+        push eax
+#else
+        push offset sulfur_type
+#endif
+        push edi
+        call dword ptr ds:uncased_strcmp
+        add esp, 8
+        test eax, eax
+        jnz quit
+        mov byte ptr [esi+13], ITEM_TYPE_SULFUR
+        quit:
+        ret
+      }
+}
+
+// Patch monsters.txt parsing: remove two resistance fields and change
+// the possible attack elements.  Also here: let gogs drop sulfur.
 static inline void monsters_txt(void)
 {
     patch_byte(0x455108, byte(0x455108) - 1); // one less field now
     patch_dword(0x456402, dword(0x456406)); // tweaking the jumptable
     patch_dword(0x456406, dword(0x45640a)); // ditto
     hook_jump(0x454ce0, attack_type); // replace the old function entirely
+    hook_call(0x4553a5, sulfur_item_type, 6);
+    // item type converted to the item in rnd_robe_type() below
 }
 
 // Note: for this purpose, "undead" is any monster not immune to Holy.
@@ -3884,6 +3915,7 @@ static void __declspec(naked) lamp_stat_name(void)
 }
 
 // Add a random item type that only generates robes (for shops).
+// Also here: sulfur-only item type for gogs.
 static void __declspec(naked) rnd_robe_type(void)
 {
     asm
@@ -3891,6 +3923,8 @@ static void __declspec(naked) rnd_robe_type(void)
         jne quit
         cmp dword ptr [ebp+12], ITEM_TYPE_ROBE - 1
         je robe
+        cmp dword ptr [ebp+12], ITEM_TYPE_SULFUR - 1
+        je sulfur
         xor eax, eax ; set zf
         quit:
         mov dword ptr [ebp+16], 1 ; replaced code
@@ -3903,6 +3937,10 @@ static void __declspec(naked) rnd_robe_type(void)
         lea eax, [edi+FIRST_ROBE*48+44+ebx]
         push 0x456826 ; rnd item by equip stat loop
         ret 4
+        sulfur:
+        mov dword ptr [esi], SULFUR
+        mov dword ptr [esp], 0x4568b0 ; past rnd item type code
+        ret
       }
 }
 

@@ -77,9 +77,9 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 73	Goblin	Goblin A	4	13	6	56	4D4	1	N	Med	Normal	1	160	100	W	0	Phys	1D9	0	10	Phys	4D2	Arrow	0	0	0	0	0	0	0	0	0	Imm	0	0	0	0
 74	Hobgoblin	Goblin B	6	21	10	96	8D4	1	N	Med	Normal	1	170	100	W	0	Phys	1D9+2	0	15	Phys	4D2+1	Arrow	0	0	0	0	0	0	0	0	0	Imm	0	0	0	0
 75	Goblin Lord	Goblin C	10	40	14	200	10%15D4+L1	1	N	Short	Aggress	1	180	90	W	0	Phys	1D9+4	0	25	Phys	4D2+4	Arrow	0	0	0	0	10	10	10	5	10	Imm	5	10	10	0
-76	Gogling	Gog A	7	25	6	119	0	1	N	Short	Normal	2	200	90	S	0	Fire	1D10+2	Fire	0	0	0	0	0	0	0	0	Imm	10	5	10	10	Imm	10	10	10	"explode,2D10,fire"
-77	Gog	Gog B	11	45	10	231	0	1	N	Short	Normal	2	220	85	S	0	Fire	1D10+6	Fire	0	0	0	0	0	0	0	0	Imm	15	5	15	15	Imm	15	15	15	"explode,2D10,fire"
-78	Magog	Gog C	18	86	14	504	0	1	N	Short	Aggress	2	240	80	S	0	Fire	2D10+8	Fire	0	0	0	0	0	0	0	0	Imm	20	10	20	20	Imm	20	20	20	"explode,2D10,fire"
+76	Gogling	Gog A	7	25	6	119	5%L3Sulfur	1	N	Short	Normal	2	200	90	S	0	Fire	1D10+2	Fire	0	0	0	0	0	0	0	0	Imm	10	5	10	10	Imm	10	10	10	"explode,2D10,fire"
+77	Gog	Gog B	11	45	10	231	10%L3Sulfur	1	N	Short	Normal	2	220	85	S	0	Fire	1D10+6	Fire	0	0	0	0	0	0	0	0	Imm	15	5	15	15	Imm	15	15	15	"explode,2D10,fire"
+78	Magog	Gog C	18	86	14	504	15%L3Sulfur	1	N	Short	Aggress	2	240	80	S	0	Fire	2D10+8	Fire	0	0	0	0	0	0	0	0	Imm	20	10	20	20	Imm	20	20	20	"explode,2D10,fire"
 79	Bronze Golem	Golem A	22	114	40	704	20D8	0	N	Short	Suicidal	1	160	100	0	BrkArmor	Phys	5D6+20	0	10	Phys	5D4	Arrow	0	0	0	0	20	20	20	Imm	Imm	Imm	50	30	30	"explode,4D10,magic"
 80	Brass Golem	Golem B	35	227	60	1575	30D8	0	N	Short	Suicidal	1	170	90	0	Brkweapon	Phys	7D6+25	0	15	Phys	5D4+4	Arrow	0	0	0	0	30	30	30	Imm	Imm	Imm	70	40	40	"explode,4D10,magic"
 81	Gold Golem	Golem C	50	400	80	3000	50D8	0	N	Short	Suicidal	1	180	80	0	BrkItem	Phys	9D6+30	0	20	Phys	5D4+8	Arrow	0	0	0	0	40	40	40	Imm	Imm	Imm	Imm	50	50	"explode,4D10,magic"

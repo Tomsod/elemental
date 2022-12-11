@@ -1046,6 +1046,7 @@ enum monster_buffs
     MBUFF_FEAR = 4,
     MBUFF_PARALYSIS = 6,
     MBUFF_SLOW = 7,
+    MBUFF_HALVED_ARMOR = 8,
     MBUFF_BERSERK = 9,
     MBUFF_MASS_DISTORTION = 10, // also used for eradication in the mod
     MBUFF_ENSLAVE = 12,
@@ -18188,6 +18189,43 @@ static void __declspec(naked) learning_quest_xp(void)
       }
 }
 
+// Let halved armor from GM Axe also halve physical resistance.
+// This hook affects damage done to monsters.
+// Note that while this would convert physical immunity to 100 resistance,
+// it cannot happen because such monsters are also immune to halved armor.
+static void __declspec(naked) halved_physical_damage_resistance(void)
+{
+    asm
+      {
+        cmp dword ptr [eax+212+MBUFF_HALVED_ARMOR*16], edx
+        jnz ok
+        cmp dword ptr [eax+212+MBUFF_HALVED_ARMOR*16+4], edx
+        ok:
+        movzx eax, byte ptr [eax+89] ; old code (mons phys res)
+        jz quit
+        shr eax, 1 ; halve
+        quit:
+        push 0x427595 ; replaced jump (roll resistance code)
+        ret
+      }
+}
+
+// This one affects resistance to physical conditions.
+static void __declspec(naked) halved_physical_condition_resistance(void)
+{
+    asm
+      {
+        mov edi, dword ptr [ebp+8] ; replaced code (get monster)
+        movzx esi, byte ptr [edi+89] ; replaced code (phys res)
+        mov edx, dword ptr [edi+212+MBUFF_HALVED_ARMOR*16]
+        or edx, dword ptr [edi+212+MBUFF_HALVED_ARMOR*16+4]
+        jz quit
+        shr esi, 1 ; halve
+        quit:
+        ret
+      }
+}
+
 // Tweak various skill effects.
 static inline void skill_changes(void)
 {
@@ -18286,6 +18324,8 @@ static inline void skill_changes(void)
     patch_pointer(0x44b944, learning_quest_xp);
     // new sword/spear gm bonus is in maybe_parry() above
     erase_code(0x48ffe9, 8); // erase old bonus
+    patch_pointer(0x4275fd, halved_physical_damage_resistance); // jumptable
+    hook_call(0x427682, halved_physical_condition_resistance, 7);
 }
 
 // Switch off some of MM7Patch's features to ensure compatibility.

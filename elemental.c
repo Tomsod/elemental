@@ -183,7 +183,8 @@ enum spcitems_txt
     SPC_BLESSED = 92,
     SPC_TERRIFYING = 93,
     SPC_MASTERFUL = 94,
-    SPC_COUNT = 94
+    SPC_KICKING = 95,
+    SPC_COUNT = 95
 };
 
 enum player_stats
@@ -13190,7 +13191,7 @@ static void __declspec(naked) titan_belt_recovery_penalty(void)
         call dword ptr ds:has_item_in_slot
         test eax, eax
         jz quit
-        add dword ptr [ebp-12], 20 ; penalty
+        add dword ptr [ebp-12], 10 ; penalty
         quit:
         mov ecx, esi ; restore
         jmp dword ptr ds:get_speed ; replaced call
@@ -13199,6 +13200,7 @@ static void __declspec(naked) titan_belt_recovery_penalty(void)
 
 // And the other one, too.  This patches the magic effects function,
 // as item bonus to damage is not always checked by the game.
+// Also here: boots of kicking increase damage as well.
 static void __declspec(naked) titan_belt_damage_bonus(void)
 {
     asm
@@ -13210,9 +13212,17 @@ static void __declspec(naked) titan_belt_damage_bonus(void)
         pop ecx
         test eax, eax
         movzx eax, word ptr [ecx+0x1828] ; replaced code
-        jz skip
-        add eax, 12 ; bonus
-        skip:
+        jz no_belt
+        add eax, 12 ; belt bonus
+        no_belt:
+        push eax
+        push SPC_KICKING
+        call dword ptr ds:has_enchanted_item
+        test eax, eax
+        pop eax
+        jz quit
+        add eax, 5 ; boot bonus
+        quit:
         ret
       }
 }

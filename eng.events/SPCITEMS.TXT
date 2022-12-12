@@ -96,8 +96,9 @@ Double Damage vs. Elementals.	Elemental Slaying	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x
 Protects from Curses and +10 to Attack Bonus.	Blessed	10	10	10	0	0	0	0	0	0	0	0	0	0	0	1500	B	(+10) to melee or ranged attack and immune to cursed condition
 Makes monsters hit in melee Afraid.	Terrifying	0	0	0	0	0	20	0	0	0	0	0	0	0	20	2000	D	Inflicts Afraid on monster upon a melee hit (Mind attack)
 +5 to weapon skill.	Masterful	20	10	0	0	0	0	0	0	0	0	0	0	0	0	2000	D	(+5) to skill corresponding to the weapon
++5 to melee damage.	of Kicking	0	0	0	0	0	0	0	0	0	15	0	0	0	0	1500	C	(+5) to melee weapon damage
 
-		660	810	605	375	355	350	260	325	245	225	405	465	640	490	
+		660	810	605	375	355	350	260	325	245	240	405	465	640	490	
 
 Treasure Level	If treasure Level = 3 add all A and B															
 A= 3 to 4	If treasure Level = 4 add all A and B and C

@@ -6946,6 +6946,28 @@ static void __declspec(naked) delayed_reanimation(void)
       }
 }
 
+// Bug fix: PCs would become stuck with zombie faces on TPK.
+static void __declspec(naked) zombie_face_on_tpk(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [eax+COND_ZOMBIE*8]
+        or ecx, dword ptr [eax+COND_ZOMBIE*8+4]
+        jz skip
+        mov edx, dword ptr [eax+0x1924] ; old voice
+        mov dword ptr [eax+0x1920], edx ; current voice
+        mov edx, dword ptr [eax+0x1928] ; old face
+        mov byte ptr [eax+0xba], dl ; current face
+        mov ecx, 4
+        get_pc_id:
+        cmp eax, dword ptr [0xa74f44+ecx*4] ; PC pointers
+        loopne get_pc_id
+        call dword ptr ds:update_face
+        skip:
+        jmp dword ptr ds:memset_ptr ; replaced call
+      }
+}
+
 // Tweaks of zombie players and monsters.
 static inline void zombie_stuff(void)
 {
@@ -6965,6 +6987,7 @@ static inline void zombie_stuff(void)
     erase_code(0x46a4f7, 10); // ditto, but space instead of mouse
     erase_code(0x4015d5, 2); // minimap and danger gem
     erase_code(0x401808, 2); // ditto, but indoors
+    hook_call(0x463603, zombie_face_on_tpk, 5);
 }
 
 // Calls the original function.

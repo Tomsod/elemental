@@ -184,7 +184,8 @@ enum spcitems_txt
     SPC_TERRIFYING = 93,
     SPC_MASTERFUL = 94,
     SPC_KICKING = 95,
-    SPC_COUNT = 95
+    SPC_ABSORPTION = 96,
+    SPC_COUNT = 96
 };
 
 enum player_stats
@@ -17251,20 +17252,24 @@ static void __declspec(naked) recall_covered_ac_chunk(void)
 
 // New Master Leather perk: chance to absorb enemy spells, restoring SP.
 // Only works if SP won't overflow the natural limit.
+// Also here: robes of Absorption have a 10% chance of doing the same.
 static int __thiscall absorb_spell(struct player *player, int spell, int rank)
 {
     if (spell == SPL_LIGHT_BOLT)
         return FALSE; // can't be blocked by anything
-    int body = player->equipment[SLOT_BODY_ARMOR];
-    if (!body)
-        return FALSE;
-    struct item *armor = &player->items[body-1];
-    if (armor->flags & IFLAGS_BROKEN
-        || ITEMS_TXT[armor->id].skill != SKILL_LEATHER)
-        return FALSE;
-    int skill = get_skill(player, SKILL_LEATHER);
-    if (skill < SKILL_MASTER || (skill & SKILL_MASK) <= random() % 100)
-        return FALSE;
+    if (!has_enchanted_item(player, SPC_ABSORPTION) || random() % 10)
+      {
+        int body = player->equipment[SLOT_BODY_ARMOR];
+        if (!body)
+            return FALSE;
+        struct item *armor = &player->items[body-1];
+        if (armor->flags & IFLAGS_BROKEN
+                || ITEMS_TXT[armor->id].skill != SKILL_LEATHER)
+            return FALSE;
+        int skill = get_skill(player, SKILL_LEATHER);
+        if (skill < SKILL_MASTER || (skill & SKILL_MASK) <= random() % 100)
+            return FALSE;
+      }
     int new_sp = player->sp + SPELL_INFO[spell].cost[rank-1];
     if (new_sp <= get_full_sp(player))
       {

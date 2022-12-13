@@ -6192,6 +6192,19 @@ static void __declspec(naked) armageddon_distance(void)
       }
 }
 
+// Do not raise flying monsters during the Armageddon sequence.
+static void __declspec(naked) armageddon_flyers(void)
+{
+    asm
+      {
+        cmp byte ptr [esi+58], 0 ; monster flight flag
+        jnz skip
+        add word ptr [esi+152], dx ; replaced code (vertical speed)
+        skip:
+        ret
+      }
+}
+
 // Blink mass buff icons when they've got less than 10 minutes left.
 static void __declspec(naked) blink_mass_buffs(void)
 {
@@ -6581,6 +6594,7 @@ static inline void misc_spells(void)
     erase_code(0x42e73e, 2); // m jump
     patch_dword(0x42e744, 10); // gm constant
     patch_word(0x42e74a, 0x6dd1); // halve below gm
+    hook_call(0x470b17, armageddon_flyers, 7);
     hook_call(0x441688, blink_mass_buffs, 6);
     erase_code(0x441690, 10); // rest of old duration check
     patch_byte(0x4417c2, 0xb8); // mov eax, dword
@@ -10615,7 +10629,7 @@ static void __declspec(naked) elixir_of_life_applicable(void)
         lea ecx, [PARTY_ADDR+edi]
         call dword ptr ds:get_full_hp
         cmp eax, dword ptr [PARTY_ADDR+edi+0x193c]
-        ja ok
+        jg ok
         mov eax, dword ptr [PARTY_ADDR+edi+COND_DRUNK*8]
         or eax, dword ptr [PARTY_ADDR+edi+COND_DRUNK*8+4]
         or eax, dword ptr [PARTY_ADDR+edi+COND_ZOMBIE*8]

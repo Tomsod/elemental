@@ -11549,9 +11549,10 @@ static void __declspec(naked) turn_afraid_monster(void)
         cmp byte ptr [ebx+60], 1 ; ai type
         jb skip ; suicidal
         je turn ; wimp
-        cmp dword ptr [ebx+212+MBUFF_BERSERK*16], 0
+        test byte ptr [ebx+36+2], 2 ; no flee bit
         jnz skip
-        cmp dword ptr [ebx+212+MBUFF_BERSERK*16+4], 0
+        mov edx, dword ptr [ebx+212+MBUFF_BERSERK*16]
+        or edx, dword ptr [ebx+212+MBUFF_BERSERK*16+4]
         jnz skip
         movzx edx, word ptr [ebx+40] ; monster hp
         lea edx, [edx+edx*4] ; 1/5th == 20%

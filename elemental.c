@@ -10482,6 +10482,8 @@ static inline void misc_rules(void)
     hook_call(0x4b7d6d, print_deposit_box_reply, 5);
     hook_call(0x4bcc13, open_deposit_box, 6);
     hook_call(0x4bd7f2, buy_deposit_box, 5);
+    // Prevent XP-boosting hirelings from giving the 9% XP bonus w/o Learning.
+    patch_word(0x49132b, 0xdb85); // test ebx, ebx -- check for base skill
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

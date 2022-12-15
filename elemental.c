@@ -984,7 +984,15 @@ struct __attribute__((packed)) mapstats_item
 #define MAPSTATS_ADDR 0x5caa38
 #define MAPSTATS ((struct mapstats_item *) MAPSTATS_ADDR)
 
-#define CUR_MAP_FILENAME ((char *) 0x6be1c4)
+#define CUR_MAP_FILENAME_ADDR 0x6be1c4
+#define CUR_MAP_FILENAME ((char *) CUR_MAP_FILENAME_ADDR)
+// TODO: instead of comparing map names we could fetch indices on game start
+#define MAP_ARENA_ADDR 0x4e44b0 // d05.blv
+#define MAP_BREEDING_ZONE_ADDR 0x4e99e4 // d10.blv
+#define MAP_WALLS_OF_MIST_ADDR 0x4e99ec // d11.blv
+#define MAP_WALLS_OF_MIST ((const char *) MAP_WALLS_OF_MIST_ADDR)
+#define MAP_MOUNT_NIGHON "out10.odm"
+#define MAP_SHOALS ((const char *) 0x4e4648) // out15.odm
 
 // Indoor or outdoor reputation for the loaded map.
 #define CURRENT_REP dword(dword(0x6be1e0) == 2 ? 0x6a1140 : 0x6be514)
@@ -3851,7 +3859,7 @@ static int __cdecl compare_special_item_prefix(char *prefix, char *text)
 // (Note that leaving a map also forces an autosave.)
 static void save_wom_barrels(void)
 {
-    if (uncased_strcmp(CUR_MAP_FILENAME, "d11.blv")) // walls of mist
+    if (uncased_strcmp(CUR_MAP_FILENAME, MAP_WALLS_OF_MIST))
         return;
     static const struct file_header header = { "barrels.bin", WOM_BARREL_CNT };
     save_file_to_lod(SAVEGAME_LOD, &header, MAP_VARS + 75, 0);
@@ -3863,7 +3871,7 @@ static void save_wom_barrels(void)
 // This is actually called on each savegame reload as well, but it's okay.
 static void load_wom_barrels(void)
 {
-    if (uncased_strcmp(CUR_MAP_FILENAME, "d11.blv")) // walls of mist
+    if (uncased_strcmp(CUR_MAP_FILENAME, MAP_WALLS_OF_MIST))
         return;
     if (check_bit(QBITS, QBIT_REFILL_WOM_BARRELS))
         return;
@@ -12808,7 +12816,7 @@ static void save_temple_beacon(void)
     elemdata.look_angle = dword(0xacd4fc);
     elemdata.map_index = get_map_index(MAPSTATS, CUR_MAP_FILENAME);
     change_bit(QBITS, QBIT_TEMPLE_UNDERWATER,
-               !uncased_strcmp(CUR_MAP_FILENAME, "out15.odm"));
+               !uncased_strcmp(CUR_MAP_FILENAME, MAP_SHOALS));
 }
 
 // Hook for the above.
@@ -12830,7 +12838,7 @@ static void __declspec(naked) bottle_in_arena(void)
     asm
       {
         push dword ptr [esp+8] ; map filename
-        push 0x4e44b0 ; arena filename
+        push MAP_ARENA_ADDR
         call dword ptr ds:uncased_strcmp
         test eax, eax
         jz forbid
@@ -13454,6 +13462,8 @@ static void __declspec(naked) gadgeteer_recharge_potion_bonus(void)
 }
 
 // Gardener's Gloves ability: flag monster for a possible reagent drop.
+// Does not work in light and dark proving grounds.
+// TODO: maybe disable both this and natural reagents in arena as well?
 static void __declspec(naked) plant_seed(void)
 {
     asm
@@ -13468,6 +13478,18 @@ static void __declspec(naked) plant_seed(void)
         push GARDENERS_GLOVES
         call dword ptr ds:has_item_in_slot
         test eax, eax
+        jz skip
+        push CUR_MAP_FILENAME_ADDR
+        push MAP_BREEDING_ZONE_ADDR
+        call dword ptr ds:uncased_strcmp
+        test eax, eax
+        jz restore
+        mov dword ptr [esp], MAP_WALLS_OF_MIST_ADDR
+        call dword ptr ds:uncased_strcmp
+        test eax, eax
+        restore:
+        pop eax
+        pop eax
         jz skip
         or byte ptr [esi+183], MMF_EXTRA_REAGENT
         mov al, byte ptr [edi+0xb9] ; class
@@ -18002,7 +18024,7 @@ static void meditation_quest(void)
 {
     if (check_bit(QBITS, QBIT_MEDITATION_GM_QUEST_ACTIVE)
         && !check_bit(QBITS, QBIT_MEDITATION_GM_QUEST)
-        && !uncased_strcmp(CUR_MAP_FILENAME, "out10.odm") // nighon
+        && !uncased_strcmp(CUR_MAP_FILENAME, MAP_MOUNT_NIGHON)
         && dword(0xacd4f4) >= 7999) // z coord (only the volcano is that high)
       {
         evt_set(PARTY, EVT_QBITS, QBIT_MEDITATION_GM_QUEST);

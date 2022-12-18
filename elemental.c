@@ -4156,6 +4156,11 @@ static inline void misc_items(void)
     erase_code(0x41da49, 3); // do not auto-id repaired items
     hook_call(0x497873, repair_starting_items, 5);
     hook_call(0x41d948, no_repair_at_distance, 5);
+    // Treat negative ID difficulty as auto-ID (but abs() repair).
+    patch_byte(0x4165f4, 0x7f); // jnz -> jg (new potion)
+    patch_byte(0x41d93c, 0x7f); // ditto (item rmb)
+    patch_byte(0x456a06, 0x7e); // jz -> jle (random item)
+    patch_byte(0x48c6fa, 0x7f); // also jnz -> jg (pick up item)
 }
 
 static uint32_t potion_damage;
@@ -13618,7 +13623,7 @@ static void __declspec(naked) fix_static_chest_items(void)
         lea eax, [eax+eax*2]
         shl eax, 4
         cmp byte ptr [ITEMS_TXT_ADDR+eax+46], 0 ; id difficulty
-        jnz skip
+        jl skip
         or byte ptr [ebx+20], IFLAGS_ID
         skip:
         mov dword ptr [esp], 0x45051e ; replaced jump adress
@@ -16948,6 +16953,8 @@ static void __declspec(naked) raise_ench_item_difficulty(void)
     asm
       {
         xor eax, eax
+        cmp byte ptr [esi+33], al ; ordinary items only
+        jnz no_ench
         mov ecx, dword ptr [esp+24] ; item
         mov edx, dword ptr [ecx+4]
         test edx, edx
@@ -16991,15 +16998,18 @@ static void __declspec(naked) raise_ench_item_difficulty(void)
         xor edx, edx
         div ecx
         no_ench:
-        movzx edx, byte ptr [esi+46] ; replaced code, almost
-        add eax, edx
-        cmp edi, eax ; replaced code
-        jl quit
+        movsx ecx, byte ptr [esi+46] ; replaced code, almost
         mov edx, SKILL_IDENTIFY_ITEM
         cmp dword ptr [esp], 0x491149 ; can repair func
         jb id
         mov edx, SKILL_REPAIR
+        test ecx, ecx ; negative difficulty means auto-id but not repair
+        jns id
+        neg ecx
         id:
+        add eax, ecx
+        cmp edi, eax ; replaced code
+        jl quit
         mov ecx, dword ptr [CURRENT_PLAYER]
         dec ecx
         imul ecx, ecx, SKILL_COUNT

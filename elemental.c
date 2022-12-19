@@ -753,16 +753,6 @@ enum qbits
 #define ITEM_TYPE_ROBE 47
 #define ITEM_TYPE_SULFUR 48
 
-// Not quite sure what this is, but it holds aimed spell data.
-struct __attribute__((packed)) dialog_param
-{
-    uint16_t spell;
-    uint16_t player;
-    SKIP(6);
-    uint16_t skill; // 0 if cast from spellbook
-    SKIP(8);
-};
-
 enum objlist
 {
     OBJ_ARROW = 545,
@@ -4290,10 +4280,10 @@ static void __declspec(naked) aim_potions_type(void)
 
 // Give back the potion if aiming prompt is cancelled.
 // Note: this will fail if the PC's backpack is full.
-static void __thiscall aim_potions_refund(struct dialog_param *this)
+static void __thiscall aim_potions_refund(struct spell_queue_item *spell)
 {
     int item_id;
-    switch (this->spell)
+    switch (spell->spell)
       {
     case SPL_FLAMING_POTION:
         item_id = FLAMING_POTION;
@@ -4313,10 +4303,10 @@ static void __thiscall aim_potions_refund(struct dialog_param *this)
     default:
         return;
       }
-    int slot = put_in_backpack(&PARTY[this->player], -1, item_id);
+    int slot = put_in_backpack(&PARTY[spell->caster], -1, item_id);
     if (slot)
-        PARTY[this->player].items[slot-1] = (struct item) { .id = item_id,
-                                                          .bonus = this->skill,
+        PARTY[spell->caster].items[slot-1] = (struct item) { .id = item_id,
+                                                         .bonus = spell->skill,
                                                           .flags = IFLAGS_ID };
     return;
 }
@@ -10497,6 +10487,10 @@ static inline void misc_rules(void)
     hook_call(0x4bd7f2, buy_deposit_box, 5);
     // Prevent XP-boosting hirelings from giving the 9% XP bonus w/o Learning.
     patch_word(0x49132b, 0xdb85); // test ebx, ebx -- check for base skill
+    // Don't impose 300 recovery when aiming a spell in realtime mode.
+    // This also fixes wrong PC getting the result of Telekinesis.
+    erase_code(0x433209, 5); // push 300
+    erase_code(0x433215, 21); // rest of old code
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

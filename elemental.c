@@ -19474,6 +19474,29 @@ static void __declspec(naked) subtract_negative_gold(void)
       }
 }
 
+// Allow monsters to attack again before finishing the current animation.
+// Important for when monster recovery is lowered below the anim speed.
+static void __declspec(naked) faster_monster_swing(void)
+{
+    asm
+      {
+        cmp dword ptr [ebx+184], eax ; replaced code (check for swing finish)
+        jge quit
+        xor eax, eax
+        inc eax
+        cmp dword ptr [ebx+124], eax ; mon recovery
+        jge skip
+        mov cx, word ptr [ebx+176] ; mon ai state
+        shl eax, cl
+        test eax, 0x4300c ; attack states
+        jnz quit
+        skip:
+        neg eax ; set flags
+        quit:
+        ret
+      }
+}
+
 // Allow optionally increasing game difficulty.
 static inline void difficulty_level(void)
 {
@@ -19498,6 +19521,7 @@ static inline void difficulty_level(void)
     hook_call(0x44bbf6, subtract_negative_gold, 6);
     // skill penalty in level_skill_bonus() above
     patch_pointer(0x417d78, "%s: %+d"); // display penalty correctly
+    hook_call(0x4020ef, faster_monster_swing, 6);
 }
 
 // Holds an unused travel reply that can be replaced with ours.

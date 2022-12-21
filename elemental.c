@@ -710,6 +710,8 @@ static struct elemdata
     int last_tax_month, last_tax_fame;
     // Set to true after purchasing a safe deposit box in a bank.
     int deposit_box;
+    // Preserve the active PC on reload.
+    int current_player;
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -7286,6 +7288,7 @@ static void load_game_data(void)
     last_bank_week = 0;
     last_hit_player = 0;
     replaced_chest = -1;
+    dword(CURRENT_PLAYER) = elemdata.current_player;
     if (dword(0xacd6b4)) // game was saved in TB mode
       {
         for (struct player *player = PARTY; player < PARTY + 4; player++)
@@ -7318,6 +7321,7 @@ static void save_game_data(void)
     if (group) // do not store group 0
         elemdata.reputation[group] = CURRENT_REP;
     replace_chest(-1); // we don't want swapped chests in the savefile
+    elemdata.current_player = dword(CURRENT_PLAYER);
     save_file_to_lod(SAVEGAME_LOD, &header, &elemdata, 0);
 }
 
@@ -10491,6 +10495,8 @@ static inline void misc_rules(void)
     // This also fixes wrong PC getting the result of Telekinesis.
     erase_code(0x433209, 5); // push 300
     erase_code(0x433215, 21); // rest of old code
+    // Do not reset the current PC on load (we restore saved value instead).
+    erase_code(0x45f26f, 41);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

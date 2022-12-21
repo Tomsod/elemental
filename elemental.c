@@ -15140,7 +15140,7 @@ static int __thiscall get_new_full_sp(struct player *player)
         base--;
     int total = (base * level + 1) / 2; // round up for goblins
     if (level <= 20)
-        total += base * bonus / 2;
+        total += base * bonus >> 1; // but round down here
     else
         total = total * (bonus + 20) / 20;
     total += CLASS_STARTING_SP[player->class>>2];

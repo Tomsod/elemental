@@ -1,6 +1,113 @@
 This is the change log for the Elemental Mod.  It's quite descriptive,
 and can be viewed as the chief source of information on the mod's features.
 
+== Elemental Mod ver. 3.1 ==
+
+This is mostly bugfix and balance tweak release, although I did add some
+features I skipped for 3.0.  Nothing major, though, that'll wait for 4.0.
+
+
+=== Skill and spell changes ===
+
+GM Thievery (exclusive to the Thief class) now allows backstabbing from any
+angle and reselling items stolen from shops, instead of the old x5 bonus.
+
+Learning now affects XP gained from quests and other scripted events.
+
+Cure Disease is renamed to Elixir of Life, it now also cures Drunk
+and Zombie and, more importantly, heals 12 HP per point of skill.
+
+Armageddon now again has a 20 reputation penalty, but only once per map.
+
+Hammerhands now grants (skill * 2) bonus magic damage to unarmed attacks and
+(skill / 2) bonus magic damage to all other melee attacks.
+
+Shield AC bonus now adds to the % chance to cover an ally (Master skill perk).
+
+Archers can now learn ID Item, and Snipers can advance it to Expert.
+Master Archers can instead advance Repair to Master.  Both can get GM Spear.
+
+Sword and Spear GM perks are now changed to grant a % chance to parry melee
+attacks.  This should be more effective than the old AC bonus.
+
+Halved armor (from GM Axe ability) now also halves physical resistance.
+
+
+=== Other new features ===
+
+New item enchantments: Masterful weapons that add +5 to the weapon's skill,
+boots of Kicking that add +5 to melee damage, and robes of Absorption that
+grant a 10% chance to nullify spells, just like the Master Leather ability.
+
+Flattener on-hit effect chance is doubled.
+
+Lady's Escort now halves missile damage.
+
+Titan's Belt now penalizes recovery less.
+
+Gardener's Gloves no longer work in proving grounds.
+
+Taking the trumpet from the chest in Tularean now turns nearby armies hostile.
+
+Double-crossed human and elven royalty now still pay you money.
+
+Markham's vase trap can now be disarmed.
+
+Banks now have a "safe deposit box" that shares its contents across all towns.
+
+There's now some fae dust in the Hall under the Hill.
+
+Gogs now have a chance to carry some sulfur.
+
+
+=== Interface and cosmetic changes ===
+
+Immutability now shows the number of remaining uses along with duration.
+
+Sword of Light now uses the lit sprite in the RMB description.
+
+Hirelings now only complain about being fired after actually pressing the
+relevant dialog option (press twice to actually fire them).
+
+When looting a chest, the '5' key now places the held item into the chest.
+
+It's no longer possible for recovering PCs to use potions.
+
+Ctrl-clicking on the Lightning Bolt spell icon allows casting it normally
+(costing SP and using Air skill) even with a certain artifact equipped.
+
+The ambient music no longer restarts on reloads.  Infinite looping option is
+recommended, otherwise you can restart the music by exiting to the main menu.
+
+Reloading now preserves the currently selected PC.
+
+Harmondale signal fires now stay lit after the goblins spawn.
+
+PCs now smile when winning a stat challenge.
+
+
+=== Bug fixes ===
+
+v3.0 fix: HP and SP regeneration did not work on robes.
+Fix: Stealing from shops and people ignored item bonuses to the skill.
+v3.0 fix: backstabbing success roll was inverted.
+Fix: lichdom now grants immunity to zombification in all circumstances.
+v3.0 fix: zombification now preserves race.
+v3.0 fix: temple in a bottle area now no longer respawns.
+v3.0 fix: Antique items were too difficult to ID and repair.
+v3.0 fix: Russian Flattener name was too long, causing glithes in shops.
+Fix: zombie faces no longer become stuck on total party kill.
+Fix: too much Armageddon could displace flying monster beyond party reach.
+v3.0 fix: sometimes monsters were turning around even when not afraid.
+Fix: teacher-type NPCs granted extra 9% to XP for PCs without Learning.
+Fix: specitems no longer have zero repair difficulty.
+Fix: aiming a spell in realtime mode increased its recovery to 140.
+v3.0 fix: realtime combat at harder difficulties should no longer slow down
+          monster attacks.  This fix may cause minor visual glitches, though.
+v3.0 fix: maximum SP half-points were sometimes rounded the wrong way.
+
+-------------------------------------------------------------------------------
+
 == Elemental Mod ver. 3.0 ==
 
 This release chiefly concerns party composition.  Characters are now defined by
@@ -364,7 +471,12 @@ days no matter the number of levels, like in MM6.  Also, after getting each
 10th level, the PC can visit the permanent "+2 to stat" wells once more, FWIW.
 
 I've also gave all GM teachers varied demands besides just skill and gold.
-Some even give you mini-quests before they can teach you!
+Some even give you mini-quests before they can teach you!  A lot of teachers
+just ask for practical experience, i.e. a specific number of successful uses
+of the skill (killed monsters for weapons, dodged hits for armor, etc.)  Most
+magic GMs now require enough resistance to a specific element.  For this, only
+"permanent" bonuses count, such as from equipment, so you may want to stock up
+on elemental resistance rings in advance if you want GM spellcasting early.
 
 Some primary stats now have new effects.  Intellect increases wand damage,
 and Personality improves trading prices; below 30 or so they will actually

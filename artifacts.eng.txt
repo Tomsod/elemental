@@ -1,4 +1,4 @@
-This is the new artifact spoiler for Elemental Mod, accurate as of v3.0.
+This is the new artifact spoiler for Elemental Mod, accurate as of v3.1.
 The player is not expected to read it before playing, as discovery is part of
 the fun.  However, you should consult this file if you're unsure precisely how
 the artifact you've found works.
@@ -37,8 +37,8 @@ duration and the bonus to resistance penetration (yes, it can be resisted).
 An artifact trident that deals extra Shock damage, grants water walking and
 Shock immunity, and adds a 0 SP Lightning Bolt to the wielder's spellbook.
 The added spell can be cast by anyone, even Knights, and uses Spear skill
-instead of Air Magic for determining damage and recovery.  Note that there's no
-way to cast "ordinary" Air-Magic-dependent LB while the trident is wielded.
+instead of Air Magic for determining damage and recovery.  To cast ordinary
+Lightning Bolt instead (with the SP cost), Ctrl-click the spell icon.
 
 4. Ellinger's Robe (robe)
 An artifact robe that provides Preservation (as the spell) and unconditional
@@ -106,7 +106,7 @@ this artifact gets more effective the higher your base damage (and Luck) is.
 
 13. Flattener (mace)
 A relic hammer with the Spectral property (attacks with either Physical or
-Magic element, whichever is more beneficial) that also has a 10% chance to
+Magic element, whichever is more beneficial) that also has a 20% chance to
 cast Mass Distortion on hit, but requires two hands to wield.  It CAN be used
 in one hand, but this will penalize melee recovery by 20 points.  Mass
 Distortion uses the wielder's Mace skill for determining damage, and like the
@@ -133,3 +133,4 @@ but the color is random.  70+ level monsters can drop the most powerful
 reagents.  Monsters that already can drop a reagent (e.g. trolls) are
 unaffected by this artifact.  And like with those "natural" reagents,
 reanimated monsters never drop reagents from this artifact either.
+The bonus drops are also disabled in the Walls of Mist and Breeding Zone.

@@ -1,4 +1,4 @@
-This is the party creation spoiler for the Elemental Mod v3.0.  Usually I
+This is the party creation spoiler for the Elemental Mod v3.1.  Usually I
 wouldn't advise reading the information you're supposed to learn as you play
 in advance, but some of the choices you make as you create the party
 (specifically, races and classes) are permanent, and if you want to play an
@@ -194,7 +194,7 @@ Sword      EMGG  EMMM  EEEE  EMMM  EEEE  EEEE  ----  ----  ----
 Dagger     EEEE  EMGG  EEEE  EEEE  EMMM  EEEE  ----  EMMM  EEME
 Axe        EMMM  ----  ----  EEEE  EEEE  EMGG  ----  ----  ----
 \_dwarves  EMGG  NEEE  NEEE  EMMM  EMMM  EGGG  NEEE  NEEE  NEEE
-Spear      EMGG  ----  EEEE  EEEE  EMMM  EMMM  ----  ----  ----
+Spear      EMGG  ----  EEEE  EEEE  EMGG  EMMM  ----  ----  ----
 Bow        EEME  EEEE  NNNN  EEEE  EMGG  EMMM  ----  ----  ----
 \_elves    EMGM  EMMM  EEEE  EMMM  EGGG  EMGG  NEEE  NEEE  NEEE
 Mace       EMMM  EEEE  ----  EMGG  ----  ----  EMGM  EEEE  ----
@@ -214,9 +214,9 @@ Body       ----  ----  -EME  NEMM  ----  -EGM  EMGG  EMGM  ----
 Light      ----  ----  ----  --M-  --E-  ----  --G-  ----  --G-
 Dark       ----  ----  ----  ---E  ---E  ----  ---G  ---M  ---G
 
-ID Item    ----  EMGG  ----  ----  ----  NNNN  ----  EEEE  EMGM
+ID Item    ----  EMGG  ----  ----  NNNE  NNNN  ----  EEEE  EMGM
 Merchant   EEEE  EMMM  ----  EMGM  EEEE  NNNN  EMGG  EEEE  NNNN
-Repair     EMGG  NNNN  ----  EMGG  EEEE  NNNN  EMMM  ----  EEEE
+Repair     EMGG  NNNN  ----  EMGG  EEME  NNNN  EMMM  ----  EEEE
 Bodybuild. EMGG  EEEE  EMGG  EMMM  EEEE  EEEE  NNNN  ----  ----
 Meditation ----  ----  ----  EEEE  EEEE  -NNN  EMMG  EMGG  EMMG
 Perception EEEE  EMGM  EEEE  NNNN  EMGG  EMGG  EEEE  EEEE  EEEE
@@ -257,9 +257,9 @@ HP/level for one SP/2 levels to better utilize Fire's expensive attack spells.
 Also, their Dodging is actually relevant now that dodging in armor is a Leather
 perk (which they have together with Monks), and GM Dagger makes Thieves the
 best at using throwing knives, even if they choose to wield swords in melee.
-Also, GM Thievery can now double melee damage through backstabs (but getting
-the monster to turn its back to you is another story), and Thieves can easily
-get the backstab chance to 100%.  Note that backstabs do not stack with crits.
+Also, Thievery can now double melee damage through backstabs, and at GM you
+don't even need to stay behind the monster, turning this into a pure melee
+damage multiplier.  The only downside is, backstabs do not stack with crits.
 
 Monks are still late bloomers, but potentially very strong in the late game,
 as GM Unarmed now gives a chance to instantly kill any enemy.  Also, staff at

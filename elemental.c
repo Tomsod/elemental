@@ -7726,6 +7726,39 @@ static inline void reputation(void)
     erase_code(0x477549, 72);
 }
 
+// Instead of copying the entire lines buffer, just store a pointer.
+// Note that MMExt 2.3 will overwrite this with an identical hook.
+static void __declspec(naked) remember_evt_lines(void)
+{
+    asm
+      {
+        mov eax, dword ptr [esp+4] ; destination
+        mov edx, dword ptr [esp+8] ; source
+        mov dword ptr [eax], edx
+        ret
+      }
+}
+
+// And now, restore the pointed buffer and adjust the register accordingly.
+// We must check for MMExt: if the call is relocated, then it's 2.3 which
+// does this already; if event is 0x7fff, it's 2.2 which doesn't expect this.
+static void __declspec(naked) recall_evt_lines(void)
+{
+    asm
+      {
+        lea edx, [esi+esi*2] ; replaced code
+        shl edx, 2 ; ditto
+        cmp dword ptr [esp], 0x44694a ; false if inside a mmext 2.3 hook
+        jne quit ; which does the below already
+        cmp edi, 0x7fff ; true if called from evt.lua
+        je quit ; must be 2.2 code, also skip for compatibility
+        sub edx, 0x5840b8 ; old buffer
+        add edx, dword ptr [0x5840b8] ; which now holds the pointer
+        quit:
+        ret
+      }
+}
+
 // With all the reputation-related script changes,
 // global.evt now has slightly more commands than the game can hold.
 // I could try to remove something, but it'll probably only grow over time,
@@ -7738,24 +7771,19 @@ static inline void expand_global_evt(void)
     patch_dword(0x443de5, GLOBAL_EVT_LINES * 12);
     patch_pointer(0x443def, global_evt_lines);
     patch_pointer(0x443e0e, global_evt_lines + 1);
-    patch_dword(0x446709, GLOBAL_EVT_LINES * 12);
-    patch_pointer(0x44670e, global_evt_lines);
-    // The next constant is shared with the map event lines buffer,
-    // but there's no harm in increasing it.
-    patch_dword(0x4468b9, GLOBAL_EVT_LINES * 12);
     patch_pointer(0x4468e9, global_evt_lines);
-    // Both times the buffer is read, it's copied into another
-    // statically allocated buffer, both of which also need to be replaced.
-    static uint32_t evt_lines_buffer[GLOBAL_EVT_LINES*3];
-    patch_pointer(0x446713, evt_lines_buffer);
-    patch_pointer(0x446754, evt_lines_buffer);
-    patch_pointer(0x44675c, evt_lines_buffer + 1);
-    patch_pointer(0x446764, evt_lines_buffer + 2);
-    static uint32_t evt_lines_buffer_2[GLOBAL_EVT_LINES*3];
-    patch_pointer(0x446904, evt_lines_buffer_2);
-    patch_pointer(0x44694d, evt_lines_buffer_2);
-    patch_pointer(0x44695d, evt_lines_buffer_2 + 1);
-    patch_pointer(0x446969, evt_lines_buffer_2 + 2);
+    // Both times the buffer was read, it was copied into another
+    // statically allocated buffer, but why not use the original one?
+    erase_code(0x446708, 15); // pushes for memmove
+    erase_code(0x446726, 5); // memmove call
+    erase_code(0x44672d, 3); // call fixup
+    patch_pointer(0x446754, global_evt_lines);
+    patch_pointer(0x44675c, global_evt_lines + 1);
+    patch_pointer(0x446764, global_evt_lines + 2);
+    // The next two hooks are duplicated by MMExtension v2.3.
+    // Using the same behavior is essential to retain compatibility.
+    hook_call(0x44690d, remember_evt_lines, 5);
+    hook_call(0x446945, recall_evt_lines, 6);
     // After tweaking barrels, I also ran out of the buffer that holds
     // global.evt raw data.  Let's replace it here as well!
     static uint8_t global_evt_buffer[GLOBAL_EVT_SIZE];

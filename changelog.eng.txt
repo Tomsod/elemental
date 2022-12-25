@@ -75,6 +75,8 @@ It's no longer possible for recovering PCs to use potions.
 
 The mod is now tentatively compatible with upcoming MMExtension v2.3.
 
+Loading a 3.0 save will (mostly) upgrade it to the current mod version.
+
 Ctrl-clicking on the Lightning Bolt spell icon allows casting it normally
 (costing SP and using Air skill) even with a certain artifact equipped.
 

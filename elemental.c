@@ -9087,11 +9087,23 @@ static void __thiscall empty_extra_chest(int id)
     memset(chest->slots, 0, sizeof(chest->slots));
 }
 
-// Hook for the above.
+// Now the dismiss hireling option must be pressed twice.
+static int confirm_hireling_dismiss = 0;
+
+// Hook for the above.  Also here: show hireling dismiss reply on firing them.
 static void __declspec(naked) empty_extra_chest_hook(void)
 {
     asm
       {
+        cmp dword ptr [confirm_hireling_dismiss], 0
+        jnz ok
+        inc dword ptr [confirm_hireling_dismiss]
+        mov ecx, dword ptr [new_strings+STR_CONFIRM_DISMISS*4]
+        mov dword ptr [0x590f0c], 77 ; enable reply
+        mov byte ptr [HIRELING_REPLY], 0 ; choose reply
+        mov dword ptr [esp], 0x4bc6f0 ; show statusline text
+        ret
+        ok:
         mov eax, dword ptr [0xad44f4+24] ; left npc prof
         cmp eax, dword ptr [0xad4540+24] ; right npc prof
         je skip ; if another porter etc. remains, do not empty
@@ -10030,9 +10042,6 @@ static void __declspec(naked) check_subtracted_qbit(void)
       }
 }
 
-// Now the dismiss hireling option must be pressed twice.
-static int confirm_hireling_dismiss = 0;
-
 // A small fix: reset the 'more information' hireling flag on dialog exit.
 // Also here: reset the var that delays the 'dismiss' reply until it's clicked.
 static void __declspec(naked) reset_hireling_reply(void)
@@ -10129,25 +10138,6 @@ static void __declspec(naked) delay_dismiss_hireling_reply(void)
         ret
         ok:
         mov ecx, dword ptr [0x737abc+eax*4-4] ; replaced code
-        ret
-      }
-}
-
-// Only show the reply when the dismiss option is first clicked.
-static void __declspec(naked) hireling_dismiss_warning(void)
-{
-    asm
-      {
-        cmp dword ptr [confirm_hireling_dismiss], 0
-        jnz ok
-        inc dword ptr [confirm_hireling_dismiss]
-        mov ecx, dword ptr [new_strings+STR_CONFIRM_DISMISS*4]
-        mov dword ptr [0x590f0c], 77 ; enable reply
-        mov byte ptr [HIRELING_REPLY], 0 ; choose reply
-        mov dword ptr [esp], 0x4bc6f0 ; show statusline text
-        ret
-        ok:
-        cmp dword ptr [0x73c014], edi ; replaced code
         ret
       }
 }
@@ -10564,7 +10554,7 @@ static inline void misc_rules(void)
     patch_bytes(0x4455a4, hireling_dismiss_reply_fix_stack_chunk, 3);
     hook_jump(0x4455a7, (void *) 0x4456fa); // skip initial reply
     hook_call(0x44551a, delay_dismiss_hireling_reply, 7);
-    hook_call(0x4bc581, hireling_dismiss_warning, 6);
+    // reply is shown in empty_extra_chest_hook()
     hook_call(0x41c9f7, add_chest_hotkey, 5);
     hook_call(0x434d0b, chest_hotkey_hook, 5);
     hook_call(0x4abf76, dont_restart_music, 5);

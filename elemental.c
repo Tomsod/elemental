@@ -10745,7 +10745,7 @@ static void __declspec(naked) elixir_of_life_new_cures(void)
         push COND_ZOMBIE
         lea ecx, [PARTY_ADDR+edi]
         call dword ptr ds:timed_cure_condition
-        test eax, eax
+        test al, al
         jz not_zombie
         mov eax, dword ptr [PARTY_ADDR+edi+0x1924] ; old voice
         mov dword ptr [PARTY_ADDR+edi+0x1920], eax

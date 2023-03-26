@@ -1258,8 +1258,8 @@ static int __thiscall (*remove_button)(void *this, void *button)
     = (funcptr_t) 0x42641d;
 static void __fastcall (*shop_voice)(int house, int topic)
     = (funcptr_t) 0x4b1df5;
-static int __thiscall (*timed_cure_condition)(void *player, int condition,
-                                              int time1, int time2)
+static char __thiscall (*timed_cure_condition)(void *player, int condition,
+                                               int time1, int time2)
     = (funcptr_t) 0x4908a0;
 static void __thiscall (*heal_hp)(void *player, int hp) = (funcptr_t) 0x48db9f;
 static void __fastcall (*update_face)(int player_id, int face)
@@ -11542,6 +11542,8 @@ static void __declspec(naked) soul_stealing_weapon(void)
         push esi
         push edi
         call ethrics_staff_zombie
+        test ebx, ebx
+        jnz soul_mainhand
         no_zombie:
         test ebx, ebx
         jz quit

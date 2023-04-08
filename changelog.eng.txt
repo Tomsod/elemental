@@ -1,6 +1,15 @@
 This is the change log for the Elemental Mod.  It's quite descriptive,
 and can be viewed as the chief source of information on the mod's features.
 
+== Elemental Mod ver. 3.1.1 ==
+
+A really tiny release that fixes a handful of bugs before I start on 4.0.
+
+* Elixir of Life no longer resets PC faces to the default party.
+* Killing monsters with Ethric's Staff shouldn't cause crashes now.
+* Fixed some typos in Russian documentation.
+
+
 == Elemental Mod ver. 3.1 ==
 
 This is mostly bugfix and balance tweak release, although I did add some

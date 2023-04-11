@@ -304,6 +304,7 @@ enum new_strings
     STR_PARRY,
     STR_DEPOSIT_BOX,
     STR_BUY_DEPOSIT_BOX,
+    STR_BUY_SCROLLS,
     NEW_STRING_COUNT
 };
 
@@ -525,7 +526,10 @@ enum items
     POTION_DIVINE_MASTERY = 279,
     LAST_POTION = 279,
     HOLY_WATER = 280, // not a potion
+    FIRST_SCROLL = 300,
+    SCROLL_FATE = 399,
     DIVINE_INTERVENTION_BOOK = 487,
+    SCROLL_TELEPATHY = 499,
     FIRST_ARTIFACT = 500,
     PUCK = 500,
     IRON_FEATHER = 501,
@@ -616,7 +620,7 @@ enum monster_group
 
 struct __attribute__((packed)) items_txt_item
 {
-    SKIP(4);
+    char *bitmap;
     char *name;
     char *generic_name;
     SKIP(16);
@@ -714,6 +718,7 @@ static struct elemdata
     int current_player;
     // Update gog drops if upgrading from 3.0.
     char gog_check[6];
+    struct item guild_scrolls[32][12];
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -1168,6 +1173,13 @@ enum horses
 #define NPC_ADDR 0x72d50c
 #define NPC_HIRED 0x80
 
+#define CURRENT_CONVERSATION 0xf8b01c
+#define EVENTS2D 0x5912b8
+#define ICONS_LOD_ADDR 0x6d0490
+#define ICONS_LOD ((void *) ICONS_LOD_ADDR)
+#define DIALOG1 0x507a3c
+#define DIALOG2 0x507a40
+
 #ifdef CHECK_OVERWRITE
 #define sprintf sprintf_mm7
 #define fread fread_mm7
@@ -1401,6 +1413,7 @@ static int __fastcall (*get_text_height)(void *font, char *string, int *bounds,
     = (funcptr_t) 0x44c5c9;
 static void __fastcall (*change_bit)(void *bits, int bit, int set)
     = (funcptr_t) 0x449ba1;
+static void (*restock_books)(void) = (funcptr_t) 0x4bc838;
 
 //---------------------------------------------------------------------------//
 
@@ -4669,7 +4682,7 @@ static void __declspec(naked) bless_water_reply_sizing(void)
         add dword ptr [ebp-24], 100
         ret
         new_reply:
-        mov eax, dword ptr [0x507a40] ; parent dialogue or smth
+        mov eax, dword ptr [DIALOG2]
         mov eax, dword ptr [eax+28] ; param = temple id
         ; cheapest temples won`t sell holy water
         ; to avoid buy price being lower than sell price
@@ -4694,7 +4707,7 @@ static void __declspec(naked) bless_water_reply_sizing(void)
         not_dark:
         push ecx
         imul eax, eax, 52 ; 2devents struct size
-        fld dword ptr [0x5912b8+eax+32] ; val field = temple cost
+        fld dword ptr [EVENTS2D+eax+32] ; val field = temple cost
         push 10
         fimul dword ptr [esp]
         fistp dword ptr [esp]
@@ -4756,10 +4769,10 @@ static void __declspec(naked) bless_water_action(void)
         je bless
         ret
         bless:
-        mov eax, dword ptr [0x507a40] ; parent dialogue or smth
+        mov eax, dword ptr [DIALOG2]
         mov eax, dword ptr [eax+28] ; param = temple id
         imul eax, eax, 52 ; 2devents struct size
-        fld dword ptr [0x5912b8+eax+32] ; val field = temple cost
+        fld dword ptr [EVENTS2D+eax+32] ; val field = temple cost
         fistp dword ptr [esp] ; don`t need the return address anymore
         pop ebx
         lea ecx, [ebx*4+ebx] ; price = heal cost x 10
@@ -8203,10 +8216,10 @@ static void __declspec(naked) temple_wizard_eye_power(void)
       {
         lea edx, [ecx-1]
         mov ecx, SPL_WIZARD_EYE
-        mov eax, dword ptr [0x507a40] ; parent dialogue or smth
+        mov eax, dword ptr [DIALOG2]
         mov eax, dword ptr [eax+28] ; param = temple id
         imul eax, eax, 52 ; 2devents struct size
-        fld dword ptr [0x5912b8+eax+32] ; val field = temple cost
+        fld dword ptr [EVENTS2D+eax+32] ; val field = temple cost
         push 5
         fidiv dword ptr [esp] ; temple power = cost / 5
         fistp dword ptr [esp]
@@ -8223,10 +8236,10 @@ static void __declspec(naked) temple_other_spells_power(void)
     asm
       {
         div edi
-        mov eax, dword ptr [0x507a40] ; parent dialogue or smth
+        mov eax, dword ptr [DIALOG2]
         mov eax, dword ptr [eax+28] ; param = temple id
         imul eax, eax, 52 ; 2devents struct size
-        fld dword ptr [0x5912b8+eax+32] ; val field = temple cost
+        fld dword ptr [EVENTS2D+eax+32] ; val field = temple cost
         push 5
         fidiv dword ptr [esp] ; temple power = cost / 5
         fistp dword ptr [esp]
@@ -9153,7 +9166,7 @@ static void __declspec(naked) quartermaster_extra_dialog(void)
         push ecx
         call dword ptr ds:add_button
         add esp, 48
-        mov ecx, dword ptr [0x507a3c] ; restore
+        mov ecx, dword ptr [DIALOG1] ; restore
         inc dword ptr [esp+4] ; one more dialog line
         skip:
         push 0x41d038 ; replaced call
@@ -9690,7 +9703,7 @@ static void __declspec(naked) add_tax_reply(void)
         inc esi
         call dword ptr ds:add_reply
         no_fine:
-        mov ecx, dword ptr [0x507a40] ; dialogue
+        mov ecx, dword ptr [DIALOG2]
         cmp dword ptr [ecx+28], 102 ; harmondale townhall id
         jne skip
         mov edx, 101 ; hitherto unused
@@ -9708,7 +9721,7 @@ static void __declspec(naked) print_tax_reply(void)
 {
     asm
       {
-        mov ecx, dword ptr [0x507a40] ; dialogue
+        mov ecx, dword ptr [DIALOG2]
         cmp dword ptr [ecx+28], 102 ; harmondale townhall id
         jne skip
         mov eax, dword ptr [new_strings+STR_TAXES*4]
@@ -9780,7 +9793,7 @@ static void __declspec(naked) tax_dialog(void)
 {
     asm
       {
-        mov eax, dword ptr [0xf8b01c] ; replaced code
+        mov eax, dword ptr [CURRENT_CONVERSATION] ; replaced code
         cmp eax, 1 ; main dialog
         jne no_reset
         and dword ptr [in_tax_dialog], 0
@@ -9793,7 +9806,7 @@ static void __declspec(naked) tax_dialog(void)
         inc dword ptr [in_tax_dialog]
         repeat:
         mov ebx, offset tax_text
-        mov esi, dword ptr [0x507a3c] ; skipped instruction
+        mov esi, dword ptr [DIALOG1] ; skipped instruction
         mov dword ptr [esp], 0x4b7acb ; print dialog code
         quit:
         ret
@@ -10252,7 +10265,7 @@ static void __declspec(naked) add_deposit_box_reply(void)
 {
     asm
       {
-        mov eax, dword ptr [0x507a3c] ; dialog
+        mov eax, dword ptr [DIALOG1]
         cmp dword ptr [eax+32], 3 ; button count
         jne ok
         mov ecx, dword ptr [eax+80] ; the button
@@ -10281,14 +10294,14 @@ static void __declspec(naked) print_deposit_box_reply(void)
 {
     asm
       {
-        mov eax, dword ptr [0xf8b01c] ; replaced code
+        mov eax, dword ptr [CURRENT_CONVERSATION] ; replaced code
         cmp eax, 9 ; our new conversation node
         je buy
         cmp eax, 1
         jne quit
         push ebx
         push dword ptr [new_strings+STR_DEPOSIT_BOX*4]
-        mov eax, dword ptr [0x507a3c] ; dialog
+        mov eax, dword ptr [DIALOG1]
         cmp dword ptr [eax+44], 4 ; highlighted reply
         cmove eax, dword ptr [ebp-4] ; hl color
         cmovne eax, dword ptr [ebp-8] ; regular color
@@ -10318,7 +10331,7 @@ static void __declspec(naked) print_deposit_box_reply(void)
         push ebx
         push esi
         push edi
-        mov esi, dword ptr [0x507a40] ; dialog
+        mov esi, dword ptr [DIALOG2]
         mov ebx, dword ptr [new_npc_text+856*4-790*4] ; buy dep. box text
         mov eax, 0x4b7acb ; town hall print bottom text code
         jmp eax
@@ -10330,7 +10343,7 @@ static void __declspec(naked) open_deposit_box(void)
 {
     asm
       {
-        mov esi, dword ptr [0x507a40] ; replaced code
+        mov esi, dword ptr [DIALOG2] ; replaced code
         cmp ecx, 22 ; bank
         jne quit
         cmp dword ptr [esp+20], 9 ; open box subaction
@@ -10358,7 +10371,7 @@ static void __declspec(naked) buy_deposit_box(void)
 {
     asm
       {
-        mov eax, dword ptr [0xf8b01c] ; replaced code (current conversation)
+        mov eax, dword ptr [CURRENT_CONVERSATION] ; replaced code
         cmp eax, 9 ; our buy box node
         jne quit
         cmp dword ptr [esp+20], 10 ; buy box subaction
@@ -10366,7 +10379,7 @@ static void __declspec(naked) buy_deposit_box(void)
         xor ecx, ecx
         mov edx, 10 ; the above subaction
         call dword ptr ds:add_reply
-        mov eax, dword ptr [0x507a3c] ; dialog
+        mov eax, dword ptr [DIALOG1]
         mov eax, dword ptr [eax+80] ; the new button
         add dword ptr [eax+12], 30 ; fix height
         add dword ptr [eax+20], 30 ; also bottom
@@ -10400,7 +10413,7 @@ static void __declspec(naked) buy_deposit_box(void)
         call dword ptr ds:show_face_animation
         jmp escape
         no_gold:
-        mov ecx, dword ptr [0x507a40] ; parent dialog
+        mov ecx, dword ptr [DIALOG2]
         mov edx, 2
         mov ecx, dword ptr [ecx+28] ; bank house id
         call dword ptr ds:shop_voice
@@ -12200,7 +12213,7 @@ static void __declspec(naked) display_worn_rdsm_body(void)
         mov byte ptr [ecx+9], al
         push 2
         push ecx
-        mov ecx, 0x6d0490 ; icons.lod
+        mov ecx, ICONS_LOD_ADDR
         call dword ptr ds:load_bitmap
         xchg eax, ebx
         push 0x43d4a1 ; code after setting coords
@@ -12312,7 +12325,7 @@ static void __declspec(naked) display_worn_rdsm_arm_2h(void)
         mov byte ptr [edx+9], al
         push 2
         push edx
-        mov ecx, 0x6d0490 ; icons.lod
+        mov ecx, ICONS_LOD_ADDR
         call dword ptr ds:load_bitmap
         xchg eax, ebx
         push 0x43dc10 ; code after setting coords
@@ -12374,7 +12387,7 @@ static void __declspec(naked) display_worn_rdsm_arm_idle(void)
         mov byte ptr [edx+9], al
         push 2
         push edx
-        mov ecx, 0x6d0490 ; icons.lod
+        mov ecx, ICONS_LOD_ADDR
         call dword ptr ds:load_bitmap
         xchg eax, ebx
         mov ecx, edi
@@ -13026,7 +13039,7 @@ static void __declspec(naked) bottle_temple_blessing(void)
         movzx eax, byte ptr [0xf8b06f+ecx] ; replaced code
         cmp eax, edx ; replaced code
         jne quit
-        mov eax, dword ptr [0x507a40] ; parent dialogue
+        mov eax, dword ptr [DIALOG2]
         mov eax, dword ptr [eax+28] ; temple id
         cmp eax, 87 ; temple in a bottle
         jne skip
@@ -13478,7 +13491,7 @@ static void __declspec(naked) display_new_belt(void)
         mov byte ptr [edx+9], al
         push 2
         push edx
-        mov ecx, 0x6d0490 ; icons.lod
+        mov ecx, ICONS_LOD_ADDR
         call dword ptr ds:load_bitmap
         mov ebx, eax
         push 0x43d954 ; code after setting coords
@@ -14553,7 +14566,7 @@ static void __declspec(naked) shop_recharge_dialog(void)
         xor ebx, ebx ; set zf
         ret
         rechargeable:
-        mov edx, dword ptr [0x507a40]
+        mov edx, dword ptr [DIALOG2]
         imul edx, dword ptr [edx+28], 52
         fld dword ptr [0x5912d8+edx] ; store price multiplier
         fld st(0)
@@ -19208,7 +19221,7 @@ static void __declspec(naked) knife_repair_dialog(void)
         movzx eax, byte ptr [esi+25] ; max charges
         sub eax, dword ptr [esi+16] ; current charges
         jbe skip
-        mov edx, dword ptr [0x507a40]
+        mov edx, dword ptr [DIALOG2]
         imul edx, dword ptr [edx+28], 52
         fld dword ptr [0x5912d8+edx] ; store price multiplier
         fld1 ; 20% bonus
@@ -19655,7 +19668,7 @@ static void __declspec(naked) add_horse_reply(void)
         call dword ptr ds:check_bit
         test eax, eax
         jz skip
-        mov ecx, dword ptr [0x507a40] ; parent dialog
+        mov ecx, dword ptr [DIALOG2]
         mov eax, dword ptr [ecx+28] ; house id
         cmp eax, 63 ; first boat
         jae skip
@@ -19670,7 +19683,7 @@ static void __declspec(naked) add_horse_reply(void)
         push offset horse_buffer
 #endif
         call dword ptr ds:sprintf
-        mov ecx, dword ptr [0x507a3c] ; dialog
+        mov ecx, dword ptr [DIALOG1]
         mov eax, dword ptr [empty_reply_index]
         cmp eax, dword ptr [ecx+44]
         cmove eax, dword ptr [colors+CLR_ITEM*4]
@@ -19726,7 +19739,7 @@ static void __declspec(naked) horse_buy_action(void)
         cmp esi, ebx ; set flags
         ret
         horse:
-        mov ecx, dword ptr [0x507a40] ; parent dialog
+        mov ecx, dword ptr [DIALOG2]
         mov edi, dword ptr [ecx+28] ; house id
         mov ecx, dword ptr [REF(horses_cost)+edi*4-54*4]
         cmp ecx, dword ptr [0xacd56c] ; party gold
@@ -20041,6 +20054,314 @@ static inline void balance_tweaks(void)
     erase_code(0x493c31, 2);
 }
 
+#define FIRST_GUILD 139
+// Magic guild subactions -- the second one is my addition.
+#define CONV_BUY_SPELLS 18
+#define CONV_BUY_SCROLLS 19
+
+// Add a "buy scrolls" option to magic guild dialogs.
+static void __declspec(naked) add_scroll_reply(void)
+{
+    asm
+      {
+        push edx ; preserve
+        mov edx, CONV_BUY_SCROLLS
+        call dword ptr ds:add_reply
+        pop edx
+        mov ecx, 2
+        jmp dword ptr ds:add_reply ; replaced call
+      }
+}
+
+// Same, but for the mirrored path guilds.
+static void __declspec(naked) add_scroll_reply_ld(void)
+{
+    asm
+      {
+        mov ecx, 1
+        mov edx, CONV_BUY_SCROLLS
+        call dword ptr ds:add_reply
+        mov eax, 0x4b3d26 ; three-reply branch
+        jmp eax
+      }
+}
+
+// Send a click on "buy scrolls" towards the buy books code.
+static void __declspec(naked) click_scroll_reply(void)
+{
+    asm
+      {
+        mov eax, dword ptr [CURRENT_CONVERSATION] ; replaced code
+        cmp eax, CONV_BUY_SCROLLS
+        jne quit
+        dec eax ; pretend we`re buying books
+        quit:
+        ret
+      }
+}
+
+// Supply the "buy scrolls" text for the new reply.
+static void __declspec(naked) print_scroll_reply(void)
+{
+    asm
+      {
+        mov eax, dword ptr [eax+36] ; replaced code
+        cmp eax, CONV_BUY_SPELLS ; ditto
+        jz books
+        cmp eax, CONV_BUY_SCROLLS
+        jnz not_scrolls
+        mov edx, dword ptr [new_strings+STR_BUY_SCROLLS*4]
+        not_scrolls:
+        ret
+        books:
+        mov edx, dword ptr [GLOBAL_TXT+400*4] ; "buy spells"
+        ret
+      }
+}
+
+// For the second use of the above, we need to switch registers.
+static void __declspec(naked) mov_scroll_reply_chunk(void)
+{
+    asm
+      {
+        mov eax, edx
+        nop dword ptr [eax]
+      }
+}
+
+#define SCHOOL_SPIRIT (SKILL_SPIRIT - SKILL_FIRE)
+#define SCHOOL_MIND (SKILL_MIND - SKILL_FIRE)
+
+// Populate a magic guild with appropriate scrolls.
+static void __thiscall restock_scrolls(int guild)
+{
+    int max_level = word(0x4f0db0 + guild * 2); // vanilla book lvl array
+    int school = word(EVENTS2D + (guild + FIRST_GUILD) * 52) - 5; // house type
+    int extra = school == SCHOOL_SPIRIT || school == SCHOOL_MIND; // 12 spells
+    int image = dword(CURRENT_CONVERSATION) == CONV_BUY_SCROLLS;
+    for (int i = 0; i < 12; i++)
+      {
+        int roll = random() % (max_level + extra);
+        int id = FIRST_SCROLL + school * 11 + roll;
+        if (roll == max_level)
+            id = school == SCHOOL_SPIRIT ? SCROLL_FATE : SCROLL_TELEPATHY;
+        struct item *scroll = &elemdata.guild_scrolls[guild][i];
+        init_item(scroll);
+        scroll->id = id;
+        scroll->flags = IFLAGS_ID;
+        // TODO: add appropriate scroll power when implemented
+        if (image)
+          {
+            void *bitmap = load_bitmap(ICONS_LOD, ITEMS_TXT[id].bitmap, 2);
+            dword(0xf8afe8 + i * 4) = 0x6d06cc + (int) bitmap * 72;
+          }
+      }
+}
+
+// Hook for the above.
+static void __declspec(naked) restock_scrolls_hook(void)
+{
+    asm
+      {
+        call dword ptr ds:restock_books ; replaced call
+        mov ecx, dword ptr [DIALOG2]
+        mov ecx, dword ptr [ecx+28] ; house id
+        sub ecx, FIRST_GUILD
+        jmp restock_scrolls
+      }
+}
+
+// Vanilla array for guild books on sale.
+#define BOOKS 0xadf894
+
+// Substitute our scroll array for the usual guild wares when appropriate.
+static void __declspec(naked) check_scroll_bought(void)
+{
+    asm
+      {
+        cmp dword ptr [CURRENT_CONVERSATION], CONV_BUY_SCROLLS
+        je scroll
+        cmp dword ptr [BOOKS+eax*4-FIRST_GUILD*12*36], ebx ; replaced code
+        ret
+        scroll:
+#ifdef __clang__
+        shl eax, 2
+        add eax, offset elemdata.guild_scrolls - FIRST_GUILD * 12 * 36
+        cmp dword ptr [eax], ebx
+#else
+        cmp dword ptr [elemdata.guild_scrolls+eax*4-FIRST_GUILD*12*36], ebx
+#endif
+        ret
+      }
+}
+
+// Same, but for fetching the item bitmap.
+static void __declspec(naked) check_scroll_bought_image(void)
+{
+    asm
+      {
+        cmp dword ptr [CURRENT_CONVERSATION], CONV_BUY_SCROLLS
+        je scroll
+        mov eax, dword ptr [BOOKS+eax*4-FIRST_GUILD*12*36] ; replaced code
+        ret
+        scroll:
+#ifdef __clang__
+        shl eax, 2
+        add eax, offset elemdata.guild_scrolls - FIRST_GUILD * 12 * 36
+        mov eax, dword ptr [eax]
+#else
+        mov eax, dword ptr [elemdata.guild_scrolls+eax*4-FIRST_GUILD*12*36]
+#endif
+        ret
+      }
+}
+
+// Also for checking if the shelves are empty.
+static void __declspec(naked) check_scroll_bought_empty(void)
+{
+    asm
+      {
+        cmp dword ptr [CURRENT_CONVERSATION], CONV_BUY_SCROLLS
+        je scroll
+        add eax, BOOKS - FIRST_GUILD * 12 * 36 ; replaced code
+        ret
+        scroll:
+        add eax, offset elemdata.guild_scrolls - FIRST_GUILD * 12 * 36
+        ret
+      }
+}
+
+// This one forms the merchant reply.  Also used for clicking to buy.
+static void __declspec(naked) check_scroll_bought_reply(void)
+{
+    asm
+      {
+        cmp dword ptr [CURRENT_CONVERSATION], CONV_BUY_SCROLLS
+        je scroll
+        lea esi, dword ptr [BOOKS+ecx*4-FIRST_GUILD*12*36-36] ; replaced code
+        ret
+        scroll:
+#ifdef __clang__
+        mov esi, ecx
+        shl esi, 2
+        add esi, offset elemdata.guild_scrolls - FIRST_GUILD * 12 * 36 - 36
+#else
+        lea esi, dword ptr [elemdata.guild_scrolls+ecx*4-FIRST_GUILD*12*36-36]
+#endif
+        ret
+      }
+}
+
+// Treat buy scrolls window the same as buy spells for clicking purposes.
+static void __declspec(naked) click_buy_scroll(void)
+{
+    asm
+      {
+        mov eax, dword ptr [CURRENT_CONVERSATION] ; replaced code
+        cmp eax, CONV_BUY_SCROLLS
+        jne quit
+        dec eax ; pretend it`s books
+        quit:
+        ret
+      }
+}
+
+// Same, but for right clicks.
+static void __declspec(naked) right_click_scroll(void)
+{
+    asm
+      {
+        cmp dword ptr [CURRENT_CONVERSATION], CONV_BUY_SPELLS ; replaced code
+        je quit
+        cmp dword ptr [CURRENT_CONVERSATION], CONV_BUY_SCROLLS
+        quit:
+        ret
+      }
+}
+
+// And this is for right-clicking a sold scroll.
+static void __declspec(naked) check_scroll_bought_hint(void)
+{
+    asm
+      {
+        cmp dword ptr [CURRENT_CONVERSATION], CONV_BUY_SCROLLS
+        je scroll
+        lea ecx, dword ptr [BOOKS+eax*4-FIRST_GUILD*12*36-36] ; replaced code
+        ret
+        scroll:
+#ifdef __clang__
+        mov ecx, eax
+        shl ecx, 2
+        add ecx, offset elemdata.guild_scrolls - FIRST_GUILD * 12 * 36 - 36
+#else
+        lea ecx, dword ptr [elemdata.guild_scrolls+eax*4-FIRST_GUILD*12*36-36]
+#endif
+        mov dword ptr [esp], 0x4b1ab5 ; regular rmb window (not spell desc)
+        ret
+      }
+}
+
+#define GUILD_SCROLL_Y_ADJ 32
+
+// Lower the sold scroll images so they wouldn't float in midair.
+static void __declspec(naked) sold_scrolls_height(void)
+{
+    asm
+      {
+        cmp dword ptr [CURRENT_CONVERSATION], CONV_BUY_SCROLLS
+        jne skip
+        add dword ptr [esp+8], GUILD_SCROLL_Y_ADJ ; bitmap y
+        skip:
+        mov eax, 0x4a6204 ; replaced call
+        jmp eax
+      }
+}
+
+// Same, but for the mouse click mask.
+static void __declspec(naked) sold_scrolls_height_mask(void)
+{
+    asm
+      {
+        cmp dword ptr [CURRENT_CONVERSATION], CONV_BUY_SCROLLS
+        jne skip
+        add ecx, GUILD_SCROLL_Y_ADJ * 2560 ; seems to be x and y at once?
+        skip:
+        mov eax, 0x40f8a8 ; replaced call
+        jmp eax
+      }
+}
+
+// Various changes to stores, guilds and other buildings.
+static inline void shop_changes(void)
+{
+    hook_call(0x4b3b29, add_scroll_reply, 5); // elemental guilds
+    hook_jump(0x4b3b30, (void *) 0x4b3cfc); // four-reply branch
+    hook_call(0x4b3b61, add_scroll_reply, 5); // self guilds
+    hook_jump(0x4b3b68, (void *) 0x4b3cfc); // ditto
+    hook_jump(0x4b3b79, add_scroll_reply_ld); // light
+    hook_jump(0x4b3b8a, add_scroll_reply_ld); // dark
+    hook_call(0x4b5dcb, click_scroll_reply, 5);
+    hook_call(0x4b6169, print_scroll_reply, 6); // planning code
+    erase_code(0x4b61b4, 6); // remove unconditional "buy spells" text
+    hook_call(0x4b6283, print_scroll_reply, 6); // printing code
+    patch_bytes(0x4b62bf, mov_scroll_reply_chunk, 5);
+    hook_call(0x4bd302, restock_scrolls_hook, 5);
+    hook_call(0x4b5ef0, check_scroll_bought, 7); // top shelf
+    hook_call(0x4b5f65, check_scroll_bought, 7); // bottom shelf
+    patch_byte(0x4b6001, CONV_BUY_SPELLS); // fix statusline
+    hook_call(0x4bd361, check_scroll_bought_image, 7);
+    hook_call(0x4b5fdb, check_scroll_bought_empty, 5);
+    hook_call(0x4b609d, check_scroll_bought_reply, 7); // reply
+    hook_call(0x4bdaf0, click_buy_scroll, 5);
+    hook_call(0x4bdec0, check_scroll_bought_reply, 7); // buy
+    hook_call(0x4b19bf, right_click_scroll, 7);
+    hook_call(0x4b1a21, check_scroll_bought_hint, 7);
+    hook_call(0x4b5f0c, sold_scrolls_height, 5); // top shelf
+    hook_call(0x4b5f84, sold_scrolls_height, 5); // bottom shelf
+    hook_call(0x4b5f26, sold_scrolls_height_mask, 5); // top shelf
+    hook_call(0x4b5f9e, sold_scrolls_height_mask, 5); // bottom shelf
+}
+
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
                     LPVOID const reserved)
 {
@@ -20087,6 +20408,7 @@ BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
         difficulty_level();
         horses();
         balance_tweaks();
+        shop_changes();
       }
     return TRUE;
 }

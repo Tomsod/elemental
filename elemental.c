@@ -305,6 +305,7 @@ enum new_strings
     STR_DEPOSIT_BOX,
     STR_BUY_DEPOSIT_BOX,
     STR_BUY_SCROLLS,
+    STR_RESTORE_SP,
     NEW_STRING_COUNT
 };
 
@@ -449,7 +450,8 @@ struct __attribute__((packed)) player
     int8_t hp_bonus;
     SKIP(1);
     int8_t sp_bonus;
-    SKIP(161);
+    SKIP(160);
+    uint8_t beacon_casts; // my addition
 };
 
 enum player_buffs
@@ -1179,6 +1181,7 @@ enum horses
 #define ICONS_LOD ((void *) ICONS_LOD_ADDR)
 #define DIALOG1 0x507a3c
 #define DIALOG2 0x507a40
+#define PARTY_GOLD 0xacd56c
 
 #ifdef CHECK_OVERWRITE
 #define sprintf sprintf_mm7
@@ -4777,7 +4780,7 @@ static void __declspec(naked) bless_water_action(void)
         pop ebx
         lea ecx, [ebx*4+ebx] ; price = heal cost x 10
         shl ecx, 1
-        cmp dword ptr [0xacd56c], ecx ; party gold
+        cmp dword ptr [PARTY_GOLD], ecx
         jae can_pay
         push 0x4b75bc ; not enough gold branch
         ret
@@ -6013,11 +6016,9 @@ static void __declspec(naked) lloyd_increase_recall_count(void)
 {
     asm
       {
-        cmp byte ptr [0x5063ec], bl ; replaced code
-        jz skip
+        mov eax, dword ptr [ACTION_THIS_ADDR] ; replaced code
         mov ecx, dword ptr [esp+20] ; pc
         inc byte ptr [ecx+0x1b3b] ; unused counter
-        skip:
         ret
       }
 }
@@ -6597,7 +6598,7 @@ static inline void misc_spells(void)
     hook_call(0x44b2b4, update_new_tp_region, 8);
     hook_jump(0x4339f9, town_portal_from_main_screen);
     hook_call(0x4339d0, town_portal_without_dialog, 5);
-    hook_call(0x433612, lloyd_increase_recall_count, 6);
+    hook_call(0x4336ee, lloyd_increase_recall_count, 5);
     hook_call(0x42b570, lloyd_starting_tab, 5);
     hook_call(0x433433, lloyd_disable_recall, 5);
     hook_call(0x4737f2, reset_lava_walking, 7);
@@ -8114,19 +8115,6 @@ static void __declspec(naked) master_healer_hp(void)
 }
 
 
-// Prevent temples from lowering SP to maximum.
-static void __declspec(naked) temple_sp(void)
-{
-    asm
-      {
-        cmp dword ptr [esi+6464], eax ; current vs max sp
-        jge quit
-        mov dword ptr [esi+6464], eax ; replaced code
-        quit:
-        ret
-      }
-}
-
 // Preserve HP/SP bonus instead of adding it right away.
 static void __declspec(naked) evt_add_hp_sp_chunk_1(void)
 {
@@ -8182,7 +8170,6 @@ static inline void hp_sp_burnout(void)
     hook_call(0x4bb816, expert_healer_hp, 6);
     hook_call(0x4bb76c, master_healer_hp, 6);
     hook_call(0x4b755e, healer_or_temple_hp, 6); // temple
-    hook_call(0x4b7569, temple_sp, 6);
     // Dealing with the gamescript add HP/SP commands below.
     patch_bytes(0x44b123, evt_add_hp_sp_chunk_1, 2); // hp
     patch_bytes(0x44b12c, evt_add_hp_sp_chunk_2, 10); // hp
@@ -10385,7 +10372,7 @@ static void __declspec(naked) buy_deposit_box(void)
         add dword ptr [eax+20], 30 ; also bottom
         jmp restore
         buy:
-        mov eax, dword ptr [0xacd56c] ; party gold
+        mov eax, dword ptr [PARTY_GOLD]
         sub eax, 2500
         jge ok
         add eax, dword ptr [0xacd570] ; bank gold
@@ -10393,7 +10380,7 @@ static void __declspec(naked) buy_deposit_box(void)
         mov dword ptr [0xacd570], eax
         xor eax, eax
         ok:
-        mov dword ptr [0xacd56c], eax
+        mov dword ptr [PARTY_GOLD], eax
         mov dword ptr [elemdata.deposit_box], 1
         push edi
         push edi
@@ -19560,11 +19547,11 @@ static void __declspec(naked) subtract_negative_gold(void)
       {
         cmp ecx, 0
         jl give
-        cmp ecx, dword ptr [0xacd56c] ; replaced code
+        cmp ecx, dword ptr [PARTY_GOLD] ; replaced code
         ret
         give:
         neg ecx
-        add ecx, dword ptr [0xacd56c] ; party gold
+        add ecx, dword ptr [PARTY_GOLD]
         add dword ptr [esp], 12 ; skip over old code
         jmp dword ptr ds:set_gold
       }
@@ -19742,7 +19729,7 @@ static void __declspec(naked) horse_buy_action(void)
         mov ecx, dword ptr [DIALOG2]
         mov edi, dword ptr [ecx+28] ; house id
         mov ecx, dword ptr [REF(horses_cost)+edi*4-54*4]
-        cmp ecx, dword ptr [0xacd56c] ; party gold
+        cmp ecx, dword ptr [PARTY_GOLD]
         jbe buy
         mov dword ptr [esp], 0x4b6a32 ; not enough gold branch
         ret
@@ -20331,6 +20318,123 @@ static void __declspec(naked) sold_scrolls_height_mask(void)
       }
 }
 
+// Get SP restore price, based on guild fanciness, PC level, and Merchant.
+static int __thiscall guild_sp_price(struct player *player)
+{
+    static const int base_price = 50; // TODO: maybe tweak later
+    // This value is 2.0, 3.0, 4.0 or 5.0, depending on guild tier.
+    int val = *(float *) (EVENTS2D + dword(dword(DIALOG2) + 28) * 52 + 32);
+    int merchant = get_merchant_bonus(player);
+    int level = player->level_base;
+    if (level <= 10)
+        level = 100;
+    else
+        level *= level;
+    int beacon = 2; // penalize abusing beacons to replenish SP
+    for (struct player *each = PARTY; each < PARTY + 4; each++)
+        beacon += each->beacon_casts;
+    if (merchant > 66) // at most 1/3 base price for services
+        return base_price * val * level * 1 * beacon / (100 * 3 * 2);
+    return base_price * val * level * (100 - merchant) * beacon
+                            / (100 * 100 * 2);
+}
+
+// Restore active PC's spell points, charge gold, return 0 if not enough.
+static int guild_restore_sp(void)
+{
+    struct player *current = &PARTY[dword(CURRENT_PLAYER)-1];
+    int max_sp = get_full_sp(current);
+    if (current->sp >= max_sp)
+        return TRUE; // do nothing
+    int price = guild_sp_price(current);
+    if (dword(PARTY_GOLD) < price)
+        return FALSE;
+    spend_gold(price);
+    current->sp = max_sp;
+    return TRUE;
+}
+
+// Hook for the above.
+static void __declspec(naked) guild_restore_sp_hook(void)
+{
+    asm
+      {
+        call guild_restore_sp
+        test eax, eax
+        jz no_gold
+        mov eax, 0x4b5e73 ; exit
+        jmp eax
+        no_gold:
+        mov eax, 0x4b5e1a ; say no gold code
+        jmp eax
+      }
+}
+
+// For storing the "restore SP" reply; also doubles as SP check cache.
+static char restore_sp_buffer[100];
+
+// Print the restore SP prompt when appropriate.
+static void __declspec(naked) print_restore_sp(void)
+{
+    asm
+      {
+        cmp word ptr [ecx+0x108+eax*2-36*2], bx ; replaced code
+        jz quit
+        cmp eax, SKILL_DARK + 36 ; no learning/meditation
+        ja skip
+        mov byte ptr [restore_sp_buffer], bl ; will remain 0 if no prompt
+        call dword ptr ds:get_full_sp
+        mov ecx, dword ptr [ebp-24] ; player
+        cmp dword ptr [ecx+0x1940], eax ; sp
+        jge skip
+        call guild_sp_price
+        push eax
+        push dword ptr [new_strings+STR_RESTORE_SP*4]
+#ifdef __clang__
+        mov eax, offset restore_sp_buffer
+        push eax
+#else
+        push offset restore_sp_buffer
+#endif
+        call dword ptr ds:sprintf
+        add esp, 12
+        lea eax, [ebp-120]
+        push ebx
+        push ebx
+        push eax
+        mov edx, offset restore_sp_buffer
+        mov ecx, dword ptr [0x5c3468] ; font
+        call dword ptr ds:get_text_height
+        add dword ptr [ebp-8], eax ; total height
+        inc dword ptr [ebp-12] ; active reply count
+        skip:
+        test edi, edi ; clear zf
+        quit:
+        ret
+      }
+}
+
+// This one actually prints the composed reply.
+static void __declspec(naked) print_restore_sp_display(void)
+{
+    asm
+      {
+        cmp word ptr [ecx+0x108+eax*2-36*2], bx ; replaced code
+        jz quit
+        cmp eax, SKILL_DARK + 36 ; no learning/meditation
+        ja skip
+        cmp byte ptr [restore_sp_buffer], bl
+        jz skip
+        mov eax, offset restore_sp_buffer
+        mov dword ptr [esp], 0x4b62c4 ; print code
+        ret
+        skip:
+        test edi, edi ; clear zf
+        quit:
+        ret
+      }
+}
+
 // Various changes to stores, guilds and other buildings.
 static inline void shop_changes(void)
 {
@@ -20360,6 +20464,12 @@ static inline void shop_changes(void)
     hook_call(0x4b5f84, sold_scrolls_height, 5); // bottom shelf
     hook_call(0x4b5f26, sold_scrolls_height_mask, 5); // top shelf
     hook_call(0x4b5f9e, sold_scrolls_height_mask, 5); // bottom shelf
+    hook_jump(0x4b5e3a, guild_restore_sp_hook);
+    hook_call(0x4b6187, print_restore_sp, 8);
+    hook_call(0x4b62a1, print_restore_sp_display, 8);
+    // Remove SP heal from temples.
+    erase_code(0x4b6f8f, 15); // SP loss no longer qualifies for healing
+    erase_code(0x4b7564, 11); // and is not in fact restored
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

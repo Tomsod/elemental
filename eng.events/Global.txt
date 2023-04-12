@@ -742,3 +742,4 @@ Global Text
 739	Safe Box
 740	Buy Safe Deposit Box 2500 Gold
 741	Buy Scrolls
+742	Restore SP %d Gold

@@ -1051,7 +1051,7 @@ struct __attribute__((packed)) spcitem
     uint8_t level; // A-D == 0-3
     uint8_t robe_prob; // my addition
     uint8_t crown_prob; // ditto
-    SKIP(1); // unused
+    uint8_t prefix; // and this
 };
 
 enum monster_buffs
@@ -11185,31 +11185,38 @@ static inline void spcitems_buffer(void)
     patch_pointer(0x42b232, &spcitems->level);
 }
 
-// Recognize some of the new enchantment names as prefixes.
-static void __declspec(naked) new_prefixes(void)
+// Externalize the prefix/suffix enchantment distinction into spcitems.txt.
+static void __declspec(naked) parse_prefix_flag(void)
 {
     asm
       {
-        je quit ; replaced jump
-        cmp eax, SPC_BARBARIANS ; replaced code
-        je quit
-        cmp eax, SPC_SPECTRAL
-        je quit
-        cmp eax, SPC_CURSED
-        je quit
-        cmp eax, SPC_SOUL_STEALING
-        je quit
-        cmp eax, SPC_LIGHTWEIGHT
-        je quit
-        cmp eax, SPC_ELEMENTAL_SLAYING
-        je quit
-        cmp eax, SPC_BLESSED
-        je quit
-        cmp eax, SPC_TERRIFYING
-        je quit
-        cmp eax, SPC_MASTERFUL
-        quit:
-        ret ; zf will be checked shortly
+        cmp eax, 2
+        je prefix
+        cmp eax, 17 ; replaced code, but with our field number
+        ret
+        prefix:
+        mov ecx, dword ptr [ebp-16]
+        mov byte ptr [ecx+27], 0
+        cmp byte ptr [esi], 'y'
+        je yes
+        cmp byte ptr [esi], 'Y'
+        jne no
+        yes:
+        mov byte ptr [ecx+27], dl
+        no:
+        test edx, edx ; set flags
+        ret
+      }
+}
+
+// And now query that parsed field when necessary.
+static void __declspec(naked) read_prefix_flag(void)
+{
+    asm
+      {
+        imul ecx, eax, 28
+        cmp byte ptr [REF(spcitems)+ecx-1], 1 ; our value
+        ret ; jz follows shortly
       }
 }
 
@@ -11947,8 +11954,9 @@ static void __declspec(naked) masterful_weapon_hook(void)
 // Let's add some new item enchantments.
 static inline void new_enchants(void)
 {
-    // Some new enchant names are prefixes.
-    hook_call(0x4565fc, new_prefixes, 5);
+    hook_call(0x4570a2, parse_prefix_flag, 5);
+    hook_call(0x4565bd, read_prefix_flag, 8);
+    erase_code(0x4565c7, 60); // old prefix code
     // Spectral weapons are handled in undead_slaying_element() above.
     // Implement the monster cursed condition.
     patch_dword(0x41ec01, 212); // start from debuff 0 (cursed)
@@ -18569,12 +18577,12 @@ static void __declspec(naked) spcitems_new_probability(void)
 {
     asm
       {
-        cmp edx, 14
+        cmp edx, 15
         jb old
         add edx, 5 ; skip over other fields
         old:
         mov ecx, dword ptr [ebp-16] ; replaced code
-        mov byte ptr [ecx+edx+6], al ; ditto
+        mov byte ptr [ecx+edx+5], al ; changed a bit
         ret
       }
 }
@@ -18774,10 +18782,9 @@ static inline void new_enchant_item_types(void)
     patch_dword(0x456f25, 11); // and totals
     // NB: new totals occupy (unused) part of bonus range array
     patch_dword(0x456f73, dword(0x456f73) + 2); // don't parse lvl1 bonus range
-    patch_byte(0x4570a6, 16); // spcitems value column
-    patch_byte(0x4570be, 16); // same
-    patch_byte(0x4570e4, 17); // last column
-    patch_byte(0x45710d, 17); // column count
+    patch_byte(0x4570be, 17); // spcitems value column
+    patch_byte(0x4570e4, 18); // last column
+    patch_byte(0x45710d, 18); // column count
     hook_call(0x4570b3, spcitems_new_probability, 7);
     // This will calculate (junk) sums of levels and value too, but it`s ok.
     patch_dword(0x457146, 19); // probabilities + fields we skip over

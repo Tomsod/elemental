@@ -743,3 +743,7 @@ Global Text
 740	Buy Safe Deposit Box 2500 Gold
 741	Buy Scrolls
 742	Restore SP %d Gold
+743	Place Order
+744	You may wish for anything, as long as it's an apple.
+745	What do you wish for?
+746	Apple

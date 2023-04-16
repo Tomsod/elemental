@@ -306,6 +306,10 @@ enum new_strings
     STR_BUY_DEPOSIT_BOX,
     STR_BUY_SCROLLS,
     STR_RESTORE_SP,
+    STR_PLACE_ORDER,
+    STR_PROMPT1,
+    STR_PROMPT2,
+    STR_PROMPT3,
     NEW_STRING_COUNT
 };
 
@@ -1417,6 +1421,8 @@ static int __fastcall (*get_text_height)(void *font, char *string, int *bounds,
 static void __fastcall (*change_bit)(void *bits, int bit, int set)
     = (funcptr_t) 0x449ba1;
 static void (*restock_books)(void) = (funcptr_t) 0x4bc838;
+static void __fastcall (*message_dialog)(int event, int label, int type)
+    = (funcptr_t) 0x4451cb;
 
 //---------------------------------------------------------------------------//
 
@@ -4800,7 +4806,7 @@ static void __declspec(naked) bless_water_action(void)
         call dword ptr ds:init_item
         mov dword ptr [esp], HOLY_WATER ; id
         mov dword ptr [esp+4], ebx ; power
-        mov dword ptr [esp+20], 1 ; identified flag
+        mov dword ptr [esp+20], IFLAGS_ID
         mov ecx, PARTY_BIN_ADDR
         push esp
         call dword ptr ds:add_mouse_item
@@ -20442,6 +20448,207 @@ static void __declspec(naked) print_restore_sp_display(void)
       }
 }
 
+// Reimplement weapon, armor and magic shop replies with a fifth one added.
+static void __declspec(naked) add_order_reply(void)
+{
+    asm
+      {
+        xor ecx, ecx
+        mov edx, 2 ; buy standard
+        call dword ptr ds:add_reply
+        mov ecx, 1
+        mov edx, 95 ; buy special
+        call dword ptr ds:add_reply
+        mov ecx, 2
+        mov edx, 97 ; place order -- the new one!
+        call dword ptr ds:add_reply
+        mov ecx, 3
+        mov edx, 94 ; display inventory
+        call dword ptr ds:add_reply
+        mov ecx, 4
+        mov edx, 96 ; learn skills
+        call dword ptr ds:add_reply
+        mov eax, 0x4b3c84 ; five-reply code
+        jmp eax
+      }
+}
+
+// Print the text for the new reply.
+static void __declspec(naked) print_order_reply(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [new_strings+STR_PLACE_ORDER*4]
+        mov dword ptr [0xf8b044], eax ; replaced code, but shifted down
+        mov dword ptr [0xf8b040], ecx ; and we put the new text in its place
+        ret
+      }
+}
+
+// Do a prompt when the reply is clicked.
+// TODO: check if current PC is inactive
+static void __declspec(naked) query_order(void)
+{
+    asm
+      {
+        jz quit ; we replaced a jnz
+        dec eax ; our reply is 1 higher
+        jnz skip
+        mov byte ptr [0x5b07b8], al ; reset any message override
+        mov eax, dword ptr [new_strings+STR_PROMPT1*4]
+        mov dword ptr [0xf8b068], eax ; current (top) message
+        push dword ptr [new_strings+STR_PROMPT2*4]
+        push 0x5c32a8 ; status (bottom) message
+        call dword ptr ds:strcpy_ptr
+        add esp, 8
+        push 41 ; our marker for dialog param
+        call dword ptr ds:message_dialog
+        skip:
+        mov dword ptr [esp], 0x4b9c24 ; replaced jump (end of function)
+        quit:
+        ret
+      }
+}
+
+// Treat our dialog param 41 same as 26, i.e. do the prompt.
+static void __declspec(naked) enable_order_prompt(void)
+{
+    asm
+      {
+        cmp dword ptr [eax+28], 26 ; replaced code
+        je ok
+        cmp dword ptr [eax+28], 41 ; our param
+        je ok
+        mov dword ptr [esp], 0x44519a ; replaced jump
+        ok:
+        ret
+      }
+}
+
+// Revert a MM7Patch change that enables Fly and WWalk icons
+// in the message screen (but only for our order prompt).
+static void __declspec(naked) disable_prompt_spell_icons(void)
+{
+    asm
+      {
+        mov eax, dword ptr [CURRENT_SCREEN] ; replaced code
+        cmp eax, 19
+        jne skip
+        mov ecx, dword ptr [0x507a64] ; dialog
+        cmp dword ptr [ecx+28], 41 ; our param
+        jne skip
+        mov eax, 13 ; house screen id
+        skip:
+        ret
+      }
+}
+
+// A hacky strncasecmp replacement that ignores case both for ASCII and CP1251.
+static int __declspec(naked) __stdcall mystrcmp(char *left, char *right, int n)
+{
+    asm
+      {
+        push esi
+        push edi
+        cld
+        mov esi, dword ptr [esp+12] ; left
+        mov edi, dword ptr [esp+16] ; right
+        mov ecx, dword ptr [esp+20] ; n
+        loop:
+        test ecx, ecx
+        jz equal
+        repe cmpsb
+        je equal
+        mov al, byte ptr [esi-1]
+        mov dl, byte ptr [edi-1]
+        ja compare
+        xchg al, dl ; for simplicity
+        compare:
+        sub dl, al
+        cmp dl, 'A' - 'a'
+        jne unequal
+        test al, 0x60 ; all lowercase letters are here
+        jz unequal
+        jnp unequal ; we check for two bits
+        test al, 0x80 ; CP1251 has all 32 letters there (we ignore E-dots)
+        jnz loop
+        cmp al, 'a'
+        jb unequal
+        cmp al, 'z'
+        jbe loop
+        unequal:
+        xor eax, eax
+        inc eax ; we do not return -1 for less (unnecessary)
+        jmp quit
+        equal:
+        xor eax, eax
+        quit:
+        pop edi
+        pop esi
+        ret 12
+      }
+}
+
+// When the prompt is filled or otherwise exited, parse it.
+static void __declspec(naked) complete_order_prompt(void)
+{
+    asm
+      {
+        cmp dword ptr [ecx+28], 41 ; our param
+        jne skip
+        push 6 ; very temporary
+        push dword ptr [new_strings+STR_PROMPT3*4]
+        push 0x5c32a8 ; status (bottom) message
+        call mystrcmp
+        test eax, eax
+        jnz not_apple
+        sub esp, 36
+        mov ecx, esp
+        call dword ptr ds:init_item
+        mov dword ptr [esp], 630 ; apple
+        mov dword ptr [esp+20], IFLAGS_ID
+        mov ecx, PARTY_BIN_ADDR
+        push esp
+        call dword ptr ds:add_mouse_item
+        add esp, 36
+        not_apple:
+        push 0
+        push 0
+        push ACTION_EXIT
+        mov ecx, ACTION_THIS_ADDR
+        call dword ptr ds:add_action
+        mov dword ptr [esp], 0x445321 ; skip event code
+        mov ecx, dword ptr [0x507a64] ; restore
+        and dword ptr [0x507a64], 0 ; we skip over this
+        skip:
+        mov eax, 0x41c213 ; replaced call
+        jmp eax
+      }
+}
+
+// Do not abort the prompt on pressing space.
+// This actually overwrites an MM7Patch hook which only checked for 26.
+static void __declspec(naked) prompt_space_no_exit(void)
+{
+    asm
+      {
+        cmp eax, 19 ; replaced code
+        jne skip
+        mov eax, dword ptr [0x507a64] ; dialog
+        test eax, eax
+        jz quit
+        mov eax, dword ptr [eax+28]
+        cmp eax, 26 ; evt.question
+        je skip
+        cmp eax, 41 ; our param
+        jne quit
+        skip:
+        add dword ptr [esp], 88 ; replaced jump
+        quit:
+        ret
+      }
+}
+
 // Various changes to stores, guilds and other buildings.
 static inline void shop_changes(void)
 {
@@ -20477,6 +20684,26 @@ static inline void shop_changes(void)
     // Remove SP heal from temples.
     erase_code(0x4b6f8f, 15); // SP loss no longer qualifies for healing
     erase_code(0x4b7564, 11); // and is not in fact restored
+    // The next three hooks are in a jumptable.
+    patch_pointer(0x4b3d51, add_order_reply); // weapon shop
+    patch_pointer(0x4b3d55, add_order_reply); // armor shop
+    patch_pointer(0x4b3d59, add_order_reply); // magic shop
+    hook_call(0x4b937c, print_order_reply, 5); // weapon shop
+    hook_call(0x4bab8f, print_order_reply, 5); // armor shop
+    hook_call(0x4b523d, print_order_reply, 5); // magic shop
+    // Shift the replies down.
+    patch_dword(0x4b9389, dword(0x4b9389) + 4); // weapon, the last reply
+    patch_dword(0x4b93ac, dword(0x4b93ac) + 4); // weapon, replies loop
+    patch_dword(0x4bab9c, dword(0x4bab9c) + 4); // armor, the last reply
+    patch_dword(0x4babbe, dword(0x4babbe) + 4); // armor, replies loop
+    patch_dword(0x4b524a, dword(0x4b524a) + 4); // magic, the last reply
+    patch_dword(0x4b526d, dword(0x4b526d) + 4); // magic, replies loop
+    hook_call(0x4b95a3, query_order, 6);
+    hook_call(0x445128, enable_order_prompt, 6);
+    hook_call(0x4416e3, disable_prompt_spell_icons, 5);
+    hook_call(0x4452e4, complete_order_prompt, 5);
+    patch_byte(0x4326dd, byte(0x4326dd) + 11); // do not reset screen to 0
+    hook_call(0x4303e2, prompt_space_no_exit, 5);
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

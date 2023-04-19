@@ -210,6 +210,7 @@ enum player_stats
     STAT_THIEVERY = 17,
     STAT_DISARM = 18,
     STAT_ARMSMASTER = 21,
+    STAT_DODGING = 22,
     STAT_UNARMED = 23,
     STAT_MELEE_ATTACK = 25,
     STAT_MELEE_DAMAGE_BASE = 26,
@@ -309,7 +310,6 @@ enum new_strings
     STR_PLACE_ORDER,
     STR_PROMPT1,
     STR_PROMPT2,
-    STR_PROMPT3,
     NEW_STRING_COUNT
 };
 
@@ -20589,6 +20589,245 @@ static int __declspec(naked) __stdcall mystrcmp(char *left, char *right, int n)
       }
 }
 
+// Get an (equippable, regular) item by its textual description.
+static struct item *__thiscall parse_item(const char *description)
+{
+    static int namelen[LAST_PREFIX], gnamelen[LAST_PREFIX];
+    static int stdlen[24], spclen[SPC_COUNT], spc2len[SPC_COUNT];
+    static char stdof[24];
+    static char *spc2[SPC_COUNT];
+    static int init = FALSE;
+    static const char space[] = " \f\n\r\t\v";
+    if (!init)
+      {
+        for (int i = 1; i <= LAST_PREFIX; i++)
+          {
+            namelen[i-1] = strlen(ITEMS_TXT[i].name);
+            gnamelen[i-1] = strlen(ITEMS_TXT[i].generic_name);
+          }
+        for (int i = 0; i < 24; i++)
+          {
+            char *name = *(char **) (0x5dbe64 + i * 20);
+            stdlen[i] = strlen(name);
+            stdof[i] = !strncmp(name, "of ", 3);
+          }
+        for (int i = 0; i < SPC_COUNT; i++)
+          {
+            char *name = spcitems[i].name;
+            char *varpart = NULL;
+            if (have_itemgend)
+                varpart = strstr(name, "^R[");
+            if (!varpart)
+              {
+                spclen[i] = strlen(name);
+                spc2[i] = NULL;
+                spc2len[i] = 0;
+                continue;
+              }
+            char *second = strchr(varpart, ']') + 1;
+            second += strspn(second, space);
+            spclen[i] = varpart - name;
+            spc2[i] = second;
+            spc2len[i] = strlen(second);
+          }
+        init = TRUE;
+      }
+    if (!description)
+        return NULL;
+    char *current;
+    int number = strtol(description, &current, 10);
+    current += strspn(current, space);
+    int spc = 0;
+    int maxlen = 0;
+    for (int i = 0; i < SPC_COUNT; i++)
+      {
+        int len = spclen[i];
+        if (len <= maxlen || !spcitems[i].prefix)
+            continue;
+        if (!mystrcmp(current, spcitems[i].name, len))
+          {
+            if (spc2[i])
+              {
+                char *next = strpbrk(current, space);
+                if (*spc2[i])
+                  {
+                    next += strspn(next, space);
+                    if (mystrcmp(next, spc2[i], spc2len[i]))
+                        continue;
+                    next += spc2len[i];
+                  }
+                len = next - current;
+              }
+            spc = i + 1;
+            maxlen = len;
+          }
+      }
+    if (spc)
+        current += maxlen;
+    if (!number)
+        number = strtol(current, &current, 10);
+    current += strspn(current, space);
+    int id = 0, gid = 0;
+    maxlen = 0;
+    for (int i = 1; i <= LAST_PREFIX; i++)
+      {
+        int gnlen = gnamelen[i-1];
+        if (gnlen > maxlen && !mystrcmp(current, ITEMS_TXT[i].generic_name,
+                                        gnlen))
+          {
+            maxlen = gnlen;
+            id = gid = i;
+          }
+        int nlen = namelen[i-1];
+        if (nlen > maxlen && !mystrcmp(current, ITEMS_TXT[i].name, nlen))
+          {
+            maxlen = nlen;
+            id = i;
+            gid = 0;
+          }
+      }
+    if (!id || id == BLASTER || id == BLASTER_RIFLE)
+        return NULL;
+    current += maxlen;
+    if (!number)
+        number = strtol(current, &current, 10);
+    current += strspn(current, space);
+    int std = 0;
+    maxlen = 0;
+    if (!spc)
+      {
+        int of = FALSE;
+        if (!number && !mystrcmp(current, "of", 2))
+          {
+            char *test = current + 2;
+            number = strtol(test, &test, 10);
+            if (number)
+              {
+                of = TRUE;
+                current = test + strspn(test, space);
+              }
+          }
+        for (int i = 1; i <= 24; i++)
+          {
+            int len = stdlen[i-1] - of * 3;
+            if (len <= maxlen || of && !stdof[i-1])
+                continue;
+            char *name = *(char **) (0x5dbe64 + (i - 1) * 20) + of * 3;
+            if (!mystrcmp(current, name, len))
+              {
+                maxlen = len;
+                std = i;
+              }
+          }
+        if (of && !std)
+            return NULL;
+        if (!of) for (int i = 0; i < SPC_COUNT; i++)
+          {
+            int len = spclen[i];
+            if (len <= maxlen || spcitems[i].prefix)
+                continue;
+            if (!mystrcmp(current, spcitems[i].name, len))
+              {
+                maxlen = len;
+                spc = i + 1;
+                std = 0;
+              }
+          }
+      }
+    current += maxlen;
+    if (!number)
+        number = strtol(current, &current, 10);
+    current += strspn(current, space);
+    if (*current)
+        return NULL;
+    if (gid)
+      {
+        if (!ITEMS_TXT[gid].mod1_dice_count
+            || ITEMS_TXT[gid].equip_stat == ITEM_TYPE_WAND - 1)
+          {
+            int next = gid;
+            do next++; while (!strcmp(ITEMS_TXT[next].generic_name,
+                                      ITEMS_TXT[gid].generic_name));
+            // TODO: have item match ench price/tier?
+            id += random() % (next - gid);
+          }
+        else if (number && !std)
+          {
+            int quality = ITEMS_TXT[gid].mod2;
+            int sign = (number > quality) - (number < quality);
+            if (sign) do quality = ITEMS_TXT[id+=sign].mod2;
+            while (quality != number && quality);
+            if (quality != number)
+                return NULL;
+          }
+      }
+    int equip = ITEMS_TXT[id].equip_stat + 1;
+    if (equip == ITEM_TYPE_WEAPON2 && ITEMS_TXT[id].skill != SKILL_STAFF)
+        equip = ITEM_TYPE_WEAPON;
+    int wand = equip == ITEM_TYPE_WAND;
+    int robe = equip == ITEM_TYPE_ARMOR && ITEMS_TXT[id].skill == SKILL_MISC;
+    int crown = equip == ITEM_TYPE_HELM && !ITEMS_TXT[id].mod1_dice_count;
+    if (equip < ITEM_TYPE_MISSILE && std)
+        return NULL;
+    if (wand && (std || spc))
+        return NULL;
+    static struct item result;
+    init_item(&result);
+    result.id = id;
+    result.flags = IFLAGS_ID;
+    if (spc)
+      {
+        int prob;
+        if (robe)
+            prob = spcitems[spc-1].robe_prob;
+        else if (crown)
+            prob = spcitems[spc-1].crown_prob;
+        else
+            prob = spcitems[spc-1].probability[equip-1];
+        if (!prob)
+            return NULL;
+        result.bonus2 = spc;
+      }
+    if (std)
+      {
+        int column = robe ? 13 : crown ? 14 : equip;
+        if (!byte(0x5dbe64 + (std - 1) * 20 + 4 + column))
+            return NULL;
+        result.bonus = std;
+        static const int halved = (2 << STAT_HP) + (2 << STAT_SP)
+                                + (2 << STAT_THIEVERY) + (2 << STAT_DISARM)
+                                + (2 << STAT_ARMSMASTER) + (2 << STAT_DODGING)
+                                + (2 << STAT_UNARMED);
+        int max = 1 << std & halved ? 12 : 25;
+        if (number < 0 || number > max)
+            return NULL;
+        if (!number)
+            number = 1 + random() % max;
+        result.bonus_strength = number;
+      }
+    if (wand)
+      {
+        int max = ITEMS_TXT[id].mod2;
+        if (number < 0 || number > max + 6)
+            return NULL;
+        if (!number)
+            number = max + random() % 7;
+        result.charges = result.max_charges = number;
+      }
+    if (id == THROWING_KNIVES || id == LIVING_WOOD_KNIVES)
+      {
+        int max = 40 + (id == THROWING_KNIVES) * 10;
+        if (!number || gid)
+            number = max + random() % (max + 1);
+        if (number < 0 || number > max * 2)
+            return NULL;
+        result.charges = result.max_charges = number;
+        if (id == LIVING_WOOD_KNIVES)
+            result.temp_ench_time = CURRENT_TIME;
+      }
+    return &result;
+}
+
 // When the prompt is filled or otherwise exited, parse it.
 static void __declspec(naked) complete_order_prompt(void)
 {
@@ -20596,22 +20835,15 @@ static void __declspec(naked) complete_order_prompt(void)
       {
         cmp dword ptr [ecx+28], 41 ; our param
         jne skip
-        push 6 ; very temporary
-        push dword ptr [new_strings+STR_PROMPT3*4]
-        push 0x5c32a8 ; status (bottom) message
-        call mystrcmp
+        mov ecx, 0x5c32a8 ; status (bottom) message
+        call parse_item
         test eax, eax
-        jnz not_apple
-        sub esp, 36
-        mov ecx, esp
-        call dword ptr ds:init_item
-        mov dword ptr [esp], 630 ; apple
-        mov dword ptr [esp+20], IFLAGS_ID
+        jz no_item
         mov ecx, PARTY_BIN_ADDR
-        push esp
+        push eax
         call dword ptr ds:add_mouse_item
-        add esp, 36
-        not_apple:
+        mov dword ptr [0xf8b064], 1 ; shopkeeper happy
+        no_item:
         push 0
         push 0
         push ACTION_EXIT
@@ -20704,6 +20936,7 @@ static inline void shop_changes(void)
     hook_call(0x4452e4, complete_order_prompt, 5);
     patch_byte(0x4326dd, byte(0x4326dd) + 11); // do not reset screen to 0
     hook_call(0x4303e2, prompt_space_no_exit, 5);
+    patch_byte(0x41c486, 50); // allow longer prompts
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

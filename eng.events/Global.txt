@@ -744,5 +744,5 @@ Global Text
 741	Buy Scrolls
 742	Restore SP %d Gold
 743	Place Order
-744	You may wish for any equippable item.
-745	What do you wish for?
+744	If our stock is insufficient for you, you may order a specific item to be created at our shop.  This takes time, money, and ore.
+745	What do you order?

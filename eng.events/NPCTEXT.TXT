@@ -922,3 +922,16 @@ Also, bring our half of the key to us, as well.  It is enshrined in the Temple o
 854	"The Barrows are home for generations of our ancestors, and anything buried along with them is sacred to us.  Foreigners trying to rob sarcophagi usually succumb to powerful curses, and even if they make out with the loot, no self-respecting dwarf would ever associate with such thieves."	Barrows rep hint (pre)	Dwarven NPCs
 855	"Had fun robbing the dead?  *spits*  You're not welcome here anymore."	Barrows rep hint (post)	Dwarven NPCs
 856	"For a one-time payment of 2500 gold, you can open a safe deposit box in our bank network.  The items you store will be absolutely safe from thieves and such, and, more importantly, you can retrieve them from any bank office on the continent, irrespective of where you've last accessed the deposit box."	Deposit box	Bankers
+857	"I'm sorry, but the item you described does not appear to exist.  Try to clarify?
+
+For example, these are all correct item descriptions:
+""swift +5 spear"" -- means an Elven Spear (which has a +5 attack bonus)
+""fancy hat of water affinity"" -- helmets can't bear this magic, but a hat can
+""ring of 20 fire resistance"" -- I will choose the type of ring for you
+""25 arcane wand of clouds"" -- the wand will have 25/25 charges."	Bad description	Shopkeepers
+858	"I'm sorry, but I don't know how to craft this type of item.  Try something else?"	Cannot craft     Shopkeepers
+859	"Yes, I can craft %s for you!  It will take %d days and cost %d gold upfront, as well as some %s.  Is this acceptable?"	Craft non-magic	Shopkeepers
+860	"Yes, I can craft %s for you!  It will take %d days and cost %d gold upfront, as well as some %s and a %s for the enchantment.  Agreed?"	Craft magic	Shopkeepers
+861	"The resulting %s should look like this."	Craft preview	Shopkeepers
+862	"These items are required to complete your order.  I will need %d lumps or ore in total."	Craft reagents	Shopkeepers
+863	"scroll of %s"	Scroll reagent	Shopkeepers

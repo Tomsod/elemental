@@ -933,5 +933,9 @@
 859	"Да, %s мне под силу!  Это займет ^I[%d] ^L[день;дня;дней] и потребует ^I[%d] золот^L[ой;ых;ых].  Мне также нужна %s.  Вас устраивает?"	Craft non-magic	Shopkeepers
 860	"Да, %s мне под силу!  Это займет ^I[%d] ^L[день;дня;дней] и потребует ^I[%d] золот^L[ой;ых;ых].  Мне также нужна %s и %s для зачарования.  Устраивает?"	Craft non-magic	Shopkeepers
 861	"Согласно задумке, %s будет выглядеть примерно вот так."	Craft preview	Shopkeepers
-862	"Эти материалы потребуются для вашего заказа.  В том числе мне нужно ^I[%d] глыб^L[а;ы;] руды."	Craft reagents	Shopkeepers
-863	"свиток заклинания %s"	Scroll reagent	Shopkeepers
+862	"Эти материалы нужны для вашего заказа.  В том числе мне потребуется ^I[%d] глыб^L[а;ы;] руды."	Craft reagents	Shopkeepers
+863	"реагент %s"	Alchemical reagent	Shopkeepers
+864	"снадобье %s"	Potion reagent	Shopkeepers
+865	"свиток заклинания %s"	Scroll reagent	Shopkeepers
+866	"книга заклинания %s"	Spellbook reagent	Shopkeepers
+867	"самоцвет %s"	Gem reagent	Shopkeepers

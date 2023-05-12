@@ -1,108 +1,108 @@
-Special Bonuses by Group																			
+Special Bonuses by Group
 
-Bonus Stat	Name Add	Prefix	Weap	Staff	Miss	Arm	Shld	Helm	Belt	Cape	Gaunt	Boot	Ring	Amul	Robe	Crown	Value	Lvl	Description fo special Bonuses and values			
+Bonus Stat	Name Add	Prefix	Weap	Staff	Miss	Arm	Shld	Helm	Belt	Cape	Gaunt	Boot	Ring	Amul	Robe	Crown	Value	Lvl	Craft	Craft description	Description fo special Bonuses and values
 
-+10 to all Resistances.	of Protection	N	0	10	0	10	10	10	0	10	0	0	10	10	10	10	1000	B	(+10) on all four resistances			
-+10 to all Seven Statistics.	of The Gods	N	5	10	5	10	10	10	10	10	10	10	10	10	10	10	3000	D	(+10) on all 7 stats			
-Explosive Impact!	of Carnage	N	0	0	10	0	0	0	0	0	0	0	0	0	0	0	5000	D	"projectile explodes (fireball radius,dmg=weapdmg)"			
-Adds 3-4 points of Cold damage.	of Cold	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	500	A	(3-4) cold damage			
-Adds 6-8 points of Cold damage.	of Frost	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1000	C	(6-8) cold damage			
-Adds 9-12 points of Cold damage.	of Ice	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	2000	D	(9-12) cold damage			
-Adds 2-5 points of Electrical damage.	of Sparks	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	500	A	(2-5) elec damage			
-Adds 4-10 points of Electrical damage.	of Lightning	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1000	C	(4-10) elec damage			
-Adds 6-15 points of Electrical damage.	of Thunderbolts	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	2000	D	(6-15) elec damage			
-Adds 1-6 points of Fire damage.	of Fire	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	500	A	(1-6) fire damage			
-Adds 2-12 points of Fire damage.	of Flame	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1000	C	(2-12) fire damage			
-Adds 3-18 points of Fire damage.	of Infernos	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	2000	D	(3-18) fire damage			
-Adds 5 points of Poison damage.	of Poison	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	500	A	(5) pois damage
-Adds 8 points of Poison damage.	of Venom	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1000	C	(8) pois damage
-Adds 12 points of Poison damage.	of Acid	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	2000	D	(12) pois damage
-Drain Hit Points from target.	Vampiric	Y	5	5	5	0	0	0	0	0	0	0	0	0	0	0	X 2	D	Heal 20% of damage done on attack
-Increases rate of Recovery.	of Recovery	N	0	0	0	0	0	0	0	0	0	0	0	0	0	0	200	B	(-10) pts on recovery from being hit
-Wearer resistant to Diseases.	of Immunity	N	0	0	0	10	10	10	10	10	0	0	10	10	10	10	1000	C	Immune to desease condition
-Wearer resistant to Insanity.	of Sanity	N	0	0	0	5	5	5	5	5	0	0	5	5	5	5	1000	C	immune to insanity condition
-Wearer resistant to Paralysis.	of Freedom	N	0	0	0	10	10	10	10	10	0	0	10	10	10	10	2000	D	immune to paralize condition
-Wearer resistant to Poison.	of Antidotes	N	0	0	0	10	10	10	10	10	0	0	10	10	10	10	1000	C	immune to poison condition
-Wearer resistant to Sleep.	of Alarms	N	0	0	0	10	10	10	10	10	0	0	10	10	10	10	500	B	immune to sleep condition
-Wearer resistant to Stone.	of The Medusa	N	0	0	0	5	5	5	5	5	0	0	5	5	5	5	2000	D	immune to stone condition
-Increased Knockback.	of Force	N	0	0	0	0	0	0	0	0	0	0	0	0	0	0	500	A	Increase knockback effect (X10)
-Adds +3 to temporary character level.	of Power	N	0	0	0	0	0	0	0	0	0	0	0	5	10	5	3000	D	(+3) char level
-Increases effect of all Air spells.	of Air Magic	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	2000	D	50% increase of spell effect and duration
-Increases effect of all Body spells.	of Body Magic	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	2000	D	50% increase of spell effect and duration
-Increases effect of all Dark spells.	of Dark Magic	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	2000	D	50% increase of spell effect and duration
-Increases effect of all Earth spells.	of Earth Magic	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	2000	D	50% increase of spell effect and duration
-Increases effect of all Fire spells.	of Fire Magic	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	2000	D	50% increase of spell effect and duration
-Increases effect of all Light spells.	of Light Magic	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	2000	D	50% increase of spell effect and duration
-Increases effect of all Mind spells.	of Mind Magic	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	2000	D	50% increase of spell effect and duration
-Increases effect of all Spirit spells.	of Spirit Magic	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	2000	D	50% increase of spell effect and duration
-Increases effect of all Water spells.	of Water Magic	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	2000	D	50% increase of spell effect and duration
-Increases chance of Disarming.	of Burglary	N	0	0	0	0	0	0	0	0	0	0	0	0	0	0	2000	B	double chance to perform lockpick and steal skill
-Half damage from all missile attacks.	of Shielding	N	0	0	0	25	30	0	0	20	0	0	5	5	5	5	1000	B	(1/2)dmg from all missle attacks (not cumulative)
-Regenerate Hit points over time.	of Regeneration	N	0	5	0	10	0	0	10	10	0	0	10	10	10	10	1000	B	"Regenerate 1hp/x while walking, etc"
-Regenerate Spell points over time.	of Mana	N	0	10	0	10	0	10	10	10	10	0	10	10	10	10	1000	B	"Regenerate 1sp/x while walking, etc"
-Double damage vs Demons.	Demon Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	X 2	A	X 2 damage vs all demons
-Double damage vs Dragons	Dragon Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	X 2	A	X 2 damage vs all dragons
-Drain Hit Points from target and Increased Weapon speed.	of Darkness	N	5	5	5	0	0	0	0	0	0	0	0	0	0	0	X 3	D	"(-20) pts on weapon speed, Vampiric"
-"+1 to Seven Stats, HP, SP, Armor, Resistances."	of Doom	N	10	10	10	10	10	10	10	10	10	10	10	10	10	10	750	B	"(+1) 7stats,hpts,spts,AC,6 resistances"
-"+10 to Endurance and Armor and +5 Hit points."	of Earth	N	10	20	10	10	10	10	10	10	10	10	10	10	20	0	2000	D	"End (+10), AC (+10), HP (+10)"
-+5 Hit points and Regenerate Hit points over time.	of Life	N	0	5	0	10	10	10	10	10	10	10	10	10	10	20	2000	D	"HP (+10), Regen hpts"
-+5 Speed and Accuracy.	Rogues'	Y	10	10	10	5	5	5	10	20	20	20	10	10	5	5	500	A	"Speed (+5), Acc (+5)"
-Adds 10-20 points of Fire damage and +25 Might.	of The Dragon	N	10	5	10	0	0	0	0	0	0	0	0	0	0	0	3000	D	"(10-20) Fire damage, Might (+25)"
-+5 Spell points and Regenerate Spell points over time.	of The Eclipse	N	0	10	0	0	0	0	10	10	5	10	10	10	5	20	2000	D	"SP (+10), Regen spts"
-+15 Endurance and +5 Armor.	of The Golem	N	5	10	5	20	20	10	10	10	10	10	10	10	20	0	1500	C	"End (+15), AC (+5)"
-+10 Intellect and Luck.	of The Moon	N	5	10	5	10	10	20	10	10	10	10	10	10	10	10	1000	C	"Luck (+10), Int (+10)"
-+30 Fire Resistance and Regenerate Hit points over time.	of The Phoenix	N	0	0	0	20	20	20	0	0	0	0	0	0	5	5	3000	D	"Fire Res (+30), Regen hpts"
-"+5 Spell points, + 10 Speed and Intellect."	of The Sky	N	5	10	5	10	10	20	10	10	10	10	10	10	10	10	2500	D	"Int (+10), Spd (+10), SP (+10)"
-+10 Endurance and Accuracy.	of The Stars	N	5	5	5	10	10	10	10	20	20	10	10	10	10	10	1000	C	"End (+10), Acc (+10)"
-+10 Might and Personality.	of The Sun	N	5	10	5	10	10	10	10	20	20	10	10	10	10	10	1000	C	"Might(+10), Per (+10)"
-+15 Endurance and Regenerate Hit points over time.	of The Troll	N	5	5	5	20	20	10	10	10	10	10	10	10	20	10	1500	C	"End (+15), Regen hpts"
-+15 Luck and Regenerate Spell points over time.	of The Unicorn	N	5	10	5	10	10	20	10	10	10	10	10	10	10	20	1500	C	"Luck (+15), Regen spts"
-+5 Might and Endurance.	Warriors'	Y	5	5	5	10	10	10	10	10	10	10	10	10	10	10	500	A	"Might (+5), End (+5)"
-+5 Intellect and Personality.	Wizards'	Y	5	10	5	5	5	5	10	10	10	10	10	10	10	10	500	A	"Intelect (+5), Per (+5)"
-Increased Value.	Antique	Y	10	10	10	10	10	10	0	0	10	0	10	10	10	10	X 10	B	Gold value increased
-Increased Weapon speed.	Swift	Y	25	15	25	0	0	0	0	0	0	0	0	0	0	0	X 2	B	(-20) pts on weapon speed
-+3 Unarmed and Dodging skills.	Monks'	Y	0	5	0	0	0	0	10	5	15	10	5	5	5	0	1500	C	+3 to Dodging and Unarmed skill
-+3 Thievery and Disarm skills.	Thieves'	Y	0	0	0	0	0	0	5	5	20	5	15	5	0	0	1500	B	+3 to Stealing and Disarm skill
-+3 ID Item and ID Monster skills.	of Identifying	N	0	0	0	0	0	0	5	5	0	5	10	15	0	5	1500	A	+3 to ID Monster and ID Item skill
-Double Damage vs. Elves.	Elf Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	A	"x2 damage on all Elf Archers, Elf Spearmen, Elf peasants (male and female)."
-Additional Damage to Undead, and can hit Ghosts.	Undead Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	B	"x1.5 Holy damage on Liches, Vampires, Zombies, Skeletons, Ghosts, and Wights"
-Double Damage vs. Titans.	Of David	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	A	x2 damage on all Titans
-Regenerate Spell points and Hit points over time.	of Plenty	N	0	5	0	10	0	5	10	10	5	0	10	10	10	10	2500	C	"Regenerate 1 hp/x and 1 sp/x while walking, etc."
-Adds 5 points of Poison damage; double Backstab damage.	Assassins'	Y	20	10	0	0	0	0	0	0	0	0	0	0	0	0	1500	C	of Poison + of Backstabbing
-Adds 6-8 points of Cold damage and +5 Armor Class.	Barbarians'	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1500	C	(6-8) cold damage and +5 AC
-+20 Shock Resistance and Shielding.	of the Storm	N	0	5	0	20	20	20	0	0	0	0	0	0	10	10	1500	C	+20 Shock Resistance and 1/2 damage from missile attacks
-+10 Cold Resistance and +2 Alchemy skill.	of the Ocean	N	0	0	0	20	20	20	0	0	0	0	0	0	10	10	1000	B	+10 Cold Resistance and +2 Alchemy skill
-Prevents damage from drowning.	of Water Walking	N	0	0	0	5	5	5	5	5	0	15	5	5	5	5	1500	C	Character with item takes no damage from drowning
-Prevents damage from falling.	of Feather Falling	N	0	0	0	5	0	0	5	5	0	5	15	5	0	0	1000	B	Character with item takes no damage from falling
-Pierces Physical resistance.	Spectral	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	B	attacks with Magic if Physical resistance is higher
-Can Curse on hit.	Cursed	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1000	C	20% chance to apply Cursed debuff for 20 min.
-Pierces Physical resistance and can Curse on hit.	of The Wraith	N	10	5	10	0	0	0	0	0	0	0	0	0	0	0	x3	D	Spectral + Cursed
-Restores Spell points when used to kill an enemy.	Soul Stealing	Y	5	5	0	0	0	0	0	0	0	0	0	0	0	0	2500	D	Adds SP equal to level of killed enemy
-Double Damage to enemies not facing you.	of Backstabbing	N	20	10	0	0	0	0	0	0	0	0	0	0	0	0	x2	B	x2 weapon damage when the enemy is facing away
-Reduced Recovery penalty.	Lightweight	Y	0	0	0	20	20	0	0	0	0	0	0	0	0	0	1500	B	(-10) to armor recovery penalty
-Increases jump height.	of Leaping	N	0	0	0	0	0	0	0	0	0	15	0	0	0	0	1000	A	+20% to base jump power, cumulative
-Wearer resistant to Dispel Magic.	of Permanence	N	0	0	0	0	10	10	0	0	0	0	10	10	0	10	2000	C	Immunity to enemy Dispel Magic
-+10 Fire Resistance and +2 Fire Magic skill.	of Fire Affinity	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	1000	B	Fire skill +2 (non-cumulative), Fire Res +10
-+10 Shock Resistance and +2 Air Magic skill.	of Air Affinity	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	1000	B	Air skill +2 (non-cumulative), Shock Res +10
-+10 Cold Resistance and +2 Water Magic skill.	of Water Affinity	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	1000	B	Water skill +2 (non-cumulative), Cold Res +10
-+5 Armor Class and +2 Earth Magic skill.	of Earth Affinity	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	1000	B	Earth skill +2 (non-cumulative), AC +5
-+10 Magic Resistance and +2 Spirit Magic skill.	of Spirit Affinity	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	1000	B	Spirit skill +2 (non-cumulative), Magic Res +10
-+10 Mind Resistance and +2 Mind Magic skill.	of Mind Affinity	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	1000	B	Mind skill +2 (non-cumulative), Mind Res +10
-+10 Poison Resistance and +2 Body Magic skill.	of Body Affinity	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	1000	B	Body skill +2 (non-cumulative), Poison Res +10
-Attracts monster attacks.	of Taunting	N	0	0	0	10	10	10	0	10	10	10	0	0	0	0	1000	B	+1 to aggro counter, cumulative
-Adds 6-10 points of Mind damage and attracts monster attacks.	of The Jester	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1500	C	(6-10) mind damage and +1 to aggro counter, cumulative
-Adds 3-18 points of Fire damage.	of Infernos	N	0	0	0	0	0	0	0	0	0	0	0	0	0	0	x2	D	exclusive to GM Fire Aura (price nerf)
-Double Damage vs. Elementals.	Elemental Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	A	"x2 damage on Fire, Air, Water, Earth, Light elementals."
-Protects from Curses and +10 to Attack Bonus.	Blessed	Y	10	10	10	0	0	0	0	0	0	0	0	0	0	0	1500	B	(+10) to melee or ranged attack and immune to cursed condition
-Makes monsters hit in melee Afraid.	Terrifying	Y	0	0	0	0	0	20	0	0	0	0	0	0	0	20	2000	D	Inflicts Afraid on monster upon a melee hit (Mind attack)
-+5 to weapon skill.	Masterful	Y	20	10	0	0	0	0	0	0	0	0	0	0	0	0	2000	D	(+5) to skill corresponding to the weapon
-+5 to melee damage.	of Kicking	N	0	0	0	0	0	0	0	0	0	15	0	0	0	0	1500	C	(+5) to melee weapon damage
-May absorb incoming spells.	of Absorption	N	0	0	0	0	0	0	0	0	0	0	0	0	10	0	2500	D	10% chance to avoid harmful spell effects and restore SP
++10 to all Resistances.	of Protection	N	0	10	0	10	10	10	0	10	0	0	10	10	10	10	1000	B	384	Day of Protection scroll	(+10) on all four resistances
++10 to all Seven Statistics.	of The Gods	N	5	10	5	10	10	10	10	10	10	10	10	10	10	10	3000	D	382	Day of the Gods scroll	(+10) on all 7 stats
+Explosive Impact!	of Carnage	N	0	0	10	0	0	0	0	0	0	0	0	0	0	0	5000	D	396	Dragon Breath scroll	"projectile explodes (fireball radius,dmg=weapdmg)"
+Adds 3-4 points of Cold damage.	of Cold	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	500	A	325	Ice Bolt scroll	(3-4) cold damage
+Adds 6-8 points of Cold damage.	of Frost	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1000	C	331	Ice Blast scroll	(6-8) cold damage
+Adds 9-12 points of Cold damage.	of Ice	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	2000	D	247	Freezing potion	(9-12) cold damage
+Adds 2-5 points of Electrical damage.	of Sparks	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	500	A	314	Sparks scroll	(2-5) elec damage
+Adds 4-10 points of Electrical damage.	of Lightning	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1000	C	317	Lightning Bolt scroll	(4-10) elec damage
+Adds 6-15 points of Electrical damage.	of Thunderbolts	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	2000	D	249	Shocking potion	(6-15) elec damage
+Adds 1-6 points of Fire damage.	of Fire	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	500	A	301	Fire Bolt scroll	(1-6) fire damage
+Adds 2-12 points of Fire damage.	of Flame	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1000	C	303	Fire Aura scroll	(2-12) fire damage
+Adds 3-18 points of Fire damage.	of Infernos	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	2000	D	246	Flaming potion	(3-18) fire damage
+Adds 5 points of Poison damage.	of Poison	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	500	A	323	Poison Spray scroll	(5) pois damage
+Adds 8 points of Poison damage.	of Venom	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1000	C	328	Acid Burst scroll	(8) pois damage
+Adds 12 points of Poison damage.	of Acid	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	2000	D	248	Noxious potion	(12) pois damage
+Drain Hit Points from target.	Vampiric	Y	5	5	5	0	0	0	0	0	0	0	0	0	0	0	X 2	D	390	Vampiric Weapon scroll	Heal 20% of damage done on attack
+Increases rate of Recovery.	of Recovery	N	0	0	0	0	0	0	0	0	0	0	0	0	0	0	200	B	250	Swift potion (unused)	(-10) pts on recovery from being hit
+Wearer resistant to Diseases.	of Immunity	N	0	0	0	10	10	10	10	10	0	0	10	10	10	10	1000	C	225	Cure Disease potion	Immune to desease condition
+Wearer resistant to Insanity.	of Sanity	N	0	0	0	5	5	5	5	5	0	0	5	5	5	5	1000	C	239	Cure Insanity potion	immune to insanity condition
+Wearer resistant to Paralysis.	of Freedom	N	0	0	0	10	10	10	10	10	0	0	10	10	10	10	2000	D	360	Cure Paralysis scroll	immune to paralize condition
+Wearer resistant to Poison.	of Antidotes	N	0	0	0	10	10	10	10	10	0	0	10	10	10	10	1000	C	371	Cure Poison scroll	immune to poison condition
+Wearer resistant to Sleep.	of Alarms	N	0	0	0	10	10	10	10	10	0	0	10	10	10	10	500	B	322	Awaken scroll	immune to sleep condition
+Wearer resistant to Stone.	of The Medusa	N	0	0	0	5	5	5	5	5	0	0	5	5	5	5	2000	D	251	Stone to Flesh potion	immune to stone condition
+Increased Knockback.	of Force	N	0	0	0	0	0	0	0	0	0	0	0	0	0	0	500	A	333	Stun scroll (unused)	Increase knockback effect (X10)
+Adds +3 to temporary character level.	of Power	N	0	0	0	0	0	0	0	0	0	0	0	5	10	5	3000	D	279	Divine Mastery potion	(+3) char level
+Increases effect of all Air spells.	of Air Magic	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	2000	D	421	Starburst spellbook	50% increase of spell effect and duration
+Increases effect of all Body spells.	of Body Magic	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	2000	D	476	Power Cure spellbook	50% increase of spell effect and duration
+Increases effect of all Dark spells.	of Dark Magic	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	2000	D	497	Armageddon spellbook	50% increase of spell effect and duration
+Increases effect of all Earth spells.	of Earth Magic	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	2000	D	443	Mass Distortion spellbook	50% increase of spell effect and duration
+Increases effect of all Fire spells.	of Fire Magic	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	2000	D	410	Incinerate spellbook	50% increase of spell effect and duration
+Increases effect of all Light spells.	of Light Magic	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	2000	D	486	Sunray spellbook	50% increase of spell effect and duration
+Increases effect of all Mind spells.	of Mind Magic	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	2000	D	465	Enslave spellbook	50% increase of spell effect and duration
+Increases effect of all Spirit spells.	of Spirit Magic	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	2000	D	454	Resurrection spellbook	50% increase of spell effect and duration
+Increases effect of all Water spells.	of Water Magic	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	2000	D	432	Lloyd's Beacon spellbook	50% increase of spell effect and duration
+Increases chance of Disarming.	of Burglary	N	0	0	0	0	0	0	0	0	0	0	0	0	0	0	2000	B	341	Telekinesis scroll (unused)	double chance to perform lockpick and steal skill
+Half damage from all missile attacks.	of Shielding	N	0	0	0	25	30	0	0	20	0	0	5	5	5	5	1000	B	232	Shield potion	(1/2)dmg from all missle attacks (not cumulative)
+Regenerate Hit points over time.	of Regeneration	N	0	5	0	10	0	0	10	10	0	0	10	10	10	10	1000	B	370	Regeneration scroll	"Regenerate 1hp/x while walking, etc"
+Regenerate Spell points over time.	of Mana	N	0	10	0	10	0	10	10	10	10	0	10	10	10	10	1000	B	207	Harpy Feather reagent	"Regenerate 1sp/x while walking, etc"
+Double damage vs Demons.	Demon Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	X 2	A	214	Vial of Devil Ichor reagent	X 2 damage vs all demons
+Double damage vs Dragons.	Dragon Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	X 2	A	263	Slaying potion	X 2 damage vs all dragons
+Drain Hit Points from target and Increased Weapon speed.	of Darkness	N	5	5	5	0	0	0	0	0	0	0	0	0	0	0	X 3	D	265	Pure Speed potion	"(-20) pts on weapon speed, Vampiric"
+"+1 to Seven Stats, HP, SP, Armor, Resistances."	of Doom	N	10	10	10	10	10	10	10	10	10	10	10	10	10	10	750	B	399	Fate scroll	"(+1) 7stats,hpts,spts,AC,6 resistances"
+"+10 to Endurance and Armor and +5 Hit points."	of Earth	N	10	20	10	10	10	10	10	10	10	10	10	10	20	0	2000	D	213	Garnet reagent	"End (+10), AC (+10), HP (+10)"
++5 Hit points and Regenerate Hit points over time.	of Life	N	0	5	0	10	10	10	10	10	10	10	10	10	10	20	2000	D	203	Ruby reagent	"HP (+10), Regen hpts"
++5 Speed and Accuracy.	Rogues'	Y	10	10	10	5	5	5	10	20	20	20	10	10	5	5	500	A	304	Haste scroll	"Speed (+5), Acc (+5)"
+Adds 10-20 points of Fire damage and +25 Might.	of The Dragon	N	10	5	10	0	0	0	0	0	0	0	0	0	0	0	3000	D	204	Dragon's Eye reagent	"(10-20) Fire damage, Might (+25)"
++5 Spell points and Regenerate Spell points over time.	of The Eclipse	N	0	10	0	0	0	0	10	10	5	10	10	10	5	20	2000	D	209	Elvish Toadstool reagent	"SP (+10), Regen spts"
++15 Endurance and +5 Armor.	of The Golem	N	5	10	5	20	20	10	10	10	10	10	10	10	20	0	1500	C	337	Stone Skin scroll	"End (+15), AC (+5)"
++10 Intellect and Luck.	of The Moon	N	5	10	5	10	10	20	10	10	10	10	10	10	10	10	1000	C	208	Moonstone reagent	"Luck (+10), Int (+10)"
++30 Fire Resistance and Regenerate Hit points over time.	of The Phoenix	N	0	0	0	20	20	20	0	0	0	0	0	0	5	5	3000	D	272	Fire Immunity potion	"Fire Res (+30), Regen hpts"
+"+5 Spell points, + 10 Speed and Intellect."	of The Sky	N	5	10	5	10	10	20	10	10	10	10	10	10	10	10	2500	D	320	Fly scroll	"Int (+10), Spd (+10), SP (+10)"
++10 Endurance and Accuracy.	of The Stars	N	5	5	5	10	10	10	10	20	20	10	10	10	10	10	1000	C	321	Starburst scroll	"End (+10), Acc (+10)"
++10 Might and Personality.	of The Sun	N	5	10	5	10	10	10	10	20	20	10	10	10	10	10	1000	C	386	Sun Ray scroll	"Might(+10), Per (+10)"
++15 Endurance and Regenerate Hit points over time.	of The Troll	N	5	5	5	20	20	10	10	10	10	10	10	10	20	10	1500	C	202	Vial of Troll Blood reagent	"End (+15), Regen hpts"
++15 Luck and Regenerate Spell points over time.	of The Unicorn	N	5	10	5	10	10	20	10	10	10	10	10	10	10	20	1500	C	646	Horseshoe	"Luck (+15), Regen spts"
++5 Might and Endurance.	Warriors'	Y	5	5	5	10	10	10	10	10	10	10	10	10	10	10	500	A	350	Heroism scroll	"Might (+5), End (+5)"
++5 Intellect and Personality.	Wizards'	Y	5	10	5	5	5	5	10	10	10	10	10	10	10	10	500	A	329	Enchant Item scroll	"Intelect (+5), Per (+5)"
+Increased Value.	Antique	Y	10	10	10	10	10	10	0	0	10	0	10	10	10	10	X 10	B	195	Brilliant gem	Gold value increased
+Increased Weapon speed.	Swift	Y	25	15	25	0	0	0	0	0	0	0	0	0	0	0	X 2	B	250	Swift potion	(-20) pts on weapon speed
++3 Unarmed and Dodging skills.	Monks'	Y	0	5	0	0	0	0	10	5	15	10	5	5	5	0	1500	C	375	Flying Fist scroll	+3 to Dodging and Unarmed skill
++3 Thievery and Disarm skills.	Thieves'	Y	0	0	0	0	0	0	5	5	20	5	15	5	0	0	1500	B	194	Yellow Topaz gem	+3 to Stealing and Disarm skill
++3 ID Item and ID Monster skills.	of Identifying	N	0	0	0	0	0	0	5	5	0	5	10	15	0	5	1500	A	191	Rose Crystal gem	+3 to ID Monster and ID Item skill
+Double Damage vs. Elves.	Elf Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	A	211	Fae Dust reagent	"x2 damage on all Elf Archers, Elf Spearmen, Elf peasants (male and female)."
+Additional Damage to Undead, and can hit Ghosts.	Undead Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	B	280	Holy Water	"x1.5 Holy damage on Liches, Vampires, Zombies, Skeletons, Ghosts, and Wights"
+Double Damage vs. Titans.	Of David	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	A	343	Mass Distortion scroll	x2 damage on all Titans
+Regenerate Spell points and Hit points over time.	of Plenty	N	0	5	0	10	0	5	10	10	5	0	10	10	10	10	2500	C	219	Philosopher's Stone reagent	"Regenerate 1 hp/x and 1 sp/x while walking, etc."
+Adds 5 points of Poison damage; double Backstab damage.	Assassins'	Y	20	10	0	0	0	0	0	0	0	0	0	0	0	0	1500	C	188	Emerald gem	of Poison + of Backstabbing
+Adds 6-8 points of Cold damage and +5 Armor Class.	Barbarians'	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1500	C	189	Sapphire gem	(6-8) cold damage and +5 AC
++20 Shock Resistance and Shielding.	of the Storm	N	0	5	0	20	20	20	0	0	0	0	0	0	10	10	1500	C	273	Shock Immunity potion	+20 Shock Resistance and 1/2 damage from missile attacks
++10 Cold Resistance and +2 Alchemy skill.	of the Ocean	N	0	0	0	20	20	20	0	0	0	0	0	0	10	10	1000	B	233	Recharge potion	+10 Cold Resistance and +2 Alchemy skill
+Prevents damage from drowning.	of Water Walking	N	0	0	0	5	5	5	5	5	0	15	5	5	5	5	1500	C	326	Water Walk scroll	Character with item takes no damage from drowning
+Prevents damage from falling.	of Feather Falling	N	0	0	0	5	0	0	5	5	0	5	15	5	0	0	1000	B	312	Feather Fall scroll	Character with item takes no damage from falling
+Pierces Physical resistance.	Spectral	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	B	346	Spectral Weapon scroll	attacks with Magic if Physical resistance is higher
+Can Curse on hit.	Cursed	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1000	C	348	Remove Curse scroll	20% chance to apply Cursed debuff for 20 min.
+Pierces Physical resistance and can Curse on hit.	of The Wraith	N	10	5	10	0	0	0	0	0	0	0	0	0	0	0	x3	D	351	Spirit Lash scroll	Spectral + Cursed
+Restores Spell points when used to kill an enemy.	Soul Stealing	Y	5	5	0	0	0	0	0	0	0	0	0	0	0	0	2500	D	398	Souldrinker scroll	Adds SP equal to level of killed enemy
+Double Damage to enemies not facing you.	of Backstabbing	N	20	10	0	0	0	0	0	0	0	0	0	0	0	0	x2	B	190	Green Garnet gem	x2 weapon damage when the enemy is facing away
+Reduced Recovery penalty.	Lightweight	Y	0	0	0	20	20	0	0	0	0	0	0	0	0	0	1500	B	228	Haste potion	(-10) to armor recovery penalty
+Increases jump height.	of Leaping	N	0	0	0	0	0	0	0	0	0	15	0	0	0	0	1000	A	315	Jump scroll	+20% to base jump power, cumulative
+Wearer resistant to Dispel Magic.	of Permanence	N	0	0	0	0	10	10	0	0	0	0	10	10	0	10	2000	C	379	Dispel Magic scroll	Immunity to enemy Dispel Magic
++10 Fire Resistance and +2 Fire Magic skill.	of Fire Affinity	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	1000	B	406	Fire Spike spellbook	Fire skill +2 (non-cumulative), Fire Res +10
++10 Shock Resistance and +2 Air Magic skill.	of Air Affinity	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	1000	B	417	Lightning Bolt spellbook	Air skill +2 (non-cumulative), Shock Res +10
++10 Cold Resistance and +2 Water Magic skill.	of Water Affinity	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	1000	B	428	Acid Burst spellbook	Water skill +2 (non-cumulative), Cold Res +10
++5 Armor Class and +2 Earth Magic skill.	of Earth Affinity	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	1000	B	439	Stone to Flesh spellbook	Earth skill +2 (non-cumulative), AC +5
++10 Magic Resistance and +2 Spirit Magic skill.	of Spirit Affinity	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	1000	B	450	Heroism spellbook	Spirit skill +2 (non-cumulative), Magic Res +10
++10 Mind Resistance and +2 Mind Magic skill.	of Mind Affinity	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	1000	B	461	Berserk spellbook	Mind skill +2 (non-cumulative), Mind Res +10
++10 Poison Resistance and +2 Body Magic skill.	of Body Affinity	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	1000	B	472	Hammerhands spellbook	Body skill +2 (non-cumulative), Poison Res +10
+Attracts monster attacks.	of Taunting	N	0	0	0	10	10	10	0	10	10	10	0	0	0	0	1000	B	358	Aura of Conflict scroll	+1 to aggro counter, cumulative
+Adds 6-10 points of Mind damage and attracts monster attacks.	of The Jester	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1500	C	361	Berserk scroll	(6-10) mind damage and +1 to aggro counter, cumulative
+Adds 3-18 points of Fire damage.	of Infernos	N	0	0	0	0	0	0	0	0	0	0	0	0	0	0	x2	D	246	Flaming potion (unused)	exclusive to GM Fire Aura (price nerf)
+Double Damage vs. Elementals.	Elemental Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	A	381	Summon Elemental scroll	"x2 damage on Fire, Air, Water, Earth, Light elementals."
+Protects from Curses and +10 to Attack Bonus.	Blessed	Y	10	10	10	0	0	0	0	0	0	0	0	0	0	0	1500	B	345	Bless scroll	(+10) to melee or ranged attack and immune to cursed condition
+Makes monsters hit in melee Afraid.	Terrifying	Y	0	0	0	0	0	20	0	0	0	0	0	0	0	20	2000	D	362	Mass Fear scroll	Inflicts Afraid on monster upon a melee hit (Mind attack)
++5 to weapon skill.	Masterful	Y	20	10	0	0	0	0	0	0	0	0	0	0	0	0	2000	D	385	Hour of Power scroll	(+5) to skill corresponding to the weapon
++5 to melee damage.	of Kicking	N	0	0	0	0	0	0	0	0	0	15	0	0	0	0	1500	C	333	Stun scroll	(+5) to melee weapon damage
+May absorb incoming spells.	of Absorption	N	0	0	0	0	0	0	0	0	0	0	0	0	10	0	2500	D	277	Magic Immunity potion	10% chance to avoid harmful spell effects and restore SP
 
-			660	810	605	375	355	350	260	325	245	240	405	465	650	490	
+			660	810	605	375	355	350	260	325	245	240	405	465	650	490
 
-Treasure Level	If treasure Level = 3 add all A and B															
+Treasure Level	If treasure Level = 3 add all A and B
 A= 3 to 4	If treasure Level = 4 add all A and B and C
 B= 3 to 5	If treasure Level = 5 add al B and C and D
 C= 4 to 5	If treasure Level = 6 add all D
-D= 5 to 6	
+D= 5 to 6

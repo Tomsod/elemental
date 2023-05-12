@@ -507,6 +507,7 @@ enum items
     LIVING_WOOD_KNIVES = 164,
     BOOMERANG_KNIFE = 165,
     LAST_PREFIX = 165, // last enchantable item
+    LARGE_GOLD_PILE = 199,
     FIRST_REAGENT = 200,
     SULFUR = 212,
     LAST_REAGENT = 214, // not counting gray
@@ -516,6 +517,7 @@ enum items
     CATALYST = 221,
     FIRST_POTION = 222,
     FIRST_COMPLEX_POTION = 225,
+    MAGIC_POTION = 227,
     FIRST_LAYERED_POTION = 228,
     FIRST_WHITE_POTION = 240,
     FLAMING_POTION = 246,
@@ -524,6 +526,7 @@ enum items
     SHOCKING_POTION = 249,
     SWIFT_POTION = 250,
     FIRST_BLACK_POTION = 262,
+    SLAYING_POTION = 263,
     PURE_LUCK = 264,
     REJUVENATION = 271,
     LAST_OLD_POTION = 271,
@@ -585,6 +588,7 @@ enum items
     GARDENERS_GLOVES = 572,
     LAST_ARTIFACT = 572,
     ROBE_OF_THE_ARCHMAGISTER = 598,
+    FIRST_ORE = 686,
     FIRST_RECIPE = 740,
     LAST_RECIPE = 779,
 };
@@ -635,7 +639,9 @@ struct __attribute__((packed)) items_txt_item
     uint8_t mod1_dice_count;
     SKIP(1);
     uint8_t mod2;
-    SKIP(15);
+    SKIP(7);
+    uint8_t chance[6];
+    SKIP(2);
 };
 
 #define ITEMS_TXT_ADDR 0x5d2864
@@ -757,23 +763,30 @@ enum qbits
     QBIT_TEMPLE_UNDERWATER = 386,
 };
 
-#define ITEM_TYPE_WEAPON 1
-#define ITEM_TYPE_WEAPON2 2
-#define ITEM_TYPE_MISSILE 3
-#define ITEM_TYPE_ARMOR 4
-#define ITEM_TYPE_SHIELD 5
-#define ITEM_TYPE_HELM 6
-#define ITEM_TYPE_BELT 7
-#define ITEM_TYPE_CLOAK 8
-#define ITEM_TYPE_GAUNTLETS 9
-#define ITEM_TYPE_BOOTS 10
-#define ITEM_TYPE_RING 11
-#define ITEM_TYPE_AMULET 12
-#define ITEM_TYPE_WAND 13
-#define ITEM_TYPE_POTION 15
-// my additions
-#define ITEM_TYPE_ROBE 47
-#define ITEM_TYPE_SULFUR 48
+enum item_types
+{
+    ITEM_TYPE_WEAPON = 1,
+    ITEM_TYPE_WEAPON2 = 2,
+    ITEM_TYPE_MISSILE = 3,
+    ITEM_TYPE_ARMOR = 4,
+    ITEM_TYPE_SHIELD = 5,
+    ITEM_TYPE_HELM = 6,
+    ITEM_TYPE_BELT = 7,
+    ITEM_TYPE_CLOAK = 8,
+    ITEM_TYPE_GAUNTLETS = 9,
+    ITEM_TYPE_BOOTS = 10,
+    ITEM_TYPE_RING = 11,
+    ITEM_TYPE_AMULET = 12,
+    ITEM_TYPE_WAND = 13,
+    ITEM_TYPE_REAGENT = 14,
+    ITEM_TYPE_POTION = 15,
+    ITEM_TYPE_SCROLL = 16,
+    ITEM_TYPE_BOOK = 17,
+    ITEM_TYPE_GEM = 20,
+    // my additions
+    ITEM_TYPE_ROBE = 47,
+    ITEM_TYPE_SULFUR = 48,
+};
 
 enum objlist
 {
@@ -1087,7 +1100,7 @@ enum monster_buffs
 // new NPC topic count
 #define TOPIC_COUNT 609
 // count of added NPC text entries
-#define NEW_TEXT_COUNT (863-789)
+#define NEW_TEXT_COUNT (867-789)
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658
@@ -18813,13 +18826,12 @@ static inline void new_enchant_item_types(void)
     hook_call(0x456ba4, staff_ench_chance, 5);
     // robes are made player-enchantable in cant_enchant_blasters() above
     // Add more columns to stditems and spcitems.
-    patch_byte(0x456eef, 12); // 2 more to stditems
+    patch_byte(0x456eef, 13); // 2 more to stditems (+1 for craft item)
     patch_dword(0x456f25, 11); // and totals
     // NB: new totals occupy (unused) part of bonus range array
     patch_dword(0x456f73, dword(0x456f73) + 2); // don't parse lvl1 bonus range
     patch_byte(0x4570be, 17); // spcitems value column
-    patch_byte(0x4570e4, 18); // last column
-    patch_byte(0x45710d, 18); // column count
+    patch_byte(0x45710d, 19); // column count
     hook_call(0x4570b3, spcitems_new_probability, 7);
     // This will calculate (junk) sums of levels and value too, but it`s ok.
     patch_dword(0x457146, 19); // probabilities + fields we skip over
@@ -20520,14 +20532,13 @@ static void __declspec(naked) print_order_reply(void)
 
 // Order items, filled below; order_gold was declared earlier.
 static struct item order_result, order_ore, order_reagent;
-static int order_ore_count, have_order_reagent;
+static int order_ore_count, have_order_reagent, order_days;
 
 // Return a mouseover hint for the confirm order screen.
 static char *__thiscall get_order_text(int id)
 {
     static char buffer[300];
     char hlname[100], reagent[100], reagname[100], orename[100];
-    int days = 10; // temp
     if (id > 1)
       {
         sprintf(buffer, new_npc_text[862-790], order_ore_count);
@@ -20541,14 +20552,39 @@ static char *__thiscall get_order_text(int id)
       }
     if (have_order_reagent)
       {
-        sprintf(reagname, COLOR_FORMAT, colors[CLR_ITEM],
-                ITEMS_TXT[order_reagent.id].name);
-        sprintf(reagent, new_npc_text[863-790], reagname);
+        int id = order_reagent.id;
+        char *specifier = NULL;
+        switch (ITEMS_TXT[id].equip_stat + 1)
+          {
+            case ITEM_TYPE_REAGENT:
+                specifier = new_npc_text[863-790]; // "reagent"
+                break;
+            case ITEM_TYPE_POTION:
+                if (id != MAGIC_POTION && id != FLAMING_POTION
+                    && id != FREEZING_POTION && id != NOXIOUS_POTION
+                    && id != SHOCKING_POTION && id != SWIFT_POTION
+                    && id != SLAYING_POTION) // these have "potion" in names
+                    specifier = new_npc_text[864-790]; // "potion of"
+                break;
+            case ITEM_TYPE_SCROLL:
+                specifier = new_npc_text[865-790]; // "scroll of"
+                break;
+            case ITEM_TYPE_BOOK:
+                specifier = new_npc_text[866-790]; // "spellbook of"
+                break;
+            case ITEM_TYPE_GEM:
+                specifier = new_npc_text[867-790]; // "gemstone"
+                break;
+          }
+        sprintf(specifier ? reagname : reagent, COLOR_FORMAT,
+                colors[CLR_ITEM], ITEMS_TXT[id].name);
+        if (specifier)
+            sprintf(reagent, specifier, reagname);
       }
     sprintf(orename, COLOR_FORMAT, colors[CLR_ITEM],
             ITEMS_TXT[order_ore.id].name);
-    sprintf(buffer, new_npc_text[859+have_order_reagent-790], hlname, days,
-            order_gold.bonus2, orename, reagent);
+    sprintf(buffer, new_npc_text[859+have_order_reagent-790], hlname,
+            order_days, order_gold.bonus2, orename, reagent);
     return buffer;
 }
 
@@ -20601,7 +20637,7 @@ static void __declspec(naked) query_order(void)
         call dword ptr ds:set_mouse_mask
         mov ebx, dword ptr [order_ore_count]
         cmp ebx, 3
-        jb upper_row
+        jbe upper_row
         lower_row:
         lea eax, [ebx+ebx*8]
         lea eax, [70+eax*4-3*36]
@@ -20860,6 +20896,7 @@ static int __thiscall parse_item(const char *description)
             maxlen = gnlen;
             id = gid = i;
           }
+        // TODO: allow parsing e.g. "wand of 20 fireballs"
         int nlen = namelen[i-1];
         if (nlen > maxlen && !mystrcmp(current, ITEMS_TXT[i].name, nlen))
           {
@@ -20922,18 +20959,12 @@ static int __thiscall parse_item(const char *description)
     current += strspn(current, space);
     if (*current)
         return FALSE;
+    int adjust = FALSE;
     if (gid)
       {
-        if (!ITEMS_TXT[gid].mod1_dice_count
-            || ITEMS_TXT[gid].equip_stat == ITEM_TYPE_WAND - 1)
-          {
-            int next = gid;
-            do next++; while (!strcmp(ITEMS_TXT[next].generic_name,
-                                      ITEMS_TXT[gid].generic_name));
-            // TODO: have item match ench price/tier?
-            id += random() % (next - gid);
-          }
-        else if (number && !std)
+        if (ITEMS_TXT[gid].equip_stat + 1 == ITEM_TYPE_WAND)
+            adjust = TRUE; // will just be randomized
+        else if (number && !std && ITEMS_TXT[gid].mod1_dice_count)
           {
             int quality = ITEMS_TXT[gid].mod2;
             int sign = (number > quality) - (number < quality);
@@ -20942,6 +20973,8 @@ static int __thiscall parse_item(const char *description)
             if (quality != number)
                 return FALSE;
           }
+        else if (!ITEMS_TXT[gid].mod2) // exclude (elven) saber
+            adjust = TRUE;
       }
     int equip = ITEMS_TXT[id].equip_stat + 1;
     if (equip == ITEM_TYPE_WEAPON2 && ITEMS_TXT[id].skill != SKILL_STAFF)
@@ -20949,13 +20982,13 @@ static int __thiscall parse_item(const char *description)
     int wand = equip == ITEM_TYPE_WAND;
     int robe = equip == ITEM_TYPE_ARMOR && ITEMS_TXT[id].skill == SKILL_MISC;
     int crown = equip == ITEM_TYPE_HELM && !ITEMS_TXT[id].mod1_dice_count;
-    if (equip < ITEM_TYPE_MISSILE && std)
+    if (equip <= ITEM_TYPE_MISSILE && std)
         return FALSE;
     if (wand && (std || spc))
         return FALSE;
     init_item(&order_result);
-    order_result.id = id;
     order_result.flags = IFLAGS_ID;
+    int fanciness = 0; // up to 300
     if (spc)
       {
         int prob;
@@ -20968,6 +21001,7 @@ static int __thiscall parse_item(const char *description)
         if (!prob)
             return FALSE;
         order_result.bonus2 = spc;
+        fanciness = (spcitems[spc-1].level + 1) * 60 + random() % 3 * 30;
       }
     if (std)
       {
@@ -20985,7 +21019,19 @@ static int __thiscall parse_item(const char *description)
         if (!number)
             number = 1 + random() % max;
         order_result.bonus_strength = number;
+        fanciness = number * (1 << std & halved ? 25 : 12);
       }
+    if (adjust)
+      {
+        if (!fanciness)
+            fanciness = random() % 300 + 1;
+        int next = gid;
+        do next++; while (!strcmp(ITEMS_TXT[next].generic_name,
+                                  ITEMS_TXT[gid].generic_name));
+        fanciness *= next - 1 - gid;
+        id += fanciness / 300 + (random() % 300 < fanciness % 300);
+      }
+    order_result.id = id;
     if (wand)
       {
         int max = ITEMS_TXT[id].mod2;
@@ -21008,6 +21054,11 @@ static int __thiscall parse_item(const char *description)
       }
     return TRUE;
 }
+
+// Filled below when parsing stditems.txt and spcitems.txt.
+STATIC int std_craft_items[24], spc_craft_items[SPC_COUNT];
+FIX(std_craft_items);
+FIX(spc_craft_items);
 
 // Check if the generated item is OK for the current shop, and compute price.
 static int verify_item(void)
@@ -21044,19 +21095,92 @@ static int verify_item(void)
         default: // shouldn't happen!
             return FALSE;
       }
-    // below is temp dummy code
+    int value = item_value(&order_result);
+    int markup = 0; // increase price for rare bonuses
+    have_order_reagent = order_result.bonus || order_result.bonus2;
+    if (have_order_reagent)
+      {
+        init_item(&order_reagent);
+        order_reagent.flags = IFLAGS_ID;
+        int lmin, lmax;
+        if (order_result.bonus)
+          {
+            order_reagent.id = std_craft_items[order_result.bonus-1];
+            int amt = order_result.bonus_strength;
+            static const int halved = (2 << STAT_HP) + (2 << STAT_SP)
+                                    + (2 << STAT_THIEVERY) + (2 << STAT_DISARM)
+                                    + (2 << STAT_ARMSMASTER)
+                                    + (2 << STAT_DODGING)
+                                    + (2 << STAT_UNARMED);
+            if (1 << order_result.bonus & halved)
+                amt += amt;
+            markup = (amt >= 24) + (amt >= 25);
+            //TODO: unhardcode this
+            lmin = 2 + (amt > 5) + (amt > 8) + (amt > 12) + (amt > 17);
+            if (1 << order_result.bonus & halved)
+                amt++;
+            lmax = 6 - (amt < 15) - (amt < 10) - (amt < 6) - (amt < 3);
+          }
+        else
+          {
+            order_reagent.id = spc_craft_items[order_result.bonus2-1];
+            struct spcitem *spc = &spcitems[order_result.bonus2-1];
+            int tier = spc->level + 'A';
+            lmin = 3 + (tier > 'B') + (tier > 'C');
+            lmax = 4 + (tier > 'A') + (tier > 'C');
+            int equip = type->equip_stat + 1;
+            if (equip == ITEM_TYPE_WEAPON2 && type->skill != SKILL_STAFF)
+                equip = ITEM_TYPE_WEAPON;
+            int prob;
+            if (equip == ITEM_TYPE_ARMOR && type->skill == SKILL_MISC)
+                prob = spc->robe_prob;
+            else if (equip == ITEM_TYPE_HELM && !type->mod1_dice_count)
+                prob = spc->crown_prob;
+            else prob = spc->probability[equip-1];
+            markup = (prob < 5) + (prob < 10);
+          }
+        int max = 0;
+        for (int level = lmin; level <= lmax; level++)
+            if (max < type->chance[level-1])
+                max = type->chance[level-1];
+        markup += (max < 5) + (max < 10);
+      }
+    int tprob = 0, wprob = 0;
+    for (int i = 0; i < 6; i++)
+      {
+        tprob += type->chance[i];
+        wprob += type->chance[i] * i;
+      }
+    int ore = wprob / tprob + (wprob % tprob * 2 > tprob);
+    if (markup && ore < 5) ore++;
+    // Average random item price for tlvl 1-6.
+    static const int avg_price[6] = { 100, 250, 500, 1000, 1500, 2500 };
     init_item(&order_ore);
-    order_ore.id = 690; // erudine
+    order_ore.id = FIRST_ORE + ore;
     order_ore.flags = IFLAGS_ID;
-    order_ore_count = 4;
+    order_ore_count = (value * 4 + avg_price[ore]) / (avg_price[ore] * 2);
+    if (type->equip_stat + 1 == ITEM_TYPE_WAND)
+        order_ore_count /= 2; // they're all too expensive!
+    if (order_ore_count < 1)
+        order_ore_count = 1;
+    else if (order_ore_count > 6)
+        order_ore_count = 6;
+    value <<= markup / 2;
+    if (markup & 1)
+        value = value * 7 / 5;
+    // Shop tier (price multiplier), from 1.5 to 4.0.
+    float fancy = *(float *) (EVENTS2D + dword(dword(DIALOG2) + 28) * 52 + 32);
+    order_days = value / fancy / 100;
+    if (order_days < 1)
+        order_days = 1;
+    value *= fancy;
+    int fin_value = value - item_value(&order_reagent);
+    if (fin_value * 2 < value)
+        fin_value = value / 2;
     init_item(&order_gold);
-    order_gold.id = 199; // large gold pile
     order_gold.flags = IFLAGS_ID;
-    order_gold.bonus2 = 5000; // amount
-    init_item(&order_reagent);
-    order_reagent.id = 382; // DoG scroll
-    order_reagent.flags = IFLAGS_ID;
-    have_order_reagent = TRUE;
+    order_gold.id = LARGE_GOLD_PILE - (fin_value < 1000) - (fin_value < 200);
+    order_gold.bonus2 = fin_value;
     return TRUE;
 }
 
@@ -21231,6 +21355,46 @@ static void __declspec(naked) right_click_order_hint(void)
       }
 }
 
+// Populate the std bonus craft item array when reading the bonus data.
+static void __declspec(naked) read_std_craft_items(void)
+{
+    asm
+      {
+        cmp dword ptr [ebp-4], 13 ; new column
+        jb old
+        mov ecx, 24
+        sub ecx, dword ptr [ebp-16] ; counter
+        mov dword ptr [REF(std_craft_items)+ecx*4], eax
+        ret
+        old:
+        mov ecx, dword ptr [ebp-24] ; replaced code
+        mov byte ptr [ecx+edx+6], al ; ditto
+        quit:
+        ret
+      }
+}
+
+// Same, but for spc boni.
+static void __declspec(naked) read_spc_craft_items(void)
+{
+    asm
+      {
+        cmp eax, 19 ; new column
+        jb quit
+        ja skip
+        push esi
+        call dword ptr ds:atoi_ptr
+        pop ecx
+        mov ecx, SPC_COUNT
+        sub ecx, dword ptr [ebp-24] ; counter
+        mov dword ptr [REF(spc_craft_items)+ecx*4], eax
+        skip:
+        add dword ptr [esp], 29 ; replaced jump
+        quit:
+        ret
+      }
+}
+
 // Various changes to stores, guilds and other buildings.
 static inline void shop_changes(void)
 {
@@ -21297,6 +21461,8 @@ static inline void shop_changes(void)
     patch_dword(0x4bb052, dword(0x4bb052) + 14); // armor
     patch_dword(0x4baa28, dword(0x4baa28) + 14); // also armor (consistency)
     patch_dword(0x4b5705, dword(0x4b5705) + 14); // magic (consistency)
+    hook_call(0x456ed3, read_std_craft_items, 7);
+    hook_call(0x4570e2, read_spc_craft_items, 5);
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

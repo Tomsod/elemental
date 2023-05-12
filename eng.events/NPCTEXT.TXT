@@ -934,4 +934,8 @@ For example, these are all correct item descriptions:
 860	"Yes, I can craft %s for you!  It will take %d days and cost %d gold upfront, as well as some %s and a %s for the enchantment.  Agreed?"	Craft magic	Shopkeepers
 861	"The resulting %s should look like this."	Craft preview	Shopkeepers
 862	"These items are required to complete your order.  I will need %d lumps or ore in total."	Craft reagents	Shopkeepers
-863	"scroll of %s"	Scroll reagent	Shopkeepers
+863	"%s reagent"	Alchemical reagent	Shopkeepers
+864	"potion of %s"	Potion reagent	Shopkeepers
+865	"scroll of %s"	Scroll reagent	Shopkeepers
+866	"spell book of %s"	Spellbook reagent	Shopkeepers
+867	"%s gemstone"	Gem reagent	Shopkeepers

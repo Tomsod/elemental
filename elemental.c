@@ -144,7 +144,8 @@ enum elements
 
 #define IMMUNE 200
 
-#define GLOBAL_TXT 0x5e4000
+#define GLOBAL_TXT_ADDR 0x5e4000
+#define GLOBAL_TXT ((char **) GLOBAL_TXT_ADDR)
 
 enum spcitems_txt
 {
@@ -310,6 +311,12 @@ enum new_strings
     STR_PLACE_ORDER,
     STR_PROMPT1,
     STR_PROMPT2,
+    STR_CONFIRM_ORDER,
+    STR_NOT_ENOUGH_REAGENTS,
+    STR_ORDER_READY,
+    STR_ORDER_NOT_READY,
+    STR_EI_NO_ORDER,
+    STR_CONFIRM_ORDER_HINT,
     NEW_STRING_COUNT
 };
 
@@ -730,7 +737,12 @@ static struct elemdata
     int current_player;
     // Update gog drops if upgrading from 3.0.
     char gog_check[6];
+    // Items for the newly added scroll shelves at the magic guilds.
     struct item guild_scrolls[32][12];
+    // Items that were ordered at shops.
+    struct item current_orders[42];
+    // And the time of their competion.
+    uint64_t order_timers[42];
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -1179,8 +1191,9 @@ struct __attribute__((packed)) patch_options
     SKIP(16);
 };
 
-// my addition
+// my additions
 #define ACTION_EXTRA_CHEST 40
+#define ACTION_PLACE_ORDER 41
 //vanilla
 #define ACTION_EXIT 113
 #define ACTION_CHANGE_CONVERSATION 405
@@ -1200,8 +1213,28 @@ enum horses
 #define NPC_ADDR 0x72d50c
 #define NPC_HIRED 0x80
 
+// Data from parsing stditems.txt.
+struct __attribute__((packed)) stditem
+{
+    char *name;
+    char *description;
+    uint8_t probability[11]; // was 9 in vanilla
+    SKIP(1);
+};
+#define STDITEMS ((struct stditem *) 0x5dbe64)
+
+// From parsing 2devents.txt.
+struct __attribute__((packed)) event2d
+{
+    uint16_t type;
+    SKIP(30);
+    float multiplier;
+    SKIP(16);
+};
+#define EVENTS2D_ADDR 0x5912b8
+#define EVENTS2D ((struct event2d *) EVENTS2D_ADDR)
+
 #define CURRENT_CONVERSATION 0xf8b01c
-#define EVENTS2D 0x5912b8
 #define ICONS_LOD_ADDR 0x6d0490
 #define ICONS_LOD ((void *) ICONS_LOD_ADDR)
 #define DIALOG1 0x507a3c
@@ -1216,6 +1249,8 @@ enum horses
 #define STATUS_MESSAGE 0x5c32a8
 #define ARRUS_FNT 0x5c3468
 #define MESSAGE_DIALOG 0x507a64
+#define SHOPKEEPER_MOOD 0xf8b064
+#define SHOP_VOICE_NO_GOLD 2
 
 #ifdef CHECK_OVERWRITE
 #define sprintf sprintf_mm7
@@ -1305,6 +1340,7 @@ static void __thiscall (*set_specitem_bonus)(void *items_txt, void *item)
 // Possibly it's not just for buttons.
 static int __thiscall (*remove_button)(void *this, void *button)
     = (funcptr_t) 0x42641d;
+#define REMOVE_BUTTON_THIS 0x7029a8
 static void __fastcall (*shop_voice)(int house, int topic)
     = (funcptr_t) 0x4b1df5;
 static char __thiscall (*timed_cure_condition)(void *player, int condition,
@@ -1369,7 +1405,7 @@ static int __thiscall (*hireling_action)(int id) = (funcptr_t) 0x4bb6b9;
 static int __cdecl (*add_button)(void *dialog, int left, int top, int width,
                                  int height, int unknown_1, int hover_action,
                                  int action, int action_param, int key,
-                                 char *text, int unknown_2, int unknown_3)
+                                 char *text, ...) // varpart is sprite(s)
     = (funcptr_t) 0x41d0d8;
 static void __thiscall (*click_on_portrait)(int player_id)
     = (funcptr_t) 0x421ca9;
@@ -1993,9 +2029,9 @@ static void __declspec(naked) display_immunity(int string, int element)
         dec eax
         cmovnz eax, dword ptr [colors+CLR_GREEN*4]
         mov ecx, dword ptr [esp+4]
-        push dword ptr [GLOBAL_TXT+625*4]
+        push dword ptr [GLOBAL_TXT_ADDR+625*4]
         push eax
-        push dword ptr [GLOBAL_TXT+ecx*4]
+        push dword ptr [GLOBAL_TXT_ADDR+ecx*4]
         push 0x4e2de0
         push esi
         call dword ptr ds:sprintf
@@ -2193,12 +2229,12 @@ static void __declspec(naked) new_global_txt_parse_check(void)
 static void new_element_names(void)
 {
     // fire is unchanged
-    dword(GLOBAL_TXT + 6 * 4) = dword(GLOBAL_TXT + 71 * 4); // electricity
-    dword(GLOBAL_TXT + 240 * 4) = dword(GLOBAL_TXT + 43 * 4); // cold
-    dword(GLOBAL_TXT + 70 * 4) = dword(GLOBAL_TXT + 166 * 4); // poison
-    dword(GLOBAL_TXT + 214 * 4) = (uintptr_t) new_strings[STR_HOLY];
+    GLOBAL_TXT[6] = GLOBAL_TXT[71]; // electricity
+    GLOBAL_TXT[240] = GLOBAL_TXT[43]; // cold
+    GLOBAL_TXT[70] = GLOBAL_TXT[166]; // poison
+    GLOBAL_TXT[214] = new_strings[STR_HOLY];
     // mind is unchanged
-    dword(GLOBAL_TXT + 29 * 4) = dword(GLOBAL_TXT + 138 * 4); // magic
+    GLOBAL_TXT[29] = GLOBAL_TXT[138]; // magic
     // light and dark are not displayed anymore
     dword(BUFF_STRINGS + PBUFF_AURA_OF_CONFLICT * 4)
         = (uintptr_t) new_strings[STR_AURA_OF_CONFLICT];
@@ -4757,8 +4793,8 @@ static void __declspec(naked) bless_water_reply_sizing(void)
         jmp ordinary
         not_dark:
         push ecx
-        imul eax, eax, 52 ; 2devents struct size
-        fld dword ptr [EVENTS2D+eax+32] ; val field = temple cost
+        imul eax, eax, 52
+        fld dword ptr [EVENTS2D_ADDR+eax+32] ; temple cost
         push 10
         fimul dword ptr [esp]
         fistp dword ptr [esp]
@@ -4822,8 +4858,8 @@ static void __declspec(naked) bless_water_action(void)
         bless:
         mov eax, dword ptr [DIALOG2]
         mov eax, dword ptr [eax+28] ; param = temple id
-        imul eax, eax, 52 ; 2devents struct size
-        fld dword ptr [EVENTS2D+eax+32] ; val field = temple cost
+        imul eax, eax, 52
+        fld dword ptr [EVENTS2D_ADDR+eax+32] ; temple cost
         fistp dword ptr [esp] ; don`t need the return address anymore
         pop ebx
         lea ecx, [ebx*4+ebx] ; price = heal cost x 10
@@ -5404,7 +5440,7 @@ static void __declspec(naked) wizard_eye_display_duration(void)
         push 0x4e323c ; right-align code
         push 0x5c5c30 ; buffer used by the replaced function
         call dword ptr ds:strcpy_ptr
-        push dword ptr [GLOBAL_TXT+121*4] ; "permanent"
+        push dword ptr [GLOBAL_TXT_ADDR+121*4] ; "permanent"
         push 0x5c5c30
         call dword ptr ds:strcat_ptr
         push 32 ; a single space
@@ -5605,7 +5641,7 @@ static void __declspec(naked) monster_fate(void)
         push dword ptr [0x5cbeb4+eax*4] ; replaced code
         jmp edx
         spectral:
-        push dword ptr [GLOBAL_TXT+221*4] ; "fate"
+        push dword ptr [GLOBAL_TXT_ADDR+221*4] ; "fate"
         jmp edx
       }
 }
@@ -8253,8 +8289,8 @@ static void __declspec(naked) temple_wizard_eye_power(void)
         mov ecx, SPL_WIZARD_EYE
         mov eax, dword ptr [DIALOG2]
         mov eax, dword ptr [eax+28] ; param = temple id
-        imul eax, eax, 52 ; 2devents struct size
-        fld dword ptr [EVENTS2D+eax+32] ; val field = temple cost
+        imul eax, eax, 52
+        fld dword ptr [EVENTS2D_ADDR+eax+32] ; temple cost
         push 5
         fidiv dword ptr [esp] ; temple power = cost / 5
         fistp dword ptr [esp]
@@ -8273,8 +8309,8 @@ static void __declspec(naked) temple_other_spells_power(void)
         div edi
         mov eax, dword ptr [DIALOG2]
         mov eax, dword ptr [eax+28] ; param = temple id
-        imul eax, eax, 52 ; 2devents struct size
-        fld dword ptr [EVENTS2D+eax+32] ; val field = temple cost
+        imul eax, eax, 52
+        fld dword ptr [EVENTS2D_ADDR+eax+32] ; temple cost
         push 5
         fidiv dword ptr [esp] ; temple power = cost / 5
         fistp dword ptr [esp]
@@ -9041,7 +9077,7 @@ static void __declspec(naked) display_dagger_accuracy(void)
     asm
       {
         pop edx
-        push dword ptr [GLOBAL_TXT+53*4] ; replaced code
+        push dword ptr [GLOBAL_TXT_ADDR+53*4] ; replaced code
         cmp byte ptr [edi+29], SKILL_DAGGER
         je dagger
         mov ecx, dword ptr [ebp-4] ; item
@@ -10309,7 +10345,7 @@ static void __declspec(naked) add_deposit_box_reply(void)
         and dword ptr [edx+52], 0 ; link to the extra button
         dec dword ptr [eax+32]
         push ecx
-        mov ecx, 0x7029a8 ; this
+        mov ecx, REMOVE_BUTTON_THIS
         call dword ptr ds:remove_button
         xor ecx, ecx ; restore
         mov edx, 7 ; ditto
@@ -10449,7 +10485,7 @@ static void __declspec(naked) buy_deposit_box(void)
         jmp escape
         no_gold:
         mov ecx, dword ptr [DIALOG2]
-        mov edx, 2
+        mov edx, SHOP_VOICE_NO_GOLD
         mov ecx, dword ptr [ecx+28] ; bank house id
         call dword ptr ds:shop_voice
         escape:
@@ -11280,7 +11316,7 @@ static void __declspec(naked) display_cursed_debuff(void)
         js cursed
         ret
         cursed:
-        mov ecx, dword ptr [GLOBAL_TXT+52*4]
+        mov ecx, dword ptr [GLOBAL_TXT_ADDR+52*4]
         push 0x41ecd8 ; fate code
         ret 4
       }
@@ -13305,14 +13341,20 @@ static void __declspec(naked) open_regular_chest(void)
       }
 }
 
+// Defined below.
+static void place_order(void);
+
 // Make a new action that opens an extra chest.
 // We need an action to safely trigger it from inventory etc.
+// Also here: the action for ordering an item in a shop.
 static void __declspec(naked) action_open_extra_chest(void)
 {
     asm
       {
         cmp ecx, ACTION_EXTRA_CHEST
         je chest
+        cmp ecx, ACTION_PLACE_ORDER
+        je order
         movzx eax, byte ptr [0x4353a1+eax] ; replaced code
         ret
         chest:
@@ -13320,6 +13362,10 @@ static void __declspec(naked) action_open_extra_chest(void)
         call replace_chest
         xor ecx, ecx
         call dword ptr ds:open_chest
+        jmp quit
+        order:
+        call place_order
+        quit:
         mov eax, 118 ; no action
         ret
       }
@@ -14231,7 +14277,7 @@ static void __declspec(naked) print_wand_to_hit(void)
         always:
         push dword ptr [new_strings+STR_ALWAYS*4]
         print:
-        push dword ptr [GLOBAL_TXT+203*4]
+        push dword ptr [GLOBAL_TXT_ADDR+203*4]
         push 0x4e2e18 ; "%s %s" format string
         push esi
         call dword ptr ds:sprintf
@@ -14439,7 +14485,7 @@ static void __declspec(naked) display_wand_charges(void)
         mov eax, dword ptr [ecx+16] ; replaced code
         test eax, eax
         jnz quit
-        push dword ptr [GLOBAL_TXT+464*4]
+        push dword ptr [GLOBAL_TXT_ADDR+464*4]
         push dword ptr [colors+CLR_RED*4]
         mov eax, offset zero_charges
         push eax
@@ -19404,7 +19450,7 @@ static void __declspec(naked) change_difficulty(void)
         push SOUND_BUZZ
         mov ecx, SOUND_THIS_ADDR
         call dword ptr ds:make_sound
-        mov ecx, dword ptr [GLOBAL_TXT+638*4] ; "hostiles nearby"
+        mov ecx, dword ptr [GLOBAL_TXT_ADDR+638*4] ; "hostiles nearby"
         mov edx, 2
         call dword ptr ds:show_status_text
         ret
@@ -20160,7 +20206,7 @@ static void __declspec(naked) print_scroll_reply(void)
         not_scrolls:
         ret
         books:
-        mov edx, dword ptr [GLOBAL_TXT+400*4] ; "buy spells"
+        mov edx, dword ptr [GLOBAL_TXT_ADDR+400*4] ; "buy spells"
         ret
       }
 }
@@ -20182,7 +20228,7 @@ static void __declspec(naked) mov_scroll_reply_chunk(void)
 static void __thiscall restock_scrolls(int guild)
 {
     int max_level = word(0x4f0db0 + guild * 2); // vanilla book lvl array
-    int school = word(EVENTS2D + (guild + FIRST_GUILD) * 52) - 5; // house type
+    int school = EVENTS2D[guild + FIRST_GUILD].type - 5;
     int extra = school == SCHOOL_SPIRIT || school == SCHOOL_MIND; // 12 spells
     int image = dword(CURRENT_CONVERSATION) == CONV_BUY_SCROLLS;
     for (int i = 0; i < 12; i++)
@@ -20381,7 +20427,7 @@ static int __thiscall guild_sp_price(struct player *player)
 {
     static const int base_price = 50; // TODO: maybe tweak later
     // This value is 2.0, 3.0, 4.0 or 5.0, depending on guild tier.
-    int val = *(float *) (EVENTS2D + dword(dword(DIALOG2) + 28) * 52 + 32);
+    int val = EVENTS2D[dword(dword(DIALOG2) + 28)].multiplier;
     int merchant = get_merchant_bonus(player);
     int level = player->level_base;
     if (level <= 10)
@@ -20493,7 +20539,12 @@ static void __declspec(naked) print_restore_sp_display(void)
       }
 }
 
+// My additions.
+#define CONV_QUERY_ORDER 97
+#define CONV_CONFIRM_ORDER 98
+
 // Reimplement weapon, armor and magic shop replies with a fifth one added.
+// Also here: remove the confirm order button when it's no longer needed.
 static void __declspec(naked) add_order_reply(void)
 {
     asm
@@ -20505,7 +20556,7 @@ static void __declspec(naked) add_order_reply(void)
         mov edx, 95 ; buy special
         call dword ptr ds:add_reply
         mov ecx, 2
-        mov edx, 97 ; place order -- the new one!
+        mov edx, CONV_QUERY_ORDER ; the new one!
         call dword ptr ds:add_reply
         mov ecx, 3
         mov edx, 94 ; display inventory
@@ -20513,6 +20564,20 @@ static void __declspec(naked) add_order_reply(void)
         mov ecx, 4
         mov edx, 96 ; learn skills
         call dword ptr ds:add_reply
+        cmp dword ptr [CURRENT_CONVERSATION], CONV_CONFIRM_ORDER
+        je ok
+        mov eax, dword ptr [DIALOG2]
+        cmp dword ptr [eax+32], 7 ; button count
+        jne ok
+        mov ecx, dword ptr [eax+80] ; the button
+        mov edx, dword ptr [ecx+48] ; next button
+        mov dword ptr [eax+80], edx
+        and dword ptr [edx+52], 0 ; link to the removed button
+        dec dword ptr [eax+32]
+        push ecx
+        mov ecx, REMOVE_BUTTON_THIS
+        call dword ptr ds:remove_button
+        ok:
         mov eax, 0x4b3c84 ; five-reply code
         jmp eax
       }
@@ -20530,8 +20595,8 @@ static void __declspec(naked) print_order_reply(void)
       }
 }
 
-// Order items, filled below; order_gold was declared earlier.
-static struct item order_result, order_ore, order_reagent;
+// Order items, filled below; order_gold was also declared earlier.
+static struct item order_result, order_ore, order_gold, order_reagent;
 static int order_ore_count, have_order_reagent, order_days;
 
 // Return a mouseover hint for the confirm order screen.
@@ -20590,10 +20655,13 @@ static char *__thiscall get_order_text(int id)
 
 // 0 for initial prompt, 1 for parse failure, 2 for wrong item/shop type.
 static int order_message_type = 0;
+// Used just below.
+static char order_message_buffer[100];
 
 // Do a prompt when the reply is clicked.
 // Also here: draw the order's result and materials.
-// TODO: check if current PC is inactive
+// Also also: check the current order ready status.
+// EI shops do not take orders as the player is unlikely to stay that long.
 static void __declspec(naked) query_order(void)
 {
     asm
@@ -20604,6 +20672,82 @@ static void __declspec(naked) query_order(void)
         cmp dword ptr [MESSAGE_DIALOG], 0 ; check if we`re in a prompt already
         jnz skip
         mov byte ptr [0x5b07b8], al ; reset any message override
+        mov ecx, dword ptr [DIALOG2]
+        mov ecx, dword ptr [ecx+28] ; house id
+        cmp ecx, 1 ; ei weapon
+        je emerald
+        cmp ecx, 15 ; ei armor
+        je emerald
+        cmp ecx, 29 ; ei magic
+        jne not_emerald
+        emerald:
+        mov eax, dword ptr [new_strings+STR_EI_NO_ORDER*4]
+        mov dword ptr [CURRENT_TEXT], eax
+        jmp simple_message
+        not_emerald:
+#ifdef __clang__
+        shl ecx, 3
+        add ecx, offset elemdata.order_timers - 8
+#else
+        lea ecx, [elemdata.order_timers+ecx*8-8]
+#endif
+        cmp dword ptr [ecx], 0
+        jnz have_order
+        cmp dword ptr [ecx+4], 0
+        jz new_order
+        have_order:
+        mov eax, dword ptr [ecx]
+        mov edx, dword ptr [ecx+4]
+        sub eax, dword ptr [CURRENT_TIME_ADDR]
+        sbb edx, dword ptr [CURRENT_TIME_ADDR+4]
+        jb ready
+        mov ecx, 24 * 60 * 60 * 128 / 30
+        div ecx
+        test eax, eax
+        jz round_up
+        add edx, edx
+        cmp edx, ecx
+        jbe round_down
+        round_up:
+        inc eax
+        round_down:
+        push eax
+        push dword ptr [new_strings+STR_ORDER_NOT_READY*4]
+#ifdef __clang__
+        mov eax, offset order_message_buffer
+        push eax
+#else
+        push offset order_message_buffer
+#endif
+        call dword ptr ds:sprintf
+        add esp, 12
+        mov dword ptr [CURRENT_TEXT], offset order_message_buffer
+        cmp dword ptr [SHOPKEEPER_MOOD], 0 ; skip if happy already
+        jnz simple_message
+        mov dword ptr [SHOPKEEPER_MOOD], 2 ; neutral
+        jmp simple_message
+        ready:
+        and dword ptr [ecx], 0
+        and dword ptr [ecx+4], 0
+        mov dword ptr [SHOPKEEPER_MOOD], 1 ; happy
+        mov eax, dword ptr [DIALOG2]
+        mov eax, dword ptr [eax+28] ; house id
+        lea eax, [eax+eax*8]
+#ifdef __clang__
+        shl eax, 2
+        add eax, offset elemdata.current_orders - 36
+#else
+        lea eax, [elemdata.current_orders+eax*4-36]
+#endif
+        push eax
+        mov ecx, PARTY_BIN_ADDR
+        call dword ptr ds:add_mouse_item
+        mov eax, dword ptr [new_strings+STR_ORDER_READY*4]
+        mov dword ptr [CURRENT_TEXT], eax
+        simple_message:
+        push 2 ; another new marker
+        jmp message
+        new_order:
         cmp dword ptr [order_message_type], 1
         cmovb eax, dword ptr [new_strings+STR_PROMPT1*4]
         cmove eax, dword ptr [new_npc_text+857*4-790*4]
@@ -20615,6 +20759,7 @@ static void __declspec(naked) query_order(void)
         call dword ptr ds:strcpy_ptr
         add esp, 8
         push 41 ; our marker for dialog param
+        message:
         call dword ptr ds:message_dialog
         jmp skip
         not_query:
@@ -20697,6 +20842,11 @@ static void __declspec(naked) query_order(void)
         add ecx, (300*640+320)*4
         call dword ptr ds:set_mouse_mask
         no_reagent:
+        push dword ptr [SHOP_IMAGES+20]
+        push 410
+        push 520
+        mov ecx, DRAW_IMAGE_THIS
+        call dword ptr ds:draw_background
         push ebx
         push ebx
         push esp
@@ -20744,7 +20894,7 @@ static void __declspec(naked) enable_order_prompt(void)
 }
 
 // Revert a MM7Patch change that enables Fly and WWalk icons
-// in the message screen (but only for our order prompt).
+// in the message screen (but only for our order prompt and shop messages).
 static void __declspec(naked) disable_prompt_spell_icons(void)
 {
     asm
@@ -20753,8 +20903,11 @@ static void __declspec(naked) disable_prompt_spell_icons(void)
         cmp eax, 19
         jne skip
         mov ecx, dword ptr [MESSAGE_DIALOG]
-        cmp dword ptr [ecx+28], 41 ; our param
+        cmp dword ptr [ecx+28], 41 ; shop prompt
+        je disable
+        cmp dword ptr [ecx+28], 2 ; shop message
         jne skip
+        disable:
         mov eax, 13 ; house screen id
         skip:
         ret
@@ -20762,6 +20915,7 @@ static void __declspec(naked) disable_prompt_spell_icons(void)
 }
 
 // A hacky strncasecmp replacement that ignores case both for ASCII and CP1251.
+// TODO: could parse E-dots in input
 static int __declspec(naked) __stdcall mystrcmp(char *left, char *right, int n)
 {
     asm
@@ -20807,10 +20961,17 @@ static int __declspec(naked) __stdcall mystrcmp(char *left, char *right, int n)
       }
 }
 
+// Bitmask for the standard bonuses who get halved value and double price.
+#define HALVED_STDS ((2 << STAT_HP) + (2 << STAT_SP) + (2 << STAT_THIEVERY) \
+                     + (2 << STAT_DISARM) + (2 << STAT_ARMSMASTER) \
+                     + (2 << STAT_DODGING) + (2 << STAT_UNARMED))
+
 // Get an (equippable, regular) item by its textual description.
 static int __thiscall parse_item(const char *description)
 {
     static int namelen[LAST_PREFIX], gnamelen[LAST_PREFIX];
+    static char samename[LAST_PREFIX];
+    static int grouplen[LAST_PREFIX+1] = {0};
     static int stdlen[24], spclen[SPC_COUNT], spc2len[SPC_COUNT];
     static char stdof[24];
     static char *spc2[SPC_COUNT];
@@ -20818,16 +20979,27 @@ static int __thiscall parse_item(const char *description)
     static const char space[] = " \f\n\r\t\v";
     if (!init)
       {
-        for (int i = 1; i <= LAST_PREFIX; i++)
+        for (int i = 1, group_start = 1; i <= LAST_PREFIX; i++)
           {
             namelen[i-1] = strlen(ITEMS_TXT[i].name);
             gnamelen[i-1] = strlen(ITEMS_TXT[i].generic_name);
+            samename[i-1] = !strcmp(ITEMS_TXT[i].name,
+                                    ITEMS_TXT[i].generic_name);
+            if (ITEMS_TXT[group_start].mod1_dice_count ? !ITEMS_TXT[i].mod2
+                                 : strcmp(ITEMS_TXT[i].generic_name,
+                                          ITEMS_TXT[group_start].generic_name))
+              {
+                grouplen[group_start-1] = i - group_start;
+                group_start = i;
+              }
+            if (i == LAST_PREFIX)
+                grouplen[group_start-1] = LAST_PREFIX + 1 - group_start;
           }
+        grouplen[LAST_PREFIX] = -1; // guard from overflow
         for (int i = 0; i < 24; i++)
           {
-            char *name = *(char **) (0x5dbe64 + i * 20);
-            stdlen[i] = strlen(name);
-            stdof[i] = !strncmp(name, "of ", 3);
+            stdlen[i] = strlen(STDITEMS[i].name);
+            stdof[i] = !strncmp(STDITEMS[i].name, "of ", 3);
           }
         for (int i = 0; i < SPC_COUNT; i++)
           {
@@ -20931,8 +21103,7 @@ static int __thiscall parse_item(const char *description)
             int len = stdlen[i-1] - of * 3;
             if (len <= maxlen || of && !stdof[i-1])
                 continue;
-            char *name = *(char **) (0x5dbe64 + (i - 1) * 20) + of * 3;
-            if (!mystrcmp(current, name, len))
+            if (!mystrcmp(current, STDITEMS[i-1].name + of * 3, len))
               {
                 maxlen = len;
                 std = i;
@@ -20969,11 +21140,11 @@ static int __thiscall parse_item(const char *description)
             int quality = ITEMS_TXT[gid].mod2;
             int sign = (number > quality) - (number < quality);
             if (sign) do quality = ITEMS_TXT[id+=sign].mod2;
-            while (quality != number && quality);
+            while (quality != number && !grouplen[id-1]);
             if (quality != number)
                 return FALSE;
           }
-        else if (!ITEMS_TXT[gid].mod2) // exclude (elven) saber
+        else if (grouplen[gid-1]) // exclude (elven) saber
             adjust = TRUE;
       }
     int equip = ITEMS_TXT[id].equip_stat + 1;
@@ -21006,29 +21177,22 @@ static int __thiscall parse_item(const char *description)
     if (std)
       {
         int column = robe ? 13 : crown ? 14 : equip;
-        if (!byte(0x5dbe64 + (std - 1) * 20 + 4 + column))
+        if (!STDITEMS[std-1].probability[column])
             return FALSE;
         order_result.bonus = std;
-        static const int halved = (2 << STAT_HP) + (2 << STAT_SP)
-                                + (2 << STAT_THIEVERY) + (2 << STAT_DISARM)
-                                + (2 << STAT_ARMSMASTER) + (2 << STAT_DODGING)
-                                + (2 << STAT_UNARMED);
-        int max = 1 << std & halved ? 12 : 25;
+        int max = 1 << std & HALVED_STDS ? 12 : 25;
         if (number < 0 || number > max)
             return FALSE;
         if (!number)
             number = 1 + random() % max;
         order_result.bonus_strength = number;
-        fanciness = number * (1 << std & halved ? 25 : 12);
+        fanciness = number * (1 << std & HALVED_STDS ? 25 : 12);
       }
-    if (adjust)
+    if (adjust && (fanciness || !samename[gid-1]))
       {
         if (!fanciness)
             fanciness = random() % 300 + 1;
-        int next = gid;
-        do next++; while (!strcmp(ITEMS_TXT[next].generic_name,
-                                  ITEMS_TXT[gid].generic_name));
-        fanciness *= next - 1 - gid;
+        fanciness *= grouplen[gid-1] - 1;
         id += fanciness / 300 + (random() % 300 < fanciness % 300);
       }
     order_result.id = id;
@@ -21107,17 +21271,12 @@ static int verify_item(void)
           {
             order_reagent.id = std_craft_items[order_result.bonus-1];
             int amt = order_result.bonus_strength;
-            static const int halved = (2 << STAT_HP) + (2 << STAT_SP)
-                                    + (2 << STAT_THIEVERY) + (2 << STAT_DISARM)
-                                    + (2 << STAT_ARMSMASTER)
-                                    + (2 << STAT_DODGING)
-                                    + (2 << STAT_UNARMED);
-            if (1 << order_result.bonus & halved)
+            if (1 << order_result.bonus & HALVED_STDS)
                 amt += amt;
             markup = (amt >= 24) + (amt >= 25);
             //TODO: unhardcode this
             lmin = 2 + (amt > 5) + (amt > 8) + (amt > 12) + (amt > 17);
-            if (1 << order_result.bonus & halved)
+            if (1 << order_result.bonus & HALVED_STDS)
                 amt++;
             lmax = 6 - (amt < 15) - (amt < 10) - (amt < 6) - (amt < 3);
           }
@@ -21168,8 +21327,8 @@ static int verify_item(void)
     value <<= markup / 2;
     if (markup & 1)
         value = value * 7 / 5;
-    // Shop tier (price multiplier), from 1.5 to 4.0.
-    float fancy = *(float *) (EVENTS2D + dword(dword(DIALOG2) + 28) * 52 + 32);
+    // Shop tier, from 1.5 to 4.0.
+    float fancy = EVENTS2D[dword(dword(DIALOG2) + 28)].multiplier;
     order_days = value / fancy / 100;
     if (order_days < 1)
         order_days = 1;
@@ -21184,22 +21343,25 @@ static int verify_item(void)
     return TRUE;
 }
 
-// My additions.
-#define CONV_QUERY_ORDER 97
-#define CONV_CONFIRM_ORDER 98
-
 // When the prompt is filled or otherwise exited, parse it.
+// Also here: return to main conversation after order result message.
 static void __declspec(naked) complete_order_prompt(void)
 {
     asm
       {
         cmp dword ptr [ecx+28], 41 ; our param
+        je ok
+        cmp dword ptr [ecx+28], 2 ; our second param, for result text
         jne skip
+        ok:
         push 0
         push 0
         push ACTION_EXIT
         mov ecx, ACTION_THIS_ADDR
         call dword ptr ds:add_action
+        mov ecx, dword ptr [MESSAGE_DIALOG]
+        cmp dword ptr [ecx+28], 2 ; exit if just message
+        je no_item
         mov ecx, STATUS_MESSAGE
         cmp dword ptr [ecx], 0
         jz no_item
@@ -21210,7 +21372,9 @@ static void __declspec(naked) complete_order_prompt(void)
         call verify_item
         test eax, eax
         jz bad_type
-        mov dword ptr [0xf8b064], 1 ; shopkeeper happy
+        mov edx, 2
+        mov ecx, dword ptr [new_strings+STR_CONFIRM_ORDER_HINT*4]
+        call dword ptr ds:show_status_text
         push CONV_CONFIRM_ORDER
         reenter:
         push ACTION_CHANGE_CONVERSATION
@@ -21258,8 +21422,11 @@ static void __declspec(naked) prompt_space_no_exit(void)
 
 // The "blueprint" background for the confirm order screen.
 static const char orderbg[] = "GENSHELF"; // temp
+// The confirm order button icon.
+static const char orderbtn[] = "order";
 
 // Load the background and item graphics when visualising the order.
+// Also here: add the confirm order button.
 static void __declspec(naked) preload_order_images(void)
 {
     asm
@@ -21296,7 +21463,7 @@ static void __declspec(naked) preload_order_images(void)
         lea eax, [eax+eax*8]
         lea eax, [LOADED_BITMAPS+eax*8]
         mov dword ptr [SHOP_IMAGES+12], eax
-        cmp dword ptr [have_order_reagent], edi
+        cmp dword ptr [have_order_reagent], edi ; == 0
         jz no_reagent
         push 2
         mov eax, dword ptr [order_reagent] ; item id
@@ -21309,6 +21476,32 @@ static void __declspec(naked) preload_order_images(void)
         lea eax, [LOADED_BITMAPS+eax*8]
         mov dword ptr [SHOP_IMAGES+16], eax
         no_reagent:
+        push 2
+#ifdef __clang__
+        mov eax, offset orderbtn
+        push eax
+#else
+        push offset orderbtn
+#endif
+        mov ecx, ebp ; icons.lod
+        call dword ptr ds:load_bitmap
+        lea eax, [eax+eax*8]
+        lea eax, [LOADED_BITMAPS+eax*8]
+        mov dword ptr [SHOP_IMAGES+20], eax
+        push edi
+        push dword ptr [new_strings+STR_CONFIRM_ORDER*4]
+        push edi
+        push edi
+        push ACTION_PLACE_ORDER
+        push edi
+        push 1
+        push 35
+        push 169
+        push 410
+        push 471
+        push dword ptr [DIALOG2]
+        call dword ptr ds:add_button
+        add esp, 48
         mov ecx, ebp ; restore
         skip:
         jmp dword ptr ds:load_bitmap ; replaced call
@@ -21395,6 +21588,89 @@ static void __declspec(naked) read_spc_craft_items(void)
       }
 }
 
+// Remove the required gold and items and start the order timer.
+static void place_order(void)
+{
+    int house = dword(dword(DIALOG2) + 28);
+    if (dword(PARTY_GOLD) < order_gold.bonus2)
+      {
+        shop_voice(house, SHOP_VOICE_NO_GOLD);
+        show_status_text(GLOBAL_TXT[155], 2); // not enough gold
+        return;
+      }
+    struct player *owners[7];
+    int items[7];
+    int got_reagent = !have_order_reagent, got_ore = 0;
+    for (struct player *player = PARTY; player < PARTY + 4; player++)
+        for (int i = 0; i < 14*9; i++)
+          {
+            int item = player->inventory[i];
+            if (item > 0)
+              {
+                int id = player->items[item-1].id;
+                if (!got_reagent && id == order_reagent.id)
+                  {
+                    got_reagent = TRUE;
+                    owners[0] = player;
+                    items[0] = i;
+                  }
+                else if (got_ore < order_ore_count && id == order_ore.id)
+                  {
+                    got_ore++;
+                    owners[got_ore] = player;
+                    items[got_ore] = i;
+                  }
+              }
+          }
+    if (!got_reagent || got_ore < order_ore_count)
+      {
+        shop_voice(house, SHOP_VOICE_NO_GOLD);
+        show_status_text(new_strings[STR_NOT_ENOUGH_REAGENTS], 2);
+        return;
+      }
+    spend_gold(order_gold.bonus2);
+    for (int i = !have_order_reagent; i <= got_ore; i++)
+        delete_backpack_item(owners[i], items[i]);
+    elemdata.current_orders[house-1] = order_result;
+    elemdata.order_timers[house-1] = CURRENT_TIME + order_days * 24 * 60 * 60
+                                                               * 128 / 30;
+    dword(SHOPKEEPER_MOOD) = 1; // happy
+    add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
+}
+
+// Treat the order result message same as simple message (exit on any click).
+static void __declspec(naked) exit_order_result_prompt(void)
+{
+    asm
+      {
+        jz skip ; replaced jump
+        cmp dword ptr [eax+28], 33 ; replaced code
+        je quit
+        cmp dword ptr [eax+28], 2 ; our message subtype
+        quit:
+        ret
+        skip:
+        inc eax ; clear zf
+        ret
+      }
+}
+
+// If the party is checking on an order and it's not ready yet,
+// prevent the shopkeeper from badmouthing them afterwards.
+static void __declspec(naked) leave_shop_no_response(void)
+{
+    asm
+      {
+        cmp dword ptr [SHOPKEEPER_MOOD], 2 ; our marker
+        je silent
+        cmp dword ptr [PARTY_GOLD], 10000 ; replaced code
+        ret
+        silent:
+        mov dword ptr [SHOPKEEPER_MOOD], ebx ; reset to zero
+        ret ; this will go towards 'too poor' code, so no curses
+      }
+}
+
 // Various changes to stores, guilds and other buildings.
 static inline void shop_changes(void)
 {
@@ -21463,6 +21739,8 @@ static inline void shop_changes(void)
     patch_dword(0x4b5705, dword(0x4b5705) + 14); // magic (consistency)
     hook_call(0x456ed3, read_std_craft_items, 7);
     hook_call(0x4570e2, read_spc_craft_items, 5);
+    hook_call(0x417596, exit_order_result_prompt, 6);
+    hook_call(0x4b1d63, leave_shop_no_response, 10);
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

@@ -746,3 +746,9 @@ Global Text
 743	Place Order
 744	If our stock is insufficient for you, you may order a specific item to be created at our shop.  This takes time, money, and ore.
 745	What do you order?
+746	Confirm Order
+747	You don't have the required items
+748	Your order is ready, here it is.  Thanks for business!
+749	Your order isn't ready yet!  I will need about %d more days.
+750	"Unfortunately, with the influx of contestants I've no time for individual orders right now.  And by the time my schedule clears up, you will likely be gone too, so I'd rather not promise what I cannot deliver!"
+751	Press ORDER to confirm

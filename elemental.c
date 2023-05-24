@@ -20770,32 +20770,44 @@ static void __declspec(naked) query_order(void)
         push 8
         mov ecx, DRAW_IMAGE_THIS
         call dword ptr ds:draw_background
-        push dword ptr [SHOP_IMAGES+4]
-        push 150
-        push 220
+        mov ecx, dword ptr [SHOP_IMAGES+4]
+        movzx eax, word ptr [ecx+24] ; sprite width
+        sub eax, 238 * 2
+        neg eax
+        shr eax, 1
+        movzx edx, word ptr [ecx+26] ; sprite height
+        sub edx, 153 * 2
+        neg edx
+        shr edx, 1
+        lea ebx, [edx+edx*4]
+        shl ebx, 9
+        lea ebx, [ebx+eax*4]
+        push ecx
+        push edx
+        push eax
         mov ecx, DRAW_IMAGE_THIS
         call dword ptr ds:draw_over_other
         push 1
         mov edx, dword ptr [SHOP_IMAGES+4]
         mov ecx, dword ptr [MOUSEOVER_BUFFER]
-        add ecx, (150*640+220)*4
+        add ecx, ebx
         call dword ptr ds:set_mouse_mask
         mov ebx, dword ptr [order_ore_count]
         cmp ebx, 3
         jbe upper_row
         lower_row:
         lea eax, [ebx+ebx*8]
-        lea eax, [70+eax*4-3*36]
+        lea eax, [40+eax*4-4*36]
         push eax
         push dword ptr [SHOP_IMAGES+8]
-        push 316
+        push 260 + 36
         push eax
         mov ecx, DRAW_IMAGE_THIS
         call dword ptr ds:draw_over_other
         pop ecx
         push 2
         mov edx, dword ptr [SHOP_IMAGES+8]
-        lea ecx, [ecx*4+316*640*4]
+        lea ecx, [ecx*4+(260+36)*640*4]
         add ecx, dword ptr [MOUSEOVER_BUFFER]
         call dword ptr ds:set_mouse_mask
         dec ebx
@@ -20803,43 +20815,66 @@ static void __declspec(naked) query_order(void)
         ja lower_row
         upper_row:
         lea eax, [ebx+ebx*8]
-        lea eax, [70+eax*4]
+        lea eax, [40+eax*4-36]
         push eax
         push dword ptr [SHOP_IMAGES+8]
-        push 280
+        push 260
         push eax
         mov ecx, DRAW_IMAGE_THIS
         call dword ptr ds:draw_over_other
         pop ecx
         push 2
         mov edx, dword ptr [SHOP_IMAGES+8]
-        lea ecx, [ecx*4+280*640*4]
+        lea ecx, [ecx*4+260*640*4]
         add ecx, dword ptr [MOUSEOVER_BUFFER]
         call dword ptr ds:set_mouse_mask
         dec ebx
         ja upper_row
-        push dword ptr [SHOP_IMAGES+12]
-        push 300
-        push 220
+        mov ecx, dword ptr [SHOP_IMAGES+12]
+        movzx eax, word ptr [ecx+24] ; sprite width
+        sub eax, 239 * 2
+        neg eax
+        shr eax, 1
+        movzx edx, word ptr [ecx+26] ; sprite height
+        sub edx, 324 * 2
+        neg edx
+        shr edx, 1
+        lea ebx, [edx+edx*4]
+        shl ebx, 9
+        lea ebx, [ebx+eax*4]
+        push ecx
+        push edx
+        push eax
         mov ecx, DRAW_IMAGE_THIS
         call dword ptr ds:draw_over_other
         push 3
         mov edx, dword ptr [SHOP_IMAGES+12]
         mov ecx, dword ptr [MOUSEOVER_BUFFER]
-        add ecx, (300*640+220)*4
+        add ecx, ebx
         call dword ptr ds:set_mouse_mask
-        xor ebx, ebx
-        cmp dword ptr [have_order_reagent], ebx
+        cmp dword ptr [have_order_reagent], 0
         jz no_reagent
-        push dword ptr [SHOP_IMAGES+16]
-        push 300
-        push 320
+        mov ecx, dword ptr [SHOP_IMAGES+16]
+        movzx eax, word ptr [ecx+24] ; sprite width
+        sub eax, 384 * 2
+        neg eax
+        shr eax, 1
+        movzx edx, word ptr [ecx+26] ; sprite height
+        sub edx, 294 * 2
+        neg edx
+        shr edx, 1
+        lea ebx, [edx+edx*4]
+        shl ebx, 9
+        lea ebx, [ebx+eax*4]
+        push ecx
+        push edx
+        push eax
         mov ecx, DRAW_IMAGE_THIS
         call dword ptr ds:draw_over_other
         push 4
         mov edx, dword ptr [SHOP_IMAGES+16]
         mov ecx, dword ptr [MOUSEOVER_BUFFER]
-        add ecx, (300*640+320)*4
+        add ecx, ebx
         call dword ptr ds:set_mouse_mask
         no_reagent:
         push dword ptr [SHOP_IMAGES+20]
@@ -20847,6 +20882,7 @@ static void __declspec(naked) query_order(void)
         push 520
         mov ecx, DRAW_IMAGE_THIS
         call dword ptr ds:draw_background
+        xor ebx, ebx
         push ebx
         push ebx
         push esp
@@ -21176,7 +21212,7 @@ static int __thiscall parse_item(const char *description)
       }
     if (std)
       {
-        int column = robe ? 13 : crown ? 14 : equip;
+        int column = robe ? 9 : crown ? 10 : equip - 4;
         if (!STDITEMS[std-1].probability[column])
             return FALSE;
         order_result.bonus = std;
@@ -21421,9 +21457,9 @@ static void __declspec(naked) prompt_space_no_exit(void)
 }
 
 // The "blueprint" background for the confirm order screen.
-static const char orderbg[] = "GENSHELF"; // temp
+static const char orderbg[] = "orderbg";
 // The confirm order button icon.
-static const char orderbtn[] = "order";
+static const char orderbtn[] = "orderbtn";
 
 // Load the background and item graphics when visualising the order.
 // Also here: add the confirm order button.

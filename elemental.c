@@ -18589,7 +18589,8 @@ static inline void skill_changes(void)
     hook_call(0x4be11b, flawless_theft, 7);
     patch_pointer(0x44b944, learning_quest_xp);
     // new sword/spear gm bonus is in maybe_parry() above
-    erase_code(0x48ffe9, 8); // erase old bonus
+    erase_code(0x48ffea, 2); // erase old bonus
+    erase_code(0x48ffef, 2); // ditto
     patch_pointer(0x4275fd, halved_physical_damage_resistance); // jumptable
     hook_call(0x427682, halved_physical_condition_resistance, 7);
 }

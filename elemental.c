@@ -735,8 +735,6 @@ static struct elemdata
     int deposit_box;
     // Preserve the active PC on reload.
     int current_player;
-    // Update gog drops if upgrading from 3.0.
-    char gog_check[6];
     // Items for the newly added scroll shelves at the magic guilds.
     struct item guild_scrolls[32][12];
     // Items that were ordered at shops.
@@ -7378,45 +7376,13 @@ static void __declspec(naked) new_game_hook(void)
 // On a new game it's lowered to the current week, which is also 0.
 static int last_bank_week;
 
-// v3.0 mod data for save compatibility.
-// TODO: remove all this later!
-struct elemdata_30
-{
-    int reputation[12];
-    char artifacts_found[LAST_ARTIFACT-FIRST_ARTIFACT+1];
-    int training[4][SKILL_COUNT];
-    int x, y, z, direction, look_angle, map_index;
-    struct map_chest extra_chests[7];
-    int difficulty;
-    int last_region;
-    int last_tax_month, last_tax_fame;
-};
-
 // Load mod data from the savegame, if said data exists.
 // Also reset some vars and fix recovery after saving in TB mode.
 static void load_game_data(void)
 {
     void *file = find_in_lod(SAVEGAME_LOD, "elemdata.bin", 1);
     if (file)
-      {
         fread(&elemdata, sizeof(elemdata), 1, file);
-        if (elemdata.extra_chests[7].picture != 3) // hacky, I know
-          {
-            // upgrade from v3.0
-            struct elemdata_30 *old = (struct elemdata_30 *) &elemdata;
-            elemdata.last_tax_fame = old->last_tax_fame;
-            elemdata.last_tax_month = old->last_tax_month;
-            elemdata.last_region = old->last_region;
-            elemdata.difficulty = old->difficulty;
-            memset(&elemdata.extra_chests[7], 0, sizeof(struct map_chest));
-            elemdata.extra_chests[7].picture = 3;
-            elemdata.extra_chests[7].bits = 2;
-            elemdata.deposit_box = FALSE;
-            elemdata.current_player = 1;
-            for (int i = 0; i < 6; i++)
-                elemdata.gog_check[i] = TRUE;
-          }
-      }
     else // probably won't happen; reset all data just in case
         new_game_data();
     reputation_group[0] = 0; // will be set on map load
@@ -7475,7 +7441,6 @@ static void __declspec(naked) save_game_hook(void)
 
 // Set the map's default reputation group and update current reputation.
 // Also here: update the Master Town Portal destination.
-// Also (temporary): update gog loot for 3.0 saves.
 static void load_map_rep(void)
 {
     reputation_index = 0;
@@ -7488,24 +7453,6 @@ static void load_map_rep(void)
     int qbit = tp_qbits[group];
     if (qbit && check_bit(QBITS, qbit))
         elemdata.last_region = tp_order[group];
-    static const int gog_maps[6] = { 11, 26, 53, 58, 63, 69 };
-    for (int i = 0; i < 6; i++)
-        if (elemdata.gog_check[i] && map_index == gog_maps[i])
-          {
-            int moncount = dword(0x6650a8);
-            for (int j = 0; j < moncount; j++)
-              {
-                struct map_monster *mon = &MAP_MONSTERS[j];
-                if (mon->id >= 76 && mon->id <= 78)
-                  {
-                    mon->item_chance = (mon->id - 75) * 5;
-                    mon->item_level = 3;
-                    mon->item_type = ITEM_TYPE_SULFUR;
-                  }
-              }
-            elemdata.gog_check[i] = FALSE;
-            break;
-          }
 }
 
 // Used below to track the bow GM mini-quest.

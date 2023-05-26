@@ -4957,6 +4957,7 @@ static void spell_elements(void)
 // Defined below.
 static void parse_statrate(void);
 static void set_colors(void);
+static void parse_clsskill(void);
 
 // Let's ride on the tail of the spells.txt parsing function.
 static void __declspec(naked) spells_txt_tail(void)
@@ -4969,6 +4970,7 @@ static void __declspec(naked) spells_txt_tail(void)
         call parse_itemgend
         call parse_statrate
         call set_colors
+        call parse_clsskill
         ret
       }
 }
@@ -15962,6 +15964,7 @@ static int __cdecl get_max_skill_level(int class, int race, int skill)
     return level || stage ? EXPERT : NORMAL;
 }
 
+// Prefetch text color constants.  Called from spells_txt_tail() above.
 static void set_colors(void)
 {
     colors[CLR_WHITE] = rgb_color(255, 255, 255);
@@ -16639,86 +16642,63 @@ static int __fastcall equip_aligned_relic(struct player *player, int align)
       }
 }
 
+// Parse clsskill.txt, which is just 'Class Skills.txt' table from MMExt.
+// Yes, I'm lazy!  But not so lazy as to depend on MMExt for just one table.
+// Called from spells_txt_tail() above.
+static void parse_clsskill(void)
+{
+    char *file = load_from_lod(EVENTS_LOD, "clsskill.txt", TRUE);
+    DWORD OldProtect;
+    VirtualProtect((LPVOID) CLASS_SKILLS_ADDR, CLASS_COUNT * SKILL_COUNT,
+                   PAGE_EXECUTE_READWRITE, &OldProtect);
+    if (strtok(file, "\r\n")) // skip first line
+        for (int i = 0; i < SKILL_COUNT; i++)
+          {
+            char *line = strtok(0, "\r\n");
+            if (!line)
+                break;
+            for (int j = 0; j < CLASS_COUNT; j++)
+              {
+                line = strchr(line + 1, '\t');
+                if (!line)
+                    break;
+                char level;
+                switch (line[1])
+                  {
+                    case '-':
+                    default:
+                        level = 0;
+                        break;
+                    case 'b':
+                    case 'B':
+                    case 'n':
+                    case 'N':
+                        level = NORMAL;
+                        break;
+                    case 'e':
+                    case 'E':
+                        level = EXPERT;
+                        break;
+                    case 'm':
+                    case 'M':
+                        level = MASTER;
+                        break;
+                    case 'g':
+                    case 'G':
+                        level = GM;
+                        break;
+                  }
+                CLASS_SKILLS[j][i] = level;
+              }
+          }
+    VirtualProtect((LPVOID) CLASS_SKILLS_ADDR, CLASS_COUNT * SKILL_COUNT,
+                   OldProtect, &OldProtect);
+    mm7_free(file);
+}
+
 // Make light and dark promotions more distinct.
 static inline void class_changes(void)
 {
-    // yeah, it's not very readable, but I *really*
-    // don't want to depend on MMExtension
-    static const uint8_t skills[CLASS_COUNT][SKILL_COUNT] = {
-          {2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 2, 2, 2, 0, 2, 1, 0, 1, 2, 2, 0, 2, 0, 0, 1},
-          {2, 3, 2, 3, 3, 2, 3, 1, 3, 2, 3, 3, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 2, 3, 3, 0, 2, 1, 0, 1, 2, 2, 0, 3, 0, 0, 1},
-          {2, 4, 2, 3, 4, 3, 3, 1, 4, 2, 3, 4, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 2, 4, 4, 0, 2, 1, 0, 1, 2, 2, 0, 4, 0, 0, 1},
-          {2, 4, 2, 3, 4, 2, 3, 1, 4, 2, 3, 4, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 2, 4, 4, 0, 2, 1, 0, 2, 2, 2, 0, 4, 1, 0, 1},
-          {0, 2, 2, 0, 0, 2, 2, 2, 1, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 2, 2, 1, 2, 0, 2, 0, 0, 2, 2, 2, 0, 2, 2, 2, 2},
-          {0, 3, 3, 0, 0, 2, 2, 3, 1, 3, 2, 0, 2, 2, 0, 0, 0, 0, 0,
-            0, 0, 3, 3, 1, 2, 0, 3, 0, 0, 3, 3, 2, 0, 3, 3, 3, 2},
-          {0, 3, 4, 0, 0, 2, 2, 4, 1, 4, 2, 0, 2, 3, 0, 0, 0, 0, 0,
-            0, 0, 4, 3, 1, 2, 0, 4, 0, 0, 4, 3, 2, 0, 3, 4, 3, 2},
-          {0, 3, 4, 0, 0, 2, 2, 4, 1, 4, 2, 0, 3, 2, 0, 0, 0, 0, 0,
-            0, 0, 4, 3, 1, 2, 0, 3, 0, 0, 4, 3, 2, 0, 3, 4, 4, 2},
-          {2, 2, 2, 0, 2, 1, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 2, 0, 2, 1, 0, 1, 2, 2, 2, 2, 1, 0, 2},
-          {3, 2, 2, 0, 2, 1, 0, 1, 0, 3, 0, 0, 0, 0, 0, 0, 2, 0, 2,
-            0, 0, 0, 0, 0, 3, 0, 2, 1, 0, 2, 3, 3, 2, 3, 1, 0, 3},
-          {4, 2, 2, 0, 2, 1, 0, 1, 0, 4, 0, 0, 0, 0, 0, 0, 3, 0, 3,
-            0, 0, 0, 0, 0, 4, 0, 2, 1, 0, 2, 4, 4, 2, 3, 1, 0, 4},
-          {4, 2, 2, 0, 2, 1, 0, 1, 0, 4, 0, 0, 0, 0, 0, 0, 2, 0, 2,
-            0, 0, 0, 0, 0, 4, 0, 2, 1, 0, 3, 4, 4, 2, 3, 2, 0, 4},
-          {1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 2, 1, 1,
-            0, 0, 0, 2, 2, 2, 2, 1, 2, 0, 0, 0, 1, 0, 2, 0, 0, 1},
-          {1, 3, 2, 2, 2, 2, 3, 2, 3, 2, 2, 3, 0, 0, 0, 0, 3, 2, 2,
-            0, 0, 0, 3, 3, 3, 2, 1, 3, 0, 0, 0, 1, 0, 2, 0, 0, 1},
-          {1, 3, 2, 2, 2, 2, 4, 2, 4, 2, 2, 3, 0, 0, 0, 0, 4, 3, 3,
-            3, 0, 0, 4, 4, 3, 2, 1, 4, 0, 0, 0, 1, 0, 2, 0, 0, 1},
-          {1, 3, 2, 2, 2, 2, 4, 2, 4, 2, 2, 3, 0, 0, 0, 0, 4, 3, 3,
-            0, 2, 0, 3, 4, 3, 2, 1, 4, 0, 0, 0, 1, 0, 3, 2, 0, 1},
-          {1, 2, 2, 2, 2, 2, 0, 2, 0, 2, 2, 0, 1, 2, 1, 1, 0, 0, 0,
-            0, 0, 1, 2, 2, 2, 2, 2, 0, 0, 1, 2, 1, 0, 2, 0, 0, 2},
-          {1, 2, 3, 2, 3, 3, 0, 3, 0, 3, 3, 0, 2, 3, 2, 2, 0, 0, 0,
-            0, 0, 1, 2, 2, 2, 2, 3, 0, 0, 2, 2, 1, 0, 2, 0, 0, 3},
-          {1, 2, 3, 2, 4, 4, 0, 4, 0, 3, 4, 0, 3, 4, 4, 3, 0, 0, 0,
-            2, 0, 1, 2, 3, 2, 2, 4, 0, 0, 2, 2, 1, 0, 2, 0, 0, 3},
-          {1, 2, 3, 2, 4, 4, 0, 4, 0, 3, 4, 0, 4, 4, 3, 3, 0, 0, 0,
-            0, 2, 2, 2, 2, 2, 2, 4, 0, 0, 2, 2, 1, 0, 2, 0, 0, 3},
-          {1, 2, 2, 2, 2, 2, 0, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 1, 1, 1, 2, 0, 2, 2, 0, 2, 2, 1, 2, 2, 2, 1, 2},
-          {1, 2, 2, 3, 3, 3, 0, 3, 2, 3, 3, 0, 2, 0, 2, 3, 0, 2, 2,
-            0, 0, 1, 1, 1, 2, 1, 3, 2, 0, 2, 2, 1, 3, 2, 2, 1, 2},
-          {1, 2, 2, 4, 3, 3, 0, 3, 2, 3, 4, 0, 2, 0, 3, 4, 0, 2, 4,
-            0, 0, 1, 1, 1, 2, 1, 4, 2, 0, 2, 2, 1, 4, 3, 2, 1, 2},
-          {1, 2, 2, 4, 3, 3, 0, 3, 2, 3, 3, 0, 2, 0, 3, 4, 0, 3, 3,
-            0, 0, 1, 1, 1, 2, 1, 4, 2, 0, 3, 2, 1, 4, 3, 3, 1, 2},
-          {2, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 1, 0, 0, 0, 0, 2, 2, 2,
-            0, 0, 0, 2, 2, 1, 2, 2, 2, 0, 0, 0, 0, 2, 0, 0, 2, 2},
-          {2, 0, 0, 0, 0, 0, 3, 2, 3, 2, 2, 1, 0, 0, 0, 0, 3, 3, 3,
-            0, 0, 0, 3, 3, 1, 3, 2, 3, 0, 0, 0, 0, 2, 0, 0, 2, 3},
-          {2, 0, 0, 0, 0, 0, 4, 2, 3, 2, 2, 2, 0, 0, 0, 0, 4, 4, 4,
-            4, 0, 0, 4, 3, 1, 3, 2, 3, 0, 0, 0, 0, 2, 0, 0, 2, 3},
-          {2, 0, 0, 0, 0, 0, 3, 2, 3, 2, 2, 1, 0, 0, 0, 0, 4, 4, 4,
-            0, 4, 0, 4, 3, 1, 4, 2, 3, 0, 0, 0, 0, 2, 0, 0, 3, 3},
-          {1, 0, 2, 0, 0, 0, 2, 2, 2, 2, 0, 0, 2, 2, 2, 2, 2, 2, 2,
-            0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 0, 1, 0, 2, 1, 0, 2, 2},
-          {1, 0, 3, 0, 0, 0, 2, 3, 2, 3, 0, 0, 2, 3, 3, 3, 2, 3, 3,
-            0, 0, 2, 2, 0, 0, 3, 2, 0, 0, 0, 2, 0, 3, 1, 0, 3, 3},
-          {1, 0, 3, 0, 0, 0, 2, 3, 2, 3, 0, 0, 2, 4, 4, 3, 3, 3, 4,
-            0, 0, 2, 2, 0, 0, 4, 2, 0, 0, 0, 2, 0, 4, 1, 0, 4, 3},
-          {1, 0, 3, 0, 0, 0, 2, 3, 2, 3, 0, 0, 3, 3, 3, 4, 2, 4, 3,
-            0, 3, 2, 2, 0, 0, 4, 2, 0, 0, 0, 2, 0, 3, 1, 0, 4, 3},
-          {2, 0, 2, 0, 0, 0, 0, 2, 0, 2, 0, 0, 2, 2, 2, 2, 0, 0, 0,
-            0, 0, 2, 1, 2, 0, 2, 2, 1, 0, 0, 1, 0, 2, 0, 0, 2, 2},
-          {3, 0, 2, 0, 0, 0, 0, 3, 0, 2, 0, 0, 3, 3, 3, 3, 0, 0, 0,
-            0, 0, 3, 1, 2, 0, 3, 2, 1, 0, 0, 1, 0, 3, 0, 0, 3, 3},
-          {3, 0, 3, 0, 0, 0, 0, 4, 0, 3, 0, 0, 4, 4, 4, 4, 0, 0, 0,
-            4, 0, 4, 1, 2, 0, 3, 2, 1, 0, 0, 1, 0, 3, 0, 0, 3, 4},
-          {4, 0, 2, 0, 0, 0, 0, 4, 0, 2, 0, 0, 4, 4, 4, 4, 0, 0, 0,
-            0, 4, 3, 1, 2, 0, 4, 2, 1, 0, 0, 1, 1, 3, 0, 0, 3, 3}
-    };
-    patch_bytes(0x4ed818, skills, CLASS_COUNT * SKILL_COUNT);
     // Black Knight ability is in cursed_weapon() above.
     hook_call(0x48f944, champion_leadership, 8);
     patch_dword(0x48f94d, dword(0x48f94d) + 3); // jump address

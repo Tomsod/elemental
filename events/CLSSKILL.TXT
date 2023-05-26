@@ -1,0 +1,38 @@
+	Knight	Cavalier	Champion	Black Knight	Thief	Rogue	Spy	Assassin	Monk	Initiate	Master	Ninja	Paladin	Crusader	Hero	Villain	Archer	Warrior Mage	Master Archer	Sniper	Ranger	Hunter	Ranger Lord	Bounty Hunter	Cleric	Priest	Priest of Light	Priest of Dark	Druid	Great Druid	Arch Druid	Warlock	Sorcerer	Wizard	Arch Mage	Lich
+Staff	E	E	E	E	-	-	-	-	E	M	G	G	N	N	N	N	N	N	N	N	N	N	N	N	E	E	E	E	N	N	N	N	E	M	M	G
+Sword	E	M	G	G	E	M	M	M	E	E	E	E	E	M	M	M	E	E	E	E	E	E	E	E	-	-	-	-	-	-	-	-	-	-	-	-
+Dagger	E	E	E	E	E	M	G	G	E	E	E	E	E	E	E	E	E	M	M	M	E	E	E	E	-	-	-	-	E	M	M	M	E	E	M	E
+Axe	E	M	M	M	-	-	-	-	-	-	-	-	E	E	E	E	E	E	E	E	E	M	G	G	-	-	-	-	-	-	-	-	-	-	-	-
+Spear	E	M	G	G	-	-	-	-	E	E	E	E	E	E	E	E	E	M	G	G	E	M	M	M	-	-	-	-	-	-	-	-	-	-	-	-
+Bow	E	E	M	E	E	E	E	E	N	N	N	N	E	E	E	E	E	M	G	G	E	M	M	M	-	-	-	-	-	-	-	-	-	-	-	-
+Mace	E	M	M	M	E	E	E	E	-	-	-	-	E	M	G	G	-	-	-	-	-	-	-	-	E	M	G	M	E	E	E	E	-	-	-	-
+Blaster	N	N	N	N	E	M	G	G	N	N	N	N	E	E	E	E	E	M	G	G	E	M	M	M	E	E	E	E	E	M	M	M	E	M	G	G
+Shield	E	M	G	G	N	N	N	N	-	-	-	-	E	M	G	G	-	-	-	-	E	E	E	E	E	M	M	M	E	E	E	E	-	-	-	-
+Leather	E	E	E	E	E	M	G	G	E	M	G	G	E	E	E	E	E	M	M	M	E	M	M	M	E	E	E	E	E	M	M	M	E	E	M	E
+Chain	E	M	M	M	E	E	E	E	-	-	-	-	E	E	E	E	E	M	G	G	E	M	G	M	E	E	E	E	-	-	-	-	-	-	-	-
+Plate	E	M	G	G	-	-	-	-	-	-	-	-	E	M	M	M	-	-	-	-	-	-	-	-	N	N	E	N	-	-	-	-	-	-	-	-
+Fire Magic	-	-	-	-	-	E	E	M	-	-	-	-	-	-	-	-	N	E	M	G	-	E	E	E	-	-	-	-	E	E	E	M	E	M	G	G
+Air Magic	-	-	-	-	-	E	M	E	-	-	-	-	-	-	-	-	E	M	G	G	-	-	-	-	-	-	-	-	E	M	G	M	E	M	G	G
+Water Magic	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	N	E	G	M	-	E	M	M	-	-	-	-	E	M	G	M	E	M	G	G
+Earth Magic	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	N	E	M	M	-	M	G	G	-	-	-	-	E	M	M	G	E	M	G	G
+Spirit Magic	-	-	-	-	-	-	-	-	-	E	M	E	E	M	G	G	-	-	-	-	-	-	-	-	E	M	G	G	E	E	M	E	-	-	-	-
+Mind Magic	-	-	-	-	-	-	-	-	-	-	-	-	N	E	M	M	-	-	-	-	-	E	E	M	E	M	G	G	E	M	M	G	-	-	-	-
+Body Magic	-	-	-	-	-	-	-	-	-	E	M	E	N	E	M	M	-	-	-	-	-	E	G	M	E	M	G	G	E	M	G	M	-	-	-	-
+Light Magic	-	-	-	-	-	-	-	-	-	-	-	-	-	-	M	-	-	-	E	-	-	-	-	-	-	-	G	-	-	-	-	-	-	-	G	-
+Dark Magic	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	E	-	-	-	E	-	-	-	-	-	-	-	G	-	-	-	M	-	-	-	G
+Identify Item	-	-	-	-	E	M	G	G	-	-	-	-	-	-	-	-	N	N	N	E	N	N	N	N	-	-	-	-	E	E	E	E	E	M	G	M
+Merchant	E	E	E	E	E	M	M	M	-	-	-	-	E	M	G	M	E	E	E	E	N	N	N	N	E	M	G	G	E	E	E	E	N	N	N	N
+Repair	E	M	G	G	N	N	N	N	-	-	-	-	E	M	G	G	E	E	M	E	N	N	N	N	E	M	M	M	-	-	-	-	E	E	E	E
+Bodybuilding	E	M	G	G	E	E	E	E	E	M	G	G	E	M	M	M	E	E	E	E	E	E	E	E	N	N	N	N	-	-	-	-	-	-	-	-
+Meditation	-	-	-	-	-	-	-	-	-	-	-	-	E	E	E	E	E	E	E	E	-	N	N	N	E	M	M	G	E	M	G	G	E	M	M	G
+Perception	E	E	E	E	E	M	G	M	E	E	E	E	N	N	N	N	E	M	G	G	E	M	G	G	E	E	E	E	E	E	E	E	E	E	E	E
+Diplomacy	N	N	N	N	-	-	-	-	N	N	N	N	E	M	G	G	-	-	-	-	E	E	E	E	E	M	M	M	-	-	-	-	N	N	N	N
+Thievery (unused)	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-
+Disarm Traps	N	N	N	E	E	M	G	G	N	E	E	M	-	-	-	-	N	E	E	E	E	E	E	M	-	-	-	-	-	-	-	-	-	-	-	-
+Dodging	E	E	E	E	E	M	M	M	E	M	G	G	-	-	-	-	E	E	E	E	E	E	E	E	-	-	-	-	N	E	E	E	N	N	N	N
+Unarmed	E	E	E	E	E	E	E	E	E	M	G	G	N	N	N	N	N	N	N	N	N	N	N	N	-	-	-	-	-	-	-	-	-	-	-	N
+Identify Monster	-	-	-	-	-	-	-	-	E	E	E	E	-	-	-	-	-	-	-	-	E	M	G	G	E	E	E	E	E	M	G	M	E	M	M	M
+Armsmaster	E	M	G	G	E	M	M	M	E	M	M	M	E	E	E	M	E	E	E	E	E	E	M	M	-	-	-	-	N	N	N	N	-	-	-	-
+Thievery	-	-	-	N	E	M	G	G	N	N	N	E	-	-	-	E	-	-	-	-	E	E	E	M	-	-	-	-	-	-	-	-	-	-	-	-
+Alchemy	-	-	-	-	E	M	M	G	-	-	-	-	-	-	-	-	-	-	-	-	N	N	N	N	E	E	E	M	E	M	G	G	E	M	M	M
+Learning	N	N	N	N	E	E	E	E	E	M	G	G	N	N	N	N	E	M	M	M	E	E	E	E	E	M	M	M	E	M	M	M	E	M	G	M

@@ -68,9 +68,9 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 64	Stone Gargoyle	Gargoyle A	16	73	18	416	5%5D10+L2Amulet	0	Y	Long	Aggress	3	300	80	0	Weak	Phys	2D12	0	0	0	0	0	0	0	0	0	20	20	20	Imm	Imm	Imm	20	30	30	0
 65	Marble Gargoyle	Gargoyle B	22	114	22	704	10%10D10+L2Amulet	0	Y	Long	Aggress	3	320	80	0	Paralyze	Phys	2D12+4	0	0	0	0	0	0	0	0	0	30	30	30	Imm	Imm	Imm	30	40	40	0
 66	Obsidian Gargoyle	Gargoyle C	33	207	26	1419	20%25D10+L3Amulet	0	Y	Med	Suicidal	3	350	70	0	Paralyze	Phys	2D12+8	0	0	0	0	0	0	0	0	0	50	50	50	Imm	Imm	Imm	50	Imm	Imm	0
-67	Djinni	Genie A	33	207	35	1419	30%L4	0	Y	Free	Aggress	3	200	60	M	0	Cold	8D4+8	Water	0	0	0	0	25	"Ice Blast,M,7"	0	0	15	30	Imm	30	50	Imm	30	30	30	0
-68	Genie	Genie B	44	325	45	2376	30%L5	0	Y	Free	Aggress	3	220	50	M	Asleep	Fire	10D4+10	Fire	0	0	0	0	25	"Fireball,M,8"	0	0	Imm	30	15	30	50	Imm	30	30	30	0
-69	Efreet	Genie C	55	467	55	3575	30%L6	0	Y	Free	Aggress	3	250	40	M	Afraid	Elec	12D4+12	Air	0	0	0	0	25	"Lightning Bolt,M,10"	0	0	50	Imm	50	50	50	Imm	50	50	50	0
+67	Djinni	Genie A	33	207	35	1419	30%L4	0	Y	Free	Aggress	3	200	60	M	0	Cold	8D4+8	Water	0	0	0	0	25	"Ice Blast,M,6"	0	0	15	30	Imm	30	50	Imm	30	30	30	0
+68	Genie	Genie B	44	325	45	2376	30%L5	0	Y	Free	Aggress	3	220	50	M	Asleep	Elec	10D4+10	Air	0	0	0	0	25	"Lightning Bolt,M,8"	0	0	30	Imm	30	30	50	Imm	30	30	30	0
+69	Efreet	Genie C	55	467	55	3575	30%L6	0	Y	Free	Aggress	3	250	40	M	Afraid	Fire	12D4+12	Fire	0	0	0	0	25	"Fireball,M,10"	0	0	Imm	50	25	50	50	Imm	50	50	50	0
 70	Shade	Ghost A	9	35	8	171	5%L2	0	Y	Free	Normal	3	240	100	CP	Afraid	Magic	1D6+6	0	0	0	0	0	0	0	0	0	10	10	Imm	Imm	Imm	10	10	Imm	Imm	0
 71	Specter	Ghost B	13	55	14	299	10%L3	0	Y	Long	Normal	3	260	90	CP	Agex2	Magic	2D6+6	0	0	0	0	0	0	0	0	0	15	15	Imm	Imm	Imm	15	15	Imm	Imm	0
 72	Ghost	Ghost C	19	93	20	551	20%L4	0	Y	Med	Suicidal	3	300	90	CP	Uncon	Magic	3D6+6	0	0	0	0	0	0	0	0	0	20	20	Imm	Imm	Imm	20	20	Imm	Imm	0

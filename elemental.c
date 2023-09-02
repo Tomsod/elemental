@@ -317,6 +317,18 @@ enum new_strings
     STR_ORDER_NOT_READY,
     STR_EI_NO_ORDER,
     STR_CONFIRM_ORDER_HINT,
+    STR_GENIE_ARTIFACT,
+    STR_GENIE_STAT,
+    STR_GENIE_CURSE,
+    STR_GENIE_TITHE,
+    STR_GENIE_NOTHING,
+    STR_GENIE_HOSTILE,
+    STR_GENIE_NEUTRAL,
+    STR_GENIE_ALLY,
+    STR_GENIE_ITEM_INIT,
+    STR_GENIE_ITEM_ASK,
+    STR_GENIE_ITEM_OK,
+    STR_GENIE_ITEM_DEFAULT,
     NEW_STRING_COUNT
 };
 
@@ -440,13 +452,18 @@ struct __attribute__((packed)) player
     uint32_t black_potions[7];
     struct item items[PLAYER_MAX_ITEMS];
     uint32_t inventory[14*9];
-    uint16_t fire_res_base;
-    uint16_t shock_res_base;
-    uint16_t cold_res_base;
-    uint16_t poison_res_base;
-    SKIP(6);
-    uint16_t mind_res_base;
-    uint16_t magic_res_base;
+    union {
+        struct {
+            uint16_t fire_res_base;
+            uint16_t shock_res_base;
+            uint16_t cold_res_base;
+            uint16_t poison_res_base;
+            SKIP(6);
+            uint16_t mind_res_base;
+            uint16_t magic_res_base;
+        };
+        uint16_t res_base[9];
+    };
     SKIP(26);
     struct spell_buff spell_buffs[24];
     SKIP(20);
@@ -662,6 +679,7 @@ enum face_animations
     ANIM_WONT_FIT = 15,
     ANIM_MIX_POTION = 16,
     ANIM_SMILE = 36,
+    ANIM_DISMAY = 40,
     ANIM_SHAKE_HEAD = 67,
 };
 
@@ -715,6 +733,8 @@ struct __attribute__((packed)) map_chest
 // All the stuff I need to preserve across save/loads (except WoM barrels).
 static struct elemdata
 {
+    // Mod version in case I'll need to ensure backward compatibility again.
+    int version;
     // Stored reputation for the game's different regions.  [0] is always zero.
     int reputation[12];
     // Expanded "artifacts found" bool array to fit the new additions.
@@ -741,6 +761,10 @@ static struct elemdata
     struct item current_orders[42];
     // And the time of their competion.
     uint64_t order_timers[42];
+    // Random seed for genie lamps.
+    uint32_t genie;
+    // Remember if a genie artifact was already given.
+    int genie_artifact;
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -960,11 +984,14 @@ struct __attribute__((packed)) map_monster
 #define MMF_REAGENT_MORE_LIKELY 16
     SKIP(28);
     struct spell_buff spell_buffs[22];
-    SKIP(272);
+    SKIP(148);
+    uint32_t ally;
+    SKIP(120);
 };
 
 #define MAP_MONSTERS_ADDR 0x5fefd8
 #define MAP_MONSTERS ((struct map_monster *) MAP_MONSTERS_ADDR)
+#define MONSTER_COUNT 0x6650a8
 
 #define MON_TARGETS ((uint32_t *) 0x4f6c88)
 
@@ -985,6 +1012,8 @@ enum condition
     COND_DRUNK = 4,
     COND_INSANE = 5,
     COND_DISEASED_GREEN = 7,
+    COND_POISONED_RED = 10,
+    COND_DISEASED_RED = 11,
     COND_PARALYZED = 12,
     COND_UNCONSCIOUS = 13,
     COND_DEAD = 14,
@@ -1237,6 +1266,10 @@ struct __attribute__((packed)) event2d
 #define ICONS_LOD ((void *) ICONS_LOD_ADDR)
 #define DIALOG1 0x507a3c
 #define DIALOG2 0x507a40
+#define PARTY_X 0xacd4ec
+#define PARTY_Y 0xacd4f0
+#define PARTY_Z 0xacd4f4
+#define PARTY_DIR 0xacd4f8
 #define PARTY_GOLD 0xacd56c
 // Pointers for images in the shop window: [0] = background, [1+] = wares.
 #define SHOP_IMAGES 0xf8afe4
@@ -1374,6 +1407,13 @@ static int (*random)(void) = (funcptr_t) 0x4caac2;
 static int __thiscall (*save_file_to_lod)(void *lod, const void *header,
                                           void *file, int unknown)
     = (funcptr_t) 0x461b85;
+static int __thiscall (*generate_artifact)(struct item *buffer)
+    = (funcptr_t) 0x4505f8;
+static void __fastcall (*summon_monster)(int id, int x, int y, int z)
+    = (funcptr_t) 0x4bbec4;
+static int __thiscall (*dir_cosine)(void *this, int dir)
+    = (funcptr_t) 0x402cae;
+#define COSINE_THIS ((void *) 0x56c680)
 static int __thiscall (*get_map_index)(struct mapstats_item *mapstats,
                                        char *filename) = (funcptr_t) 0x4547cf;
 static void (*on_map_leave)(void) = (funcptr_t) 0x443fb8;
@@ -1490,6 +1530,11 @@ static void __fastcall (*change_bit)(void *bits, int bit, int set)
 static void (*restock_books)(void) = (funcptr_t) 0x4bc838;
 static void __fastcall (*message_dialog)(int event, int label, int type)
     = (funcptr_t) 0x4451cb;
+// These are really script command IDs, but message_dialog() also uses them.
+#define MESSAGE_QUESTION 26
+#define MESSAGE_SIMPLE 33
+// To distinguish our prompts/etc. from genuine script commands.
+#define MESSAGE_MARKER 0xd00d
 static void __thiscall (*draw_background)(void *this, int x, int y,
                                           void *image) = (funcptr_t) 0x4a5e42;
 #define DRAW_IMAGE_THIS 0xdf1a68
@@ -1499,6 +1544,8 @@ static void __fastcall (*set_mouse_mask)(int *buffer, void *image, int id)
     = (funcptr_t) 0x40f936;
 static int *__thiscall (*get_mouse_coords)(void *this, int *buffer)
     = (funcptr_t) 0x469c3d;
+static void __thiscall (*randomize_item)(void *this, int level, int type,
+                                         void *item) = (funcptr_t) 0x45664c;
 
 //---------------------------------------------------------------------------//
 
@@ -1850,7 +1897,7 @@ static int __thiscall is_immune(struct player *player, unsigned int element)
     case MAGIC:
         if (has_item_in_slot(player, WITCHBANE, SLOT_AMULET)
             || (player->class & -4) == CLASS_KNIGHT
-               && byte(NPC_ADDR + HORSE_AVLEE * 76 + 8) & NPC_HIRED)
+                && byte(NPC_ADDR + HORSE_AVLEE * 76 + 8) & NPC_HIRED)
             result |= 1;
         break;
       }
@@ -3621,7 +3668,7 @@ static void __thiscall brew_if_possible(struct player *player, int potion)
     struct item brewn_potion = { .id = potion, .flags = IFLAGS_ID,
                                  .bonus = buffer[best_brew].power };
     add_mouse_item(PARTY_BIN, &brewn_potion);
-        show_face_animation(player, ANIM_MIX_POTION, 0); // successful brew
+    show_face_animation(player, ANIM_MIX_POTION, 0); // successful brew
 }
 
 //Defined below.
@@ -3725,6 +3772,9 @@ static void __declspec(naked) drink_swift_potion(void)
       }
 }
 
+// Cannot raise base PC stats higher than this.
+#define NATURAL_STAT_LIMIT 255
+
 // Let the pure attribute black potions give bonus equal to their power,
 // instead of a fixed +50.  This adds a strategic dilemma: do you drink it
 // as soon as you find it and enjoy a smaller bonus right now, or wait until
@@ -3768,10 +3818,10 @@ static void __declspec(naked) pure_potions_power(void)
         ret 4
         has_power:
         add dx, word ptr [esi+188+ecx*4] ; base attribute
-        test dh, dh ; can`t raise higher than 255
-        jz not_above_limit
-        mov dx, 255
-        not_above_limit:
+        cmp dx, NATURAL_STAT_LIMIT
+        jle ok
+        mov dx, NATURAL_STAT_LIMIT
+        ok:
         mov word ptr [esi+188+ecx*4], dx
         ret
       }
@@ -3978,49 +4028,6 @@ static void load_wom_barrels(void)
         fread(MAP_VARS + 75, 1, WOM_BARREL_CNT, file);
 }
 
-// Make the genie lamps give +5 to +20 to stats instead of +1 to +4.
-static void __declspec(naked) lamp_quadruple(void)
-{
-    asm
-      {
-        mov eax, dword ptr [0xacd54c] ; week of month
-        lea eax, [eax*4+eax+4]
-        ret
-      }
-}
-
-// Put Intellect and Personality on the same month to fit.
-static void __declspec(naked) lamp_int_or_per(void)
-{
-    asm
-      {
-        test dword ptr [0xacd550], 1 ; day of month
-        jz per
-        push 0x4682a4
-        ret
-        per:
-        mov ecx, dword ptr [0x507a00] ; "personality"
-        mov dword ptr [ebp-8], ecx
-        push 0x4682b0
-        ret
-      }
-}
-
-// Shift the base stat names according to the change.
-static void __declspec(naked) lamp_stat_name(void)
-{
-    asm
-      {
-        mov ecx, eax
-        cmp ecx, 2
-        jb okay
-        inc ecx
-        okay:
-        mov ecx, dword ptr [0x5079f8+ecx*4] ; replaced code
-        ret
-      }
-}
-
 // Add a random item type that only generates robes (for shops).
 // Also here: sulfur-only item type for gogs.
 static void __declspec(naked) rnd_robe_type(void)
@@ -4182,6 +4189,168 @@ static void __declspec(naked) no_repair_at_distance(void)
       }
 }
 
+// Counter for re-trying the genie wish prompt.
+static int genie_wish_attempts;
+
+// The new logic for genie lamps.
+static void __thiscall genie_lamp(struct player *player)
+{
+    // Simple PRNG that also depends on the current day.
+    unsigned int day = CURRENT_TIME >> 13;
+    day /= 256 * 60 * 24 >> 13; // avoid long division dependency
+    elemdata.genie = (day * 8u + 1664525u) * elemdata.genie + 1013904223u;
+    remove_mouse_item(MOUSE_THIS); // eat lamp
+    char buffer[100];
+    char* status_text = buffer;
+    int good = 0;
+    switch (elemdata.genie >> 28)
+      {
+        case 0:
+            good = 1;
+            if (!elemdata.genie_artifact && !(elemdata.genie & 0xf000000))
+              {
+                struct item artifact;
+                if (generate_artifact(&artifact))
+                  {
+                    add_mouse_item(PARTY_BIN, &artifact);
+                    sprintf(status_text, new_strings[STR_GENIE_ARTIFACT],
+                            ITEMS_TXT[artifact.id].generic_name);
+                    elemdata.genie_artifact = TRUE;
+                    break;
+                  }
+              }
+            byte(0x5b07b8) = 0; // reset message override
+            *(char **) CURRENT_TEXT = new_strings[STR_GENIE_ITEM_INIT];
+            strcpy((char *) STATUS_MESSAGE, new_strings[STR_GENIE_ITEM_ASK]);
+            message_dialog(MESSAGE_MARKER, 2, MESSAGE_QUESTION);
+            genie_wish_attempts = 5;
+            status_text = NULL;
+            break;
+        case 1:
+        case 2:
+        case 3:
+              {
+                int stat = (elemdata.genie >> 19 & 511) % 7;
+                int bonus = (elemdata.genie >> 15 & 15)
+                          + (player->level_base + 3) / 4;
+                int new_stat = player->stats[stat][0] + bonus;
+                if (new_stat > NATURAL_STAT_LIMIT)
+                    new_stat = NATURAL_STAT_LIMIT;
+                player->stats[stat][0] = new_stat;
+                if (stat == STAT_ACCURACY || stat == STAT_SPEED)
+                    stat ^= 1; // names are swapped
+                sprintf(status_text, new_strings[STR_GENIE_STAT], player->name,
+                        bonus, ((char **) 0x5079f8)[stat]); // stat name ptrs
+                good = 2;
+              }
+            break;
+        case 4:
+        case 5:
+        case 6:
+              {
+                // TODO: add "resistance"?
+                static const int res_names[] = { 87, 71, 43, 166, 142, 138 };
+                int resist = (elemdata.genie >> 19 & 511) % 6;
+                char *name = GLOBAL_TXT[res_names[resist]];
+                if (resist > POISON) resist += 3; // there's a gap
+                int bonus = (elemdata.genie >> 15 & 15)
+                          + (player->level_base + 3) / 4;
+                int new_res = player->res_base[resist] + bonus;
+                if (new_res > NATURAL_STAT_LIMIT)
+                    new_res = NATURAL_STAT_LIMIT;
+                player->res_base[resist] = new_res;
+                sprintf(status_text, new_strings[STR_GENIE_STAT], player->name,
+                        bonus, name);
+                good = 2;
+              }
+            break;
+        case 7:
+              {
+                int bonus = (elemdata.genie >> 25 & 7) + 1
+                          + player->level_base * player->level_base / 200;
+                player->skill_points += bonus;
+                sprintf(status_text, new_strings[STR_GENIE_STAT], player->name,
+                        bonus, GLOBAL_TXT[207]);
+                good = 2;
+              }
+            break;
+        case 8:
+        case 9:
+        case 10:
+              {
+                static const int curse[] = { COND_CURSED, COND_INSANE,
+                                             COND_POISONED_RED,
+                                             COND_DISEASED_RED,
+                                             COND_PARALYZED, COND_DEAD,
+                                             COND_STONED, COND_ERADICATED };
+                condition_immunity(player, curse[elemdata.genie>>25&7], FALSE);
+                sprintf(status_text, new_strings[STR_GENIE_CURSE],
+                        player->name);
+                good = -2;
+              }
+            break;
+        case 11:
+              {
+                int tithe = dword(PARTY_GOLD)
+                          / (10 + (elemdata.genie >> 25 & 7));
+                if (tithe < 1000) tithe = 1000;
+                if (tithe > dword(PARTY_GOLD)) tithe = dword(PARTY_GOLD);
+                spend_gold(tithe);
+                sprintf(status_text, new_strings[STR_GENIE_TITHE], tithe);
+                good = -1;
+              }
+            break;
+        case 12:
+        case 13:
+        case 14:
+            if (dword(MONSTER_COUNT) < 500) // check if can summon
+              {
+                int dx = dir_cosine(COSINE_THIS, dword(PARTY_DIR)) >> 8;
+                int dy = dir_cosine(COSINE_THIS, dword(PARTY_DIR) - 512) >> 8;
+                // TODO: check for a wall?
+                summon_monster(68, dword(PARTY_X) + dx, dword(PARTY_Y) + dy,
+                               dword(PARTY_Z));
+                int attitude = elemdata.genie >> 28 & 3;
+                if (attitude)
+                  {
+                    struct map_monster *genie = MAP_MONSTERS
+                                              + dword(MONSTER_COUNT) - 1;
+                    // the party or wizards
+                    genie->ally = attitude > 1 ? 9999 : 32;
+                    genie->bits &= ~0x80000; // not hostile
+                  }
+                status_text = new_strings[STR_GENIE_HOSTILE+attitude];
+                good = attitude > 1 ? 1 : -1;
+                break;
+              }
+            // else fallthrough
+        case 15:
+            status_text = new_strings[STR_GENIE_NOTHING];
+            good = -1;
+            break;
+      }
+    if (good)
+        show_face_animation(player, good > 0 ? ANIM_SMILE : ANIM_DISMAY, 0);
+    if (good > 1 || good < -1)
+        spell_face_anim(SPELL_ANIM_THIS,
+                        good > 0 ? SPELL_ANIM_SWIRLY : SPELL_ANIM_SPARKLES,
+                        player - PARTY);
+    if (status_text)
+        show_status_text(status_text, 2);
+}
+
+// Hook for the above.
+static void __declspec(naked) genie_lamp_hook(void)
+{
+    asm
+      {
+        mov ecx, esi
+        call genie_lamp
+        mov ecx, 0x468e87 ; end of the parent function
+        jmp ecx
+      }
+}
+
 // Misc item tweaks.
 static inline void misc_items(void)
 {
@@ -4210,24 +4379,6 @@ static inline void misc_items(void)
     erase_code(0x456624, 3); // do not multiply ench id
     hook_call(0x456633, prefix_hook, 6);
     hook_call(0x4578cf, compare_special_item_prefix, 5);
-    hook_call(0x46825f, lamp_quadruple, 5);
-    // Change genie lamp rewards alike MM6: first six months are base stats
-    // (Int and Per share a month), last six months are resistances.
-    // We're rewriting a jumptable here.
-    patch_pointer(0x468e92, lamp_int_or_per);
-    // move the rest of base stats one up
-    patch_dword(0x468e96, dword(0x468e9a));
-    patch_dword(0x468e9a, dword(0x468e9e));
-    patch_dword(0x468e9e, dword(0x468ea2));
-    patch_dword(0x468ea2, dword(0x468ea6));
-    hook_call(0x468274, lamp_stat_name, 7);
-    // the code for resistances exists, but it's not in the table
-    patch_dword(0x468ea6, 0x4683f0);
-    patch_dword(0x468eaa, 0x4683de);
-    patch_dword(0x468eae, 0x4683cc);
-    patch_dword(0x468eb2, 0x4683ba);
-    patch_dword(0x468eb6, 0x4683a8);
-    patch_dword(0x468eba, 0x468396);
     hook_call(0x4567db, rnd_robe_type, 7);
     // Let some armor shops sell robes.
     patch_word(0x4f0328, ITEM_TYPE_ROBE); // ei std
@@ -4257,6 +4408,7 @@ static inline void misc_items(void)
     patch_byte(0x41d93c, 0x7f); // ditto (item rmb)
     patch_byte(0x456a06, 0x7e); // jz -> jle (random item)
     patch_byte(0x48c6fa, 0x7f); // also jnz -> jg (pick up item)
+    hook_jump(0x46825f, genie_lamp_hook);
 }
 
 static uint32_t potion_damage;
@@ -5217,7 +5369,7 @@ static void __declspec(naked) spirit_lash_x_chunk(void)
 {
     asm
       {
-        mov eax, dword ptr [0xacd4ec] ; party.x
+        mov eax, dword ptr [PARTY_X]
         nop
         nop
       }
@@ -5228,7 +5380,7 @@ static void __declspec(naked) spirit_lash_y_chunk(void)
 {
     asm
       {
-        mov eax, dword ptr [0xacd4f0] ; party.y
+        mov eax, dword ptr [PARTY_Y]
         nop
         nop
       }
@@ -5239,7 +5391,7 @@ static void __declspec(naked) spirit_lash_z_chunk(void)
 {
     asm
       {
-        mov ecx, dword ptr [0xacd4f4] ; party.z
+        mov ecx, dword ptr [PARTY_Z]
       }
 }
 
@@ -6258,17 +6410,17 @@ static void __declspec(naked) armageddon_distance(void)
     asm
       {
         movsx ecx, word ptr [ebx+142] ; monster.x
-        sub ecx, dword ptr [0xacd4ec] ; party.x
+        sub ecx, dword ptr [PARTY_X]
         jge got_x
         neg ecx
         got_x:
         movsx eax, word ptr [ebx+144] ; monster.y
-        sub eax, dword ptr [0xacd4f0] ; party.y
+        sub eax, dword ptr [PARTY_Y]
         jge got_y
         neg eax
         got_y:
         movsx edx, word ptr [ebx+146] ; monster.z
-        sub edx, dword ptr [0xacd4f4] ; party.z
+        sub edx, dword ptr [PARTY_Z]
         jge got_z
         neg edx
         got_z:
@@ -7171,7 +7323,7 @@ static int __thiscall __declspec(naked) monster_considers_spell(void *this,
 }
 
 // Monsters can now cast turn undead (only on party, only if liches or zombies
-// present) and destoy undead (on any undead PC or monster).
+// present) and destroy undead (on any undead PC or monster).
 // Also here: fix dispel magic on party from non-hostile monsters.
 static int __thiscall consider_new_spells(void *this,
                                           struct map_monster *monster,
@@ -7258,7 +7410,7 @@ static void __fastcall cast_new_spells(int monster, void *vector, int spell,
         for (int i = 0; i < 4; i++)
             if (is_undead(&PARTY[i]) && player_active(&PARTY[i])
                 && !absorb_spell(&PARTY[i], spell, NORMAL))
-                inflict_condition(&PARTY[i], COND_AFRAID, 0);
+                condition_immunity(&PARTY[i], COND_AFRAID, 0);
         make_sound(SOUND_THIS, spell_sound, 0, 0, -1, 0, 0, 0, 0);
       }
     else if (spell == SPL_DESTROY_UNDEAD)
@@ -7350,6 +7502,7 @@ static int replaced_chest;
 static void new_game_data(void)
 {
     memset(&elemdata, 0, sizeof(elemdata));
+    elemdata.version = 400; // v4.0.0
     for (int i = 0; i < EXTRA_CHEST_COUNT; i++)
       {
         elemdata.extra_chests[i].picture = 6;
@@ -7360,6 +7513,7 @@ static void new_game_data(void)
     reputation_index = 0;
     replaced_chest = -1;
     elemdata.last_region = -1;
+    elemdata.genie = random() << 16 | random(); // only 15 bytes per call
 }
 
 // Hook for the above.
@@ -7739,7 +7893,7 @@ static void __declspec(naked) armageddon_hook(void)
     asm
       {
         call armageddon_rep
-        cmp dword ptr [0x6650a8], esi ; replaced code
+        cmp dword ptr [MONSTER_COUNT], esi ; replaced code
         ret
       }
 }
@@ -9865,7 +10019,7 @@ static void __declspec(naked) restrict_flying_down(void)
 {
     asm
       {
-        cmp dword ptr [0xacd4f4], 4000 ; party.z
+        cmp dword ptr [PARTY_Z], 4000
         jl low
         cmp dword ptr [0xacd53c], ecx ; if already flying
         jz fail
@@ -11642,7 +11796,7 @@ static void __declspec(naked) check_backstab(void)
       {
         cmp word ptr [ecx+0x108+SKILL_THIEVERY*2], SKILL_GM
         jae backstab
-        mov edx, dword ptr [0xacd4f8] ; party direction
+        mov edx, dword ptr [PARTY_DIR]
         sub dx, word ptr [esi+154] ; monster direction
         test dh, 6 ; we want no more than +/-512 mod 2048 difference
         jnp quit ; PF == 1 will match 0x000 and 0x110 only
@@ -12932,10 +13086,10 @@ static void __stdcall viper_slow(struct player *player,
 // Save the party position when using Temple in a Bottle.
 static void save_temple_beacon(void)
 {
-    elemdata.x = dword(0xacd4ec);
-    elemdata.y = dword(0xacd4f0);
-    elemdata.z = dword(0xacd4f4);
-    elemdata.direction = dword(0xacd4f8);
+    elemdata.x = dword(PARTY_X);
+    elemdata.y = dword(PARTY_Y);
+    elemdata.z = dword(PARTY_Z);
+    elemdata.direction = dword(PARTY_DIR);
     elemdata.look_angle = dword(0xacd4fc);
     elemdata.map_index = get_map_index(MAPSTATS, CUR_MAP_FILENAME);
     change_bit(QBITS, QBIT_TEMPLE_UNDERWATER,
@@ -13829,7 +13983,7 @@ static inline void new_artifacts(void)
     hook_call(0x45062e, jump_over_specitems, 5);
     // make space on the stack for all possible arts
     const int art_count = LAST_OLD_ARTIFACT - FIRST_ARTIFACT + 1
-                          + LAST_ARTIFACT - FIRST_NEW_ARTIFACT + 1;
+                        + LAST_ARTIFACT - FIRST_NEW_ARTIFACT + 1;
     patch_dword(0x4505fd, art_count * 4);
     patch_dword(0x450628, art_count * -4);
     patch_dword(0x450651, art_count * -4);
@@ -16953,7 +17107,7 @@ static void __thiscall draw_eradication(struct map_monster *monster,
                                         uint32_t *sprite_params)
 {
     double scale = (monster->spell_buffs[MBUFF_MASS_DISTORTION].expire_time
-                   - dword(0x50ba5c) /* anim timer */) / (double) ERAD_TIME;
+                    - dword(0x50ba5c) /* anim timer */) / (double) ERAD_TIME;
     sprite_params[0] = sprite_params[0] * scale; // sprite width
     sprite_params[1] = sprite_params[1] * scale; // sprite height
 }
@@ -17004,7 +17158,7 @@ static int __thiscall get_erad_mon_z(struct map_monster *monster)
         || !(monster->mod_flags & MMF_ERADICATED))
         return 0;
     int time = monster->spell_buffs[MBUFF_MASS_DISTORTION].expire_time
-               - dword(0x50ba5c); // anim timer
+             - dword(0x50ba5c); // anim timer
     if (time <= 0)
         monster->ai_state = AI_REMOVED; // no corpse
     return (1.0 - time / (double) ERAD_TIME) * 0.8 * monster->height;
@@ -17348,7 +17502,7 @@ static int __thiscall maybe_cover_ally(struct player *player)
             struct items_txt_item *data = &ITEMS_TXT[shield->id];
             if (!(shield->flags & IFLAGS_BROKEN) && data->skill == SKILL_SHIELD
                 && (skill & SKILL_MASK) + data->mod1_dice_count + data->mod2
-                   > random() % 100)
+                    > random() % 100)
               {
                 int new_ac = get_ac(PARTY + i);
                 if (new_ac > ac)
@@ -17405,7 +17559,7 @@ static int __thiscall absorb_spell(struct player *player, int spell, int rank)
             return FALSE;
         struct item *armor = &player->items[body-1];
         if (armor->flags & IFLAGS_BROKEN
-                || ITEMS_TXT[armor->id].skill != SKILL_LEATHER)
+            || ITEMS_TXT[armor->id].skill != SKILL_LEATHER)
             return FALSE;
         int skill = get_skill(player, SKILL_LEATHER);
         if (skill < SKILL_MASTER || (skill & SKILL_MASK) <= random() % 100)
@@ -18066,7 +18220,7 @@ static void __stdcall kill_checks(struct player *player,
             int new_player = player - PARTY + 1;
             // these are the animtime counters for turn-based/normal mode
             int new_time = dword(dword(0xacd6b4) ? 0x50ba5c : 0x50ba84)
-                           - proj->age;
+                         - proj->age;
             if (new_player == bow_kill_player && new_time == bow_kill_time
                 && check_bit(QBITS, QBIT_BOW_GM_QUEST_ACTIVE)
                 && !check_bit(QBITS, QBIT_BOW_GM_QUEST))
@@ -18141,7 +18295,7 @@ static void meditation_quest(void)
     if (check_bit(QBITS, QBIT_MEDITATION_GM_QUEST_ACTIVE)
         && !check_bit(QBITS, QBIT_MEDITATION_GM_QUEST)
         && !uncased_strcmp(CUR_MAP_FILENAME, MAP_MOUNT_NIGHON)
-        && dword(0xacd4f4) >= 7999) // z coord (only the volcano is that high)
+        && dword(PARTY_Z) >= 7999) // only the volcano is that high
       {
         evt_set(PARTY, EVT_QBITS, QBIT_MEDITATION_GM_QUEST);
         // make the quest book blink, and also sparkles
@@ -20586,6 +20740,7 @@ static int order_message_type = 0;
 // Used just below.
 static char order_message_buffer[100];
 
+
 // Do a prompt when the reply is clicked.
 // Also here: draw the order's result and materials.
 // Also also: check the current order ready status.
@@ -20673,7 +20828,9 @@ static void __declspec(naked) query_order(void)
         mov eax, dword ptr [new_strings+STR_ORDER_READY*4]
         mov dword ptr [CURRENT_TEXT], eax
         simple_message:
-        push 2 ; another new marker
+        push MESSAGE_SIMPLE
+        xor edx, edx
+        inc edx
         jmp message
         new_order:
         cmp dword ptr [order_message_type], 1
@@ -20686,8 +20843,10 @@ static void __declspec(naked) query_order(void)
         push STATUS_MESSAGE
         call dword ptr ds:strcpy_ptr
         add esp, 8
-        push 41 ; our marker for dialog param
+        push MESSAGE_QUESTION
+        xor edx, edx
         message:
+        mov ecx, MESSAGE_MARKER
         call dword ptr ds:message_dialog
         jmp skip
         not_query:
@@ -20842,23 +21001,8 @@ static void __declspec(naked) query_order(void)
       }
 }
 
-// Treat our dialog param 41 same as 26, i.e. do the prompt.
-static void __declspec(naked) enable_order_prompt(void)
-{
-    asm
-      {
-        cmp dword ptr [eax+28], 26 ; replaced code
-        je ok
-        cmp dword ptr [eax+28], 41 ; our param
-        je ok
-        mov dword ptr [esp], 0x44519a ; replaced jump
-        ok:
-        ret
-      }
-}
-
 // Revert a MM7Patch change that enables Fly and WWalk icons
-// in the message screen (but only for our order prompt and shop messages).
+// in the message screen, but only if we're not in the main screen.
 static void __declspec(naked) disable_prompt_spell_icons(void)
 {
     asm
@@ -20866,13 +21010,7 @@ static void __declspec(naked) disable_prompt_spell_icons(void)
         mov eax, dword ptr [CURRENT_SCREEN] ; replaced code
         cmp eax, 19
         jne skip
-        mov ecx, dword ptr [MESSAGE_DIALOG]
-        cmp dword ptr [ecx+28], 41 ; shop prompt
-        je disable
-        cmp dword ptr [ecx+28], 2 ; shop message
-        jne skip
-        disable:
-        mov eax, 13 ; house screen id
+        mov eax, dword ptr [0x5067f8] ; old screen
         skip:
         ret
       }
@@ -21309,25 +21447,29 @@ static int verify_item(void)
 
 // When the prompt is filled or otherwise exited, parse it.
 // Also here: return to main conversation after order result message.
+// Also also: gift a genie-wished item (reuses the prompt code).
 static void __declspec(naked) complete_order_prompt(void)
 {
     asm
       {
-        cmp dword ptr [ecx+28], 41 ; our param
-        je ok
-        cmp dword ptr [ecx+28], 2 ; our second param, for result text
-        jne skip
+        mov eax, dword ptr [0x590f14] ; replaced code
+        cmp dword ptr [0x5c3298], MESSAGE_MARKER
+        jne quit
+        cmp dword ptr [0x5c329c], 2 ; this is for genie wishes
+        je no_exit
         ok:
         push 0
         push 0
         push ACTION_EXIT
         mov ecx, ACTION_THIS_ADDR
         call dword ptr ds:add_action
-        mov ecx, dword ptr [MESSAGE_DIALOG]
-        cmp dword ptr [ecx+28], 2 ; exit if just message
+        no_exit:
+        cmp dword ptr [0x5c329c], 1 ; exit if just message
         je no_item
+        cmp dword ptr [0x5c329c], 2
+        je genie
         mov ecx, STATUS_MESSAGE
-        cmp dword ptr [ecx], 0
+        cmp byte ptr [ecx], 0
         jz no_item
         call parse_item
         test eax, eax
@@ -21345,12 +21487,11 @@ static void __declspec(naked) complete_order_prompt(void)
         mov ecx, ACTION_THIS_ADDR
         call dword ptr ds:add_action
         no_item:
-        mov dword ptr [esp], 0x445321 ; skip event code
-        mov ecx, dword ptr [MESSAGE_DIALOG] ; restore
         and dword ptr [MESSAGE_DIALOG], 0 ; we skip over this
         skip:
-        mov eax, 0x41c213 ; replaced call
-        jmp eax
+        mov dword ptr [esp], 0x445321 ; skip event code
+        quit:
+        ret
         bad_type:
         inc eax
         bad_parse:
@@ -21358,29 +21499,55 @@ static void __declspec(naked) complete_order_prompt(void)
         mov dword ptr [order_message_type], eax
         push CONV_QUERY_ORDER
         jmp reenter
-      }
-}
-
-// Do not abort the prompt on pressing space.
-// This actually overwrites an MM7Patch hook which only checked for 26.
-static void __declspec(naked) prompt_space_no_exit(void)
-{
-    asm
-      {
-        cmp eax, 19 ; replaced code
-        jne skip
-        mov eax, dword ptr [MESSAGE_DIALOG]
+        refused_wish:
+#ifdef __clang__
+        mov eax, offset order_result
+        push eax
+#else
+        push offset order_result
+#endif
+        push 0
+        push 6
+        mov ecx, ITEMS_TXT_ADDR - 4
+        call dword ptr ds:randomize_item
+        mov ecx, dword ptr [new_strings+STR_GENIE_ITEM_DEFAULT*4]
+        jmp give_item
+        genie:
+        mov ecx, STATUS_MESSAGE
+        cmp byte ptr [ecx], 0
+        jz refused_wish
+        call parse_item
         test eax, eax
-        jz quit
-        mov eax, dword ptr [eax+28]
-        cmp eax, 26 ; evt.question
-        je skip
-        cmp eax, 41 ; our param
-        jne quit
-        skip:
-        add dword ptr [esp], 88 ; replaced jump
-        quit:
-        ret
+        jz bad_wish
+        mov ecx, dword ptr [new_strings+STR_GENIE_ITEM_OK*4]
+        give_item:
+        mov edx, 2
+        call dword ptr ds:show_status_text
+        mov ecx, PARTY_BIN_ADDR
+#ifdef __clang__
+        mov eax, offset order_result
+        push eax
+#else
+        push offset order_result
+#endif
+        call dword ptr ds:add_mouse_item
+        jmp no_item
+        bad_wish:
+        dec dword ptr [genie_wish_attempts]
+        jz refused_wish
+        mov eax, dword ptr [new_npc_text+857*4-790*4]
+        mov dword ptr [CURRENT_TEXT], eax
+        and byte ptr [0x5b07b8], 0 ; reset override
+        push dword ptr [new_strings+STR_GENIE_ITEM_ASK*4]
+        push STATUS_MESSAGE
+        call dword ptr ds:strcpy_ptr
+        add esp, 8
+        and dword ptr [MESSAGE_DIALOG], 0 ; otherwise it won`t reinit
+        push MESSAGE_QUESTION
+        mov edx, 2
+        mov ecx, MESSAGE_MARKER
+        call dword ptr ds:message_dialog
+        jmp skip
       }
 }
 
@@ -21602,23 +21769,6 @@ static void place_order(void)
     add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
 }
 
-// Treat the order result message same as simple message (exit on any click).
-static void __declspec(naked) exit_order_result_prompt(void)
-{
-    asm
-      {
-        jz skip ; replaced jump
-        cmp dword ptr [eax+28], 33 ; replaced code
-        je quit
-        cmp dword ptr [eax+28], 2 ; our message subtype
-        quit:
-        ret
-        skip:
-        inc eax ; clear zf
-        ret
-      }
-}
-
 // If the party is checking on an order and it's not ready yet,
 // prevent the shopkeeper from badmouthing them afterwards.
 static void __declspec(naked) leave_shop_no_response(void)
@@ -21687,11 +21837,9 @@ static inline void shop_changes(void)
     hook_call(0x4b95a3, query_order, 6); // weapon shop
     hook_call(0x4badc3, query_order, 6); // armor shop
     hook_call(0x4b5477, query_order, 6); // magic shop
-    hook_call(0x445128, enable_order_prompt, 6);
     hook_call(0x4416e3, disable_prompt_spell_icons, 5);
-    hook_call(0x4452e4, complete_order_prompt, 5);
+    hook_call(0x4452e9, complete_order_prompt, 5);
     patch_byte(0x4326dd, byte(0x4326dd) + 11); // do not reset screen to 0
-    hook_call(0x4303e2, prompt_space_no_exit, 5);
     patch_byte(0x41c486, 50); // allow longer prompts
     hook_call(0x4bcb97, preload_order_images, 5);
     hook_call(0x4b1a32, right_click_order, 5);
@@ -21703,7 +21851,6 @@ static inline void shop_changes(void)
     patch_dword(0x4b5705, dword(0x4b5705) + 14); // magic (consistency)
     hook_call(0x456ed3, read_std_craft_items, 7);
     hook_call(0x4570e2, read_spc_craft_items, 5);
-    hook_call(0x417596, exit_order_result_prompt, 6);
     hook_call(0x4b1d63, leave_shop_no_response, 10);
 }
 

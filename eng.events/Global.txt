@@ -752,3 +752,15 @@ Global Text
 749	Your order isn't ready yet!  I will need about %d more days.
 750	"Unfortunately, with the influx of contestants I've no time for individual orders right now.  And by the time my schedule clears up, you will likely be gone too, so I'd rather not promise what I cannot deliver!"
 751	Press ORDER to confirm
+752	"The grateful genie gifts you an ancient %s!"
+753	"The grateful genie grants %s %+d to %s!"
+754	"Annoyed at your disturbance, the genie curses %s!"
+755	"The genie fines you %d gold for your impertinence!"
+756	"The genie vanishes without even a word of thanks.  Rude…"
+757	"""You disturbed me, fools!"""
+758	"""You freed me!"""
+759	"""Thank you for freeing me!"""
+760	"The grateful genie promises you any piece of equipment of your choice!"
+761	What do you wish for?
+762	"""Here you go!"""
+763	"""Can't decide?  Here's something anyway!"""

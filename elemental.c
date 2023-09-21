@@ -114,17 +114,6 @@ static void erase_code(uintptr_t address, int length)
     VirtualProtect((LPVOID) address, length, OldProtect, &OldProtect);
 }
 
-// Some tricks to sidestep clang bugs.
-#ifdef __clang__
-#define STATIC
-#define FIX(token) static const int _##token
-#define REF(token) _##token
-#else
-#define STATIC static
-#define FIX(token)
-#define REF(token) token
-#endif
-
 //---------------------------------------------------------------------------//
 
 enum elements
@@ -1435,7 +1424,7 @@ static int __fastcall attack_type(const char *attack)
     return PHYSICAL;
 }
 
-const char sulfur_type[] = "SULFUR";
+static const char sulfur_type[] = "SULFUR";
 
 // Parse sulfur pseudo-item-type drop in monsters.txt.
 static void __declspec(naked) sulfur_item_type(void)
@@ -2087,8 +2076,7 @@ static inline void undead_immunities(void)
     hook_call(0x44a778, unzombie_liches, 5);
 }
 
-STATIC char *new_strings[NEW_STRING_COUNT];
-FIX(new_strings);
+static char *new_strings[NEW_STRING_COUNT];
 
 // We need a few localizable strings, which we'll add to global.txt.
 static void __declspec(naked) read_global_txt(void)
@@ -2760,8 +2748,7 @@ static void __declspec(naked) display_temp_enchant(void)
 }
 
 // New buffer for enchantment data.  Mostly used in spcitems_buffer() below.
-STATIC struct spcitem spcitems[SPC_COUNT];
-FIX(spcitems);
+static struct spcitem spcitems[SPC_COUNT];
 
 // Formats for displaying wand charges or knives.
 static const char nonzero_charges[] = "%s: %u/%u";
@@ -9591,8 +9578,7 @@ static void __declspec(naked) toggle_cook_reply(void)
 }
 
 // Storage for the new NPC text entries.
-STATIC char *new_npc_text[NEW_TEXT_COUNT];
-FIX(new_npc_text);
+static char *new_npc_text[NEW_TEXT_COUNT];
 
 // Print the decription for the applied buff.
 static void __declspec(naked) print_cook_reply(void)
@@ -9609,7 +9595,7 @@ static void __declspec(naked) print_cook_reply(void)
         cook:
         add eax, eax
         add eax, dword ptr [ebx+68] ; ability/dish flag
-        mov ecx, dword ptr [REF(new_npc_text)+810*4-790*4+eax*4] ; decriptions
+        mov ecx, dword ptr [new_npc_text+810*4-790*4+eax*4] ; decriptions
         quit:
         ret
       }
@@ -13452,9 +13438,8 @@ static void __declspec(naked) higher_ethric_drain(void)
 }
 
 // Worn Gadgeteer's Belt data.
-STATIC const int gadgeteers_belt_xy[] = { 530, 185, 533, 171,
+static const int gadgeteers_belt_xy[] = { 530, 185, 533, 171,
                                           532, 214, 535, 210, };
-FIX(gadgeteers_belt_xy);
 static char gadgeteers_belt_gfx[] = "itemgadgv0";
 
 // Draw the new belt on the paperdoll.
@@ -13468,8 +13453,8 @@ static void __declspec(naked) display_new_belt(void)
         ret
         belt:
         mov eax, dword ptr [esp+40] ; body type
-        mov ecx, dword ptr [REF(gadgeteers_belt_xy)+eax*8]
-        mov edx, dword ptr [REF(gadgeteers_belt_xy)+eax*8+4]
+        mov ecx, dword ptr [gadgeteers_belt_xy+eax*8]
+        mov edx, dword ptr [gadgeteers_belt_xy+eax*8+4]
         mov dword ptr [esp+24], ecx
         mov dword ptr [esp+20], edx
         and eax, 1 ; no special dwarf gfx
@@ -13646,12 +13631,7 @@ static void __declspec(naked) mark_guaranteed_artifacts(void)
 {
     asm
       {
-#ifdef __clang__
-        add eax, offset elemdata.artifacts_found - FIRST_ARTIFACT
-        mov byte ptr [eax], 0x80
-#else
         mov byte ptr [elemdata.artifacts_found-FIRST_ARTIFACT+eax], 0x80
-#endif
         cmp dword ptr [ebp+4], 0x45051a ; if called from chest generator
         jne not_chest
         or byte ptr [edi+21], 5 ; flag for mm7patch art refund
@@ -13685,16 +13665,9 @@ static void __declspec(naked) fix_static_chest_items(void)
         cmp eax, LAST_ARTIFACT
         ja ok
         artifact:
-#ifdef __clang__
-        mov edx, offset elemdata.artifacts_found - FIRST_ARTIFACT
-        cmp byte ptr [edx+eax], 0
-        jnz replace
-        mov byte ptr [edx+eax], 0x80
-#else
         cmp byte ptr [elemdata.artifacts_found-FIRST_ARTIFACT+eax], 0
         jnz replace
         mov byte ptr [elemdata.artifacts_found-FIRST_ARTIFACT+eax], 0x80
-#endif
         or byte ptr [ebx+21], 5 ; flag for mm7patch art refund
         ok:
         lea eax, [eax+eax*2]
@@ -14898,8 +14871,8 @@ static void __declspec(naked) hit_qualifier(void)
       {
         pop edx
         mov ecx, dword ptr [critical_hit]
-        cmovz eax, dword ptr [REF(new_strings)+STR_HITS*4+ecx*4]
-        cmovnz eax, dword ptr [REF(new_strings)+STR_SHOOTS*4+ecx*4]
+        cmovz eax, dword ptr [new_strings+STR_HITS*4+ecx*4]
+        cmovnz eax, dword ptr [new_strings+STR_SHOOTS*4+ecx*4]
         push eax
         lea eax, dword ptr [edi+168] ; replaced code
         jmp edx
@@ -14984,7 +14957,7 @@ static void __declspec(naked) display_new_npc_text(void)
         mov eax, dword ptr [NPC_TOPIC_TEXT_ADDR+eax*8-4] ; replaced code
         ret
         new:
-        mov eax, dword ptr [REF(new_npc_text)+eax*4-790*4]
+        mov eax, dword ptr [new_npc_text+eax*4-790*4]
         ret
       }
 }
@@ -15367,10 +15340,9 @@ static void __declspec(naked) check_racial_skill(void)
 }
 
 // Extra pick that replaces Learning for humans.
-STATIC const int added_picks[9] = { SKILL_NONE, SKILL_NONE, SKILL_NONE,
+static const int added_picks[9] = { SKILL_NONE, SKILL_NONE, SKILL_NONE,
                                     SKILL_NONE, SKILL_CHAIN, SKILL_NONE,
                                     SKILL_STAFF, SKILL_AIR, SKILL_NONE };
-FIX(added_picks);
 
 // Substitute the racial skill with the default weapon skill
 // when displaying picked optional skills.  Also don't display Learning
@@ -15391,7 +15363,7 @@ static void __declspec(naked) exclude_racial_skill(void)
         cmp eax, SKILL_LEARNING
         je invert ; this will clear zf
         movzx edx, byte ptr [ecx+0xb9]
-        cmp eax, dword ptr [REF(added_picks)+edx]
+        cmp eax, dword ptr [added_picks+edx]
         je quit
         skip:
         cmp byte ptr [STARTING_SKILLS+ebx+eax], 1 ; replaced code, basically
@@ -15464,11 +15436,10 @@ static void __declspec(naked) preserve_racial_skill(void)
 }
 
 // Which skill picks to replace with the class' default weapon.
-STATIC const int excluded_picks[9] = { SKILL_NONE, SKILL_PERCEPTION,
+static const int excluded_picks[9] = { SKILL_NONE, SKILL_PERCEPTION,
                                        SKILL_SWORD, SKILL_DAGGER, SKILL_NONE,
                                        SKILL_NONE, SKILL_REPAIR,
                                        SKILL_PERCEPTION, SKILL_MERCHANT };
-FIX(excluded_picks);
 
 // In the available skill picks, remove racial skill, add the default
 // weapon skill if the former replaces it, and remove the least useful
@@ -15484,7 +15455,7 @@ static void __declspec(naked) substitute_racial_skill(void)
         je monk
         cmp eax, ebx
         je not_it
-        cmp eax, dword ptr [REF(excluded_picks)+esi]
+        cmp eax, dword ptr [excluded_picks+esi]
         je substitute
         cmp eax, SKILL_BLASTER
         jae skip
@@ -15494,7 +15465,7 @@ static void __declspec(naked) substitute_racial_skill(void)
         monk:
         cmp eax, ebx
         je show
-        cmp eax, dword ptr [REF(excluded_picks)+esi]
+        cmp eax, dword ptr [excluded_picks+esi]
         je not_it
         skip:
         cmp byte ptr [ecx], 1
@@ -15516,7 +15487,7 @@ static void __declspec(naked) substitute_racial_skill(void)
         human:
         cmp eax, ebx
         je not_it
-        cmp eax, dword ptr [REF(added_picks)+esi]
+        cmp eax, dword ptr [added_picks+esi]
         jne skip
         jmp show
       }
@@ -15578,7 +15549,7 @@ static void __declspec(naked) change_racial_skill(void)
         call unshift_human_buttons
         pop eax
         movzx ecx, byte ptr [edi+0xb9]
-        mov edx, dword ptr [REF(added_picks)+ecx]
+        mov edx, dword ptr [added_picks+ecx]
         cmp edx, SKILL_NONE
         je no_extra
         mov word ptr [edi+0x108+edx*2], 0
@@ -15641,7 +15612,7 @@ static void __declspec(naked) change_racial_skill(void)
         cmp byte ptr [STARTING_SKILLS+ecx+edx], 0
         jne not_removed
         movzx ecx, byte ptr [edi+0xb9]
-        mov ecx, dword ptr [REF(excluded_picks)+ecx]
+        mov ecx, dword ptr [excluded_picks+ecx]
         mov word ptr [edi+0x108+ecx*2], 0
         not_removed:
         cmp byte ptr [edi+0xb9], CLASS_MONK
@@ -16113,7 +16084,7 @@ static void __declspec(naked) race_hint(void)
         lea ecx, [ebx+eax]
         lea edi, [ecx+0xa8] ; PC name
         call dword ptr ds:get_race
-        mov eax, dword ptr [REF(new_strings)+STR_HUMANS*4+eax*4]
+        mov eax, dword ptr [new_strings+STR_HUMANS*4+eax*4]
         pop ecx ; restore
         push 0x4174f0
         ret 4
@@ -17061,7 +17032,7 @@ static void __declspec(naked) raise_ench_item_difficulty(void)
         test edx, edx
         jz no_ench
         imul edx, edx, 28
-        mov eax, dword ptr [REF(spcitems)+edx-8] ; value
+        mov eax, dword ptr [spcitems+edx-8] ; value
         cmp eax, 10
         ja spc
         jb ok
@@ -17091,12 +17062,7 @@ static void __declspec(naked) raise_ench_item_difficulty(void)
         dec ecx
         imul ecx, ecx, SKILL_COUNT
         add edx, ecx
-#ifdef __clang__
-        mov ecx, offset elemdata.training ; buggy clang strikes again
-        inc dword ptr [ecx+edx*4] ; (can`t inc training[edx] directly)
-#else
         inc dword ptr [elemdata.training+edx*4] ; should also set the flags
-#endif
         quit:
         ret
       }
@@ -18202,12 +18168,7 @@ static void __declspec(naked) train_disarm(void)
         dec ecx
         imul ecx, ecx, SKILL_COUNT
         add ecx, SKILL_DISARM_TRAPS
-#ifdef __clang__
-        mov edx, offset elemdata.training ; work around clang bugs
-        inc dword ptr [edx+ecx*4]
-#else
         inc dword ptr [elemdata.training+ecx*4]
-#endif
         ret
       }
 }
@@ -18223,12 +18184,7 @@ static void __declspec(naked) train_id_monster(void)
         dec ecx
         imul ecx, ecx, SKILL_COUNT
         add ecx, SKILL_IDENTIFY_MONSTER
-#ifdef __clang__
-        mov edx, offset elemdata.training ; work around clang bugs
-        inc dword ptr [edx+ecx*4]
-#else
         inc dword ptr [elemdata.training+ecx*4]
-#endif
         skip:
         cmp dword ptr [0x507a70], ebx ; replaced code
         ret
@@ -19640,8 +19596,7 @@ static void __declspec(naked) remember_empty_reply(void)
 // Used to hold the buy horse reply w/o formatting.
 static char *horse_buffer[100];
 // Used below.
-STATIC const int horses_cost[9] = { 1000, 2000, 3000, 3000, 4000, 4000, 5000 };
-FIX(horses_cost);
+static const int horses_cost[9] = { 1000, 2000, 3000, 3000, 4000, 4000, 5000 };
 
 // Replace the empty reply with ours, for buying a horse, if applicable.
 static void __declspec(naked) add_horse_reply(void)
@@ -19661,7 +19616,7 @@ static void __declspec(naked) add_horse_reply(void)
         jae skip
         sub eax, 54 ; first stables
         jb skip ; just in case
-        push dword ptr [REF(horses_cost)+eax*4]
+        push dword ptr [horses_cost+eax*4]
         push dword ptr [new_strings+STR_BUY_HORSE*4]
 #ifdef __clang__
         mov eax, offset horse_buffer
@@ -19728,7 +19683,7 @@ static void __declspec(naked) horse_buy_action(void)
         horse:
         mov ecx, dword ptr [0x507a40] ; parent dialog
         mov edi, dword ptr [ecx+28] ; house id
-        mov ecx, dword ptr [REF(horses_cost)+edi*4-54*4]
+        mov ecx, dword ptr [horses_cost+edi*4-54*4]
         cmp ecx, dword ptr [0xacd56c] ; party gold
         jbe buy
         mov dword ptr [esp], 0x4b6a32 ; not enough gold branch
@@ -19759,7 +19714,7 @@ static void __declspec(naked) horse_rmb(void)
         jb skip
         cmp eax, HORSE_AVLEE ; last horse
         ja skip
-        mov eax, dword ptr [REF(new_npc_text)+57*4+eax*4-HORSE_HARMONDALE*4]
+        mov eax, dword ptr [new_npc_text+57*4+eax*4-HORSE_HARMONDALE*4]
         add dword ptr [esp], 6 ; skip dragon code
         quit:
         ret

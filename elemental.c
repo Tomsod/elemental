@@ -10745,6 +10745,17 @@ static inline void misc_rules(void)
     erase_code(0x433215, 21); // rest of old code
     // Do not reset the current PC on load (we restore saved value instead).
     erase_code(0x45f26f, 41);
+    // Expand the audible sprites array.
+#define SOUNDLEN 125 // more than 127 and it would get tricky
+    static int sound_sprites[SOUNDLEN];
+    patch_byte(0x460e2b, SOUNDLEN); // bounds check
+    patch_byte(0x47f1a3, SOUNDLEN); // ditto
+    patch_pointer(0x460e4f, sound_sprites); // writing
+    patch_pointer(0x47f1c3, sound_sprites); // ditto
+    patch_pointer(0x4ab49d, sound_sprites); // reading
+    // Also decrease the sound radius slightly.
+    patch_dword(0x4ab4e9, 2500); // start
+    patch_dword(0x4ab671, 2500); // stop
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

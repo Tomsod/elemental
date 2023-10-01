@@ -716,7 +716,8 @@ struct __attribute__((packed)) map_chest
     int16_t slots[140];
 };
 
-#define MAP_CHESTS ((struct map_chest *) 0x5e4fd0)
+#define MAP_CHESTS_ADDR 0x5e4fd0
+#define MAP_CHESTS ((struct map_chest *) MAP_CHESTS_ADDR)
 #define EXTRA_CHEST_COUNT 8
 
 // All the stuff I need to preserve across save/loads (except WoM barrels).
@@ -4338,6 +4339,28 @@ static void __declspec(naked) genie_lamp_hook(void)
       }
 }
 
+// ID zero- (or negative) difficulty items when a chest is opened.
+static void __declspec(naked) id_zero_chest_items(void)
+{
+    asm
+      {
+        test byte ptr [MAP_CHESTS_ADDR+esi+2], 4 ; replaced code
+        jnz quit
+        mov eax, dword ptr [ebp-4] ; item + 20
+        mov eax, dword ptr [eax-20]
+        lea eax, [eax+eax*2]
+        shl eax, 4
+        cmp byte ptr [ITEMS_TXT_ADDR+eax+46], 0 ; id difficulty
+        jg skip
+        inc eax ; clear zf
+        quit:
+        ret
+        skip:
+        xor eax, eax ; set zf
+        ret
+      }
+}
+
 // Misc item tweaks.
 static inline void misc_items(void)
 {
@@ -4396,6 +4419,7 @@ static inline void misc_items(void)
     patch_byte(0x456a06, 0x7e); // jz -> jle (random item)
     patch_byte(0x48c6fa, 0x7f); // also jnz -> jg (pick up item)
     hook_jump(0x46825f, genie_lamp_hook);
+    hook_call(0x420304, id_zero_chest_items, 7);
 }
 
 static uint32_t potion_damage;
@@ -13858,7 +13882,7 @@ static void __declspec(naked) mark_guaranteed_artifacts(void)
 
 // Mark all static artifacts added by the mod as refundable.
 // If a chest would have an artifact that's already generated,
-// replace it with a random one.  Also, ID all difficulty 0 items.
+// replace it with a random one.
 static void __declspec(naked) fix_static_chest_items(void)
 {
     asm
@@ -13873,24 +13897,18 @@ static void __declspec(naked) fix_static_chest_items(void)
         not_random:
         mov eax, dword ptr [ebx]
         cmp eax, FIRST_ARTIFACT
-        jb ok
+        jb skip
         cmp eax, LAST_OLD_ARTIFACT
         jbe artifact
         cmp eax, FIRST_NEW_ARTIFACT
-        jb ok
+        jb skip
         cmp eax, LAST_ARTIFACT
-        ja ok
+        ja skip
         artifact:
         cmp byte ptr [elemdata.artifacts_found-FIRST_ARTIFACT+eax], 0
         jnz replace
         mov byte ptr [elemdata.artifacts_found-FIRST_ARTIFACT+eax], 0x80
         or byte ptr [ebx+21], 5 ; flag for mm7patch art refund
-        ok:
-        lea eax, [eax+eax*2]
-        shl eax, 4
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+46], 0 ; id difficulty
-        jl skip
-        or byte ptr [ebx+20], IFLAGS_ID
         skip:
         mov dword ptr [esp], 0x45051e ; replaced jump adress
         quit:

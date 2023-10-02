@@ -10,6 +10,9 @@ rawset(Game.NPCGreet, "?ptr", mem.u4[0x476e3a] - 8)
 -- Not a big deal, but still better to inform MMExtension about it.
 rawset(Party.ArtifactsFound, "?ptr", mem.u4[0x4568f7])
 
+-- The audible sprite IDs are relocated as well (vanilla array was too short).
+rawset(Map.SoundSprites, "?ptr", mem.u4[0x4ab49d])
+
 -- The mod overwrites some exe data that is exposed by MMExtension tables.
 -- Since pre-existing tables would take higher precedence than elemental.dll,
 -- and outright deleting them is impossible as the mod is distributed

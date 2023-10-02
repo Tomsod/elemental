@@ -1,6 +1,19 @@
 This is the change log for the Elemental Mod.  It's quite descriptive,
 and can be viewed as the chief source of information on the mod's features.
 
+== Elemental Mod ver. 3.1.2 ==
+
+Another tiny release with some bugfixes accumulated while writing 4.0.
+
+* Lloyd's Beacon recall counter is now incremented after the autosave.
+* Elixir of Life scrolls and spellbooks are now named as such.
+* Fix AC bonuses from skills broken by some 3.1 code.
+* Vanilla fix: now more than 9 sprites per map can emit sounds.
+* Also the distance at which these sounds play is now decreased a bit.
+* Fix the 3.0 bug that caused some chest items to be pre-identified.
+* A bunch of text typo fixes, including incorrect Ethric's Staff description.
+
+
 == Elemental Mod ver. 3.1.1 ==
 
 A really tiny release that fixes a handful of bugs before I start on 4.0.

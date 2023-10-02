@@ -110,7 +110,7 @@ v3.0 fix: temple in a bottle area now no longer respawns.
 v3.0 fix: Antique items were too difficult to ID and repair.
 v3.0 fix: Russian Flattener name was too long, causing glithes in shops.
 Fix: zombie faces no longer become stuck on total party kill.
-Fix: too much Armageddon could displace flying monster beyond party reach.
+Fix: too much Armageddon could displace flying monsters beyond party reach.
 v3.0 fix: sometimes monsters were turning around even when not afraid.
 Fix: teacher-type NPCs granted extra 9% to XP for PCs without Learning.
 Fix: specitems no longer have zero repair difficulty.

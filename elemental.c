@@ -5987,11 +5987,9 @@ static void __declspec(naked) lloyd_increase_recall_count(void)
 {
     asm
       {
-        cmp byte ptr [0x5063ec], bl ; replaced code
-        jz skip
+        mov eax, dword ptr [ACTION_THIS_ADDR] ; replaced code
         mov ecx, dword ptr [esp+20] ; pc
         inc byte ptr [ecx+0x1b3b] ; unused counter
-        skip:
         ret
       }
 }
@@ -6571,7 +6569,7 @@ static inline void misc_spells(void)
     hook_call(0x44b2b4, update_new_tp_region, 8);
     hook_jump(0x4339f9, town_portal_from_main_screen);
     hook_call(0x4339d0, town_portal_without_dialog, 5);
-    hook_call(0x433612, lloyd_increase_recall_count, 6);
+    hook_call(0x4336ee, lloyd_increase_recall_count, 5);
     hook_call(0x42b570, lloyd_starting_tab, 5);
     hook_call(0x433433, lloyd_disable_recall, 5);
     hook_call(0x4737f2, reset_lava_walking, 7);

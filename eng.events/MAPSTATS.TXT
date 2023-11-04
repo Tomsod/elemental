@@ -77,3 +77,4 @@
 74	The Strange Temple	nwc.blv	0	0	1	672	7	10	0	12	6	4	0	0	0	0	0	0	1	1-3	0	0	3	1-3	0	0	1	1-3	5	STONEROOM	0
 75	The Small House	mdt15.blv	0	0	20	672	7	10	0	20	10	6	0	0	0	0	zBlasterGuy	zBlasterGuy	1	1	Rat	Rat	3	1-3	0	0	1	1-3	19	STONEROOM	0
 76	The Arena	d05.blv	0	0	1	0	7	10	0	1	1	1	0	0	0	0	0	0	1	1-3	0	0	1	1-3	0	0	1	1-3	8	ARENA	0
+77	Altar of Wishes	genie.blv	0	0	12	672	7	10	6	12	6	4	25	40	30	30	Genie	Genie	3	2-3	Elemental Air	Elemental Air	4	3-5	Elemental Fire	Elemental Fire	3	3-5	15	STONEROOM	0		

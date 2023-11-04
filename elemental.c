@@ -1051,6 +1051,7 @@ struct __attribute__((packed)) mapstats_item
 #define MAP_WALLS_OF_MIST ((const char *) MAP_WALLS_OF_MIST_ADDR)
 #define MAP_MOUNT_NIGHON "out10.odm"
 #define MAP_SHOALS ((const char *) 0x4e4648) // out15.odm
+static const char map_altar_of_wishes[] = "genie.blv";
 
 // Indoor or outdoor reputation for the loaded map.
 #define CURRENT_REP dword(dword(0x6be1e0) == 2 ? 0x6a1140 : 0x6be514)
@@ -7611,7 +7612,7 @@ static void __declspec(naked) save_game_hook(void)
 static void load_map_rep(void)
 {
     reputation_index = 0;
-    int map_index = get_map_index(MAPSTATS, CUR_MAP_FILENAME);
+    int map_index = get_map_index(MAPSTATS, CUR_MAP_FILENAME) - 1;
     int group = MAPSTATS[map_index].reputation_group;
     reputation_group[0] = group;
     CURRENT_REP = elemdata.reputation[group];
@@ -9030,10 +9031,7 @@ static int __stdcall check_skill(int player, int skill, int level, int mastery)
         case SKILL_MERCHANT:
         case SKILL_IDENTIFY_MONSTER:
             if (current_mastery == GM)
-              {
-                current_skill = 10000;
-                break;
-              }
+                return TRUE;
             /* else fall through */
         // these cap at x3 now
         case SKILL_BODYBUILDING:
@@ -13112,7 +13110,7 @@ static void save_temple_beacon(void)
     elemdata.z = dword(PARTY_Z);
     elemdata.direction = dword(PARTY_DIR);
     elemdata.look_angle = dword(0xacd4fc);
-    elemdata.map_index = get_map_index(MAPSTATS, CUR_MAP_FILENAME);
+    elemdata.map_index = get_map_index(MAPSTATS, CUR_MAP_FILENAME) - 1;
     change_bit(QBITS, QBIT_TEMPLE_UNDERWATER,
                !uncased_strcmp(CUR_MAP_FILENAME, MAP_SHOALS));
 }
@@ -21802,6 +21800,61 @@ static inline void shop_changes(void)
     hook_call(0x4b1d63, leave_shop_no_response, 10);
 }
 
+// Allow non-bouncing projectiles to trigger facets in Altar of Wishes.
+// Necessary for the room 1 tic-tac-toe puzzle.
+static void __declspec(naked) genie_projectile_trigger(void)
+{
+    asm
+      {
+        mov eax, 0x46bffe ; replaced call (returns 0 if proj destroyed)
+        call eax ; ditto
+        test eax, eax ; the check after the hook
+        jnz quit
+        push CUR_MAP_FILENAME_ADDR
+#ifdef __clang__
+        mov eax, offset map_altar_of_wishes
+        push eax
+#else
+        push offset map_altar_of_wishes
+#endif
+        call dword ptr ds:uncased_strcmp
+        add esp, 8
+        inc eax ; -1 to 1 -> 0 to 2
+        and eax, 1 ; 2 -> 0
+        quit:
+        ret
+      }
+}
+
+// Add one extra map to game data structures, using the empty 0th element.
+static inline void one_more_map(void)
+{
+    erase_code(0x453fe9, 1); // mapstats.txt parse: start from 0
+    patch_byte(0x4547e1, 4); // get_map_index function: start from 0
+    patch_byte(0x454802, 0x7e); // jl -> jle (check last map)
+    erase_code(0x476be1, 9); // npcdist.txt: don't fill map 0 with 10's
+    patch_byte(0x476bc4, 0x7f); // jge -> jg (parse one more column)
+    patch_dword(0x476bd9, dword(0x476bd9) - 64); // start from 0th map
+    patch_dword(0x4774f1, dword(0x4774f1) - 64); // reading npcdist
+    patch_dword(0x47750a, dword(0x47750a) - 64); // ditto
+    // addresses taken from an MMExt script, with get_map_index calls removed
+    static const int mapstats[] = {
+        0x410dbb, 0x410dcb, 0x410fb2, 0x413c7a, 0x413f97, 0x41cc24, 0x42045c,
+        0x42ec1c, 0x43331b, 0x43349c, 0x4334cd, 0x4334fb, 0x433969, 0x433b9f,
+        0x433c1b, 0x4340d8, 0x438d72, 0x438e4e, 0x444577, 0x44496f, 0x4449d7,
+        0x444bcb, 0x444d60, 0x444f02, 0x444f80, 0x448d7f, 0x450275, 0x4603c7,
+        0x460b96, 0x47a404, 0x49595c, 0x497f94, 0x4abfe0, 0x4ac0d1, 0x4b2a1f,
+        0x4b3518, 0x4b41ea, 0x4b69df, 0x4b6a91, 0x4b6de2, 0x4be05a };
+    for (int idx = 0; idx < sizeof(mapstats) / sizeof(int); idx++)
+        patch_dword(mapstats[idx], dword(mapstats[idx]) - 68); // start from 0
+    // map track reference at 0x4abf71 is tricky as it's overriden by mmext
+    patch_word(0x4abf62, 0x9048); // dec eax; nop (adjust map index)
+    patch_byte(0x4abf64, 0x7c); // jl ... (now "no map found" is -1)
+    patch_byte(0x433b8a, 78); // update map count (some map change code)
+    patch_byte(0x497f8a, 78); // ditto (perception glow check)
+    hook_call(0x47184c, genie_projectile_trigger, 5);
+}
+
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
                     LPVOID const reserved)
 {
@@ -21849,6 +21902,7 @@ BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
         horses();
         balance_tweaks();
         shop_changes();
+        one_more_map();
       }
     return TRUE;
 }

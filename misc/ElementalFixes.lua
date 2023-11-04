@@ -31,3 +31,5 @@ for table in path.find("Data/Tables/*.txt") do
     end
 end
 
+-- Disable MMExt v2.3 map array extender (we handle it ourselves).
+rawset(Game.MapStats, "count", 78)

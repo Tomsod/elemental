@@ -222,7 +222,7 @@
 220	30	Dungeon Ent	10	157	Туннели в Эофол	Placeholder		0	0	0	0	1.5						6	18	0	0	0	0
 221	31	Dungeon Ent	10	151	Гора Громовой Кулак	Placeholder		0	0	0	0	1.5						6	18	0	0	0	0
 222	32	Dungeon Ent	10	151	Туннели Нигона	Placeholder		0	0	0	0	1.5						6	18	0	0	0	0
-223	1	Hive Ent	1	1	Placeholder	Placeholder		0	0	0	0	1.5						6	18	0	0	0	0																																										
+223	33	Dungeon Ent	6	163	Алтарь желаний
 224	1	House 224	1	73	Особняк Донны Вирит			0	0	0	0	1.5																																																					
 225	2	House 225	1	74	Дом Мии Люсиль			0	0	0	0	1.5																																																					
 226	3	House 226	1	75	Особняк Валандира			0	0	0	0	1.5																																																					

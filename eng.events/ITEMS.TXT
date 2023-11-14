@@ -542,7 +542,7 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 540	carmine	Lady Carmine's Dagger	1500	Weapon	Dagger	2d2	4	Special	-8	Dagger	5	Assassins'	0	4	75	Nicks and scratches on this nasty blade show that it has seen plenty of action.  
 541	villblad	Villain's Blade	2000	Weapon	Sword	3d3	13	Special	-16	Sword	1	Vampiric	0	5	128	"William Setag would frequently slay prisoners with this blade to heal his own minor cuts and bruises.  The weapon is cold to the touch, and tingles in your hand."
 542	perfebow	The Perfect Bow	400	Missile	Bow	5d2	6	Special	-12	Bow	12	0	0	12	40	"Quest Item:  Although of high quality, this bow doesn't seem to perform nearly as well as it should.  The string is too hard to pull back, it doesn't remain steady enough while aiming, and it seems a little off-balance."
-543	perfebow	The Perfect Bow	4000	Missile	Bow	5d2	12	Special	-20	Bow	12	Blessed	0	12	40	"This bow seems to know its wielder's strength and adjusts itself accordingly.  You never have to struggle to pull the string back, and it's always easy to hold your shot until you're ready to fire.  Dozens of small advantages like this in the design of the bow make for the finest weapon of its type you have ever seen."
+543	perfebow	The Perfect Bow	4000	Missile	Bow	5d2	12	Artifact	-25	Bow	12	0	0	12	40	"(Swift, critical hit chance +25%) This bow seems to know its wielder's strength and adjusts itself accordingly.  You never have to struggle to pull the string back, and it's always easy to hold your shot until you're ready to fire.  Dozens of small advantages like this in the design of the bow make for the finest weapon of its type you have ever seen."
 544	item344	Shadow's Mask	2000	Helm	Misc	2	10	Artifact	-15	Helm	25	0	0	0	0	"(Thievery skill +3, Disarm skill +3, conceals wearer's identity from monsters) A mask designed to hide the identity of the wearer, it has also been magically enhanced to offer good protection and to aid thiefly pursuits."
 545	ghosring	Ghost Ring	2500	Ring	Misc	0	0	Special	-20	Ring	32	of Spirit Magic	0	0	0	An odd ring that feels strangely warm to the touch.  It enhances the wearers connection to the spirit.
 546	fairring	Faerie Ring	1500	Ring	Misc	0	0	Special	-10	Ring	32	of Air Affinity	0	0	0	A rare and very powerful ring made by Faeries.  Few mortals ever see such as this!
@@ -593,8 +593,8 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 591	null	_artifact591	0	0	0	0	0	0	0	_artifact591	0	0	0	0	0	Description here.
 592	null	_artifact592	0	0	0	0	0	0	0	_artifact592	0	0	0	0	0	Description here.
 593	null	_artifact593	0	0	0	0	0	0	0	_artifact593	0	0	0	0	0	Description here.
-594	perfebow	The Perfect Bow	4000	Missile	Bow	5d2	12	Special	-20	Bow	12	Cursed	0	12	40	"This bow seems to know its wielder's strength and adjusts itself accordingly.  You never have to struggle to pull the string back, and it's always easy to hold your shot until you're ready to fire.  Dozens of small advantages like this in the design of the bow make for the finest weapon of its type you have ever seen."
-595	itemragr	Ring of Aggravate Monster	2000	Ring	Misc	0	0	Special	-8	Ring	32	of Taunting	0	0	0	As soon as you pick this ring up, you feel hundreds of unfriendly stares directed at you.  This item is clearly cursed; you should pawn it to some dupe as soon as you can.		
+594	itemgadg	Sniper's Quiver	4000	Belt	Misc	0	0	Artifact	-25	Belt	28	0	0	0	0	"(Bow skill +8, of Shielding) Once belonged to Malcolm Hawkeye, arguably the greatest Sniper ever.  Arrows in the quiver are exceedingly sharp and always strike true; besides, they magically replenish themselves.  The belt holding the quiver is also enchanted to deflect enemy arrows, as Malcolm was no stranger to sniper duels."
+595	itemragr	Ring of Aggravate Monster	2000	Ring	Misc	0	0	Special	-8	Ring	32	of Taunting	0	0	0	As you pick this ring up, you feel hundreds of unfriendly stares directed at you.  This item is clearly cursed; you should pawn it to some dupe as soon as you can.		
 596	itemtk4	Vampire Knives	2500	Missile	Dagger	1d4	7	Special	-16	Knives	153	of Darkness	0	18	-85	A set of crimson throwing knives found in a vampire crypt.  The blades drain life from their victims, and a new knife appears after every throw, allowing for a constant barrage of attacks.  Using this weapon skillfully, it's almost impossible to die in battle.		
 597	item007	The DeathBlade	666	Weapon2	Sword	4d5	250	Special	-50	Two-Handed Sword	2	of Darkness	0	16	142	For testing only!
 598	itemroba	Robe of the Archmagister	2500	Armor	Misc	1	3	Special	-20	Robe	152	of Water Magic	0	0	0	"This ceremonial robe is used by the Archmagister of the School of Sorcery (currently Thomas Grey) on the official occasions and during certain magic rituals.  To assist in the latter, the fabric is enchanted to improve spells of the Water domain."		
@@ -652,18 +652,18 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 650	item288	Temple in a Bottle	0	N / A	Misc	0	0	1	0	Bottle	127	0	0	0	0	"A strangely shaped small building finely crafted inside a glass bottle.  Something about the bottle beckons you inside.  To use, pick the bottle up and click over the picture of your character in the inventory screen."
 651	item295	Arcomage Deck	0	N / A	Misc	0	0	4	0	Deck	128	0	0	0	0	Quest Item: A deck of fancifully drawn cards used for a popular card game.
 652	item209	West Pillar Key	0	N / A	Misc	0	0	6	0	Key	80	0	0	0	0	A small key.
-653	item205	Central Pillar Key	0	N / A	Misc	0	0	6	0	Key	80	0	0	0	0	A small key.
+653	item212	Central Pillar Key	0	N / A	Misc	0	0	6	0	Key	80	0	0	0	0	A small key.
 654	item210	East Pillar Key	0	N / A	Misc	0	0	6	0	Key	80	0	0	0	0	A small key.
-655	item208	Barrow Key	0	N / A	Misc	0	0	6	0	Key	80	0	0	0	0	A small key.
-656	item208	Barrow Key	0	N / A	Misc	0	0	6	0	Key	80	0	0	0	0	A small key.
-657	item208	Barrow Key	0	N / A	Misc	0	0	6	0	Key	80	0	0	0	0	A small key.
+655	item213	Barrow Key	0	N / A	Misc	0	0	6	0	Key	80	0	0	0	0	A small key.
+656	item214	Barrow Key	0	N / A	Misc	0	0	6	0	Key	80	0	0	0	0	A small key.
+657	item215	Barrow Key	0	N / A	Misc	0	0	6	0	Key	80	0	0	0	0	A small key.
 658	item080	Contestant's Shield	300	Shield	Shield	6	1	4	-4	Contestant's Shield	23	0	0	60	55	Quest Item:  Blood stains the back side of this battered shield.  The owner must certainly have been killed while using it.
 659	item205	William's Tower Key	0	N / A	Misc	0	0	6	0	Key	80	0	0	0	0	A small key.
 660	item206	Catherine's Key	0	N / A	Misc	0	0	6	0	Key	80	0	0	0	0	A small key.
 661	item207	Colony Zod Key	0	N / A	Misc	0	0	6	0	Key	80	0	0	0	0	A small key.
 662	item208	Faerie Key	0	N / A	Misc	0	0	6	0	Key	80	0	0	0	0	A small key.
 663	item211	Sewer Key	0	N / A	Misc	0	0	6	0	Key	80	0	0	0	0	Been looking for this?  No wonder it wasn't in the sewers… it was hiding out in Erathia the whole time.
-664	item210	Newname Key	0	N / A	Misc	0	0	6	0	Key	80	0	0	0	0	A small key.
+664	item216	Genie Key	0	N / A	Misc	0	0	6	0	Key	80	0	0	0	0	A small key.
 665	item211	Newname Key	0	N / A	Misc	0	0	6	0	Key	80	0	0	0	0	A small key.
 666	item212	Newname Key	0	N / A	Misc	0	0	1	0	Map	80	0	0	0	0	A small key.
 667	item213	Newname Key	0	N / A	Misc	0	0	1	0	Map	80	0	0	0	0	A small key.

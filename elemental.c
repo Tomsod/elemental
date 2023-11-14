@@ -209,6 +209,7 @@ enum player_stats
     STAT_FIRE_MAGIC = 34,
     STAT_LIGHT_MAGIC = 41,
     STAT_DARK_MAGIC = 42,
+    STAT_BOW = 44,
     STAT_FIRE_POISON_RES = 47,
 };
 
@@ -578,6 +579,7 @@ enum items
     FORGE_GAUNTLETS = 534,
     LADYS_ESCORT = 536,
     CLANKERS_AMULET = 537,
+    THE_PERFECT_BOW = 543,
     SHADOWS_MASK = 544,
     SACRIFICIAL_DAGGER = 553,
     RED_DRAGON_SCALE_MAIL = 554,
@@ -600,6 +602,7 @@ enum items
     GADGETEERS_BELT = 571,
     GARDENERS_GLOVES = 572,
     LAST_ARTIFACT = 572,
+    SNIPERS_QUIVER = 594,
     ROBE_OF_THE_ARCHMAGISTER = 598,
     FIRST_ORE = 686,
     FIRST_RECIPE = 740,
@@ -2665,7 +2668,7 @@ static void __declspec(naked) bow_temp_damage(void)
 }
 
 // Check for temporary swiftness enchantments.
-// Also here: implement Viper's Swift property.
+// Also here: implement Viper and the Perfect Bow's Swift properties.
 static void __declspec(naked) temp_swiftness(void)
 {
     asm
@@ -2679,6 +2682,8 @@ static void __declspec(naked) temp_swiftness(void)
         je swift
         no_temp:
         cmp dword ptr [edx], VIPER
+        je swift
+        cmp dword ptr [edx], THE_PERFECT_BOW
         je swift
         mov ecx, dword ptr [edx+12]
         cmp ecx, SPC_SWIFT
@@ -8515,6 +8520,38 @@ static char *__stdcall resistance_hint(char *description, int resistance)
     return buffer;
 }
 
+// Shared subroutine that calculates melee or ranged critical hit/miss chance.
+static int __thiscall get_critical_chance(struct player *player, int ranged)
+{
+    int crit = get_effective_stat(get_luck(player));
+    int dagger = get_skill(player, SKILL_DAGGER);
+    if (dagger > SKILL_MASTER)
+      {
+        dagger &= SKILL_MASK;
+        int equip = player->equipment[ranged?SLOT_MISSILE:SLOT_MAIN_HAND];
+        for (int i = !!ranged; i < 2; i++)
+          {
+            if (equip)
+              {
+                struct item *weapon = &player->items[equip-1];
+                if (!(weapon->flags & IFLAGS_BROKEN)
+                    && ITEMS_TXT[weapon->id].skill == SKILL_DAGGER)
+                    crit += dagger;
+              }
+            if (!i)
+                equip = player->equipment[SLOT_OFFHAND];
+          }
+      }
+    if (ranged && has_item_in_slot(player, THE_PERFECT_BOW, SLOT_MISSILE))
+        crit += 25;
+    if (!ranged && crit > 0
+        && has_item_in_slot(player, CLOVER, SLOT_MAIN_HAND))
+        crit *= 2;
+    if (crit > 100) // can happen with stupid high dagger skill
+        crit = 100;
+    return crit;
+}
+
 // Provide additional info for melee and ranged damage, too.
 static char *__stdcall damage_hint(char *description, int ranged)
 {
@@ -8535,37 +8572,13 @@ static char *__stdcall damage_hint(char *description, int ranged)
           }
         display_damage = TRUE;
       }
-    int crit = get_effective_stat(get_luck(player));
-    int dagger = get_skill(player, SKILL_DAGGER);
-    if (dagger >= SKILL_MASTER)
-      {
-        dagger &= SKILL_MASK;
-        int equip = player->equipment[ranged?SLOT_MISSILE:SLOT_MAIN_HAND];
-        for (int i = ranged; i < 2; i++)
-          {
-            if (equip)
-              {
-                struct item *weapon = &player->items[equip-1];
-                if (!(weapon->flags & IFLAGS_BROKEN)
-                    && ITEMS_TXT[weapon->id].skill == SKILL_DAGGER)
-                    crit += dagger;
-              }
-            if (!i)
-                equip = player->equipment[SLOT_OFFHAND];
-          }
-      }
+    int crit = get_critical_chance(player, ranged);
     if (!crit && !display_damage)
         return description;
     strcpy(buffer, description);
     if (crit > 0)
-      {
-        if (!ranged && has_item_in_slot(player, CLOVER, SLOT_MAIN_HAND))
-            crit *= 2;
-        if (crit > 100) // can happen with stupid high dagger skill
-            crit = 100;
         sprintf(buffer + strlen(buffer), "\n\n%s: %d%%",
                 new_strings[STR_CRIT_HIT_CHANCE], crit);
-      }
     else if (crit < 0)
         sprintf(buffer + strlen(buffer), "\n\n%s: %d%%",
                 new_strings[STR_CRIT_MISS_CHANCE], -crit);
@@ -8592,6 +8605,7 @@ static char *__stdcall damage_hint(char *description, int ranged)
       }
     else
         avg = get_min_melee_damage(player) + get_max_melee_damage(player);
+    // TODO: maybe account for regular hit chance somehow
     double dpr = avg / 2.0 * (100 + crit) / get_attack_delay(player, ranged);
     sprintf(buffer + strlen(buffer), "\n%s: %.1f",
             new_strings[STR_AVERAGE_DPR], dpr);
@@ -12235,7 +12249,8 @@ static void __declspec(naked) elven_chainmail_bow_bonus(void)
 
 // Implement the Sacrificial Dagger SP bonus.
 // Also here: Headache's mental penalty, Ellinger's Robe magic boost,
-// Sword of Light, Clover, Clanker's Amulet, and Gardener's Gloves boni.
+// Sword of Light, Clover, Clanker's Amulet, Gardener's Gloves, Shadow's Mask,
+// and Sniper's Quiver's boni.
 static void __declspec(naked) artifact_stat_bonus(void)
 {
     asm
@@ -12304,6 +12319,13 @@ static void __declspec(naked) artifact_stat_bonus(void)
         add dword ptr [esp+20], 3
         ret
         not_mask:
+        cmp eax, SNIPERS_QUIVER
+        jne not_quiver
+        cmp esi, STAT_BOW
+        jne quit
+        add dword ptr [esp+20], 8
+        ret
+        not_quiver:
         sub eax, PUCK ; replaced code
         quit:
         ret
@@ -13679,6 +13701,10 @@ static void __declspec(naked) higher_ethric_drain(void)
 static const int gadgeteers_belt_xy[] = { 530, 185, 533, 171,
                                           532, 214, 535, 210, };
 static char gadgeteers_belt_gfx[] = "itemgadgv0";
+// Same for Sniper's Quiver. (TEMP)
+static const int snipers_quiver_xy[] = { 530, 185, 533, 171,
+                                         532, 214, 535, 210, };
+static char snipers_quiver_gfx[] = "itemgadgv0";
 
 // Draw the new belt on the paperdoll.
 static void __declspec(naked) display_new_belt(void)
@@ -13687,18 +13713,27 @@ static void __declspec(naked) display_new_belt(void)
       {
         cmp ecx, GADGETEERS_BELT
         je belt
+        cmp ecx, SNIPERS_QUIVER
+        je quiver
         sub ecx, TITANS_BELT ; replaced code
         ret
         belt:
+        mov ecx, offset gadgeteers_belt_xy
+        mov edx, offset gadgeteers_belt_gfx
+        jmp gfx
+        quiver:
+        mov ecx, offset snipers_quiver_xy
+        mov edx, offset snipers_quiver_gfx
+        gfx:
         mov eax, dword ptr [esp+40] ; body type
-        mov ecx, dword ptr [gadgeteers_belt_xy+eax*8]
-        mov edx, dword ptr [gadgeteers_belt_xy+eax*8+4]
-        mov dword ptr [esp+24], ecx
-        mov dword ptr [esp+20], edx
+        lea ecx, [ecx+eax*8]
         and eax, 1 ; no special dwarf gfx
         add eax, '1'
-        mov edx, offset gadgeteers_belt_gfx
         mov byte ptr [edx+9], al
+        mov eax, dword ptr [ecx]
+        mov ecx, dword ptr [ecx+4]
+        mov dword ptr [esp+24], eax
+        mov dword ptr [esp+20], ecx
         push 2
         push edx
         mov ecx, ICONS_LOD_ADDR
@@ -13928,7 +13963,7 @@ static void __declspec(naked) mark_chest_checked(void)
       }
 }
 
-// Let Lady's Escort halve incoming missile damage.
+// Let Lady's Escort and Sniper's Quiver halve incoming missile damage.
 static void __declspec(naked) lady_escort_shielding(void)
 {
     asm
@@ -13938,8 +13973,16 @@ static void __declspec(naked) lady_escort_shielding(void)
         push LADYS_ESCORT
         call dword ptr ds:has_item_in_slot
         test eax, eax
-        jz skip
+        jz no_ring
         sar dword ptr [ebp-4], 1 ; total damage
+        no_ring:
+        mov ecx, edi
+        push SLOT_BELT
+        push SNIPERS_QUIVER
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        jz skip
+        sar dword ptr [ebp-4], 1
         skip:
         lea ebx, [edi+0x1948] ; replaced code
         ret
@@ -16514,76 +16557,22 @@ static void __declspec(naked) sniper_accuracy(void)
         jz weapon
         cmp dword ptr [ebx+72], SPL_ARROW
         jb quit ; blades spell etc.
-        cmp dword ptr [ebx+72], SPL_KNIFE
-        jne not_dagger
         weapon:
-        mov ecx, edi
-        push SKILL_DAGGER
-        call dword ptr ds:get_skill
-        cmp eax, SKILL_MASTER
-        jbe not_dagger
-        and eax, SKILL_MASK
-        test ebx, ebx
-        jz melee
-        mov dword ptr [ebp-36], eax ; unused and zero here
-        jmp not_dagger
-        melee:
-        mov edx, dword ptr [edi+0x1948+SLOT_MAIN_HAND*4]
-        test edx, edx
-        jz offhand
-        lea edx, [edx+edx*8]
-        test byte ptr [edi+0x1f0+edx*4+20], IFLAGS_BROKEN
-        jnz offhand
-        mov ecx, dword ptr [edi+0x1f0+edx*4]
-        lea ecx, [ecx+ecx*2]
-        shl ecx, 4
-        cmp byte ptr [ITEMS_TXT_ADDR+ecx+29], SKILL_DAGGER
-        jne offhand
-        mov dword ptr [ebp-36], eax
-        offhand:
-        mov edx, dword ptr [edi+0x1948+SLOT_OFFHAND*4]
-        test edx, edx
-        jz not_dagger
-        lea edx, [edx+edx*8]
-        test byte ptr [edi+0x1f0+edx*4+20], IFLAGS_BROKEN
-        jnz not_dagger
-        mov ecx, dword ptr [edi+0x1f0+edx*4]
-        lea ecx, [ecx+ecx*2]
-        shl ecx, 4
-        cmp byte ptr [ITEMS_TXT_ADDR+ecx+29], SKILL_DAGGER
-        jne not_dagger
-        add dword ptr [ebp-36], eax
-        not_dagger:
-        mov ecx, edi
-        call dword ptr ds:get_luck
-        push eax
-        call dword ptr ds:get_effective_stat
-        add dword ptr [ebp-36], eax
-        jge crit
         call dword ptr ds:random
         xor edx, edx
         mov ecx, 100
         div ecx
-        add edx, dword ptr [ebp-36]
+        push edx
+        push ebx
+        mov ecx, edi
+        call get_critical_chance
+        pop edx
+        cmp eax, edx
+        jge crit
+        add edx, eax
         jge hit
         jmp no_crit
         crit:
-        test ebx, ebx
-        jnz no_clover ; melee only
-        mov ecx, edi
-        push SLOT_MAIN_HAND
-        push CLOVER
-        call dword ptr ds:has_item_in_slot
-        test eax, eax
-        jz no_clover
-        shl dword ptr [ebp-36], 1
-        no_clover:
-        call dword ptr ds:random
-        xor edx, edx
-        mov ecx, 100
-        div ecx
-        cmp edx, dword ptr [ebp-36]
-        jae hit
         mov dword ptr [critical_hit], 1
         hit:
         cmp dword ptr [critical_hit], 2

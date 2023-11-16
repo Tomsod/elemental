@@ -502,6 +502,7 @@ enum skill_mastery
 
 #define CURRENT_TIME_ADDR 0xacce64
 #define CURRENT_TIME (*(uint64_t *) CURRENT_TIME_ADDR)
+#define ONE_DAY (24 * 60 * 60 * 128 / 30)
 
 enum items
 {
@@ -758,6 +759,9 @@ static struct elemdata
     uint32_t genie;
     // Remember if a genie artifact was already given.
     int genie_artifact;
+    // For the Armageddon nerf (healing monsters after 24 hours).
+    int current_map;
+    uint64_t map_enter_time;
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -1169,6 +1173,7 @@ struct __attribute__((packed)) map_object
 };
 
 #define AI_REMOVED 11
+#define AI_INVISIBLE 19
 
 #define COLOR_FORMAT_ADDR 0x4e2d60
 #define COLOR_FORMAT ((char *) COLOR_FORMAT_ADDR)
@@ -1410,13 +1415,14 @@ static int __thiscall (*dir_cosine)(void *this, int dir)
 #define COSINE_THIS ((void *) 0x56c680)
 static int __thiscall (*get_map_index)(struct mapstats_item *mapstats,
                                        char *filename) = (funcptr_t) 0x4547cf;
-static void (*on_map_leave)(void) = (funcptr_t) 0x443fb8;
 static void *__thiscall (*find_in_lod)(void *lod, char *filename, int unknown)
     = (funcptr_t) 0x4615bd;
 static int __cdecl (*fread)(void *buffer, int size, int count, void *stream)
     = (funcptr_t) 0x4cb8a5;
 static int (*get_eff_reputation)(void) = (funcptr_t) 0x47752f;
 static int __thiscall (*get_full_sp)(void *player) = (funcptr_t) 0x48e55d;
+static void __thiscall (*kill_civilian)(int id) = (funcptr_t) 0x438ce2;
+static int __thiscall (*monster_active)(void *monster) = (funcptr_t) 0x40894b;
 static int __thiscall (*equipped_item_type)(void *player, int slot)
     = (funcptr_t) 0x48d612;
 static int __thiscall (*equipped_item_skill)(void *player, int slot)
@@ -6421,56 +6427,6 @@ static void __declspec(naked) stun_element(void)
       }
 }
 
-// Make Armageddon damage depend on monster to party distance.
-static void __declspec(naked) armageddon_distance(void)
-{
-    asm
-      {
-        movsx ecx, word ptr [ebx+142] ; monster.x
-        sub ecx, dword ptr [PARTY_X]
-        jge got_x
-        neg ecx
-        got_x:
-        movsx eax, word ptr [ebx+144] ; monster.y
-        sub eax, dword ptr [PARTY_Y]
-        jge got_y
-        neg eax
-        got_y:
-        movsx edx, word ptr [ebx+146] ; monster.z
-        sub edx, dword ptr [PARTY_Z]
-        jge got_z
-        neg edx
-        got_z:
-        cmp eax, edx
-        jae y_bigger
-        xchg eax, edx
-        y_bigger:
-        cmp ecx, eax
-        jae ordered
-        xchg ecx, eax
-        cmp eax, edx
-        jae ordered
-        xchg eax, edx
-        ordered:
-        ; approximation of euclid metric used for the danger gem
-        shr edx, 2
-        add ecx, edx
-        lea edx, [eax+eax*2]
-        shl edx, 2
-        sub edx, eax
-        shr edx, 5
-        add ecx, edx
-        mov eax, 0x1600 ; safe (green gem) distance
-        cmp ecx, eax
-        jbe nearby
-        mul edi
-        div ecx
-        mov dword ptr [esp+12], eax
-        nearby:
-        ret
-      }
-}
-
 // Do not raise flying monsters during the Armageddon sequence.
 static void __declspec(naked) armageddon_flyers(void)
 {
@@ -6480,6 +6436,45 @@ static void __declspec(naked) armageddon_flyers(void)
         jnz skip
         add word ptr [esi+152], dx ; replaced code (vertical speed)
         skip:
+        ret
+      }
+}
+
+// Remove XP reward for killing monsters through Armageddon
+// and instead enable the check for killing peasants and guards.
+static void __declspec(naked) armageddon_rep(void)
+{
+    asm
+      {
+        push 0x401bc1 ; after xp code
+        mov ecx, dword ptr [ebp-8] ; monster id
+        jmp dword ptr ds:kill_civilian
+      }
+}
+
+// Heal all monsters after party spends a whole day in the same map,
+// specifically to curb prolonged Armageddon camping.
+static void armageddon_heal(void)
+{
+    if (CURRENT_TIME - elemdata.map_enter_time < ONE_DAY)
+        return;
+    elemdata.map_enter_time = CURRENT_TIME;
+    for (int i = 0; i < dword(MONSTER_COUNT); i++)
+        if (monster_active(MAP_MONSTERS + i)
+            || MAP_MONSTERS[i].ai_state == AI_INVISIBLE)
+            MAP_MONSTERS[i].hp = MAP_MONSTERS[i].max_hp;
+}
+
+// Hook for the above.
+static void __declspec(naked) armageddon_heal_hook(void)
+{
+    asm
+      {
+        test byte ptr [STATE_BITS], 0x30 ; if enemies are near
+        jnz skip
+        call armageddon_heal
+        skip:
+        cmp dword ptr [PARTY_BUFF_ADDR+BUFF_IMMOLATION*16+4], esi ; replaced
         ret
       }
 }
@@ -6867,13 +6862,9 @@ static inline void misc_spells(void)
     SPELL_INFO[SPL_STUN].delay_gm = 50;
     patch_bytes(0x43973d, stun_power_chunk, 7);
     hook_call(0x439c4f, stun_element, 5);
-    hook_call(0x401b76, armageddon_distance, 5);
-    // Increase number of Armageddon casts to 5/10 per day.
-    erase_code(0x42e73b, 2); // e jump
-    erase_code(0x42e73e, 2); // m jump
-    patch_dword(0x42e744, 10); // gm constant
-    patch_word(0x42e74a, 0x6dd1); // halve below gm
     hook_call(0x470b17, armageddon_flyers, 7);
+    hook_jump(0x401b9d, armageddon_rep);
+    hook_call(0x493a34, armageddon_heal_hook, 6);
     hook_call(0x441688, blink_mass_buffs, 6);
     erase_code(0x441690, 10); // rest of old duration check
     patch_byte(0x4417c2, 0xb8); // mov eax, dword
@@ -7613,7 +7604,7 @@ static void __declspec(naked) save_game_hook(void)
 }
 
 // Set the map's default reputation group and update current reputation.
-// Also here: update the Master Town Portal destination.
+// Also here: update the Master Town Portal destination, and track map changes.
 static void load_map_rep(void)
 {
     reputation_index = 0;
@@ -7626,6 +7617,11 @@ static void load_map_rep(void)
     int qbit = tp_qbits[group];
     if (qbit && check_bit(QBITS, qbit))
         elemdata.last_region = tp_order[group];
+    if (map_index != elemdata.current_map)
+      {
+        elemdata.current_map = map_index;
+        elemdata.map_enter_time = CURRENT_TIME;
+      }
 }
 
 // Used below to track the bow GM mini-quest.
@@ -7891,30 +7887,6 @@ static void __declspec(naked) pickpocket_rep(void)
       }
 }
 
-// Armageddon did not affect reputation, even if it killed peasants.
-// Let's overcompensate by adding an unconditional rep penalty.
-static void armageddon_rep(void)
-{
-    if (MAP_VARS[70]) // unused everywhere
-        return;
-    MAP_VARS[70] = TRUE;
-    uint32_t *rep = &CURRENT_REP;
-    *rep += 20;
-    if ((signed) *rep > 10000) // vanilla rep code often has this limit
-        *rep = 10000;
-}
-
-// Hook for the above.
-static void __declspec(naked) armageddon_hook(void)
-{
-    asm
-      {
-        call armageddon_rep
-        cmp dword ptr [MONSTER_COUNT], esi ; replaced code
-        ret
-      }
-}
-
 // Let the town hall bounties affect reputation slightly.
 // Also, Bounty Hunters may get a small skill point bonus.
 static void __stdcall bounty_rep(int level)
@@ -7994,7 +7966,6 @@ static inline void reputation(void)
     hook_call(0x42ec41, pickpocket_rep, 5);
     // Do not decrease rep on successful shoplift.
     patch_byte(0x4b13bf, 0);
-    hook_call(0x401b4e, armageddon_hook, 6);
     hook_call(0x4bd223, bounty_hook, 7);
     hook_call(0x4bc695, hire_npc_hook, 6);
     // Remove an ongoing NPC rep penalty.
@@ -20726,7 +20697,7 @@ static void __declspec(naked) query_order(void)
         sub eax, dword ptr [CURRENT_TIME_ADDR]
         sbb edx, dword ptr [CURRENT_TIME_ADDR+4]
         jb ready
-        mov ecx, 24 * 60 * 60 * 128 / 30
+        mov ecx, ONE_DAY
         div ecx
         test eax, eax
         jz round_up
@@ -21698,8 +21669,7 @@ static void place_order(void)
     for (int i = !have_order_reagent; i <= got_ore; i++)
         delete_backpack_item(owners[i], items[i]);
     elemdata.current_orders[house-1] = order_result;
-    elemdata.order_timers[house-1] = CURRENT_TIME + order_days * 24 * 60 * 60
-                                                               * 128 / 30;
+    elemdata.order_timers[house-1] = CURRENT_TIME + order_days * ONE_DAY;
     dword(SHOPKEEPER_MOOD) = 1; // happy
     add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
 }

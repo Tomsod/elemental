@@ -784,7 +784,7 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 782	item186	Telekinesis	0	Sscroll	Misc	S42	1	2	-7	Spell Scroll	77	0	0	0	0	"A spell scroll.  To cast this spell, pick the scroll up and left-click over the picture of your character in the inventory screen."
 783	itemltkn	Light Apprentice Token	2000	Amulet	Misc	0	0	Special	-10	Token	33	0	0	0	0	"This amulet marks its wearer as a student of Light, worthy of advanced knowledge.  By an ancient tradition, trainers affiliated with Light must demand one in return for their lessons.  Nowadays these are mostly distributed by Celeste officials."
 784	itemdtkn	Dark Apprentice Token	2000	Amulet	Misc	0	0	Special	-10	Token	33	0	0	0	0	"This amulet marks its wearer as a student of Darkness, worthy of advanced knowledge.  By an ancient tradition, trainers affiliated with Darkness must demand one in return for their lessons.  The easiest way to get such a token is to obtain favor of the Necromancer's Guild, but killing the previous owner is also considered acceptable."
-785	null	_quest/misc785	0	0	0	0	0	0	0	_quest/misc785	0	0	0	0	0	Description here.
+785	item359	Magic Ember	1500	N / A	Misc	0	1	2	0	Ember	137	0	0	0	0	"This ember is still hot to the touch.  The Fire magic trapped within is highly valued by blacksmiths and enchanters.  To use, pick the item up and right-click over a weapon."
 786	null	_quest/misc786	0	0	0	0	0	0	0	_quest/misc786	0	0	0	0	0	Description here.
 787	null	_quest/misc787	0	0	0	0	0	0	0	_quest/misc787	0	0	0	0	0	Description here.
 788	null	_quest/misc788	0	0	0	0	0	0	0	_quest/misc788	0	0	0	0	0	Description here.

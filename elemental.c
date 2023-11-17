@@ -506,6 +506,7 @@ enum skill_mastery
 
 enum items
 {
+    SHARKTOOTH_DAGGER = 17,
     FIRST_CLUB = 58,
     LAST_CLUB = 60,
     BLASTER = 64,
@@ -527,6 +528,7 @@ enum items
     SULFUR = 212,
     LAST_REAGENT = 214, // not counting gray
     FIRST_GRAY_REAGENT = 215,
+    PHILOSOPHERS_STONE = 219,
     LAST_GRAY_REAGENT = 219,
     POTION_BOTTLE = 220,
     CATALYST = 221,
@@ -608,6 +610,7 @@ enum items
     FIRST_ORE = 686,
     FIRST_RECIPE = 740,
     LAST_RECIPE = 779,
+    MAGIC_EMBER = 785,
 };
 
 enum item_slot
@@ -816,7 +819,7 @@ enum item_types
     ITEM_TYPE_GEM = 20,
     // my additions
     ITEM_TYPE_ROBE = 47,
-    ITEM_TYPE_SULFUR = 48,
+    ITEM_TYPE_SPECIAL = 48,
 };
 
 enum objlist
@@ -1580,43 +1583,62 @@ static int __fastcall attack_type(const char *attack)
     return PHYSICAL;
 }
 
-static const char sulfur_type[] = "SULFUR";
+// For the parse code just below.
+static const char special_type[] = "SPECIAL";
+static const char reagent_type[] = "REAGENT";
+static const char potion_type[] = "POTION";
 
-// Parse sulfur pseudo-item-type drop in monsters.txt.
-static void __declspec(naked) sulfur_item_type(void)
+// Parse new item drop types in monsters.txt.
+static void __declspec(naked) new_item_drop_types(void)
 {
     asm
       {
         mov byte ptr [esi+12], cl ; replaced code
         cmp byte ptr [edi], 0 ; ditto
         jz quit
+        push edi
 #ifdef __clang__
-        mov eax, offset sulfur_type
+        mov eax, offset special_type
         push eax
 #else
-        push offset sulfur_type
+        push offset special_type
 #endif
-        push edi
         call dword ptr ds:uncased_strcmp
-        add esp, 8
         test eax, eax
-        jnz quit
-        mov byte ptr [esi+13], ITEM_TYPE_SULFUR
+        jnz not_special
+        mov byte ptr [esi+13], ITEM_TYPE_SPECIAL
+        jmp restore
+        not_special:
+        mov dword ptr [esp], offset reagent_type
+        call dword ptr ds:uncased_strcmp
+        test eax, eax
+        jnz not_reagent
+        mov byte ptr [esi+13], ITEM_TYPE_REAGENT
+        jmp restore
+        not_reagent:
+        mov dword ptr [esp], offset potion_type
+        call dword ptr ds:uncased_strcmp
+        test eax, eax
+        jnz restore
+        mov byte ptr [esi+13], ITEM_TYPE_POTION
+        restore:
+        pop eax
+        pop eax
         quit:
         ret
       }
 }
 
 // Patch monsters.txt parsing: remove two resistance fields and change
-// the possible attack elements.  Also here: let gogs drop sulfur.
+// the possible attack elements.  Also here: add some specific monster drops.
 static inline void monsters_txt(void)
 {
     patch_byte(0x455108, byte(0x455108) - 1); // one less field now
     patch_dword(0x456402, dword(0x456406)); // tweaking the jumptable
     patch_dword(0x456406, dword(0x45640a)); // ditto
     hook_jump(0x454ce0, attack_type); // replace the old function entirely
-    hook_call(0x4553a5, sulfur_item_type, 6);
-    // item type converted to the item in rnd_robe_type() below
+    hook_call(0x4553a5, new_item_drop_types, 6);
+    // special item type converted to the items in rnd_robe_type() below
 }
 
 // Note: for this purpose, "undead" is any monster not immune to Holy.
@@ -3187,19 +3209,25 @@ static void __declspec(naked) potion_aura(void)
       }
 }
 
-// Prevent the game from applying the enchantment
-// too early and in the wrong place.
-static void __declspec(naked) slaying_potion_chunk(void)
+// Prevent the game from applying the enchantment too early and in the wrong
+// place.  This also takes care of magic embers (that are similar in effect).
+static void __declspec(naked) slaying_potion_enchantment(void)
 {
     asm
       {
+        cmp dword ptr [MOUSE_ITEM], MAGIC_EMBER
+        jne dragon
+        mov eax, SPC_FLAME ; will be increased later
+        mov dword ptr [ebp-20], 24 * 60 * 60 * 128 ; one day (divided later)
+        ret
+        dragon:
         mov eax, SPC_DRAGON_SLAYING
-        nop
-        nop
+        ret
       }
 }
 
 // Allow slaying potions to enchant weapons permanently if possible.
+// Also here: do the same for magic embers which reuse this code.
 static void __declspec(naked) permanent_slaying(void)
 {
     asm
@@ -3212,7 +3240,13 @@ static void __declspec(naked) permanent_slaying(void)
         jnz quit
         cmp dword ptr [ebp-4], 2 ; equip stat, 0-2 = weapon
         ja quit
+        cmp dword ptr [MOUSE_ITEM], MAGIC_EMBER
+        jne dragon
+        mov dword ptr [esi+12], SPC_INFERNOS_2 ; same as gm fire aura
+        jmp aura
+        dragon:
         mov dword ptr [esi+12], SPC_DRAGON_SLAYING
+        aura:
         or dword ptr [esi+20], 16 ; red aura
         push 0x4168b4
         ret 4
@@ -3270,7 +3304,7 @@ static inline void temp_enchants(void)
     erase_code(0x41690b, 9);
     erase_code(0x416932, 12);
     // pass the enchantment to our code in eax
-    patch_bytes(0x416884, slaying_potion_chunk, 7);
+    hook_call(0x416884, slaying_potion_enchantment, 7);
     hook_call(0x41684e, permanent_slaying, 6);
     erase_code(0x416953, 3);
 }
@@ -4029,7 +4063,7 @@ static void load_wom_barrels(void)
 }
 
 // Add a random item type that only generates robes (for shops).
-// Also here: sulfur-only item type for gogs.
+// Also here: let some monsters drop specific items (but with a % chance).
 static void __declspec(naked) rnd_robe_type(void)
 {
     asm
@@ -4037,8 +4071,8 @@ static void __declspec(naked) rnd_robe_type(void)
         jne quit
         cmp dword ptr [ebp+12], ITEM_TYPE_ROBE - 1
         je robe
-        cmp dword ptr [ebp+12], ITEM_TYPE_SULFUR - 1
-        je sulfur
+        cmp dword ptr [ebp+12], ITEM_TYPE_SPECIAL - 1
+        je special
         xor eax, eax ; set zf
         quit:
         mov dword ptr [ebp+16], 1 ; replaced code
@@ -4051,9 +4085,24 @@ static void __declspec(naked) rnd_robe_type(void)
         lea eax, [edi+FIRST_ROBE*48+44+ebx]
         push 0x456826 ; rnd item by equip stat loop
         ret 4
+        special:
+        mov eax, dword ptr [ebp+8] ; level
+        mov dword ptr [esp], 0x4568b0 ; past rnd item type code
+        dec eax
+        js ember
+        jz sulfur
+        dec eax
+        jz stone
+        mov dword ptr [esi], SHARKTOOTH_DAGGER
+        ret
+        stone:
+        mov dword ptr [esi], PHILOSOPHERS_STONE
+        ret
         sulfur:
         mov dword ptr [esi], SULFUR
-        mov dword ptr [esp], 0x4568b0 ; past rnd item type code
+        ret
+        ember:
+        mov dword ptr [esi], MAGIC_EMBER
         ret
       }
 }
@@ -4880,12 +4929,17 @@ static void __declspec(naked) damage_potions_player(void)
 }
 
 // Redirect applied holy water to the weapon potions code.
+// Also here: pretend magic embers are slaying potions.
 static void __declspec(naked) holy_water_jump(void)
 {
     asm
       {
         cmp ecx, HOLY_WATER
         je quit
+        cmp ecx, MAGIC_EMBER
+        jne skip
+        mov ecx, SLAYING_POTION
+        skip:
         cmp ecx, SWIFT_POTION ; replaced code
         quit:
         ret

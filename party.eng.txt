@@ -1,4 +1,4 @@
-This is the party creation spoiler for the Elemental Mod v3.1.  Usually I
+This is the party creation spoiler for the Elemental Mod v4.0.  Usually I
 wouldn't advise reading the information you're supposed to learn as you play
 in advance, but some of the choices you make as you create the party
 (specifically, races and classes) are permanent, and if you want to play an
@@ -65,14 +65,10 @@ killing your enemies, but again, anyone can kill their enemies, while Fly and
 Town Portal are irreplaceable.  So you'll want GM Air and Water at the least.
 Again, in this mod you have options.  Specifically, both Master Archers (LP)
 and Arch Druids (also LP) can attain both of these GM ranks, and even DP
-Archers still get Air (but only Master Water).  Scraping the bottom of the
-barrel, Spies (LP Thieves) have Master Air and Rangers will eventually get
-Master Water, but really, if you want a comfortable game, get yourself a
-Sorcerer or an Archer or a Druid.  And if you want a fully evil party, you're
-pretty much limited to a Lich, which is a good idea anyway as GM Dark magic
-is the main benefit of the Dark Path and hybrid classes can't learn it.
-Similarly, the healer role above is also limited to bona fide Priests of Dark
-on the evil side, who are again optimal because of their Dark magic anyway.
+Archers still get Air, while DP Rangers have GM Water.  Scraping the bottom of
+the barrel, Spies (LP Thieves) have Master Air, while DP Archers and LP Rangers
+will eventually get Master Water, but really, if you want a comfortable game,
+get yourself a Sorcerer or properly promote your Archer, Ranger and/or a Druid.
 
 So there are your four roles.  If you pick hybrids, the same character can
 fulfill two roles at once, albeit sometimes not as good.  Here's a handy
@@ -191,25 +187,25 @@ First, here's the new skill advancement table.  (01LD are promotions.)
 Staff      EEEE  ----  EMGG  NNNN  NNNN  NNNN  EEEE  NNNN  EMMG
 Sword      EMGG  EMMM  EEEE  EMMM  EEEE  EEEE  ----  ----  ----
 \_goblins  EGGG  EMGG  EMMM  EMGG  EMMM  EMMM  NEEE  NEEE  NEEE
-Dagger     EEEE  EMGG  EEEE  EEEE  EMMM  EEEE  ----  EMMM  EEME
+Dagger     EEEE  EMGG  NNNN  EEEE  EMMM  EEEE  ----  EMMM  EEME
 Axe        EMMM  ----  ----  EEEE  EEEE  EMGG  ----  ----  ----
 \_dwarves  EMGG  NEEE  NEEE  EMMM  EMMM  EGGG  NEEE  NEEE  NEEE
 Spear      EMGG  ----  EEEE  EEEE  EMGG  EMMM  ----  ----  ----
-Bow        EEME  EEEE  NNNN  EEEE  EMGG  EMMM  ----  ----  ----
-\_elves    EMGM  EMMM  EEEE  EMMM  EGGG  EMGG  NEEE  NEEE  NEEE
+Bow        EEME  EEEE  NNNN  EEEM  EMGG  EMMM  ----  ----  ----
+\_elves    EMGM  EMMM  EEEE  EMMG  EGGG  EMGG  NEEE  NEEE  NEEE
 Mace       EMMM  EEEE  ----  EMGG  ----  ----  EMGM  EEEE  ----
 Blaster    NNNN  EMGG  NNNN  EEEE  EMGG  EMMM  EEEE  EMMM  EMGG
 Shield     EMGG  NNNN  ----  EMGG  ----  EEEE  EMMM  EEEE  ----
 Leather    EEEE  EMGG  EMGG  EEEE  EMMM  EMMM  EEEE  EMMM  EEME
 Chain      EMMM  EEEE  ----  EEEE  EMGG  EMGM  EEEE  ----  ----
-Plate      EMGG  ----  ----  EMMM  ----  ----  NNEN  ----  ----
+Plate      EMGG  ----  ----  EMMM  ----  ----  NEEE  ----  ----
 
 Fire       ----  -EEM  ----  ----  NEMG  -EEE  ----  EEEM  EMGG
 Air        ----  -EME  ----  ----  EMGG  ----  ----  EMGM  EMGG
-Water      ----  ----  ----  ----  NEGM  -EMM  ----  EMGM  EMGG
-Earth      ----  ----  ----  ----  NEMM  -MGG  ----  EMMG  EMGG
+Water      ----  ----  ----  ----  NEGM  -EMG  ----  EMGM  EMGG
+Earth      ----  ----  ----  ----  NEMM  -MGG  ----  EMMG  EMMM
 Spirit     ----  ----  -EME  EMGG  ----  ----  EMGG  EEME  ----
-Mind       ----  ----  ----  NEMM  ----  -EEM  EMGG  EMMG  ----
+Mind       ----  ----  ----  NEMM  ----  -EEE  EMGG  EMMG  ----
 Body       ----  ----  -EME  NEMM  ----  -EGM  EMGG  EMGM  ----
 Light      ----  ----  ----  --M-  --E-  ----  --G-  ----  --G-
 Dark       ----  ----  ----  ---E  ---E  ----  ---G  ---M  ---G
@@ -217,16 +213,16 @@ Dark       ----  ----  ----  ---E  ---E  ----  ---G  ---M  ---G
 ID Item    ----  EMGG  ----  ----  NNNE  NNNN  ----  EEEE  EMGM
 Merchant   EEEE  EMMM  ----  EMGM  EEEE  NNNN  EMGG  EEEE  NNNN
 Repair     EMGG  NNNN  ----  EMGG  EEME  NNNN  EMMM  ----  EEEE
-Bodybuild. EMGG  EEEE  EMGG  EMMM  EEEE  EEEE  NNNN  ----  ----
+Bodybuild. EMGG  EEEE  EMGG  EMMM  EEEE  EEEE  NNEN  ----  ----
 Meditation ----  ----  ----  EEEE  EEEE  -NNN  EMMG  EMGG  EMMG
 Perception EEEE  EMGM  EEEE  NNNN  EMGG  EMGG  EEEE  EEEE  EEEE
 Disarm     NNNE  EMGG  NEEM  ----  NEEE  EEEM  ----  ----  ----
 Dodging    EEEE  EMMM  EMGG  ----  EEEE  EEEE  ----  NEEE  NNNN
 Unarmed    EEEE  EEEE  EMGG  NNNN  NNNN  NNNN  ----  ----  ---N
 ID Monster ----  ----  EEEE  ----  ----  EMGG  EEEE  EMGM  EMMM
-Armsmaster EMGG  EMMM  EMMM  EEEM  EEEE  EEMM  ----  NNNN  ----
+Armsmaster EMGG  EMMM  EMMM  EEEE  EEEE  EEMM  ----  NNNN  ----
 Thievery   ---N  EMGG  NNNE  ---E  ----  EEEM  ----  ----  ----
-Alchemy    ----  EMMG  ----  ----  ----  NNNN  EEEM  EMGG  EMMM
+Alchemy    ----  EMMG  ----  ----  ----  NNNN  EEEE  EMGG  EMMM
 Learning   NNNN  EEEE  EMGG  NNNN  EMMM  EEEE  EMMM  EMMM  EMGM
 \_humans   EEEE  EMMM  EGGG  EEEE  EMGG  EMMM  EMGG  EMGG  EMGG
 
@@ -275,7 +271,7 @@ Paladins can get the same 75% physical reduction as Knights, which makes them
 second best tanks (they only lack HP).  They can also advance Spirit to GM,
 which gives them the useful combat revival spell, among other things. Heroes
 (LP) can advance Light to Master and Merchant to GM, which makes them decent
-Cleric substitutes.  Villians (DP) can get Master Armsmaster and Expert Dark,
+Cleric substitutes.  Villians (DP) can get Master Bow and Expert Dark,
 both of which increase their combat potential (even Expert Shrapmetal is
 deadly!)  They also can learn Expert Thievery for unreliable backstabs.
 
@@ -289,8 +285,8 @@ now.  Also, Snipers can never miss with a bow as a unique class ability.
 
 Rangers suck much less now.  For one, they can attain Master Armsmaster.  Two,
 their magical skills are generally better: while Rangers cannot learn Air and
-Spirit at all, they can get GM Earth, Master Water, and, depending on
-promotion, either (LP) GM Body or (DP) Master Body and Mind.  That GM Body
+Spirit at all, they can get GM Earth, and, depending on promotion, either (LP)
+GM Body and Master Water, or (DP) GM Water and Master Body.  That GM Body
 actually makes Ranger Lords very good healers, possibly even removing the need
 for a Cleric, and they also get GM Chain for defense.  Bounty Hunters (DP)
 lack either, but they do get Master Disarm and Thievery, and with enough skill
@@ -300,10 +296,8 @@ a town hall bounty can give them extra skill points as per the class ability.
 Clerics haven't changed much, but they notably can now (barely) learn the Plate
 skill.  They will never be able to wear plate without recovery penalty, but as
 it doesn't affect spellcasting speed, it's manageable.  Priests of Light can
-actually advance Plate to Expert and Mace to GM, turning them into miniature
-Paladins, but Priests of Dark are stuck at Normal Plate, which hardly matters
-as they have Shrapmetal!  As a compensation they do get GM Meditation (for SP
-regeneration) and Master Alchemy (second only to Druids and Assassins).  Also,
+also advance Bodybuilding to Expert and Mace to GM, turning them into miniature
+Paladins. Priests of Dark instead get GM Meditation, for SP regeneration.  BTW,
 Clerics now cannot use bows at all.  Neither can Druids or Sorcerers, but at
 least they got throwing knives, while Clerics can only equip wands or blasters.
 
@@ -317,8 +311,8 @@ promoted Sorcerers in raw spell might.  Both Druid promotions still get GM
 Meditation, which now allows them to regenerate SP, and can advance to Expert
 in Dodging, should they decide to wear robes instead of leather armor.
 
-Sorcerers are still strong in this mod, being able to GM five magic schools,
-but their other skills are shifted.  Archmages (LP) can advance Dagger to
+Sorcerers are a bit weaker in this mod, as they cannot get GM Earth anymore;
+also, their other skills are shifted.  Archmages (LP) can advance Dagger to
 Master for a sizeable crit chance boost, and can also get Master Leather for
 spell absorption.  Finally, they get GM Learning.  Liches (DP) no longer
 regenerate SP naturally, but must learn GM Meditation for that.  Instead,

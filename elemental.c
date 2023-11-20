@@ -1069,6 +1069,7 @@ static const char map_altar_of_wishes[] = "genie.blv";
 enum profession
 {
     NPC_SMITH = 1,
+    NPC_SCHOLAR = 4,
     NPC_PORTER = 29,
     NPC_QUARTER_MASTER = 30,
     NPC_COOK = 33,
@@ -10651,6 +10652,23 @@ static void __declspec(naked) buy_deposit_box(void)
       }
 }
 
+// Give Scholars +5 to ID Item, stacking with Sages.
+static void __declspec(naked) new_scholar_bonus(void)
+{
+    asm
+      {
+        call dword ptr ds:have_npc_hired ; replaced code (sage)
+        lea eax, [eax+eax*2]
+        lea esi, [esi+eax*2]
+        mov ecx, NPC_SCHOLAR
+        call dword ptr ds:have_npc_hired
+        lea eax, [eax+eax*4]
+        add esi, eax
+        xor eax, eax ; skip old esi = 6 code
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -10817,6 +10835,9 @@ static inline void misc_rules(void)
     // Also decrease the sound radius slightly.
     patch_dword(0x4ab4e9, 2500); // start
     patch_dword(0x4ab671, 2500); // stop
+    // Downgrade Scholars to +5 to ID Item.
+    erase_code(0x49111f, 9); // old bonus
+    hook_call(0x48f954, new_scholar_bonus, 5);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

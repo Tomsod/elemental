@@ -54,29 +54,12 @@
 50	Duper	200		Merchant skill is increased by eight points for each character.  Lowers Reputation when hired.  %01 takes %17 percent of all gold you find.	Lots of people can be talked out of stuff they would never give up if they thought about it.  The trick is to talk fast and don't let them pause to consider what you're really saying.  I'll stay with you and coach you on this valuable skill for only 200 gold to start and %17 percent of the gold we find.	Wait!  Let's talk about this!  I know you don't really want to dismiss me.  We can work it out!
 51	Burglar	2000		Disarm Traps and Thievery skills are increased by eight points for each character.  Lowers Reputation when hired.  %01 costs you nothing!	"Need traps disarmed?  Perhaps something retrieved without the owner's knowledge or consent?  I've been doing it ever since I was released from jail three years ago.  If you need help, I'll come with you for free!  I need the practice.  "	What?  I didn't do nothin!  
 52	Fallen Wizard	2500	Hour of Power	Casts Hour of Power once per day for a duration of six hours.  Lowers Reputation when hired.  %01 takes %17 percent of all gold you find.	"Few people outside of the Wizard's realm possess the knowledge to cast Hour of Power.  I can cast it once per day for your party if you'll hire me.  I only charge 2500 gold initially, and %17 percent of the gold we find."	"You're would give up all the spells I cast on you for a few measly gold pieces?  Think it through carefully, my friend."
-53	Acolyte	500		"Two point bonus to Self (body, mind, spirit) spell skills for all characters.  %01 takes %17 percent of all gold you find."	I can assist your spell casting by slightly boosting your spells of the Self for 500 gold to start and %17 percent of the gold we find..	"By firing me, you're not just losing a friend and spiritual advisor, but your link to the Gods!  I know you don't really mean it.  You won't dismiss me."
-54	Initiate	1000		"Three point bonus to Self (body, mind, spirit) spell skills for all characters.  %01 takes %17 percent of all gold you find."	My prayers can magnify your Self spell skills for 1000 gold to start and %17 percent of the gold we find.	"By firing me, you're not just losing a friend and spiritual advisor, but your link to the Gods!  I know you don't really mean it.  You won't dismiss me."
-55	Prelate	2000		"Four point bonus to Self (body, mind, spirit) spell skills for all characters.  %01 takes %17 percent of all gold you find."	I can greatly increase the effect of your Self spells for a small initial donation of of 2000 gold and then %17 percent of the gold we find.	"By firing me, you're not just losing a friend and spiritual advisor, but your link to the Gods!  I know you don't really mean it.  You won't dismiss me."
+53	Acolyte of the Sun	500		"Two point bonus to Self (body, mind, spirit) and Light spell skills for all characters.  %01 takes %17 percent of all gold you find."	I can assist your spell casting by slightly boosting your spells of the Self and Light for 500 gold to start and %17 percent of the gold we find.	"By firing me, you're not just losing a friend and spiritual advisor, but your link to the Gods!  I know you don't really mean it.  You won't dismiss me."
+54	Initiate of the Sun	1000		"Three point bonus to Self (body, mind, spirit) and Light spell skills for all characters.  %01 takes %17 percent of all gold you find."	My prayers can magnify your Self and Light spell skills for 1000 gold to start and %17 percent of the gold we find.	"By firing me, you're not just losing a friend and spiritual advisor, but your link to the Gods!  I know you don't really mean it.  You won't dismiss me."
+55	Prelate of the Sun	2000		"Four point bonus to Self (body, mind, spirit) and Light spell skills for all characters.  %01 takes %17 percent of all gold you find."	I can greatly increase the effect of your Self and Light spells for a small initial donation of of 2000 gold and then %17 percent of the gold we find.	"By firing me, you're not just losing a friend and spiritual advisor, but your link to the Gods!  I know you don't really mean it.  You won't dismiss me."
 56	Monk	500		Increases the unarmed and dodging skills by two for all characters.  %01 takes %17 percent of all gold you find.	"I can help train your minds and bodies to perfect your unarmored, unarmed combat techniques.  I only require 500 gold to start and %17 percent of the gold we find."	"You, uh, haven't snatched the pebble from my hand yet, grasshopper.  Will you cut short your training so casually?"
 57	Sage	750		Increases the identify item and identify monster skills by six for all characters.  %01 takes %17 percent of all gold you find.	I have considerable knowledge of the items and creatures of Erathia.  I'd be willing to help you out in your travels for 750 gold to start and %17 percent of the gold we find.	"You will miss my excellent advice and knowledge the minute I am gone, mark my words!"
 58	Hunter	500		Increases the identify monster skill by four for all characters.  %01 takes %17 percent of all gold you find.	"I've hunted most every type of creature in Erathia, and I know a little something about all of them.  Though I'm retired from hunting, I'll share my knowledge with you for 500 gold to start and %17 percent of the gold we find."	"Well, this old hunter knows not to beg.  Go on and dismiss me if you want."
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
-						
+59	Acolyte of the Moon	500		"Two point bonus to Self (body, mind, spirit) and Dark spell skills for all characters.  Lowers Reputation when hired.  %01 takes %17 percent of all gold you find."	I can assist your spell casting by slightly boosting your spells of the Self and Dark for 500 gold to start and %17 percent of the gold we find.	"By firing me, you're not just losing a friend and spiritual advisor, but the favor of the Dark Gods!  I know you don't want to be cursed.  You won't dismiss me."
+60	Initiate of the Moon	1000		"Three point bonus to Self (body, mind, spirit) and Dark spell skills for all characters.  Lowers Reputation when hired.  %01 takes %17 percent of all gold you find."	My prayers can magnify your Self and Dark spell skills for 1000 gold to start and %17 percent of the gold we find.	"By firing me, you're not just losing a friend and spiritual advisor, but the favor of the Dark Gods!  I know you don't want to be cursed.  You won't dismiss me."
+61	Prelate of the Moon	2000		"Four point bonus to Self (body, mind, spirit) and Dark spell skills for all characters.  Lowers Reputation when hired.  %01 takes %17 percent of all gold you find."	I can greatly increase the effect of your Self and Dark spells for a small initial donation of of 2000 gold and then %17 percent of the gold we find.	"By firing me, you're not just losing a friend and spiritual advisor, but the favor of the Dark Gods!  I know you don't want to be cursed.  You won't dismiss me."

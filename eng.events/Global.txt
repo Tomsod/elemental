@@ -344,7 +344,7 @@ Global Text
 341	Wind Master
 342	Water Master
 343	Gate Master
-344	Acolyte
+344	Acolyte of the Sun
 345	Piper
 346	Explorer
 347	Pirate
@@ -599,7 +599,7 @@ Global Text
 596	Chaplain
 597	Diplomat
 598	Fallen Wizard
-599	Prelate
+599	Prelate of the Sun
 600	Sage
 601	Zombie
 602	History
@@ -764,3 +764,8 @@ Global Text
 761	What do you wish for?
 762	"""Here you go!"""
 763	"""Can't decide?  Here's something anyway!"""
+764	Initiate of the Sun
+765	Monk
+766	Acolyte of the Moon
+767	Initiate of the Moon
+768	Prelate of the Moon

@@ -319,6 +319,11 @@ enum new_strings
     STR_GENIE_ITEM_ASK,
     STR_GENIE_ITEM_OK,
     STR_GENIE_ITEM_DEFAULT,
+    STR_SUN_INITIATE,
+    STR_MONK,
+    STR_MOON_ACOLYTE,
+    STR_MOON_INITIATE,
+    STR_MOON_PRELATE,
     NEW_STRING_COUNT
 };
 
@@ -1064,7 +1069,7 @@ struct __attribute__((packed)) mapstats_item
 static const char map_altar_of_wishes[] = "genie.blv";
 
 // Indoor or outdoor reputation for the loaded map.
-#define CURRENT_REP dword(dword(0x6be1e0) == 2 ? 0x6a1140 : 0x6be514)
+#define CURRENT_REP (*(int32_t *) (dword(0x6be1e0) == 2 ? 0x6a1140 : 0x6be514))
 
 enum profession
 {
@@ -1080,6 +1085,12 @@ enum profession
     NPC_DUPER = 50,
     NPC_BURGLAR = 51,
     NPC_FALLEN_WIZARD = 52,
+    NPC_MONK = 56,
+    LAST_OLD_NPC = 58,
+    NPC_MOON_ACOLYTE = 59,
+    NPC_MOON_INITIATE = 60,
+    NPC_MOON_PRELATE = 61,
+    NPC_COUNT = 62,
 };
 
 // New max number of global.evt comands (was 4400 before).
@@ -1263,6 +1274,13 @@ struct __attribute__((packed)) event2d
 };
 #define EVENTS2D_ADDR 0x5912b8
 #define EVENTS2D ((struct event2d *) EVENTS2D_ADDR)
+
+// From npcprof.txt, now extended and relocated.
+static struct npcprof
+{
+    uint32_t cost;
+    char *description, *action, *join, *dismiss;
+} npcprof[NPC_COUNT];
 
 #define CURRENT_CONVERSATION 0xf8b01c
 #define ICONS_LOD_ADDR 0x6d0490
@@ -7978,12 +7996,12 @@ static void __stdcall hire_npc_rep(int profession)
 {
     if (profession == NPC_PIRATE || profession == NPC_GYPSY
         || profession == NPC_DUPER || profession == NPC_BURGLAR
-        || profession == NPC_FALLEN_WIZARD)
+        || profession == NPC_FALLEN_WIZARD
+        || profession >= NPC_MOON_ACOLYTE && profession <= NPC_MOON_PRELATE)
       {
-        uint32_t *rep = &CURRENT_REP;
-        *rep += 5;
-        if ((signed) *rep > 10000) // vanilla rep code often has this limit
-            *rep = 10000;
+        CURRENT_REP += 5;
+        if (CURRENT_REP > 10000) // vanilla rep code often has this limit
+            CURRENT_REP = 10000;
       }
 }
 
@@ -9040,6 +9058,17 @@ static void __declspec(naked) color_broken_ac_2(void)
       }
 }
 
+// Use a new, separately localizable, name string for Monk NPCs.
+static void __declspec(naked) monk_npc_name(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [new_strings+STR_MONK*4]
+        mov dword ptr [0x73c110+NPC_MONK*4], ecx ; replaced code
+        ret
+      }
+}
+
 // Implement the CheckSkill 0x2b command properly.  From what I understand,
 // it's supposed to check for effective skill (multiplied by mastery).
 // Learning is special, as its bonus (from NPCs etc.) is not multiplied.
@@ -9834,7 +9863,7 @@ static void __declspec(naked) print_cook_reply(void)
 {
     asm
       {
-        mov ecx, dword ptr [0x737abc+eax*4-16] ; replaced code
+        mov ecx, dword ptr [npcprof+eax*4+4] ; replaced code, almost
         cmp byte ptr [HIRELING_REPLY], 2
         jne quit
         sub eax, NPC_COOK * 5
@@ -10372,7 +10401,7 @@ static void __declspec(naked) delay_dismiss_hireling_reply(void)
         mov dword ptr [esp], 0x4456fa ; skip any reply
         ret
         ok:
-        mov ecx, dword ptr [0x737abc+eax*4-4] ; replaced code
+        mov ecx, dword ptr [npcprof+eax*4+16] ; replaced code, almost
         ret
       }
 }
@@ -10705,6 +10734,9 @@ static inline void misc_rules(void)
     // Localization fix: separate hunter-as-npc and hunter-as-class strings.
     patch_pointer(0x452fa6, &new_strings[STR_HUNTER]);
     patch_pointer(0x48c310, &new_strings[STR_HUNTER]);
+    // Same for monks.
+    patch_pointer(0x47636d, &new_strings[STR_MONK]);
+    hook_call(0x453543, monk_npc_name, 6); // can't just patch in place
     patch_pointer(0x4484f3, check_skill_hook);
     hook_call(0x44b360, evt_add_specitem, 5);
     hook_call(0x48dab0, pickpocket_specitem, 6);
@@ -16673,20 +16705,36 @@ static void __declspec(naked) sniper_accuracy(void)
 }
 
 // Let Warlock's familiar also boost Dark magic (and Light, but it's not used).
+// Also here: moon priest hireling bonuses (and light for sun priests).
 static void __declspec(naked) warlock_dark_bonus(void)
 {
     asm
       {
-        jg extra
-        ret
-        extra:
+        jle moon
         cmp edi, SKILL_DARK
         jg skip
-        push 0x48f8f5 ; warlock check
-        ret 4
+        jl no_moon ; light
+        moon:
+        mov ecx, NPC_MOON_ACOLYTE
+        call dword ptr ds:have_npc_hired
+        lea esi, [esi+eax*2]
+        mov ecx, NPC_MOON_INITIATE
+        call dword ptr ds:have_npc_hired
+        lea eax, [eax+eax*2]
+        add esi, eax
+        mov ecx, NPC_MOON_PRELATE
+        call dword ptr ds:have_npc_hired
+        lea esi, [esi+eax*4]
+        cmp edi, SKILL_DARK
+        je warlock
+        no_moon:
+        ret ; to vanilla acolyte etc. checks
+        warlock:
+        mov dword ptr [esp], 0x48f8f5 ; warlock check
+        ret
         skip:
-        push 0x48fb1e ; replaced jump
-        ret 4
+        mov dword ptr [esp], 0x48fb1e ; replaced jump
+        ret
       }
 }
 
@@ -21889,6 +21937,62 @@ static inline void one_more_map(void)
     hook_call(0x47184c, genie_projectile_trigger, 5);
 }
 
+// Provide names for new NPCs without discarding the old array.
+static void __declspec(naked) new_hireling_names(void)
+{
+    asm
+      {
+        pop ecx
+        cmp eax, LAST_OLD_NPC
+        jg new
+        push dword ptr [0x73c110+eax*4] ; replaced code
+        jmp ecx
+        new:
+        push dword ptr [new_strings+STR_MOON_ACOLYTE*4+eax*4-LAST_OLD_NPC*4-4]
+        jmp ecx
+      }
+}
+
+// Add a few more NPC professions and extend the relevant game arrays.
+static inline void new_hireling_types(void)
+{
+    // replace parsed npcprof.txt; addresses actually taken from mmext
+    patch_pointer(0x416B8F, &npcprof[0].description);
+    patch_pointer(0x416BA3, &npcprof[0].join);
+    patch_pointer(0x420CAB, &npcprof[0].cost);
+    patch_pointer(0x44536E, &npcprof[0].action);
+    // 0x44551D overwritten by delay_dismiss_hireling_reply()
+    // 0x445526 overwritten by print_cook_reply()
+    patch_pointer(0x445548, &npcprof[0].join);
+    // 0x4455A7 also overwritten near delay_dismiss_hireling_reply()
+    patch_pointer(0x4455B0, &npcprof[0].join);
+    patch_pointer(0x49597F, &npcprof[0].cost);
+    patch_pointer(0x4B1FE5, &npcprof[0].join);
+    patch_pointer(0x4B228F, &npcprof[0].join);
+    patch_pointer(0x4B2298, &npcprof[0].description);
+    patch_pointer(0x4B22ED, &npcprof[0].cost);
+    patch_pointer(0x4B2367, &npcprof[0].join);
+    patch_pointer(0x4B3DDC, &npcprof[0].description);
+    patch_pointer(0x4B4104, &npcprof[0].description);
+    patch_pointer(0x4BC680, &npcprof[0].cost);
+    patch_word(0x477183, 0xbb90); // nop; mov ebx, ...
+    patch_pointer(0x477185, &npcprof[1].join); // npcprof parse
+    patch_dword(0x477192, NPC_COUNT - 1); // ditto
+    patch_dword(0x477261, NPC_COUNT); // count at the end
+    patch_byte(0x476c17, NPC_COUNT); // npcdist parse
+    patch_byte(0x476c37, NPC_COUNT); // calc totals
+    hook_call(0x416c76, new_hireling_names, 7);
+    hook_call(0x41e9da, new_hireling_names, 7);
+    hook_call(0x445485, new_hireling_names, 7);
+    hook_call(0x4b2b0d, new_hireling_names, 7);
+    // Initiate was both Monk promotion and NPC.  Decouple.
+    patch_pointer(0x453677, &new_strings[STR_SUN_INITIATE]);
+    patch_pointer(0x476359, &new_strings[STR_SUN_INITIATE]);
+    // sun/moon priest bonuses are in warlock_dark_bonus() above
+    // Prevent Sun acolyte bonus from overwriting Moon bonus to Self.
+    patch_dword(0x48f8d4, 0x02c68300 + byte(0x48f8d4)); // add esi, 2
+}
+
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
                     LPVOID const reserved)
 {
@@ -21937,6 +22041,7 @@ BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
         balance_tweaks();
         shop_changes();
         one_more_map();
+        new_hireling_types();
       }
     return TRUE;
 }

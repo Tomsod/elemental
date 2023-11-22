@@ -324,6 +324,7 @@ enum new_strings
     STR_MOON_ACOLYTE,
     STR_MOON_INITIATE,
     STR_MOON_PRELATE,
+    STR_NINJA,
     NEW_STRING_COUNT
 };
 
@@ -902,6 +903,7 @@ enum spells
     SPL_FEATHER_FALL = 13,
     SPL_SPARKS = 15,
     SPL_LIGHTNING_BOLT = 18,
+    SPL_INVISIBILITY = 19,
     SPL_POISON_SPRAY = 24,
     SPL_RECHARGE_ITEM = 28,
     SPL_ENCHANT_ITEM = 30,
@@ -1087,10 +1089,11 @@ enum profession
     NPC_FALLEN_WIZARD = 52,
     NPC_MONK = 56,
     LAST_OLD_NPC = 58,
-    NPC_MOON_ACOLYTE = 59,
-    NPC_MOON_INITIATE = 60,
-    NPC_MOON_PRELATE = 61,
-    NPC_COUNT = 62,
+    NPC_MOON_ACOLYTE,
+    NPC_MOON_INITIATE,
+    NPC_MOON_PRELATE,
+    NPC_NINJA,
+    NPC_COUNT
 };
 
 // New max number of global.evt comands (was 4400 before).
@@ -9274,28 +9277,36 @@ static void __declspec(naked) display_dagger_accuracy(void)
 // Let's give some hirelings new abilities.
 static int __thiscall new_hireling_action(int id)
 {
-    if (id == NPC_PORTER)
+    switch (id)
       {
-        add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
-        add_action(ACTION_THIS, ACTION_EXTRA_CHEST, 1, 1);
+        case NPC_PORTER:
+            add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
+            add_action(ACTION_THIS, ACTION_EXTRA_CHEST, 1, 1);
+            return TRUE;
+        case NPC_QUARTER_MASTER:
+            add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
+            add_action(ACTION_THIS, ACTION_EXTRA_CHEST, 2, 1);
+            return TRUE;
+        case NPC_GYPSY:
+            add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
+            add_action(ACTION_THIS, ACTION_EXTRA_CHEST, 4, 1);
+            return TRUE;
+        case NPC_COOK:
+        case NPC_CHEF:
+            byte(HIRELING_REPLY) = 2;
+            dword(0x590f0c) = 77; // enable reply code
+            return TRUE;
+        case NPC_NINJA:
+            if (byte(STATE_BITS) & 0x30)
+              {
+                show_status_text(GLOBAL_TXT[638], 2); // "hostiles nearby"
+                return TRUE;
+              }
+            aim_spell(SPL_INVISIBILITY, 0, SKILL_GM + 4, 32, 0); // one hour
+            return FALSE;
+        default:
+            return hireling_action(id);
       }
-    else if (id == NPC_QUARTER_MASTER)
-      {
-        add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
-        add_action(ACTION_THIS, ACTION_EXTRA_CHEST, 2, 1);
-      }
-    else if (id == NPC_GYPSY)
-      {
-        add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
-        add_action(ACTION_THIS, ACTION_EXTRA_CHEST, 4, 1);
-      }
-    else if (id == NPC_COOK || id == NPC_CHEF)
-      {
-        byte(HIRELING_REPLY) = 2;
-        dword(0x590f0c) = 77; // enable reply code
-      }
-    else return hireling_action(id);
-    return TRUE;
 }
 
 // Actually print the dialog option for new NPCs.
@@ -9309,6 +9320,8 @@ static void __declspec(naked) enable_new_hireling_action(void)
         cmp eax, NPC_QUARTER_MASTER
         je enable
         cmp eax, NPC_GYPSY
+        je enable
+        cmp eax, NPC_NINJA
         je enable
         cmp eax, 10 ; replaced code
         ret
@@ -9331,6 +9344,8 @@ static void __declspec(naked) new_hireling_action_text(void)
         cmp ecx, NPC_QUARTER_MASTER
         jz quit
         cmp ecx, NPC_GYPSY
+        jz quit
+        cmp ecx, NPC_NINJA
         quit:
         ret
       }
@@ -10870,6 +10885,8 @@ static inline void misc_rules(void)
     // Downgrade Scholars to +5 to ID Item.
     erase_code(0x49111f, 9); // old bonus
     hook_call(0x48f954, new_scholar_bonus, 5);
+    // Increase Fallen Wizard buff duration to the stated 6 hours.
+    patch_dword(0x4bb8fc, SKILL_GM + 5); // was Master 5
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -21953,6 +21970,26 @@ static void __declspec(naked) new_hireling_names(void)
       }
 }
 
+// Only use two bytes for the per-area NPC chance totals.  Should be enough.
+static void __declspec(naked) npcdist_totals_chunk(void)
+{
+    asm
+      {
+        xor ecx, ecx ; replaced code
+        and word ptr [eax], cx ; changed from dword
+      }
+}
+
+// Only use two bytes of the read totals (the rest are garbage).
+static void __declspec(naked) truncate_npcdist_totals(void)
+{
+    asm
+      {
+        and ebx, 0xffff
+        jmp dword ptr ds:random ; replaced call
+      }
+}
+
 // Add a few more NPC professions and extend the relevant game arrays.
 static inline void new_hireling_types(void)
 {
@@ -21991,6 +22028,14 @@ static inline void new_hireling_types(void)
     // sun/moon priest bonuses are in warlock_dark_bonus() above
     // Prevent Sun acolyte bonus from overwriting Moon bonus to Self.
     patch_dword(0x48f8d4, 0x02c68300 + byte(0x48f8d4)); // add esi, 2
+    // ninja ability is in new_hireling_action() above
+    // Create place in the npcdist array for the new NPCs.
+    patch_dword(0x476bd9, dword(0x476bd9) - 3); // three more bytes
+    patch_bytes(0x476c27, npcdist_totals_chunk, 5);
+    patch_byte(0x476c31, 4 - 3); // three bytes earlier for totals
+    hook_call(0x4774f5, truncate_npcdist_totals, 5);
+    patch_dword(0x47750a, dword(0x47750a) - 2); // reading npcdist
+    erase_code(0x477515, 1); // off by one
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

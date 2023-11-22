@@ -769,3 +769,4 @@ Global Text
 766	Acolyte of the Moon
 767	Initiate of the Moon
 768	Prelate of the Moon
+769	Ninja

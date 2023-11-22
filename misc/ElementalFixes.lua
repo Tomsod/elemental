@@ -34,4 +34,4 @@ end
 -- Disable MMExt v2.3 map array extender (we handle it ourselves).
 rawset(Game.MapStats, "count", 78)
 -- Same for the hireling text array.
-if Game.NPCProfNames then rawset(Game.NPCProfNames, "limit", 62) end
+if Game.NPCProfNames then rawset(Game.NPCProfNames, "limit", 63) end

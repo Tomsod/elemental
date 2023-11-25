@@ -325,6 +325,7 @@ enum new_strings
     STR_MOON_INITIATE,
     STR_MOON_PRELATE,
     STR_NINJA,
+    STR_MERCHANT,
     NEW_STRING_COUNT
 };
 
@@ -917,6 +918,7 @@ enum spells
     SPL_PRESERVATION = 50,
     SPL_SPIRIT_LASH = 52,
     SPL_REMOVE_FEAR = 56,
+    SPL_MIND_BLAST = 57,
     SPL_AURA_OF_CONFLICT = 59,
     SPL_BERSERK = 62,
     SPL_CURE_WEAKNESS = 67,
@@ -1077,6 +1079,7 @@ enum profession
 {
     NPC_SMITH = 1,
     NPC_SCHOLAR = 4,
+    NPC_MERCHANT = 21,
     NPC_PORTER = 29,
     NPC_QUARTER_MASTER = 30,
     NPC_COOK = 33,
@@ -6765,8 +6768,10 @@ static inline void misc_spells(void)
     hook_jump(0x453b35, spells_txt_tail);
     // Poison chest traps are also hardcoded.
     patch_dword(0x438f11, POISON); // was body (8)
-    // Buff Ice Blast a little (d3 -> d4 damage).
-    SPELL_INFO[SPL_ICE_BLAST].damage_dice = 4;
+    // Buff Ice Blast to its MM8 version (d3 -> d6 damage).
+    SPELL_INFO[SPL_ICE_BLAST].damage_dice = 6;
+    // But remove the extra shards on GM (which doubled damage in practice).
+    erase_code(0x46c51e, 5);
     hook_call(0x4742bd, feather_fall_jump, 6); // outdoors
     hook_call(0x47301e, feather_fall_jump, 6); // indoors
     // Remove the shorter delay from GM Feather Fall.
@@ -6872,6 +6877,11 @@ static inline void misc_spells(void)
     patch_byte(0x427cd8, 2); // targets a pc
     patch_dword(0x4e22b8, 276); // spellbook icon x
     patch_dword(0x4e22bc, 5); // spellbook icon y
+    // generic buff recovery value
+    SPELL_INFO[SPL_AURA_OF_CONFLICT].delay_normal = 120;
+    SPELL_INFO[SPL_AURA_OF_CONFLICT].delay_expert = 120;
+    SPELL_INFO[SPL_AURA_OF_CONFLICT].delay_master = 120;
+    SPELL_INFO[SPL_AURA_OF_CONFLICT].delay_gm = 120;
     hook_call(0x434702, alternative_spell_mode_hook, 7);
     hook_call(0x428295, cumulative_recovery, 6);
     hook_call(0x42abbf, enchant_item_min_value, 5); // GM
@@ -6925,6 +6935,8 @@ static inline void misc_spells(void)
     hook_call(0x4336ee, lloyd_increase_recall_count, 5);
     hook_call(0x42b570, lloyd_starting_tab, 5);
     hook_call(0x433433, lloyd_disable_recall, 5);
+    // Reduce Lloyd's Beacon duration to 2 days/skill.
+    patch_dword(0x42b543, 2 * 24 * 60 * 60);
     hook_call(0x4737f2, reset_lava_walking, 7);
     hook_call(0x473828, lava_walking, 5);
     patch_dword(0x429972, 10); // nerf master meteor shower (16 -> 10 rocks)
@@ -6968,6 +6980,20 @@ static inline void misc_spells(void)
     erase_code(0x4398df, 4); // do not skip for weapon melee
     hook_call(0x4398f5, improved_hammerhands, 7);
     hook_call(0x41d7e2, display_immutability_charges, 6);
+    // Some spells didn't have the stated recovery reduction.
+    SPELL_INFO[SPL_FIRE_BOLT].delay_expert = 100;
+    SPELL_INFO[SPL_FIRE_BOLT].delay_master = 90;
+    SPELL_INFO[SPL_FIRE_BOLT].delay_gm = 80;
+    // reducing GM to 70 would be too much I think
+    SPELL_INFO[SPL_ICE_BLAST].delay_normal = 90;
+    SPELL_INFO[SPL_ICE_BLAST].delay_expert = 90;
+    SPELL_INFO[SPL_ICE_BLAST].delay_master = 90;
+    SPELL_INFO[SPL_SPIRIT_LASH].delay_gm = 90;
+    SPELL_INFO[SPL_MIND_BLAST].delay_expert = 100;
+    SPELL_INFO[SPL_MIND_BLAST].delay_master = 90;
+    SPELL_INFO[SPL_MIND_BLAST].delay_gm = 80;
+    SPELL_INFO[SPL_HAMMERHANDS].delay_master = 100;
+    SPELL_INFO[SPL_HAMMERHANDS].delay_gm = 100;
 }
 
 // For consistency with players, monsters revived with Reanimate now have
@@ -9072,6 +9098,17 @@ static void __declspec(naked) monk_npc_name(void)
       }
 }
 
+// Same, but for Merchants.
+static void __declspec(naked) merchant_npc_name(void)
+{
+    asm
+      {
+        mov edx, dword ptr [new_strings+STR_MERCHANT*4]
+        mov dword ptr [0x73c110+NPC_MERCHANT*4], edx ; replaced code
+        ret
+      }
+}
+
 // Implement the CheckSkill 0x2b command properly.  From what I understand,
 // it's supposed to check for effective skill (multiplied by mastery).
 // Learning is special, as its bonus (from NPCs etc.) is not multiplied.
@@ -10752,6 +10789,9 @@ static inline void misc_rules(void)
     // Same for monks.
     patch_pointer(0x47636d, &new_strings[STR_MONK]);
     hook_call(0x453543, monk_npc_name, 6); // can't just patch in place
+    // And Merchant NPCs shared their name with the skill.
+    patch_pointer(0x47620f, &new_strings[STR_MERCHANT]);
+    hook_call(0x45336f, merchant_npc_name, 6); // again can't patch
     patch_pointer(0x4484f3, check_skill_hook);
     hook_call(0x44b360, evt_add_specitem, 5);
     hook_call(0x48dab0, pickpocket_specitem, 6);
@@ -11013,9 +11053,9 @@ static void __declspec(naked) resurrection_chunk(void)
 {
     asm
       {
-        add edi, 5
+        add edi, 2
         lea edi, [edi*4+edi]
-        shl edi, 1
+        lea edi, [edi*2+edi]
         lea ecx, [PARTY_ADDR+eax]
         call dword ptr ds:get_full_hp
         cmp edi, eax
@@ -17158,7 +17198,7 @@ static void __stdcall blaster_eradicate(struct player *player,
     if (projectile->spell_type == SPL_INCINERATE)
       {
         int power = projectile->spell_power;
-        if (power > random() % 50 && elemdata.difficulty <= random() % 4
+        if (power * 3 > random() % 100 && elemdata.difficulty <= random() % 4
             && debuff_monster(monster, FIRE, power))
             monster->hp = 0;
       }
@@ -17693,10 +17733,11 @@ static void __declspec(naked) absorb_monster_spell(void)
         jne skip
         call dword ptr ds:random
         xor edx, edx
-        mov ecx, 50
+        mov ecx, 100
         div ecx
         mov eax, dword ptr [ebx+76] ; spell power
         and eax, SKILL_MASK
+        lea eax, [eax+eax*2]
         cmp eax, edx
         jbe skip
         ; now we make a debuff resistance roll

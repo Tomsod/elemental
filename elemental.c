@@ -6749,6 +6749,39 @@ static void __declspec(naked) display_immutability_charges(void)
       }
 }
 
+// Add damage to Turn Undead, and skip fear if no damage dealt.
+static void __declspec(naked) turn_undead_damage(void)
+{
+    asm
+      {
+        test eax, eax ; -1 if no object created
+        js skip
+        push dword ptr [edi+40] ; target hp
+        push esi
+        push esi
+        push esi
+        push esp
+        mov edx, dword ptr [ebp-8]
+        mov edx, dword ptr [0x50bdb0+edx*4] ; target list
+        lea ecx, [eax*8+2]
+        call dword ptr ds:damage_monster_from_party
+        add esp, 12
+        pop eax
+        cmp word ptr [edi+40], ax ; not hurt, not scared
+        je skip
+        cmp word ptr [edi+40], si ; check if dead
+        jle skip
+        mov eax, dword ptr [ebp-16] ; replaced code
+        shl eax, 7 ; ditto
+        pop ecx
+        push esi ; also replaced
+        jmp ecx
+        skip:
+        mov dword ptr [esp], 0x42bd87 ; after fear code
+        ret
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -6994,6 +7027,9 @@ static inline void misc_spells(void)
     SPELL_INFO[SPL_MIND_BLAST].delay_gm = 80;
     SPELL_INFO[SPL_HAMMERHANDS].delay_master = 100;
     SPELL_INFO[SPL_HAMMERHANDS].delay_gm = 100;
+    // Let Turn Undead deal minor damage.
+    SPELL_INFO[SPL_TURN_UNDEAD].damage_dice = 1;
+    hook_call(0x42bd51, turn_undead_damage, 7);
 }
 
 // For consistency with players, monsters revived with Reanimate now have
@@ -7059,10 +7095,9 @@ static void __declspec(naked) control_undead_chunk(void)
       }
 }
 
-// There's a couple more places where the game checks for undead-ness,
-// but these three are the most important ones.  Notably, I didn't change
-// "of undead slayer" modifier, but that's because I plan to rework it
-// entirely in the future versions.
+// This is actually redundant now as any immune monster will resist all
+// damage and thus avoid the debuff too, but we do still avoid a lot of
+// useless calculations by performing this check in advance.
 static void __declspec(naked) turn_undead_chunk(void)
 {
     asm
@@ -7454,6 +7489,7 @@ static int __thiscall consider_new_spells(void *this,
 
         for (int i = 0; i < 4; i++)
             if (is_undead(&PARTY[i]) && player_active(&PARTY[i])
+                // TODO: may remove the below requirement if damage ever rises
                 && !PARTY[i].conditions[COND_AFRAID])
                 return TRUE;
         return FALSE;
@@ -7463,7 +7499,7 @@ static int __thiscall consider_new_spells(void *this,
         if (target == TGT_PARTY)
           {
             if (!(monster->bits & 0x200000)) // has line of sight
-                return 0;
+                return FALSE;
             for (int i = 0; i < 4; i++)
                 if (is_undead(&PARTY[i]) && player_active(&PARTY[i]))
                     return TRUE;
@@ -7500,7 +7536,7 @@ static void __fastcall __declspec(naked) monster_casts_spell(int monster,
 //Defined below.
 static int __thiscall absorb_spell(struct player *player, int spell, int rank);
 
-// Turn undead scares all undead PCs, with no chance to resist.
+// Turn undead damages and scares all undead PCs.
 // Destroy undead damages one undead PC or monster with Holy.
 // We also handle the Cursed monster debuff here.
 static void __fastcall cast_new_spells(int monster, void *vector, int spell,
@@ -7520,7 +7556,14 @@ static void __fastcall cast_new_spells(int monster, void *vector, int spell,
         for (int i = 0; i < 4; i++)
             if (is_undead(&PARTY[i]) && player_active(&PARTY[i])
                 && !absorb_spell(&PARTY[i], spell, NORMAL))
-                condition_immunity(&PARTY[i], COND_AFRAID, 0);
+              {
+                int mastery = skill_mastery(skill);
+                skill &= SKILL_MASK;
+                int damage = spell_damage(spell, skill, mastery, 0);
+                if (damage_player(&PARTY[i], damage, ELEMENT(spell))
+                    && !PARTY[i].conditions[COND_AFRAID])
+                    condition_immunity(&PARTY[i], COND_AFRAID, 0);
+              }
         make_sound(SOUND_THIS, spell_sound, 0, 0, -1, 0, 0, 0, 0);
       }
     else if (spell == SPL_DESTROY_UNDEAD)
@@ -11341,19 +11384,26 @@ static void __declspec(naked) slow_multiply_duration_chunk(void)
 }
 
 // Make Turn Undead duration dependent only on mastery and not skill.
-// Instead, skill reduces recovery.
 static void __declspec(naked) turn_undead_duration_chunk(void)
 {
     asm
       {
         ; edx == 3
-        sub edx, 2 ; normal 5 min
-        jmp duration
+        gm:
         shl edx, 1 ; gm 1 hour
+        master:
         shl edx, 1 ; master 30 min
-        duration:
+        jmp expert
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+        normal:
+        sub edx, 2 ; normal 5 min
+        expert:
         imul eax, edx, 60 * 5 ; expert 15 min
-        sub dword ptr [ebp-180], edi ; recovery
       }
 }
 
@@ -11432,9 +11482,8 @@ static inline void debuff_spells(void)
     patch_bytes(0x428df5, slow_multiply_duration_chunk, 6);
     // Make Turn Undead duration fixed, for symmetry with other debuffs.
     patch_bytes(0x42bbed, turn_undead_duration_chunk, 21);
-    patch_byte(0x42bbe6, 15); // expert jump
-    patch_byte(0x42bbe9, 10); // master jump
-    patch_word(0x42bbeb, 0x0574); // new GM jump: jnz N -> jz GM
+    patch_byte(0x42bbe9, 5); // master jump
+    patch_byte(0x42bbec, 12); // normal jump
     patch_bytes(0x428e86, duration_15min_chunk, 6); // Charm
     // Berserk
     patch_bytes(0x42c4ac, duration_15min_chunk, 6); // E

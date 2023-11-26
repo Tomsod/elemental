@@ -194,6 +194,7 @@ explosion	4091	16	16	-	-	x	x	x	x	-	-	-	-	-	null	16	0	0	0	0	0
 shard	4092	16	16	-	-	x	-	x	-	x	-	-	-	-	spell41	1000	500	0	0	0	0
 Mass Distortion	4100	16	16	-	-	x	-	x	x	x	-	-	-	-	null	768	4000	0	0	0	0
 explosion	4101	16	16	-	-	x	x	x	x	-	-	-	-	-	null	16	0	0	0	0	0
+Turn Undead	5031	16	16	-	-	x	-	x	x	-	-	-	-	-	null	0	0	0	0	0	0
 Spirit Lash	5070	16	16	-	-	x	-	x	x	-	-	-	-	-	null	0	0	0	0	0	0
 explosion	5071	16	16	-	-	x	x	x	x	-	-	-	-	-	null	16	0	0	0	0	0
 Mind Blast	6010	16	16	-	-	x	-	x	x	x	-	-	-	-	spell57	768	4000	0	0	0	0

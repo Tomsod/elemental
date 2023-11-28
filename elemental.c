@@ -6782,6 +6782,36 @@ static void __declspec(naked) turn_undead_damage(void)
       }
 }
 
+// Make some conditions more "expensive" to prevent through Immutability.
+static void __declspec(naked) immutability_double_cost(void)
+{
+    asm
+      {
+        sub word ptr [PARTY_BUFF_ADDR+BUFF_IMMUTABILITY*16+8], 2
+        jg ok
+        mov ecx, PARTY_BUFF_ADDR + BUFF_IMMUTABILITY * 16
+        call dword ptr ds:remove_buff
+        ok:
+        mov eax, 0x4930f6 ; resisted code path
+        jmp eax
+      }
+}
+
+// Instadeath protection at GM should be even more expensive.
+static void __declspec(naked) immutability_triple_cost(void)
+{
+    asm
+      {
+        sub word ptr [PARTY_BUFF_ADDR+BUFF_IMMUTABILITY*16+8], 3
+        jg ok
+        mov ecx, PARTY_BUFF_ADDR + BUFF_IMMUTABILITY * 16
+        call dword ptr ds:remove_buff
+        ok:
+        mov eax, 0x4930f6 ; resisted code path
+        jmp eax
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -7030,6 +7060,17 @@ static inline void misc_spells(void)
     // Let Turn Undead deal minor damage.
     SPELL_INFO[SPL_TURN_UNDEAD].damage_dice = 1;
     hook_call(0x42bd51, turn_undead_damage, 7);
+    // Let Immutability wear off more quickly against dangerous conditions.
+    // paralyzed
+    patch_dword(0x492f6e, (int) immutability_double_cost - 0x492f72);
+    patch_dword(0x492f7a, (int) immutability_double_cost - 0x492f7e);
+    // dead
+    patch_dword(0x492ff9, (int) immutability_triple_cost - 0x492ffd);
+    // stoned -- also fixes a bug wherein it wasn't decremented at all
+    patch_dword(0x493014, (int) immutability_double_cost - 0x493018);
+    patch_dword(0x493020, (int) immutability_double_cost - 0x493024);
+    // eradicated
+    patch_dword(0x49309a, (int) immutability_triple_cost - 0x49309e);
 }
 
 // For consistency with players, monsters revived with Reanimate now have

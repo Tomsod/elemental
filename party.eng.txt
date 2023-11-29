@@ -240,9 +240,10 @@ that will give some kind of bonus (mostly travel-related) to the party.  Second
 promotions will also give unique abilities: Champions (LP) grant +2 to weapon
 and armor skills for the entire party (and this is cumulative if you have
 several of them), while Black Knights (DP) treat every melee weapon as Cursed
-(which means equipping an actually Cursed weapon is redundant).  Skill-wise,
-Champions get Master Bow, and Black Knights have Thievery and Expert Disarm,
-but this is all mostly cosmetic.  Overall, Knights are still straightforward.
+(which means equipping an actually Cursed weapon is redundant) and have +10%
+to melee crit chance.  Skill-wise, Champions get Master Bow, and Black Knights
+have Thievery and Expert Disarm.  This can fill another niche in your party,
+but it's all mostly cosmetic.  Overall, Knights are still straightforward.
 
 Thieves are more of an utility class now, as they can get GM ID Item and either
 Perception (LP) or Alchemy (DP).  Their magic skills are more focused, as they

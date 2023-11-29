@@ -175,7 +175,9 @@ enum spcitems_txt
     SPC_MASTERFUL = 94,
     SPC_KICKING = 95,
     SPC_ABSORPTION = 96,
-    SPC_COUNT = 96
+    SPC_KEEN = 97,
+    SPC_VORPAL = 98,
+    SPC_COUNT = 98
 };
 
 enum player_stats
@@ -8681,29 +8683,37 @@ static char *__stdcall resistance_hint(char *description, int resistance)
 static int __thiscall get_critical_chance(struct player *player, int ranged)
 {
     int crit = get_effective_stat(get_luck(player));
+    if (player->class == CLASS_BLACK_KNIGHT && !ranged)
+        crit += 10;
     int dagger = get_skill(player, SKILL_DAGGER);
     if (dagger > SKILL_MASTER)
-      {
         dagger &= SKILL_MASK;
-        int equip = player->equipment[ranged?SLOT_MISSILE:SLOT_MAIN_HAND];
-        for (int i = !!ranged; i < 2; i++)
+    else dagger = 0;
+    int equip = player->equipment[ranged?SLOT_MISSILE:SLOT_OFFHAND];
+    for (int i = !!ranged; i < 2; i++)
+      {
+        if (equip)
           {
-            if (equip)
+            struct item *weapon = &player->items[equip-1];
+            if (!(weapon->flags & IFLAGS_BROKEN))
               {
-                struct item *weapon = &player->items[equip-1];
-                if (!(weapon->flags & IFLAGS_BROKEN)
-                    && ITEMS_TXT[weapon->id].skill == SKILL_DAGGER)
+                if (ITEMS_TXT[weapon->id].skill == SKILL_DAGGER)
                     crit += dagger;
+                if (weapon->bonus2 == SPC_KEEN)
+                    crit += 5;
+                else if (weapon->bonus2 == SPC_VORPAL)
+                    crit += 10;
+                if (weapon->id == THE_PERFECT_BOW)
+                    crit += 25;
+                else if (weapon->id == CHARELE)
+                    crit += 20;
+                else if (weapon->id == CLOVER && crit > 0)
+                    crit *= 2; // must be applied last
               }
-            if (!i)
-                equip = player->equipment[SLOT_OFFHAND];
           }
+        if (!i)
+            equip = player->equipment[SLOT_MAIN_HAND];
       }
-    if (ranged && has_item_in_slot(player, THE_PERFECT_BOW, SLOT_MISSILE))
-        crit += 25;
-    if (!ranged && crit > 0
-        && has_item_in_slot(player, CLOVER, SLOT_MAIN_HAND))
-        crit *= 2;
     if (crit > 100) // can happen with stupid high dagger skill
         crit = 100;
     return crit;
@@ -8996,14 +9006,11 @@ static int __stdcall new_stat_thresholds(int stat)
 }
 
 // Give the two-handed swords and axes doubled quality bonus to damage.
-// Charele also gets this bonus (as an unique artifact property).
 static void __declspec(naked) th_weapons_damage(void)
 {
     asm
       {
         movzx eax, byte ptr [ITEMS_TXT_ADDR+esi+32] ; replaced code (dmg bonus)
-        cmp ebp, CHARELE
-        je doubled
         cmp byte ptr [ITEMS_TXT_ADDR+esi+28], 1 ; two-handed weapon
         jne quit
         cmp byte ptr [ITEMS_TXT_ADDR+esi+29], SKILL_SWORD
@@ -9023,9 +9030,6 @@ static void __declspec(naked) th_weapons_description(void)
     asm
       {
         lea eax, [ebp-204] ; replaced code
-        mov ecx, dword ptr [ebp-4] ; item
-        cmp dword ptr [ecx], CHARELE
-        je doubled
         cmp byte ptr [edi+28], 1
         jne quit
         cmp byte ptr [edi+29], SKILL_SWORD
@@ -9045,8 +9049,6 @@ static void __declspec(naked) th_weapons_min_damage(void)
     asm
       {
         movzx edi, byte ptr [ITEMS_TXT_ADDR+eax+32] ; replaced code (dmg bonus)
-        cmp edx, CHARELE
-        je doubled
         cmp byte ptr [ITEMS_TXT_ADDR+eax+28], 1 ; two-handed weapon
         jne quit
         cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_SWORD
@@ -9065,8 +9067,6 @@ static void __declspec(naked) th_weapons_max_damage(void)
 {
     asm
       {
-        cmp edx, CHARELE
-        je damage
         cmp byte ptr [ITEMS_TXT_ADDR+eax+28], 1 ; two-handed weapon
         jne damage
         cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_SWORD
@@ -9090,8 +9090,6 @@ static void __declspec(naked) th_weapons_damage_bonus(void)
         movzx edi, byte ptr [ITEMS_TXT_ADDR+eax+32] ; replaced code (dmg bonus)
         cmp esi, STAT_MELEE_DAMAGE_BASE
         jne not_doubled
-        cmp eax, CHARELE * 48
-        je doubled
         cmp byte ptr [ITEMS_TXT_ADDR+eax+28], 1 ; two-handed weapon
         jne not_doubled
         cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_SWORD

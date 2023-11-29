@@ -98,8 +98,10 @@ Makes monsters hit in melee Afraid.	Terrifying	Y	0	0	0	0	0	20	0	0	0	0	0	0	0	20	2
 +5 to weapon skill.	Masterful	Y	20	10	0	0	0	0	0	0	0	0	0	0	0	0	2000	D	385	Hour of Power scroll	(+5) to skill corresponding to the weapon
 +5 to melee damage.	of Kicking	N	0	0	0	0	0	0	0	0	0	15	0	0	0	0	1500	C	333	Stun scroll	(+5) to melee weapon damage
 May absorb incoming spells.	of Absorption	N	0	0	0	0	0	0	0	0	0	0	0	0	10	0	2500	D	277	Magic Immunity potion	10% chance to avoid harmful spell effects and restore SP
++5% critical hit chance.	Keen	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1000	B	338	Blades scroll	(+5) to melee or ranged critical hit roll, cumulative
++10% critical hit chance.	Vorpal	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	2000	D	392	Shrapmetal scroll	(+10) to melee or ranged critical hit roll, cumulative
 
-			660	810	605	375	355	350	260	325	245	240	405	465	650	490
+			700	830	645	375	355	350	260	325	245	240	405	465	650	490
 
 Treasure Level	If treasure Level = 3 add all A and B
 A= 3 to 4	If treasure Level = 4 add all A and B and C

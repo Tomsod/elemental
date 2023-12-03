@@ -12394,6 +12394,18 @@ static void __declspec(naked) masterful_weapon_hook(void)
       }
 }
 
+// Make "of Doom" slightly more useful.
+static void __declspec(naked) of_doom_bonus(void)
+{
+    asm
+      {
+        jg skip ; replaced jump
+        add edi, 3 ; was 1
+        skip:
+        ret
+      }
+}
+
 // Let's add some new item enchantments.
 static inline void new_enchants(void)
 {
@@ -12451,6 +12463,7 @@ static inline void new_enchants(void)
     hook_call(0x48f5f6, blessed_missile_weapon, 7);
     hook_call(0x48fb1e, masterful_weapon_hook, 5);
     // masterful clubs are in blessed_rightnand_weapon()
+    hook_call(0x48f3f6, of_doom_bonus, 7);
 }
 
 // Let the Elven Chainmail also improve bow skill.

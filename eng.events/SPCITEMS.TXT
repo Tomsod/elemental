@@ -3,7 +3,7 @@ Special Bonuses by Group
 Bonus Stat	Name Add	Prefix	Weap	Staff	Miss	Arm	Shld	Helm	Belt	Cape	Gaunt	Boot	Ring	Amul	Robe	Crown	Value	Lvl	Craft	Craft description	Description fo special Bonuses and values
 
 +10 to all Resistances.	of Protection	N	0	10	0	10	10	10	0	10	0	0	10	10	10	10	1000	B	384	Day of Protection scroll	(+10) on all four resistances
-+10 to all Seven Statistics.	of The Gods	N	5	10	5	10	10	10	10	10	10	10	10	10	10	10	3000	D	382	Day of the Gods scroll	(+10) on all 7 stats
++10 to all Seven Statistics.	of The Gods	N	5	10	5	10	10	10	10	10	10	10	10	10	10	10	1500	C	382	Day of the Gods scroll	(+10) on all 7 stats
 Explosive Impact!	of Carnage	N	0	0	10	0	0	0	0	0	0	0	0	0	0	0	5000	D	396	Dragon Breath scroll	"projectile explodes (fireball radius,dmg=weapdmg)"
 Adds 3-4 points of Cold damage.	of Cold	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	500	A	325	Ice Bolt scroll	(3-4) cold damage
 Adds 6-8 points of Cold damage.	of Frost	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1000	C	331	Ice Blast scroll	(6-8) cold damage
@@ -43,7 +43,7 @@ Regenerate Spell points over time.	of Mana	N	0	10	0	10	0	10	10	10	10	0	10	10	10	
 Double damage vs Demons.	Demon Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	X 2	A	214	Vial of Devil Ichor reagent	X 2 damage vs all demons
 Double damage vs Dragons.	Dragon Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	X 2	A	263	Slaying potion	X 2 damage vs all dragons
 Drain Hit Points from target and Increased Weapon speed.	of Darkness	N	5	5	5	0	0	0	0	0	0	0	0	0	0	0	X 3	D	265	Pure Speed potion	"(-20) pts on weapon speed, Vampiric"
-"+1 to Seven Stats, HP, SP, Armor, Resistances."	of Doom	N	10	10	10	10	10	10	10	10	10	10	10	10	10	10	750	B	399	Fate scroll	"(+1) 7stats,hpts,spts,AC,6 resistances"
+"+3 to Seven Stats, HP, SP, Armor, Resistances."	of Doom	N	10	10	10	10	10	10	10	10	10	10	10	10	10	10	750	B	399	Fate scroll	"(+3) 7stats,hpts,spts,AC,6 resistances"
 "+10 to Endurance and Armor and +5 Hit points."	of Earth	N	10	20	10	10	10	10	10	10	10	10	10	10	20	0	2000	D	213	Garnet reagent	"End (+10), AC (+10), HP (+10)"
 +5 Hit points and Regenerate Hit points over time.	of Life	N	0	5	0	10	10	10	10	10	10	10	10	10	10	20	2000	D	203	Ruby reagent	"HP (+10), Regen hpts"
 +5 Speed and Accuracy.	Rogues'	Y	10	10	10	5	5	5	10	20	20	20	10	10	5	5	500	A	304	Haste scroll	"Speed (+5), Acc (+5)"

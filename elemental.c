@@ -146,10 +146,12 @@ enum spcitems_txt
     SPC_INFERNOS = 12,
     SPC_VENOM = 14,
     SPC_VAMPIRIC = 16,
+    SPC_DEMON_SLAYING = 39,
     SPC_DRAGON_SLAYING = 40,
     SPC_DARKNESS = 41,
     SPC_DRAGON = 46,
     SPC_SWIFT = 59,
+    SPC_ELF_SLAYING = 63,
     SPC_UNDEAD_SLAYING = 64,
     SPC_DAVID = 65,
     SPC_ASSASSINS = 67,
@@ -1335,7 +1337,6 @@ static int __fastcall (*elem_damage)(void *weapon, int *ret_element,
                                      int *ret_vampiric) = (funcptr_t) 0x439e16;
 static int __stdcall (*monster_resists)(void *monster, int element, int damage)
     = (funcptr_t) 0x427522;
-static funcptr_t monster_in_group = (funcptr_t) 0x438bce;
 static void __thiscall (*expire_temp_bonus)(struct item *item, long long time)
     = (funcptr_t) 0x458299;
 static funcptr_t is_artifact = (funcptr_t) 0x456d98;
@@ -2762,162 +2763,6 @@ static void __declspec(naked) expire_weapon(void)
       }
 }
 
-// Store temp enchant in eax for the next chunk.
-static void __declspec(naked) temp_bane_bow_1(void)
-{
-    asm
-      {
-        xor eax, eax
-        xor edx, edx
-        cmp dword ptr [ebx+4], TEMP_ENCH_MARKER
-        jne no_temp
-        mov eax, dword ptr [ebx+8]
-        no_temp:
-        mov ebx, dword ptr [ebx+12] ; replaced code
-        cmp ebx, SPC_UNDEAD_SLAYING ; replaced code
-        ret
-      }
-}
-
-// Check monster bane twice for both possible enchants.
-// Also lower Undead Slaying extra damage to 150%.
-// This hook also implements Elemental Slaying bows.
-static void __declspec(naked) temp_bane_bow_2(void)
-{
-    asm
-      {
-        mov edi, eax
-        cmp ebx, SPC_ELEMENTAL_SLAYING
-        jne not_elemental
-        cmp ecx, 34 ; first elemental
-        jb not_elemental
-        cmp ecx, 48 ; last elemental
-        ja not_elemental
-        xor ebx, ebx
-        xor eax, eax
-        inc eax
-        jmp quit
-        not_elemental:
-        cmp edx, MG_UNDEAD
-        sete bl
-        call dword ptr ds:monster_in_group
-        and ebx, eax
-        cmp edi, SPC_UNDEAD_SLAYING
-        je undead
-        cmp edi, SPC_DRAGON_SLAYING
-        jne quit
-        mov edx, MG_DRAGON
-        jmp temp
-        undead:
-        mov edx, MG_UNDEAD
-        test eax, eax
-        setz bh
-        temp:
-        mov ecx, dword ptr [ebp+8]
-        push eax
-        call dword ptr ds:monster_in_group
-        pop ecx
-        and bh, al
-        or eax, ecx
-        quit:
-        mov ecx, esi
-        test ebx, ebx
-        jz not_undead
-        shr ecx, 1
-        not_undead:
-        ret
-      }
-}
-
-// Avoid skipping the code below for non-bane weapons.
-static void __declspec(naked) temp_bane_melee_1(void)
-{
-    asm
-      {
-        cmp eax, SPC_DAVID ; replaced code
-        pop edx
-        jne no_bane
-        push MG_TITAN ; replaced code
-        jmp edx
-        no_bane:
-        push 0
-        jmp edx
-      }
-}
-
-// Check bane twice for melee weapons.
-// We also check for backstab damage and Elemental Slaying weapons here.
-// Also, ensures that Undead Slaying only adds +50% damage.
-static void __declspec(naked) temp_bane_melee_2(void)
-{
-    asm
-      {
-        push 0 ; undead flag
-        cmp ebp, CORSAIR
-        je backstab
-        cmp ebp, OLD_NICK
-        je backstab
-        cmp eax, SPC_BACKSTABBING
-        je backstab
-        cmp eax, SPC_ASSASSINS
-        jne no_backstab
-        backstab:
-        test byte ptr [esp+44], 2 ; 1st param, backstab bit
-        jz no_backstab
-        doubled:
-        mov eax, 1 ; return true
-        jmp quit
-        no_backstab:
-        cmp eax, SPC_ELEMENTAL_SLAYING
-        je elemental
-        cmp ebp, MEKORIGS_HAMMER
-        jne not_elemental
-        elemental:
-        cmp ecx, 34 ; first elemental
-        jb not_elemental
-        cmp ecx, 48 ; last elemental
-        jbe doubled
-        not_elemental:
-        cmp edx, MG_UNDEAD
-        jne not_undead
-        inc dword ptr [esp] ; undead flag
-        not_undead:
-        call dword ptr ds:monster_in_group
-        and dword ptr [esp], eax ; reset flag if not undead
-        cmp dword ptr [ebx+4], TEMP_ENCH_MARKER
-        jne quit
-        mov ecx, dword ptr [ebx+8]
-        cmp ecx, SPC_UNDEAD_SLAYING
-        je undead
-        cmp ecx, SPC_DRAGON_SLAYING
-        je dragon
-        quit:
-        pop edx
-        mov ecx, esi
-        test edx, edx
-        jle dont_halve
-        shr ecx, 1
-        dont_halve:
-        ret
-        dragon:
-        mov edx, MG_DRAGON
-        jmp temp
-        undead:
-        test eax, eax
-        jnz quit
-        mov edx, MG_UNDEAD
-        add dword ptr [esp], 2
-        temp:
-        mov ecx, dword ptr [esp+52]
-        push eax
-        call dword ptr ds:monster_in_group
-        pop ecx
-        sub dword ptr [esp], eax
-        or eax, ecx
-        jmp quit
-      }
-}
-
 // Additional item info paragraphs.
 static char enchant_buffer[100], charge_buffer[100];
 
@@ -3299,19 +3144,9 @@ static inline void temp_enchants(void)
     hook_call(0x48e4b4, temp_swiftness, 6);
     patch_word(0x48d20e, 0xdf89); // mov edi, ebx
     hook_call(0x48d210, expire_weapon, 5);
-    hook_call(0x48d260, temp_bane_bow_1, 6);
-    patch_byte(0x48d28b, 11); // redirect a jump to always reach the below hook
-    hook_call(0x48d297, temp_bane_bow_2, 5);
-    patch_word(0x48d2a0, 0xce01); // add esi, ecx
-    // melee bane code is repeated for either hand
+    // melee damage code is repeated for either hand
     hook_call(0x48ce11, expire_weapon, 7);
-    hook_call(0x48ceb6, temp_bane_melee_1, 7);
-    hook_call(0x48cecf, temp_bane_melee_2, 5);
-    patch_word(0x48ced8, 0xce01); // add esi, ecx
     hook_call(0x48cf42, expire_weapon, 7);
-    hook_call(0x48cfe1, temp_bane_melee_1, 7);
-    hook_call(0x48cffa, temp_bane_melee_2, 5);
-    patch_word(0x48d003, 0xce01); // add esi, ecx
     hook_call(0x41e025, display_temp_enchant, 7);
     patch_dword(0x41dfe5, 5); // two more cycles
     hook_call(0x41de8d, temp_enchant_height, 7);
@@ -7549,7 +7384,7 @@ static int __thiscall consider_new_spells(void *this,
             return FALSE;
           }
         else if ((target & 7) == TGT_MONSTER) 
-            return MAP_MONSTERS[target>>3].holy_resistance != IMMUNE;
+            return MAP_MONSTERS[target>>3].holy_resistance < IMMUNE;
         else // shouldn't happen
             return FALSE;
       }
@@ -8680,7 +8515,9 @@ static char *__stdcall resistance_hint(char *description, int resistance)
 }
 
 // Shared subroutine that calculates melee or ranged critical hit/miss chance.
-static int __thiscall get_critical_chance(struct player *player, int ranged)
+static int __thiscall get_critical_chance(struct player *player,
+                                          struct map_monster *monster,
+                                          int ranged)
 {
     int crit = get_effective_stat(get_luck(player));
     if (player->class == CLASS_BLACK_KNIGHT && !ranged)
@@ -8703,6 +8540,58 @@ static int __thiscall get_critical_chance(struct player *player, int ranged)
                     crit += 5;
                 else if (weapon->bonus2 == SPC_VORPAL)
                     crit += 10;
+                if (monster)
+                  {
+                    int id = weapon->id;
+                    int bonus = weapon->bonus2;
+                    int ench = 0;
+                    if (weapon->bonus == TEMP_ENCH_MARKER)
+                        ench = weapon->bonus_strength;
+                    int slay;
+                    switch ((monster->id + 2) / 3)
+                      {
+                        case 8: // devils
+                            slay = bonus == SPC_DEMON_SLAYING || id == GIBBET;
+                            break;
+                        case 9: // dragons
+                            slay = bonus == SPC_DRAGON_SLAYING
+                                   || ench == SPC_DRAGON_SLAYING
+                                   || id == GIBBET;
+                            break;
+                        case 12: // air elementals
+                        case 13: // earth elementals
+                        case 14: // fire elementals
+                        case 15: // light elementals
+                        case 16: // water elementals
+                            slay = bonus == SPC_ELEMENTAL_SLAYING
+                                   || id == MEKORIGS_HAMMER;
+                            break;
+                        case 17: // elven archers
+                        case 18: // elven spearmen
+                        case 45: // elven peasants female a
+                        case 46: // elven peasants female b
+                        case 47: // elven peasants female c
+                        case 48: // elven peasants male a
+                        case 49: // elven peasants male b
+                        case 50: // elven peasants male c
+                            slay = bonus == SPC_ELF_SLAYING || id == ELFBANE;
+                            break;
+                        case 71: // titans
+                            slay = bonus == SPC_DAVID;
+                            break;
+                        default:
+                            slay = FALSE;
+                            break;
+                      }
+                    if (slay)
+                        crit += 30;
+                    else if (monster->holy_resistance < IMMUNE
+                             && (bonus == SPC_UNDEAD_SLAYING
+                                 || ench == SPC_UNDEAD_SLAYING
+                                 || id == GHOULSBANE || id == GIBBET
+                                 || id == JUSTICE))
+                        crit += 20;
+                  }
                 if (weapon->id == THE_PERFECT_BOW)
                     crit += 25;
                 else if (weapon->id == CHARELE)
@@ -8717,6 +8606,32 @@ static int __thiscall get_critical_chance(struct player *player, int ranged)
     if (crit > 100) // can happen with stupid high dagger skill
         crit = 100;
     return crit;
+}
+
+// Similar, but for backstabs (melee only).
+static int __thiscall get_backstab_chance(struct player *player)
+{
+    int skill = get_skill(player, SKILL_THIEVERY);
+    int chance = skill & SKILL_MASK;
+    if (skill >= SKILL_MASTER)
+        chance *= 3;
+    else if (skill >= SKILL_EXPERT)
+        chance *= 2;
+    for (int slot = SLOT_MAIN_HAND; slot >= SLOT_OFFHAND; slot--)
+      {
+        int equip = player->equipment[slot];
+        if (!equip)
+            continue;
+        struct item *weapon = &player->items[equip-1];
+        if (weapon->flags & IFLAGS_BROKEN)
+            continue;
+        if (weapon->bonus2 == SPC_BACKSTABBING
+            || weapon->bonus2 == SPC_ASSASSINS)
+            chance += 15;
+        else if (weapon->id == OLD_NICK)
+            chance += 13;
+      }
+    return chance;
 }
 
 // Provide additional info for melee and ranged damage, too.
@@ -8739,7 +8654,7 @@ static char *__stdcall damage_hint(char *description, int ranged)
           }
         display_damage = TRUE;
       }
-    int crit = get_critical_chance(player, ranged);
+    int crit = get_critical_chance(player, NULL, ranged);
     if (!crit && !display_damage)
         return description;
     strcpy(buffer, description);
@@ -8752,11 +8667,10 @@ static char *__stdcall damage_hint(char *description, int ranged)
     else strcat(buffer, "\n");
     if (!display_damage)
         return buffer;
-    int backstab = get_skill(player, SKILL_THIEVERY);
-    if (!ranged && backstab > SKILL_GM)
+    if (!ranged && player->skills[SKILL_THIEVERY] >= SKILL_GM)
       {
         // essentially also crits at this point
-        int chance = (backstab & SKILL_MASK) * 3;
+        int chance = get_backstab_chance(player);
         if (chance >= 100)
             crit = 100;
         else
@@ -12039,13 +11953,12 @@ static void __declspec(naked) reset_critical_hit(void)
       {
         mov dword ptr [critical_hit], eax ; == 0
         mov dword ptr [ebp-32], eax ; replaced code
-        cmp ebx, eax ; repalced code
+        cmp ebx, eax ; replaced code
         ret
       }
 }
 
-// If the monster can be backstabbed, add 2 to the first parameter
-// of melee damage function and set the backstab critical flag.
+// If the monster can be backstabbed, set the backstab critical flag.
 static void __declspec(naked) check_backstab(void)
 {
     asm
@@ -12057,22 +11970,10 @@ static void __declspec(naked) check_backstab(void)
         test dh, 6 ; we want no more than +/-512 mod 2048 difference
         jnp quit ; PF == 1 will match 0x000 and 0x110 only
         backstab:
-        add dword ptr [esp+4], 2 ; backstab flag
         mov dword ptr [critical_hit], 2
         quit:
         mov dword ptr [ebp-8], 4 ; replaced code
         ret
-      }
-}
-
-// Since we repurposed the second bit of the first parameter
-// to the melee damage function, we must rewrite its original read
-// to only check the first bit.
-static void __declspec(naked) melee_might_check_chunk(void)
-{
-    asm
-      {
-        test byte ptr [esp+36], 1
       }
 }
 
@@ -12434,7 +12335,6 @@ static inline void new_enchants(void)
     hook_call(0x439536, reset_critical_hit, 5);
     hook_call(0x439863, check_backstab, 7);
     // backstab damage doubled in temp_bane_melee_2() above
-    patch_bytes(0x48d04f, melee_might_check_chunk, 5);
     hook_call(0x402fe2, turn_afraid_monster, 7);
     hook_call(0x403ef9, turn_afraid_monster, 7);
     // Give the "assassins'" ench backstab as well, but remove disarm bonus.
@@ -12464,6 +12364,10 @@ static inline void new_enchants(void)
     hook_call(0x48fb1e, masterful_weapon_hook, 5);
     // masterful clubs are in blessed_rightnand_weapon()
     hook_call(0x48f3f6, of_doom_bonus, 7);
+    // Remove the old 2x slaying weapon damage.
+    erase_code(0x48d25c, 70); // missile
+    erase_code(0x48ce7b, 95); // right hand
+    erase_code(0x48cfa6, 95); // left hand
 }
 
 // Let the Elven Chainmail also improve bow skill.
@@ -14236,8 +14140,6 @@ static inline void new_artifacts(void)
     hook_call(0x48eee0, artifact_stat_bonus, 5);
     hook_call(0x492c4a, sacrificial_dagger_goblin_only, 5);
     // corsair and old nick can backstab now
-    erase_code(0x48ceae, 8); // old nick elf slaying
-    erase_code(0x48cfd9, 8); // ditto
     // old nick poison damage increased in elemental_weapons() above
     patch_byte(0x48f086, 13); // old nick disarm bonus
     // kelebrim protects from dispel
@@ -14312,7 +14214,7 @@ static inline void new_artifacts(void)
     hook_call(0x447ea4, open_regular_chest, 5);
     hook_call(0x430598, action_open_extra_chest, 7);
     hook_call(0x41ff6d, no_boh_recursion, 6);
-    // clover double damage is in check_backstab() above
+    // clover double crit chance is in get_critical_chance() above
     // and luck bonus is in artifact_stat_bonus()
     hook_call(0x48e3f1, titan_belt_recovery_penalty, 5);
     hook_call(0x48f840, titan_belt_damage_bonus, 7);
@@ -16800,6 +16702,7 @@ static void __declspec(naked) sniper_accuracy(void)
         div ecx
         push edx
         push ebx
+        push esi
         mov ecx, edi
         call get_critical_chance
         pop edx
@@ -16814,20 +16717,10 @@ static void __declspec(naked) sniper_accuracy(void)
         cmp dword ptr [critical_hit], 2
         jne check_crit
         mov ecx, edi
-        push SKILL_THIEVERY
-        call dword ptr ds:get_skill
-        mov edx, eax
-        and edx, SKILL_MASK
-        jz no_thievery
-        mov ecx, edx
-        cmp eax, SKILL_EXPERT
-        jb roll
-        add edx, ecx
-        cmp eax, SKILL_MASTER
-        jb roll
-        add edx, ecx
-        roll:
-        push edx
+        call get_backstab_chance
+        test eax, eax
+        jz no_backstab
+        push eax
         call dword ptr ds:random
         xor edx, edx
         mov ecx, 100
@@ -16835,7 +16728,7 @@ static void __declspec(naked) sniper_accuracy(void)
         pop ecx
         cmp edx, ecx
         jb check_crit
-        no_thievery:
+        no_backstab:
         and dword ptr [critical_hit], 0
         check_crit:
         xor edx, edx ; to distinguish from critical miss

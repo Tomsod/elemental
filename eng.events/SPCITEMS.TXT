@@ -40,8 +40,8 @@ Increases chance of Disarming.	of Burglary	N	0	0	0	0	0	0	0	0	0	0	0	0	0	0	2000	B	
 Half damage from all missile attacks.	of Shielding	N	0	0	0	25	30	0	0	20	0	0	5	5	5	5	1000	B	232	Shield potion	(1/2)dmg from all missle attacks (not cumulative)
 Regenerate Hit points over time.	of Regeneration	N	0	5	0	10	0	0	10	10	0	0	10	10	10	10	1000	B	370	Regeneration scroll	"Regenerate 1hp/x while walking, etc"
 Regenerate Spell points over time.	of Mana	N	0	10	0	10	0	10	10	10	10	0	10	10	10	10	1000	B	207	Harpy Feather reagent	"Regenerate 1sp/x while walking, etc"
-Double damage vs Demons.	Demon Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	X 2	A	214	Vial of Devil Ichor reagent	X 2 damage vs all demons
-Double damage vs Dragons.	Dragon Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	X 2	A	263	Slaying potion	X 2 damage vs all dragons
+May deal double damage to Demons.	Demon Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	X 2	A	214	Vial of Devil Ichor reagent	(+30) to critical roll vs all demons
+May deal double damage to Dragons.	Dragon Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	X 2	A	263	Slaying potion	(+30) to critical roll vs all dragons
 Drain Hit Points from target and Increased Weapon speed.	of Darkness	N	5	5	5	0	0	0	0	0	0	0	0	0	0	0	X 3	D	265	Pure Speed potion	"(-20) pts on weapon speed, Vampiric"
 "+3 to Seven Stats, HP, SP, Armor, Resistances."	of Doom	N	10	10	10	10	10	10	10	10	10	10	10	10	10	10	750	B	399	Fate scroll	"(+3) 7stats,hpts,spts,AC,6 resistances"
 "+10 to Endurance and Armor and +5 Hit points."	of Earth	N	10	20	10	10	10	10	10	10	10	10	10	10	20	0	2000	D	213	Garnet reagent	"End (+10), AC (+10), HP (+10)"
@@ -64,11 +64,11 @@ Increased Weapon speed.	Swift	Y	25	15	25	0	0	0	0	0	0	0	0	0	0	0	X 2	B	250	Swift p
 +3 Unarmed and Dodging skills.	Monks'	Y	0	5	0	0	0	0	10	5	15	10	5	5	5	0	1500	C	375	Flying Fist scroll	+3 to Dodging and Unarmed skill
 +3 Thievery and Disarm skills.	Thieves'	Y	0	0	0	0	0	0	5	5	20	5	15	5	0	0	1500	B	194	Yellow Topaz gem	+3 to Stealing and Disarm skill
 +3 ID Item and ID Monster skills.	of Identifying	N	0	0	0	0	0	0	5	5	0	5	10	15	0	5	1500	A	191	Rose Crystal gem	+3 to ID Monster and ID Item skill
-Double Damage vs. Elves.	Elf Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	A	211	Fae Dust reagent	"x2 damage on all Elf Archers, Elf Spearmen, Elf peasants (male and female)."
-Additional Damage to Undead, and can hit Ghosts.	Undead Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	B	280	Holy Water	"x1.5 Holy damage on Liches, Vampires, Zombies, Skeletons, Ghosts, and Wights"
-Double Damage vs. Titans.	Of David	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	A	343	Mass Distortion scroll	x2 damage on all Titans
+May deal double damage to Elves.	Elf Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	A	211	Fae Dust reagent	"(+30) to critical roll on all Elf Archers, Elf Spearmen, Elf peasants (male and female)."
+May deal double damage to Undead, and can hit Ghosts.	Undead Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	B	280	Holy Water	"Attack with Holy and (+20) to critical roll on anyone not immune to it"
+May deal double damage to Titans.	Of David	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	A	343	Mass Distortion scroll	(+30) to critical roll on all Titans
 Regenerate Spell points and Hit points over time.	of Plenty	N	0	5	0	10	0	5	10	10	5	0	10	10	10	10	2500	C	219	Philosopher's Stone reagent	"Regenerate 1 hp/x and 1 sp/x while walking, etc."
-Adds 5 points of Poison damage; double Backstab damage.	Assassins'	Y	20	10	0	0	0	0	0	0	0	0	0	0	0	0	1500	C	188	Emerald gem	of Poison + of Backstabbing
+Adds 5 points of Poison damage; adds Backstab chance.	Assassins'	Y	20	10	0	0	0	0	0	0	0	0	0	0	0	0	1500	C	188	Emerald gem	of Poison + of Backstabbing
 Adds 6-8 points of Cold damage and +5 Armor Class.	Barbarians'	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1500	C	189	Sapphire gem	(6-8) cold damage and +5 AC
 +20 Shock Resistance and Shielding.	of the Storm	N	0	5	0	20	20	20	0	0	0	0	0	0	10	10	1500	C	273	Shock Immunity potion	+20 Shock Resistance and 1/2 damage from missile attacks
 +10 Cold Resistance and +2 Alchemy skill.	of the Ocean	N	0	0	0	20	20	20	0	0	0	0	0	0	10	10	1000	B	233	Recharge potion	+10 Cold Resistance and +2 Alchemy skill
@@ -78,7 +78,7 @@ Pierces Physical resistance.	Spectral	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	B	346	
 Can Curse on hit.	Cursed	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1000	C	348	Remove Curse scroll	20% chance to apply Cursed debuff for 20 min.
 Pierces Physical resistance and can Curse on hit.	of The Wraith	N	10	5	10	0	0	0	0	0	0	0	0	0	0	0	x3	D	351	Spirit Lash scroll	Spectral + Cursed
 Restores Spell points when used to kill an enemy.	Soul Stealing	Y	5	5	0	0	0	0	0	0	0	0	0	0	0	0	2500	D	398	Souldrinker scroll	Adds SP equal to level of killed enemy
-Double Damage to enemies not facing you.	of Backstabbing	N	20	10	0	0	0	0	0	0	0	0	0	0	0	0	x2	B	190	Green Garnet gem	x2 weapon damage when the enemy is facing away
+Adds chance of double damage to enemies not facing you.	of Backstabbing	N	20	10	0	0	0	0	0	0	0	0	0	0	0	0	x2	B	190	Green Garnet gem	(+15) to backstab roll, cumulative
 Reduced Recovery penalty.	Lightweight	Y	0	0	0	20	20	0	0	0	0	0	0	0	0	0	1500	B	228	Haste potion	(-10) to armor recovery penalty
 Increases jump height.	of Leaping	N	0	0	0	0	0	0	0	0	0	15	0	0	0	0	1000	A	315	Jump scroll	+20% to base jump power, cumulative
 Wearer resistant to Dispel Magic.	of Permanence	N	0	0	0	0	10	10	0	0	0	0	10	10	0	10	2000	C	379	Dispel Magic scroll	Immunity to enemy Dispel Magic
@@ -92,7 +92,7 @@ Wearer resistant to Dispel Magic.	of Permanence	N	0	0	0	0	10	10	0	0	0	0	10	10	0	
 Attracts monster attacks.	of Taunting	N	0	0	0	10	10	10	0	10	10	10	0	0	0	0	1000	B	358	Aura of Conflict scroll	+1 to aggro counter, cumulative
 Adds 6-10 points of Mind damage and attracts monster attacks.	of The Jester	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1500	C	361	Berserk scroll	(6-10) mind damage and +1 to aggro counter, cumulative
 Adds 3-18 points of Fire damage.	of Infernos	N	0	0	0	0	0	0	0	0	0	0	0	0	0	0	x2	D	246	Flaming potion (unused)	exclusive to GM Fire Aura (price nerf)
-Double Damage vs. Elementals.	Elemental Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	A	381	Summon Elemental scroll	"x2 damage on Fire, Air, Water, Earth, Light elementals."
+May deal double damage to Elementals.	Elemental Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	A	381	Summon Elemental scroll	"(+30) to critical roll on Fire, Air, Water, Earth, Light elementals."
 Protects from Curses and +10 to Attack Bonus.	Blessed	Y	10	10	10	0	0	0	0	0	0	0	0	0	0	0	1500	B	345	Bless scroll	(+10) to melee or ranged attack and immune to cursed condition
 Makes monsters hit in melee Afraid.	Terrifying	Y	0	0	0	0	0	20	0	0	0	0	0	0	0	20	2000	D	362	Mass Fear scroll	Inflicts Afraid on monster upon a melee hit (Mind attack)
 +5 to weapon skill.	Masterful	Y	20	10	0	0	0	0	0	0	0	0	0	0	0	0	2000	D	385	Hour of Power scroll	(+5) to skill corresponding to the weapon

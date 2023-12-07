@@ -8919,113 +8919,6 @@ static int __stdcall new_stat_thresholds(int stat)
     return statrates[0].bonus;
 }
 
-// Give the two-handed swords and axes doubled quality bonus to damage.
-static void __declspec(naked) th_weapons_damage(void)
-{
-    asm
-      {
-        movzx eax, byte ptr [ITEMS_TXT_ADDR+esi+32] ; replaced code (dmg bonus)
-        cmp byte ptr [ITEMS_TXT_ADDR+esi+28], 1 ; two-handed weapon
-        jne quit
-        cmp byte ptr [ITEMS_TXT_ADDR+esi+29], SKILL_SWORD
-        je doubled
-        cmp byte ptr [ITEMS_TXT_ADDR+esi+29], SKILL_AXE
-        jne quit
-        doubled:
-        shl eax, 1
-        quit:
-        ret
-      }
-}
-
-// Display new two-handed weapon stats correctly.
-static void __declspec(naked) th_weapons_description(void)
-{
-    asm
-      {
-        lea eax, [ebp-204] ; replaced code
-        cmp byte ptr [edi+28], 1
-        jne quit
-        cmp byte ptr [edi+29], SKILL_SWORD
-        je doubled
-        cmp byte ptr [edi+29], SKILL_AXE
-        jne quit
-        doubled:
-        shl dword ptr [esp+4], 1 ; pushed bonus damage
-        quit:
-        ret
-      }
-}
-
-// Calculate the new minimum damage for two-handed weapons.
-static void __declspec(naked) th_weapons_min_damage(void)
-{
-    asm
-      {
-        movzx edi, byte ptr [ITEMS_TXT_ADDR+eax+32] ; replaced code (dmg bonus)
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+28], 1 ; two-handed weapon
-        jne quit
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_SWORD
-        je doubled
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_AXE
-        jne quit
-        doubled:
-        shl edi, 1
-        quit:
-        ret
-      }
-}
-
-// Calculate the new maximum damage for two-handed weapons.
-static void __declspec(naked) th_weapons_max_damage(void)
-{
-    asm
-      {
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+28], 1 ; two-handed weapon
-        jne damage
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_SWORD
-        je damage
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_AXE
-        damage:
-        movzx eax, byte ptr [ITEMS_TXT_ADDR+eax+32] ; replaced code (dmg bonus)
-        jne skip
-        shl eax, 1
-        skip:
-        ret
-      }
-}
-
-// Not sure if this is ever used, but just in case.
-// Also here: give daggers and SoL double to-hit bonus.
-static void __declspec(naked) th_weapons_damage_bonus(void)
-{
-    asm
-      {
-        movzx edi, byte ptr [ITEMS_TXT_ADDR+eax+32] ; replaced code (dmg bonus)
-        cmp esi, STAT_MELEE_DAMAGE_BASE
-        jne not_doubled
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+28], 1 ; two-handed weapon
-        jne not_doubled
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_SWORD
-        je doubled
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_AXE
-        jne not_doubled
-        doubled:
-        shl edi, 1
-        not_doubled:
-        cmp esi, STAT_MELEE_ATTACK
-        jne quit
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_DAGGER
-        je dagger
-        cmp eax, SWORD_OF_LIGHT * 48
-        jne quit
-        dagger:
-        shl edi, 1
-        quit:
-        ret
-      }
-}
-
 // Make it so rest encounters are only triggered if there are hostile
 // monsters on the map.  Also exclude all types of peasants.
 static void __declspec(naked) rest_encounters(void)
@@ -9264,46 +9157,6 @@ static void __declspec(naked) th_spear(void)
         quit:
         push 0x469062
         ret
-      }
-}
-
-// Give offhand daggers and SoL double to-hit bonus.
-static void __declspec(naked) offhand_dagger_accuracy(void)
-{
-    asm
-      {
-        movzx ecx, byte ptr [ITEMS_TXT_ADDR+eax+32] ; quality bonus
-        add edi, ecx
-        cmp esi, STAT_MELEE_ATTACK
-        jne quit
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_DAGGER
-        je dagger
-        cmp ebx, SWORD_OF_LIGHT
-        jne quit
-        dagger:
-        add edi, ecx
-        quit:
-        mov eax, 0x48f60a
-        jmp eax
-      }
-}
-
-// Display daggers' doubled to-hit bonus properly.
-static void __declspec(naked) display_dagger_accuracy(void)
-{
-    asm
-      {
-        pop edx
-        push dword ptr [GLOBAL_TXT_ADDR+53*4] ; replaced code
-        cmp byte ptr [edi+29], SKILL_DAGGER
-        je dagger
-        mov ecx, dword ptr [ebp-4] ; item
-        cmp dword ptr [ecx], SWORD_OF_LIGHT
-        jne quit
-        dagger:
-        shl eax, 1
-        quit:
-        jmp edx
       }
 }
 
@@ -10768,11 +10621,6 @@ static inline void misc_rules(void)
     hook_call(0x4940b1, bank_interest_2, 5);
     hook_call(0x4180ae, stat_hint_hook, 6);
     hook_jump(0x48ea13, new_stat_thresholds);
-    hook_call(0x48ce6a, th_weapons_damage, 7);
-    hook_call(0x41dd47, th_weapons_description, 6);
-    hook_call(0x48ebee, th_weapons_min_damage, 7);
-    hook_call(0x48ed95, th_weapons_max_damage, 7);
-    hook_call(0x48ecb0, th_weapons_damage_bonus, 7);
     hook_call(0x4506a5, rest_encounters, 13);
     // Upgrade Castle Harmondale (now Nighon) potion shop to item level 5.
     patch_word(0x4f045e, 5);
@@ -10799,8 +10647,6 @@ static inline void misc_rules(void)
     // by allowing to replace it with a shield too.
     // Also allows the above hook to work properly.
     erase_code(0x469034, 46); // just nuke all the special spear code
-    hook_jump(0x48ecfe, offhand_dagger_accuracy);
-    hook_call(0x41dd1b, display_dagger_accuracy, 6);
     hook_call(0x4bc4c8, new_hireling_action, 5);
     hook_call(0x445f16, enable_new_hireling_action, 6);
     hook_call(0x44532e, new_hireling_action_text, 5);
@@ -12200,7 +12046,8 @@ static void __declspec(naked) dont_lower_magic_bonus(void)
 }
 
 // Add +10 to-hit to wielded Blessed weapons.  This hook is for main hand.
-// Also here: add +5 to-hit to Masterful clubs in lieu of skill bonus.
+// Also here: add +5 to-hit to Masterful clubs in lieu of skill bonus,
+// and implement Sword of Light's extra +20 to-hit bonus.
 static void __declspec(naked) blessed_rightnand_weapon(void)
 {
     asm
@@ -12211,6 +12058,10 @@ static void __declspec(naked) blessed_rightnand_weapon(void)
         jne not_blessed
         add dword ptr [esp+20], 10 ; stat bonus
         not_blessed:
+        cmp dword ptr [ebx+0x214+eax*4-36], SWORD_OF_LIGHT
+        jne not_sword
+        add dword ptr [esp+20], 20
+        not_sword:
         cmp dword ptr [ebx+0x214+eax*4-36+12], SPC_MASTERFUL
         skip:
         mov eax, dword ptr [ebx+0x214+eax*4-36] ; replaced code
@@ -12233,10 +12084,15 @@ static void __declspec(naked) blessed_offhand_weapon(void)
         cmp esi, STAT_MELEE_ATTACK
         jne skip
         cmp dword ptr [ebx+0x214+eax*4-36+12], SPC_BLESSED
-        jne skip
+        jne not_blessed
         add dword ptr [esp+20], 10 ; stat bonus
+        not_blessed:
+        cmp dword ptr [ebx+0x214+eax*4-36], SWORD_OF_LIGHT
+        jne skip
+        add dword ptr [esp+20], 20
         skip:
         mov ebx, dword ptr [ebx+0x214+eax*4-36] ; replaced code
+        quit:
         ret
       }
 }

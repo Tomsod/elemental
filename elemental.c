@@ -518,8 +518,6 @@ enum skill_mastery
 enum items
 {
     SHARKTOOTH_DAGGER = 17,
-    FIRST_CLUB = 58,
-    LAST_CLUB = 60,
     BLASTER = 64,
     BLASTER_RIFLE = 65,
     LAST_BODY_ARMOR = 78, // noble plate armor
@@ -2672,8 +2670,12 @@ static void __declspec(naked) ignore_temp_ench_enchant_item(void)
       }
 }
 
+// Used just below, to store the two-handed check result.
+static int extra_temp_damage;
+
 // Replace the calls to the weapon elemental damage function with
 // our code that calls it twice, for both permanent and temporary bonus.
+// Also here: increase elemental damage done by two-handed weapons.
 static void __declspec(naked) temp_elem_damage(void)
 {
     asm
@@ -2682,6 +2684,47 @@ static void __declspec(naked) temp_elem_damage(void)
         push eax
         call dword ptr ds:elem_damage
         pop ecx
+        mov edx, dword ptr [ecx]
+        lea edx, [edx+edx*2]
+        shl edx, 4
+        and dword ptr [extra_temp_damage], 0
+        cmp byte ptr [ITEMS_TXT_ADDR+edx+28], ITEM_TYPE_WEAPON2 - 1
+        jne one_handed
+        cmp byte ptr [ITEMS_TXT_ADDR+edx+29], SKILL_SWORD
+        je two_handed
+        cmp byte ptr [ITEMS_TXT_ADDR+edx+29], SKILL_AXE
+        jne one_handed
+        two_handed:
+        cmp dword ptr [ebp-8], POISON
+        je poison
+        push eax
+        push ecx
+        call dword ptr ds:random
+        test eax, 2
+        jz no_temp
+        inc dword ptr [extra_temp_damage]
+        no_temp:
+        and eax, 1
+        jz skip
+        mov ecx, dword ptr [esp]
+        push eax
+        mov edx, esp
+        push eax
+        push esp
+        call dword ptr ds:elem_damage
+        pop ecx
+        pop ecx
+        skip:
+        pop ecx
+        pop edx
+        add eax, edx
+        jmp one_handed
+        poison:
+        lea eax, [eax+eax*2]
+        inc eax
+        shr eax, 1
+        inc dword ptr [extra_temp_damage]
+        one_handed:
         cmp dword ptr [ecx+4], TEMP_ENCH_MARKER
         jne quit
         push eax
@@ -2698,6 +2741,27 @@ static void __declspec(naked) temp_elem_damage(void)
         lea eax, [esp+40]
         push eax
         call dword ptr ds:elem_damage
+        cmp dword ptr [extra_temp_damage], 0
+        jz no_extra
+        cmp dword ptr [esp+36], POISON
+        je poison_temp
+        mov ecx, esp
+        push eax
+        push eax
+        mov edx, esp
+        push eax
+        push esp
+        call dword ptr ds:elem_damage
+        pop ecx
+        pop ecx
+        pop ecx
+        add eax, ecx
+        jmp no_extra
+        poison_temp:
+        lea eax, [eax+eax*2]
+        inc eax
+        shr eax, 1
+        no_extra:
         add esp, 36
         pop ecx
         pop edx
@@ -2806,6 +2870,9 @@ static struct spcitem spcitems[SPC_COUNT];
 static const char nonzero_charges[] = "%s: %u/%u";
 static const char zero_charges[] = "\f%05d%s: 0/%u";
 
+// Defined below.
+static char *__thiscall two_handed_bonus_desc(struct item *, int);
+
 // Adjust description screen height to fit the new lines.
 // Also compose the lines themselves while we're at it.
 static void __declspec(naked) temp_enchant_height(void)
@@ -2862,10 +2929,9 @@ static void __declspec(naked) temp_enchant_height(void)
         mov ecx, dword ptr [ebp-4]
         cmp dword ptr [ecx+4], TEMP_ENCH_MARKER
         jne skip
-        mov eax, dword ptr [ecx+8]
-        imul eax, eax, 28
-        add eax, offset spcitems - 24
-        push dword ptr [eax]
+        push ecx
+        call two_handed_bonus_desc
+        push eax
         push dword ptr [new_strings+STR_TEMPORARY*4]
         push 0x4e2e80
 #ifdef __clang__
@@ -4284,6 +4350,51 @@ static void __declspec(naked) id_zero_chest_items(void)
       }
 }
 
+// Adjust bonus descriptions for two-handed weapons to match the effect.
+// Called just below and in temp_enchant_height() above.
+static char *__thiscall two_handed_bonus_desc(struct item *item, int temp)
+{
+    int bonus = temp ? item->bonus_strength : item->bonus2;
+    char *desc = spcitems[bonus-1].description;
+    char *subst = strstr(desc, "^H[");
+    if (!subst)
+        return desc;
+    static char buffer[200];
+    memcpy(buffer, desc, subst - desc);
+    buffer[subst - desc] = 0;
+    char *varpart = subst + 3; // strlen("^H[")
+    struct items_txt_item *data = &ITEMS_TXT[item->id];
+    if ((data->skill == SKILL_SWORD || data->skill == SKILL_AXE)
+        && data->equip_stat + 1 == ITEM_TYPE_WEAPON2)
+      {
+        char *second = strchr(varpart, ';');
+        if (second)
+            varpart = second + 1;
+      }
+    char *end = strpbrk(varpart, ";]");
+    if (end)
+        strncat(buffer, varpart, end - varpart);
+    else
+        strcat(buffer, varpart);
+    char *rest = strchr(subst, ']');
+    if (rest)
+        strcat(buffer, rest + 1);
+    return buffer;
+}
+
+// Hook for the above (one of them, anyway).
+static void __declspec(naked) two_handed_bonus_desc_hook(void)
+{
+    asm
+      {
+        push ebx ; == 0
+        call two_handed_bonus_desc
+        pop ecx
+        push eax
+        jmp ecx
+      }
+}
+
 // Misc item tweaks.
 static inline void misc_items(void)
 {
@@ -4343,6 +4454,7 @@ static inline void misc_items(void)
     patch_byte(0x48c6fa, 0x7f); // also jnz -> jg (pick up item)
     hook_jump(0x46825f, genie_lamp_hook);
     hook_call(0x420304, id_zero_chest_items, 7);
+    hook_call(0x41ddf5, two_handed_bonus_desc_hook, 6);
 }
 
 static uint32_t potion_damage;
@@ -8534,12 +8646,16 @@ static int __thiscall get_critical_chance(struct player *player,
             struct item *weapon = &player->items[equip-1];
             if (!(weapon->flags & IFLAGS_BROKEN))
               {
-                if (ITEMS_TXT[weapon->id].skill == SKILL_DAGGER)
+                struct items_txt_item *data = &ITEMS_TXT[weapon->id];
+                int two_handed = data->equip_stat + 1 == ITEM_TYPE_WEAPON2
+                                 && (data->skill == SKILL_SWORD
+                                     || data->skill == SKILL_AXE);
+                if (data->skill == SKILL_DAGGER)
                     crit += dagger;
                 if (weapon->bonus2 == SPC_KEEN)
-                    crit += 5;
+                    crit += two_handed ? 8 : 5;
                 else if (weapon->bonus2 == SPC_VORPAL)
-                    crit += 10;
+                    crit += two_handed ? 15 : 10;
                 if (monster)
                   {
                     int id = weapon->id;
@@ -8584,13 +8700,13 @@ static int __thiscall get_critical_chance(struct player *player,
                             break;
                       }
                     if (slay)
-                        crit += 30;
+                        crit += two_handed ? 45 : 30;
                     else if (monster->holy_resistance < IMMUNE
                              && (bonus == SPC_UNDEAD_SLAYING
                                  || ench == SPC_UNDEAD_SLAYING
                                  || id == GHOULSBANE || id == GIBBET
                                  || id == JUSTICE))
-                        crit += 20;
+                        crit += two_handed? 30 : 20;
                   }
                 if (weapon->id == THE_PERFECT_BOW)
                     crit += 25;
@@ -8627,7 +8743,13 @@ static int __thiscall get_backstab_chance(struct player *player)
             continue;
         if (weapon->bonus2 == SPC_BACKSTABBING
             || weapon->bonus2 == SPC_ASSASSINS)
-            chance += 15;
+          {
+            struct items_txt_item *data = &ITEMS_TXT[weapon->id];
+            if ((data->skill == SKILL_SWORD || data->skill == SKILL_AXE)
+                && data->equip_stat + 1 == ITEM_TYPE_WEAPON2)
+                chance += 23;
+            else chance += 15;
+          }
         else if (weapon->id == OLD_NICK)
             chance += 13;
       }
@@ -11371,7 +11493,7 @@ static inline void spcitems_buffer(void)
     // item name
     patch_pointer(0x456616, spcitems - 1);
     // the other reference is handled in prefix_gender() above
-    patch_pointer(0x41ddf7, &(spcitems-1)->description); // item description
+    // item description handled in two_handed_bonus_desc() above
     patch_pointer(0x4564ae, &(spcitems-1)->value); // item value
     // enchant item spell (some of these are unused, but whatever)
     patch_pointer(0x42ad56, spcitems->probability);
@@ -12045,7 +12167,7 @@ static void __declspec(naked) dont_lower_magic_bonus(void)
       }
 }
 
-// Add +10 to-hit to wielded Blessed weapons.  This hook is for main hand.
+// Add +10/15 to-hit to wielded Blessed weapons.  This hook is for main hand.
 // Also here: add +5 to-hit to Masterful clubs in lieu of skill bonus,
 // and implement Sword of Light's extra +20 to-hit bonus.
 static void __declspec(naked) blessed_rightnand_weapon(void)
@@ -12053,30 +12175,39 @@ static void __declspec(naked) blessed_rightnand_weapon(void)
     asm
       {
         cmp esi, STAT_MELEE_ATTACK
+        mov ecx, dword ptr [ebx+0x214+eax*4-36]
         jne skip
-        cmp dword ptr [ebx+0x214+eax*4-36+12], SPC_BLESSED
+        lea edx, [ecx+ecx*2]
+        shl edx, 4
+        mov eax, dword ptr [ebx+0x214+eax*4-36+12]
+        cmp eax, SPC_BLESSED
         jne not_blessed
         add dword ptr [esp+20], 10 ; stat bonus
+        cmp byte ptr [ITEMS_TXT_ADDR+edx+28], ITEM_TYPE_WEAPON2 - 1
+        jne not_blessed
+        cmp byte ptr [ITEMS_TXT_ADDR+edx+29], SKILL_SWORD
+        je extra_blessed
+        cmp byte ptr [ITEMS_TXT_ADDR+edx+29], SKILL_AXE
+        jne not_blessed
+        extra_blessed:
+        add dword ptr [esp+20], 5
         not_blessed:
-        cmp dword ptr [ebx+0x214+eax*4-36], SWORD_OF_LIGHT
+        cmp ecx, SWORD_OF_LIGHT
         jne not_sword
         add dword ptr [esp+20], 20
         not_sword:
-        cmp dword ptr [ebx+0x214+eax*4-36+12], SPC_MASTERFUL
-        skip:
-        mov eax, dword ptr [ebx+0x214+eax*4-36] ; replaced code
-        jne quit
-        cmp eax, FIRST_CLUB
-        jb quit
-        cmp eax, LAST_CLUB
-        ja quit
+        cmp eax, SPC_MASTERFUL
+        jne skip
+        cmp byte ptr [ITEMS_TXT_ADDR+edx+29], SKILL_NONE ; club
+        jne skip
         add dword ptr [esp+20], 5
-        quit:
+        skip:
+        mov eax, ecx ; replaced code, effectively
         ret
       }
 }
 
-// Same, but for the offhand.
+// Same, but for the offhand.  (Clubs or two-handers cannot occur here.)
 static void __declspec(naked) blessed_offhand_weapon(void)
 {
     asm
@@ -12092,7 +12223,6 @@ static void __declspec(naked) blessed_offhand_weapon(void)
         add dword ptr [esp+20], 20
         skip:
         mov ebx, dword ptr [ebx+0x214+eax*4-36] ; replaced code
-        quit:
         ret
       }
 }

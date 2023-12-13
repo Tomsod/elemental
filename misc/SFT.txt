@@ -9266,3 +9266,4 @@
 9264	swrdstx	swrdstx	65536	-	x	x	-	-	-	-	-	-	-	-	-	-	-	-	-	-	0	1	2
 9265	objrobe	objrobe	65536	-	x	x	-	-	-	-	-	-	-	-	-	-	-	-	-	-	0	9	2
 9266	objknife	objknife	65536	-	x	x	-	-	-	-	-	-	-	-	-	-	-	-	-	-	0	3	2
+9267	petelem	petelem	78643	-	x	-	-	-	-	-	-	-	-	-	x	x	x	-	-	-	0	998	2

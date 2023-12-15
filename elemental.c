@@ -1101,10 +1101,10 @@ enum profession
     NPC_COUNT
 };
 
-// New max number of global.evt comands (was 4400 before).
-#define GLOBAL_EVT_LINES 5350
+// New max number of global.evt commands (was 4400 before).
+#define GLOBAL_EVT_LINES 5400
 // New max size of global.evt itself (was 46080 bytes before).
-#define GLOBAL_EVT_SIZE 53500
+#define GLOBAL_EVT_SIZE 54000
 
 #define CURRENT_PLAYER 0x507a6c
 
@@ -1160,7 +1160,7 @@ enum monster_buffs
 // new NPC topic count
 #define TOPIC_COUNT 609
 // count of added NPC text entries
-#define NEW_TEXT_COUNT (867-789)
+#define NEW_TEXT_COUNT (869-789)
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658
@@ -10891,6 +10891,10 @@ static inline void misc_rules(void)
     hook_call(0x48f954, new_scholar_bonus, 5);
     // Increase Fallen Wizard buff duration to the stated 6 hours.
     patch_dword(0x4bb8fc, SKILL_GM + 5); // was Master 5
+    // Add two more cauldrons.
+    patch_byte(0x4509a8, 6); // was 4
+    patch_byte(0x4509b8, 20); // shift trash heap event down to make space
+    patch_byte(0x45099b, 21); // another one
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

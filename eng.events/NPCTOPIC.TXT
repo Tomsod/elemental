@@ -394,12 +394,12 @@
 393	Frosty Cauldron
 394	Shocking Cauldron
 395	Noxious Cauldron
-396	Trash Heap
-397	Trash Heap
+396	Bubbling Cauldron
+397	Magical Cauldron
 398	Trash Heap
 399	Enter Arena Combat
-400	Elemental Guild Membership
-401	Guild of the Self Membership
+400	Trash Heap
+401	Trash Heap
 402	Air Guild Membership
 403	Earth Guild Membership
 404	Fire Guild Membership

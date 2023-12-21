@@ -678,96 +678,97 @@ Global Text
 675	"Splendid job!  With the activation of the Gate, a thousand worlds lie at your feet.  Perhaps on one of them you will find the Ancients themselves, and return with the fruits their great civilization has to offer your world and your kingdom."
 676	"Brilliant!  The completion of the Heavenly Forge has provided enough Ancient weapons to crush all resistance to your plans.  Soon the world will bow to your every whim!  Still, you can't help but wonder what was beyond the Gate the other side was trying so hard to build."
 677	Holy
-678	Fire Imm
-679	Shock Imm
-680	Cold Imm
-681	Poison Imm
-682	Mind Imm
-683	Magic Imm
-684	Temporary
-685	%s doesn't know how to brew %ss!
-686	You don't have enough reagents!
-687	You don't know the recipe to make %s!
-688	You don't have enough potion bottles!
-689	Bless Water %d Gold
-690	Always
-691	"Sorry, but I cannot restore even a single charge for this %s."
-692	"I can restore this %s to %d charges for only %d gold."
-693	Rating
-694	Base Value
-695	%s inflicts %lu points and halves armor of %s
-696	%s inflicts %lu total damage to %lu monsters
-697	%s inflicts %lu total damage to %lu monsters, killing %lu
-698	Hunter
-699	Elemental Mod ver. 3.1
-700	Black potion used
-701	Average damage reduction
-702	accounting for race
-703	"Humans are the most generic race of Antagarich, posessing no exceptional advantages.  Despite this, they're prolific across the continent.  Some say fortune favors them.  Humans have no racial weapon, but they're quick learners and can become proficient at any skill."
-704	"Elves are smart and agile, but physically frail.  However, they have greater aptitude for magic than any other race.  Every Elf has some level of training with bows."
-705	"Goblins are strong and swift, but none too bright.  They can take a lot of punishment, but their magic capacity is stunted.  Goblins fight with whatever is handy, but most tribes prefer long blades of some kind."
-706	"Dwarves are strong and tough, but slow and clumsy.  They have the greatest health pool of any race.  Dwarves are very fond of axes, and even their Clerics are allowed to use an axe in combat."
-707	"You must identify this item before you can read it!"
-708	%s absorbs the spell
-709	Become a Grandmaster in %s for %s
-710	"You have virtually no practical experience in %s, so you cannot advance it now."
-711	"You have only little experience in %s.  Practice it more to qualify for training."
-712	"While you have used the %s skill before, it's not yet quite enough for becoming a Grandmaster."
-713	"You only need a little more practice in %s, then you can be taught!"
-714	Open Right Bag
-715	Knives
-716	"Sorry, but I cannot repair even a single one of these %s."
-717	"I can repair these %s, yielding %d knives, for only %d gold."
-718	Aura of Conflict
-719	"You cannot recall anymore beacons today!"
-720	Botched
-721	Taxes
-722	Can learn
-723	Cannot learn
-724	Already learned
-725	Buy Horse %d Gold
-726	hits
-727	critically hits
-728	backstabs
-729	shoots
-730	critically shoots
-731	Critical hit chance
-732	Critical miss chance
-733	Average damage per round
-734	Spell power
-735	ID Item
-736	ID Monster
-737	Click again to dismiss
-738	%s parries the attack
-739	Safe Box
-740	Buy Safe Deposit Box 2500 Gold
-741	Buy Scrolls
-742	Restore SP %d Gold
-743	Place Order
-744	If our stock is insufficient for you, you may order a specific item to be created at our shop.  This takes time, money, and ore.
-745	What do you order?
-746	Confirm Order
-747	You don't have the required items
-748	Your order is ready, here it is.  Thanks for business!
-749	Your order isn't ready yet!  I will need about %d more days.
-750	"Unfortunately, with the influx of contestants I've no time for individual orders right now.  And by the time my schedule clears up, you will likely be gone too, so I'd rather not promise what I cannot deliver!"
-751	Press ORDER to confirm
-752	"The grateful genie gifts you an ancient %s!"
-753	"The grateful genie grants %s %+d to %s!"
-754	"Annoyed at your disturbance, the genie curses %s!"
-755	"The genie fines you %d gold for your impertinence!"
-756	"The genie vanishes without even a word of thanks.  Rude…"
-757	"""You disturbed me, fools!"""
-758	"""You freed me!"""
-759	"""Thank you for freeing me!"""
-760	"The grateful genie promises you any piece of equipment of your choice!"
-761	What do you wish for?
-762	"""Here you go!"""
-763	"""Can't decide?  Here's something anyway!"""
-764	Initiate of the Sun
-765	Monk
-766	Acolyte of the Moon
-767	Initiate of the Moon
-768	Prelate of the Moon
-769	Ninja
-770	Merchant
+678	Temporary
+679	%s doesn't know how to brew %ss!
+680	You don't have enough reagents!
+681	You don't know the recipe to make %s!
+682	You don't have enough potion bottles!
+683	Bless Water %d Gold
+684	Always
+685	"Sorry, but I cannot restore even a single charge for this %s."
+686	"I can restore this %s to %d charges for only %d gold."
+687	Rating
+688	Base Value
+689	%s inflicts %lu points and halves armor of %s
+690	%s inflicts %lu total damage to %lu monsters
+691	%s inflicts %lu total damage to %lu monsters, killing %lu
+692	Hunter
+693	Elemental Mod ver. 3.1
+694	Black potion used
+695	Average damage reduction
+696	accounting for race
+697	"Humans are the most generic race of Antagarich, posessing no exceptional advantages.  Despite this, they're prolific across the continent.  Some say fortune favors them.  Humans have no racial weapon, but they're quick learners and can become proficient at any skill."
+698	"Elves are smart and agile, but physically frail.  However, they have greater aptitude for magic than any other race.  Every Elf has some level of training with bows."
+699	"Goblins are strong and swift, but none too bright.  They can take a lot of punishment, but their magic capacity is stunted.  Goblins fight with whatever is handy, but most tribes prefer long blades of some kind."
+700	"Dwarves are strong and tough, but slow and clumsy.  They have the greatest health pool of any race.  Dwarves are very fond of axes, and even their Clerics are allowed to use an axe in combat."
+701	"You must identify this item before you can read it!"
+702	%s absorbs the spell
+703	Become a Grandmaster in %s for %s
+704	"You have virtually no practical experience in %s, so you cannot advance it now."
+705	"You have only little experience in %s.  Practice it more to qualify for training."
+706	"While you have used the %s skill before, it's not yet quite enough for becoming a Grandmaster."
+707	"You only need a little more practice in %s, then you can be taught!"
+708	Open Right Bag
+709	Knives
+710	"Sorry, but I cannot repair even a single one of these %s."
+711	"I can repair these %s, yielding %d knives, for only %d gold."
+712	"You cannot recall anymore beacons today!"
+713	Botched
+714	Taxes
+715	Can learn
+716	Cannot learn
+717	Already learned
+718	Buy Horse %d Gold
+719	hits
+720	critically hits
+721	backstabs
+722	shoots
+723	critically shoots
+724	Critical hit chance
+725	Critical miss chance
+726	Average damage per round
+727	Spell power
+728	ID Item
+729	ID Monster
+730	Click again to dismiss
+731	%s parries the attack
+732	Safe Box
+733	Buy Safe Deposit Box 2500 Gold
+734	Buy Scrolls
+735	Restore SP %d Gold
+736	Place Order
+737	If our stock is insufficient for you, you may order a specific item to be created at our shop.  This takes time, money, and ore.
+738	What do you order?
+739	Confirm Order
+740	You don't have the required items
+741	Your order is ready, here it is.  Thanks for business!
+742	Your order isn't ready yet!  I will need about %d more days.
+743	"Unfortunately, with the influx of contestants I've no time for individual orders right now.  And by the time my schedule clears up, you will likely be gone too, so I'd rather not promise what I cannot deliver!"
+744	Press ORDER to confirm
+745	"The grateful genie gifts you an ancient %s!"
+746	"The grateful genie grants %s %+d to %s!"
+747	"Annoyed at your disturbance, the genie curses %s!"
+748	"The genie fines you %d gold for your impertinence!"
+749	"The genie vanishes without even a word of thanks.  Rude…"
+750	"""You disturbed me, fools!"""
+751	"""You freed me!"""
+752	"""Thank you for freeing me!"""
+753	"The grateful genie promises you any piece of equipment of your choice!"
+754	What do you wish for?
+755	"""Here you go!"""
+756	"""Can't decide?  Here's something anyway!"""
+757	Initiate of the Sun
+758	Monk
+759	Acolyte of the Moon
+760	Initiate of the Moon
+761	Prelate of the Moon
+762	Ninja
+763	Merchant
+764	Fire Immunity
+765	Shock Immunity
+766	Cold Immunity
+767	Poison Immunity
+768	Mind Immunity
+769	Magic Immunity
+770	Aura of Conflict
+771	Divine Mastery

@@ -237,12 +237,6 @@ enum class
 enum new_strings
 {
     STR_HOLY,
-    STR_FIRE_IMM,
-    STR_SHOCK_IMM,
-    STR_COLD_IMM,
-    STR_POISON_IMM,
-    STR_MIND_IMM,
-    STR_MAGIC_IMM,
     STR_TEMPORARY,
     STR_ALCH_SKILL,
     STR_ALCH_REAGENTS,
@@ -277,7 +271,6 @@ enum new_strings
     STR_KNIVES,
     STR_CANNOT_KNIVES,
     STR_REPAIR_KNIVES,
-    STR_AURA_OF_CONFLICT,
     STR_CANNOT_RECALL,
     STR_BOTCHED,
     STR_TAXES,
@@ -330,6 +323,14 @@ enum new_strings
     STR_MOON_PRELATE,
     STR_NINJA,
     STR_MERCHANT,
+    STR_FIRE_IMM,
+    STR_SHOCK_IMM,
+    STR_COLD_IMM,
+    STR_POISON_IMM,
+    STR_MIND_IMM,
+    STR_MAGIC_IMM,
+    STR_AURA_OF_CONFLICT,
+    STR_DIVINE_MASTERY,
     NEW_STRING_COUNT
 };
 
@@ -489,7 +490,6 @@ enum player_buffs
     PBUFF_BLESS = 1,
     PBUFF_POISON_RES = 2,
     PBUFF_MAGIC_RES = 3,
-    PBUFF_AURA_OF_CONFLICT = 4,
     PBUFF_FIRE_RES = 5,
     PBUFF_HAMMERHANDS = 6,
     PBUFF_MIND_RES = 9,
@@ -498,22 +498,34 @@ enum player_buffs
     PBUFF_COLD_RES = 22,
 };
 
+// The array is in elemdata below.  The order is important.
+enum new_player_buffs
+{
+    NBUFF_FIRE_IMM,
+    NBUFF_SHOCK_IMM,
+    NBUFF_COLD_IMM,
+    NBUFF_POISON_IMM,
+    NBUFF_MIND_IMM,
+    NBUFF_MAGIC_IMM,
+    NBUFF_AURA_OF_CONFLICT,
+    NBUFF_DIVINE_MASTERY,
+    NBUFF_COUNT
+};
+
 enum skill_mastery
 {
     NORMAL = 1,
     EXPERT = 2,
     MASTER = 3,
     GM = 4,
-    // we mark the elemental immunity buffs
-    // with a special mastery level of 5
-    IMMUNITY_MARKER = 5,
 };
 
 #define MOUSE_ITEM 0xad458c
 
 #define CURRENT_TIME_ADDR 0xacce64
 #define CURRENT_TIME (*(uint64_t *) CURRENT_TIME_ADDR)
-#define ONE_DAY (24 * 60 * 60 * 128 / 30)
+#define MINUTE (60 * 128 / 30)
+#define ONE_DAY (24 * 60 * MINUTE)
 
 enum items
 {
@@ -556,6 +568,7 @@ enum items
     PURE_LUCK = 264,
     REJUVENATION = 271,
     LAST_OLD_POTION = 271,
+    POTION_FIRE_IMMUNITY = 272,
     POTION_MAGIC_IMMUNITY = 277,
     POTION_PAIN_REFLECTION = 278,
     POTION_DIVINE_MASTERY = 279,
@@ -635,8 +648,6 @@ enum item_slot
     SLOT_AMULET = 9,
     SLOT_ANY = 16, // used by has_item_in_slot()
 };
-
-#define BUFF_STRINGS 0x506798
 
 #define TEMP_ENCH_MARKER 0xff
 
@@ -773,7 +784,10 @@ static struct elemdata
     int genie_artifact;
     // For the Armageddon nerf (healing monsters after 24 hours).
     int current_map;
+    // Same.
     uint64_t map_enter_time;
+    // Stores new player buffs (mostly potion effects).
+    struct spell_buff new_pc_buffs[4][NBUFF_COUNT];
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -1331,6 +1345,9 @@ static funcptr_t ftol = (funcptr_t) 0x4ca74c;
 static int __thiscall (*add_buff)(struct spell_buff *buff, long long time,
                                   int skill, int power, int overlay,
                                   int caster) = (funcptr_t) 0x458519;
+static int __thiscall (*expire_buff)(void *buff, long long current_time)
+    = (funcptr_t) 0x458603;
+static void __thiscall (*reset_stat_boni)(void *player) = (funcptr_t) 0x490707;
 static int __fastcall (*elem_damage)(void *weapon, int *ret_element,
                                      int *ret_vampiric) = (funcptr_t) 0x439e16;
 static int __stdcall (*monster_resists)(void *monster, int element, int damage)
@@ -1897,13 +1914,13 @@ static int __thiscall is_immune(struct player *player, unsigned int element)
         return is_immune(player, FIRE) && is_immune(player, POISON);
 
     int result = 0;
-    // elemental resistance/immunity buffs
-    static const int buffs[] = { PBUFF_FIRE_RES, PBUFF_SHOCK_RES,
-                                 PBUFF_COLD_RES, PBUFF_POISON_RES, -1, -1, -1,
-                                 PBUFF_MIND_RES, PBUFF_MAGIC_RES };
-    if (element <= MAGIC && buffs[element] != -1
-        && player->spell_buffs[buffs[element]].skill == IMMUNITY_MARKER)
-        result |= 2;
+    if (element <= POISON || element == MIND || element == MAGIC)
+      {
+        int buff = element < MIND ? element - FIRE + NBUFF_FIRE_IMM
+                                  : element - MIND + NBUFF_MIND_IMM;
+        if (elemdata.new_pc_buffs[player-PARTY][buff].expire_time)
+            result |= 2;
+      }
 
     int undead = is_undead(player);
     if (undead)
@@ -2317,7 +2334,6 @@ static void __declspec(naked) new_global_txt_parse_check(void)
 // Instead of replacing every instance of e.g. "water" with "cold",
 // overwrite string pointers themselves.  Note that spell school names
 // are stored separately by now and are thus not affected.
-// Also here: replace Fate player buff string with Aura of Conflict.
 static void new_element_names(void)
 {
     // fire is unchanged
@@ -2328,8 +2344,6 @@ static void new_element_names(void)
     // mind is unchanged
     GLOBAL_TXT[29] = GLOBAL_TXT[138]; // magic
     // light and dark are not displayed anymore
-    dword(BUFF_STRINGS + PBUFF_AURA_OF_CONFLICT * 4)
-        = (uintptr_t) new_strings[STR_AURA_OF_CONFLICT];
 }
 
 // We need to do a few things after global.txt is parsed.
@@ -2351,31 +2365,7 @@ static inline void global_txt(void)
     hook_call(0x45386a, global_txt_tail, 5);
 }
 
-// Behind the scenes, elemental immunity uses the same buff ID as elemental
-// resistance.  Thus, it's impossible to have both at the same time
-// (not that it would be useful anyway).  So, if you drink one potion
-// while under effect of other, the new effect will replace the old.
-static void __declspec(naked) resistance_replaces_immunity(void)
-{
-    asm
-      {
-        adc edx, dword ptr [CURRENT_TIME_ADDR+4]
-        cmp word ptr [ecx+10], IMMUNITY_MARKER
-        jne not_immunity
-        and dword ptr [ecx], 0
-        and dword ptr [ecx+4], 0
-        not_immunity:
-        ret
-      }
-}
-
-static const uint32_t new_potion_buffs[] = { PBUFF_FIRE_RES, PBUFF_SHOCK_RES,
-                                             PBUFF_COLD_RES, PBUFF_POISON_RES,
-                                             PBUFF_MIND_RES, PBUFF_MAGIC_RES,
-                                             PBUFF_PAIN_REFLECTION };
-
 static void throw_potions_jump(void); // defined below
-static const int thirty = 30; // for a div below
 static uintptr_t check_inactive_player;
 
 // Add elemental immunity potions and the pain reflection potion.
@@ -2404,58 +2394,47 @@ static void __declspec(naked) new_potion_effects(void)
         new:
         cmp edx, HOLY_WATER
         je throw_potions_jump
-        cmp edx, POTION_DIVINE_MASTERY
-        je divine_mastery
-        mov ecx, offset new_potion_buffs
-        mov ecx, dword ptr [ecx+eax*4-52*4]
-        shl ecx, 4
-        lea ecx, [esi+0x17a0+ecx]
-        push ebx
-        push ebx
         cmp edx, POTION_PAIN_REFLECTION
         je pain_reflection
-        push ebx
-        push IMMUNITY_MARKER
-        cmp word ptr [ecx+10], IMMUNITY_MARKER
-        je set_duration
-        and dword ptr [ecx], 0
-        and dword ptr [ecx+4], 0
-        jmp set_duration
+        mov ecx, dword ptr [ebp+8] ; pc id
+        dec ecx
+        imul ecx, ecx, NBUFF_COUNT * 16
+        lea eax, [edx*4+NBUFF_FIRE_IMM*4-POTION_FIRE_IMMUNITY*4]
+        lea ecx, [elemdata.new_pc_buffs+ecx+eax*4]
+        jmp got_buff
         pain_reflection:
-        ; power is meaningless for this buff, but let`s compute it anyway
-        mov eax, dword ptr [MOUSE_ITEM+4]
-        shr eax, 1
-        add eax, 5
-        push eax
+        lea ecx, [esi+0x17a0+PBUFF_PAIN_REFLECTION*16]
+        got_buff:
+        push ebx
+        push ebx
+        cmp edx, POTION_DIVINE_MASTERY
+        je divine_mastery
+        push ebx
         push GM ; black = gm, not that it matters much
-        set_duration:
         cmp edx, POTION_MAGIC_IMMUNITY
-        mov eax, dword ptr [MOUSE_ITEM+4]
         je magic
-        mov edx, 128 * 60 * 10
+        mov edx, 10 * MINUTE
         jmp multiply
         magic:
-        mov edx, 128 * 60 * 3
-        multiply:
-        mul edx
-        div dword ptr [thirty]
+        mov edx, 3 * MINUTE
+        jmp multiply
+        divine_mastery:
+        mov eax, dword ptr [MOUSE_ITEM+4] ; potion power
         xor edx, edx
+        mov edi, 5 ; unused at this point
+        div edi
+        inc eax
+        push eax
+        push GM
+        mov edx, 30 * MINUTE
+        multiply:
+        mov eax, dword ptr [MOUSE_ITEM+4]
+        mul edx
         add eax, dword ptr [CURRENT_TIME_ADDR]
         adc edx, dword ptr [CURRENT_TIME_ADDR+4]
         push edx
         push eax
         call dword ptr ds:add_buff
-        jmp quit
-        divine_mastery:
-        mov eax, dword ptr [MOUSE_ITEM+4] ; potion power
-        xor edx, edx
-        mov ecx, 5
-        div ecx
-        inc eax
-        cmp ax, word ptr [esi+0xdc] ; level bonus
-        jle quit
-        mov word ptr [esi+0xdc], ax
-        quit:
         push 0x4687a8
         ret
       }
@@ -2502,46 +2481,6 @@ static void __declspec(naked) mix_new_potions_2(void)
       }
 }
 
-// Display e.g. "fire imm" instead of "fire res" player buff when appropriate.
-static void __declspec(naked) immunity_strings(void)
-{
-    asm
-      {
-        mov eax, dword ptr [ebp-20]
-        cmp word ptr [eax+10], IMMUNITY_MARKER
-        mov eax, dword ptr [ebp-4]
-        jne quit
-        xor ecx, ecx
-        cmp eax, BUFF_STRINGS + 5*4
-        je fire
-        cmp eax, BUFF_STRINGS + 0*4
-        je shock
-        cmp eax, BUFF_STRINGS + 22*4
-        je cold
-        cmp eax, BUFF_STRINGS + 2*4
-        je poison
-        cmp eax, BUFF_STRINGS + 9*4
-        je mind
-        cmp eax, BUFF_STRINGS + 3*4
-        jne quit
-        inc ecx
-        mind:
-        inc ecx
-        poison:
-        inc ecx
-        cold:
-        inc ecx
-        shock:
-        inc ecx
-        fire:
-        mov eax, offset new_strings + STR_FIRE_IMM * 4 ; they go in order
-        lea eax, [eax+ecx*4]
-        quit:
-        movzx ecx, byte ptr [edi-1]
-        ret
-      }
-}
-
 // Pre-identify sold recipes.  Non-consequental in vanilla, but I want the type
 // of all recipes to be just "Recipe" and this allows still showing their name.
 static void __declspec(naked) identify_recipes(void)
@@ -2581,18 +2520,135 @@ static void __declspec(naked) raise_dead_potion(void)
       }
 }
 
+// Text color for the new player buffs.  Used just below.
+static const uint8_t new_buff_colors[NBUFF_COUNT][3] = {
+      { 0xff, 0x55, 0x00 }, // fire
+      { 0x96, 0xd4, 0xff }, // air
+      { 0x00, 0x80, 0xff }, // water
+      { 0xff, 0x80, 0x00 }, // body
+      { 0xeb, 0x0f, 0xff }, // mind
+      { 0x80, 0x80, 0x80 }, // earth
+      { 0xeb, 0x0f, 0xff }, // mind
+      { 0xff, 0xff, 0x9b }, // light
+};
+
+// Inject the new player buffs into the loop for buff duration window.
+static void __declspec(naked) display_new_buffs(void)
+{
+    asm
+      {
+        cmp dword ptr [ebp-4], 0x506798 + 24 * 4 ; replaced code
+        jl skip
+        jg new
+        mov dword ptr [ebp-4], offset new_strings + STR_FIRE_IMM * 4
+        sub edx, PARTY_ADDR ; this only works because it`s offset
+        shr edx, 13 ; now we have pc number
+        imul edx, edx, NBUFF_COUNT * 16
+        add edx, offset elemdata.new_pc_buffs
+        mov edi, offset new_buff_colors + 1
+        new:
+        cmp dword ptr [ebp-4], offset new_strings + STR_DIVINE_MASTERY * 4 + 4
+        skip:
+        ret
+      }
+}
+
+// We also need to account for new buffs when precalculating window height.
+static void __declspec(naked) count_new_buffs(void)
+{
+    asm
+      {
+        mov eax, dword ptr [edi+28] ; pc id
+        mov ebx, NBUFF_COUNT
+        mul ebx
+        shl eax, 4
+        add eax, offset elemdata.new_pc_buffs
+        loop:
+        cmp dword ptr [eax], edx
+        jnz yes
+        cmp dword ptr [eax+4], edx
+        jz no
+        yes:
+        inc ecx
+        no:
+        add eax, 16
+        dec ebx
+        jnz loop
+        mov eax, dword ptr [ARRUS_FNT] ; replaced code
+        ret
+      }
+}
+
+// Check new buff expiration time each tick, same as with vanilla ones.
+static void __declspec(naked) expire_new_buffs(void)
+{
+    asm
+      {
+        mov eax, dword ptr [esp+28] ; pc pointer
+        sub eax, 0xa74f48 ; now we got pc number x4
+        mov ebp, NBUFF_COUNT
+        mul ebp
+        lea edi, [elemdata.new_pc_buffs+eax*4]
+        loop:
+        push dword ptr [CURRENT_TIME_ADDR+4]
+        push dword ptr [CURRENT_TIME_ADDR]
+        mov ecx, edi
+        call dword ptr ds:expire_buff
+        add edi, 16
+        dec ebp
+        jnz loop
+        lea edi, [esi+0x17a0] ; replaced code
+        ret
+      }
+}
+
+// Also remove them when resting, training, travelling etc.
+static void __declspec(naked) reset_new_buffs(void)
+{
+    asm
+      {
+        call dword ptr ds:reset_stat_boni ; replaced call
+        mov eax, dword ptr [ebp-4] ; pc id
+        shl eax, 1
+        mov ebx, NBUFF_COUNT
+        mul ebx
+        lea edi, [elemdata.new_pc_buffs+eax*8]
+        loop:
+        mov ecx, edi
+        call dword ptr ds:remove_buff
+        add edi, 16
+        dec ebx
+        jnz loop
+        ret
+      }
+}
+
+// Add Divine Mastery buff power to temporary level.
+static void __declspec(naked) divine_mastery_effect(void)
+{
+    asm
+      {
+        movsx eax, word ptr [esi+218] ; replaced code
+        add edi, eax ; add to total
+        sub esi, PARTY_ADDR - 0x1000
+        shr esi, 13 ; got pc id
+        imul esi, esi, NBUFF_COUNT * 16
+        mov ax, word ptr [elemdata.new_pc_buffs+esi+NBUFF_DIVINE_MASTERY*16+8]
+        movsx eax, ax
+        ret
+      }
+}
+
 // Add new (black) potions and rearrange others.  Also some holy water code.
+// We extend character buffs here, which is later used by Aura of Conflict.
 static inline void new_potions(void)
 {
-    hook_call(0x468c50, resistance_replaces_immunity, 6);
     // holy water is handled below but the jump is here
     patch_byte(0x46878a, HOLY_WATER - POTION_BOTTLE);
     check_inactive_player = dword(0x4685ee) + 0x4685f2; // get mmpatch hook
     hook_jump(0x468791, new_potion_effects);
     hook_call(0x4163b1, mix_new_potions_1, 6);
     hook_call(0x4163d7, mix_new_potions_2, 6);
-    patch_byte(0x41d653, byte(0x41d657)); // move an instruction
-    hook_call(0x41d654, immunity_strings, 7);
     patch_byte(0x4b8fd4, LAST_RECIPE - FIRST_RECIPE + 1); // sell new recipes
     patch_dword(0x490f1f, LAST_RECIPE); // allow selling new recipes
     patch_dword(0x4bda2b, LAST_RECIPE); // ditto
@@ -2605,6 +2661,11 @@ static inline void new_potions(void)
     patch_dword(0x468ef2, dword(0x468f3a)); // recharge now cures paralysis
     patch_dword(0x468f3a, dword(0x468f66)); // cure paralysis -> stone to flesh
     patch_pointer(0x468f66, raise_dead_potion); // stone to flesh -> raise dead
+    hook_call(0x41d69b, display_new_buffs, 7);
+    hook_call(0x41d3a7, count_new_buffs, 5);
+    hook_call(0x494636, expire_new_buffs, 6);
+    hook_call(0x490d48, reset_new_buffs, 5);
+    hook_call(0x48c916, divine_mastery_effect, 7);
 }
 
 // We now store a temporary enchantment in the bonus strength field,
@@ -3274,7 +3335,7 @@ static void __declspec(naked) buff_potions_power(void)
         add dword ptr [esp+16], edx
         mov edx, dword ptr [MOUSE_ITEM+4]
         cmp ah, CLASS_THIEF
-        mov eax, 30 * 60 * 128 / 30 / 4 ; quarter of half hour in ticks
+        mov eax, 30 * MINUTE / 4 ; quarter of half hour
         jne quarter
         add eax, eax
         quarter:
@@ -5893,7 +5954,7 @@ static void __declspec(naked) aura_of_conflict(void)
         mov eax, dword ptr [ebp-32]
         mov edx, dword ptr [ebp-36]
         sub dword ptr [eax+0x1940], edx ; sp cost
-        mov eax, 10 * 60 * 128 / 30 ; ten minutes
+        mov eax, 10 * MINUTE
         mul edi ; spell power
         push esi
         push esi
@@ -5904,8 +5965,8 @@ static void __declspec(naked) aura_of_conflict(void)
         push edx
         push eax
         movzx edi, word ptr [ebx+4] ; target pc
-        mov ecx, dword ptr [0xa74f48+edi*4] ; PC pointers
-        lea ecx, [ecx+0x17a0+PBUFF_AURA_OF_CONFLICT*16]
+        imul ecx, edi, NBUFF_COUNT * 16
+        add ecx, offset elemdata.new_pc_buffs + NBUFF_AURA_OF_CONFLICT * 16
         call dword ptr ds:add_buff
         push edi
         push SPELL_ANIM_SWIRLY
@@ -6518,7 +6579,7 @@ static void __declspec(naked) blink_mass_buffs(void)
         sbb edx, dword ptr [CURRENT_TIME_ADDR+4]
         jb skip
         ja ok
-        cmp ecx, 128 * 60 * 10 / 30 ; 10 min
+        cmp ecx, 10 * MINUTE
         jae ok
         test byte ptr [0x50ba5c], 0x40
         jnz ok
@@ -6543,7 +6604,7 @@ static void __declspec(naked) blink_pc_buffs(void)
         sbb edx, dword ptr [CURRENT_TIME_ADDR+4]
         jb skip
         ja ok
-        cmp ecx, 128 * 60 * 10 / 30 ; 10 min
+        cmp ecx, 10 * MINUTE
         jae ok
         mov dword ptr [0x576eac], 1 ; refresh screen
         test byte ptr [0x50ba5c], 0x40
@@ -6881,10 +6942,6 @@ static inline void misc_spells(void)
     SPELL_INFO[SPL_FLYING_FIST].damage_fixed = 20;
     SPELL_INFO[SPL_FLYING_FIST].damage_dice = 10;
     hook_call(0x427e6a, zero_item_spells, 5);
-    // Change Aura of Conflict buff color to Mind.
-    patch_byte(0x4e2ac4, byte(0x4e2ad3));
-    patch_byte(0x4e2ac5, byte(0x4e2ad4));
-    patch_byte(0x4e2ac6, byte(0x4e2ad5));
     patch_pointer(0x42ea51, aura_of_conflict);
     patch_byte(0x427cd8, 2); // targets a pc
     patch_dword(0x4e22b8, 276); // spellbook icon x
@@ -9624,7 +9681,7 @@ static int __stdcall weighted_monster_preference(struct map_monster *monster)
                  || item->id == GIBBET) && !(item->flags & IFLAGS_BROKEN))
                 weights[i]++;
           }
-        weights[i] += player->spell_buffs[PBUFF_AURA_OF_CONFLICT].power;
+        weights[i] += elemdata.new_pc_buffs[i][NBUFF_AURA_OF_CONFLICT].power;
         if (has_item_in_slot(player, SHADOWS_MASK, SLOT_HELM))
             continue; // race/class/gender hidden
         static const int class_pref[9] = { 0x1, 0x80, 0x100, 0x2, 0x4,
@@ -11702,7 +11759,7 @@ static void __stdcall terrifying_helmet(struct player *player,
     int minutes = mastery <= 1 ? 5 : 15 << (mastery - 2); // 5, 15, 30, an hour
     if (debuff_monster(monster, MIND, skill))
         add_buff(monster->spell_buffs + MBUFF_FEAR,
-                 CURRENT_TIME + minutes * 60 * 128 / 30, mastery, 0, 0, 0);
+                 CURRENT_TIME + minutes * MINUTE, mastery, 0, 0, 0);
 }
 
 // Defined below.
@@ -11819,7 +11876,7 @@ static void __declspec(naked) cursed_weapon(void)
         test eax, eax
         jz fail
         xor ecx, ecx
-        mov eax, 128 * 60 * 20 / 30 ; 20 min
+        mov eax, 20 * MINUTE
         mov edx, dword ptr [CURRENT_TIME_ADDR+4]
         add eax, dword ptr [CURRENT_TIME_ADDR]
         adc edx, ecx
@@ -12795,7 +12852,7 @@ static void __declspec(naked) check_dragon_wand(void)
 }
 
 // 30 minutes in game ticks, used as a division constant.
-static const int half_hour = 30 * 60 * 128 / 30;
+static const int half_hour = 30 * MINUTE;
 
 // Defined below.
 static void regen_living_knives(void);
@@ -12973,7 +13030,7 @@ static void __stdcall headache_berserk(struct player *player,
     if (mastery < EXPERT)
         mastery = EXPERT;
     add_buff(monster->spell_buffs + MBUFF_BERSERK,
-             CURRENT_TIME + (15 << (mastery - 2)) * 60 * 128 / 30,
+             CURRENT_TIME + (15 << (mastery - 2)) * MINUTE,
              mastery, 0, 0, 0);
     struct map_object anim = { OBJ_BERSERK,
                                find_objlist_item(OBJLIST_THIS, OBJ_BERSERK),
@@ -13247,7 +13304,7 @@ static void __stdcall viper_slow(struct player *player,
         return;
     int mastery = skill_mastery(skill);
     add_buff(monster->spell_buffs + MBUFF_SLOW,
-             CURRENT_TIME + (mastery <= 1 ? 5 : 20) * 60 * 128 / 30, mastery,
+             CURRENT_TIME + (mastery <= 1 ? 5 : 20) * MINUTE, mastery,
              (mastery <= 2 ? 2 : mastery == 3 ? 4 : 8), 0, 0);
     magic_sparkles(monster, 0);
     make_sound(SOUND_THIS, word(0x4edf30 + SPL_SLOW * 2),
@@ -15387,7 +15444,7 @@ static inline void npc_dialog(void)
     patch_dword(0x476e45, GREET_COUNT);
     patch_pointer(0x4455dc, npc_greet);
     patch_pointer(0x4b2ba4, npc_greet);
-    patch_dword(0x476b17, NPC_TOPIC_TEXT_ADDR + TOPIC_COUNT * 8); // more NPC topics
+    patch_dword(0x476b17, NPC_TOPIC_TEXT_ADDR + TOPIC_COUNT * 8); // add topics
     hook_call(0x476a43, write_new_npc_text, 13);
     hook_call(0x447bee, display_new_npc_text, 7);
     hook_call(0x447c0d, display_new_npc_text_2, 7);
@@ -19444,7 +19501,7 @@ static void __thiscall repair_knives(struct player *player, struct item *knife)
 }
 
 // 5 minutes in game ticks, used as a division constant.
-static const int five_minutes = 5 * 60 * 128 / 30;
+static const int five_minutes = 5 * MINUTE;
 
 // Restore one +3 knife every 5 minutes if no temp enchant present.
 // Called from use_knife_charge() and also regen_dragon_charges() above.

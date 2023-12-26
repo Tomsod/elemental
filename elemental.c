@@ -576,7 +576,7 @@ enum items
     HOLY_WATER = 280, // not a potion
     FIRST_SCROLL = 300,
     SCROLL_FATE = 399,
-    DIVINE_INTERVENTION_BOOK = 487,
+    FIRST_BOOK = 400,
     SCROLL_TELEPATHY = 499,
     FIRST_ARTIFACT = 500,
     PUCK = 500,
@@ -937,6 +937,8 @@ enum spells
     SPL_MIND_BLAST = 57,
     SPL_AURA_OF_CONFLICT = 59,
     SPL_BERSERK = 62,
+    SPL_CURE_INSANITY = 64,
+    SPL_PSYCHIC_SHOCK = 65,
     SPL_CURE_WEAKNESS = 67,
     SPL_REGENERATION = 71,
     SPL_HAMMERHANDS = 73,
@@ -947,6 +949,7 @@ enum spells
     SPL_DISPEL_MAGIC = 80,
     SPL_PARALYZE = 81,
     SPL_PRISMATIC_LIGHT = 84,
+    SPL_DIVINE_INTERVENTION = 88,
     SPL_VAMPIRIC_WEAPON = 91,
     SPL_SHRINKING_RAY = 92,
     SPL_CONTROL_UNDEAD = 94,
@@ -6619,6 +6622,7 @@ static void __declspec(naked) blink_pc_buffs(void)
 }
 
 // When browsing guild shelves, mark which spells are or can be learned.
+// Berserk and Psychic Shock have to be swapped as they're out of order now.
 static void __declspec(naked) mark_learned_guild_spells(void)
 {
     asm
@@ -6629,6 +6633,14 @@ static void __declspec(naked) mark_learned_guild_spells(void)
         mov ecx, dword ptr [0xa74f44+ecx*4] ; PC pointers
         cmp byte ptr [ecx+0x192+esi-1], 0 ; known spell flag
         jnz known
+        cmp esi, SPL_BERSERK
+        sete al
+        cmp esi, SPL_PSYCHIC_SHOCK
+        sete ah
+        sub al, ah
+        movsx eax, al
+        lea eax, [eax+eax*2]
+        add esi, eax
         mov eax, dword ptr [ebp-20] ; school x 4
         lea edx, [eax+eax*2]
         shr eax, 2
@@ -6819,6 +6831,42 @@ static void __declspec(naked) immutability_triple_cost(void)
         ok:
         mov eax, 0x4930f6 ; resisted code path
         jmp eax
+      }
+}
+
+// Swap Berserk and Psychic Shock books in Mind guilds.
+static void __declspec(naked) mind_guild_spell_reorder(void)
+{
+    asm
+      {
+        mov ebp, dword ptr [DIALOG2] ; replaced code
+        cmp esi, FIRST_BOOK + SPL_BERSERK - 1
+        sete al
+        cmp esi, FIRST_BOOK + SPL_PSYCHIC_SHOCK - 1
+        sete ah
+        sub al, ah
+        movsx eax, al
+        lea eax, [eax+eax*2]
+        add esi, eax
+        ret
+      }
+}
+
+// Also swap them when learning a new spell.
+static void __declspec(naked) learned_mind_spell_reorder(void)
+{
+    asm
+      {
+        lea eax, [esi+0x192+edi] ; replaced code
+        cmp edi, SPL_BERSERK - 1
+        sete cl
+        cmp edi, SPL_PSYCHIC_SHOCK - 1
+        sete ch
+        sub cl, ch
+        movsx ecx, cl
+        lea ecx, [ecx+ecx*2]
+        add edi, ecx
+        ret
       }
 }
 
@@ -7077,6 +7125,22 @@ static inline void misc_spells(void)
     patch_dword(0x493020, (int) immutability_double_cost - 0x493024);
     // eradicated
     patch_dword(0x49309a, (int) immutability_triple_cost - 0x49309e);
+    // Shift Berserk, Psychic Shock and Cure Insanity around.
+    for (int i = 0; i < 4; i++)
+      {
+        SPELL_INFO[SPL_BERSERK].cost[i] = 20;
+        SPELL_INFO[SPL_CURE_INSANITY].cost[i] = 25;
+        SPELL_INFO[SPL_PSYCHIC_SHOCK].cost[i] = 10;
+      }
+    SPELL_INFO[SPL_PSYCHIC_SHOCK].damage_fixed = 8;
+    SPELL_INFO[SPL_PSYCHIC_SHOCK].damage_dice = 8;
+    SPELL_INFO[SPL_PSYCHIC_SHOCK].delay_master = 100;
+    SPELL_INFO[SPL_PSYCHIC_SHOCK].delay_gm = 90;
+    erase_code(0x42c8a8, 28); // no weakness anim for cure instanity
+    hook_jump(0x42c91a, (void *) 0x42deaa); // and no actual weakness
+    // berserk disables spellcasting in consider_new_spells() below
+    hook_call(0x4bc915, mind_guild_spell_reorder, 6);
+    hook_call(0x4684f3, learned_mind_spell_reorder, 7);
 }
 
 // For consistency with players, monsters revived with Reanimate now have
@@ -7521,6 +7585,8 @@ static int __thiscall consider_new_spells(void *this,
                                           struct map_monster *monster,
                                           int spell)
 {
+    if (monster->spell_buffs[MBUFF_BERSERK].expire_time)
+        return FALSE; // too angry to cast
     int monster_id = monster - MAP_MONSTERS;
     unsigned int target = MON_TARGETS[monster_id];
     if (spell == SPL_TURN_UNDEAD)
@@ -10404,7 +10470,7 @@ static void __declspec(naked) fix_infinite_di_books(void)
 {
     asm
       {
-        cmp dword ptr [0xf8b028], DIVINE_INTERVENTION_BOOK ; returned item
+        cmp dword ptr [0xf8b028], FIRST_BOOK + SPL_DIVINE_INTERVENTION - 1
         jne skip
         push 0 ; unset
         mov edx, QBIT_LOST_DIVINE_INTERVENTION
@@ -11044,21 +11110,6 @@ static void __declspec(naked) gm_cure_chunk(void)
       }
 }
 
-// Bug fix: failing to cure insanity would still inflict weakness.
-static void __declspec(naked) failed_cure_weakness(void)
-{
-    asm
-      {
-        test al, al ; result of curing attempt
-        jz skip
-        imul ecx, ecx, 6972 ; replaced code
-        ret
-        skip:
-        push 0x42deaa ; post-cast code
-        ret 4
-      }
-}
-
 // Bug fix: cure unconsciousness, set HP to 1, and inflict weakness
 // only if Raise Dead succeeds in removing the dead condition.
 static void __declspec(naked) raise_dead_chunk(void)
@@ -11197,7 +11248,6 @@ static inline void cure_spells(void)
     patch_bytes(0x42c850, gm_cure_chunk, 5); // GM -> M
     patch_dword(0x42c857, 60*60); // M -> E
     erase_code(0x42c8c4, 30); // remove old GM code
-    hook_call(0x42c91e, failed_cure_weakness, 6); // might as well
     // Shift the max cure delay multipliers: Cure Poison.
     // Similar code, similar patches.
     patch_bytes(0x42cc56, gm_cure_chunk, 5); // GM -> M

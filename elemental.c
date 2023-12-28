@@ -2,9 +2,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #ifdef CHECK_OVERWRITE
 #include <stdio.h>
 #endif
+
 
 #define byte(address) (*(uint8_t *) (address))
 #define word(address) (*(uint16_t *) (address))
@@ -921,12 +923,14 @@ enum spells
     SPL_SPARKS = 15,
     SPL_LIGHTNING_BOLT = 18,
     SPL_INVISIBILITY = 19,
+    SPL_IMPLOSION = 20,
     SPL_POISON_SPRAY = 24,
     SPL_RECHARGE_ITEM = 28,
     SPL_ENCHANT_ITEM = 30,
     SPL_ICE_BLAST = 32,
     SPL_STUN = 34,
     SPL_SLOW = 35,
+    SPL_ROCK_BLAST = 41,
     SPL_MASS_DISTORTION = 44,
     SPL_BLESS = 46,
     SPL_SPECTRAL_WEAPON = 47,
@@ -936,9 +940,11 @@ enum spells
     SPL_REMOVE_FEAR = 56,
     SPL_MIND_BLAST = 57,
     SPL_AURA_OF_CONFLICT = 59,
+    SPL_CHARM = 60,
     SPL_BERSERK = 62,
     SPL_CURE_INSANITY = 64,
     SPL_PSYCHIC_SHOCK = 65,
+    SPL_ENSLAVE = 66,
     SPL_CURE_WEAKNESS = 67,
     SPL_REGENERATION = 71,
     SPL_HAMMERHANDS = 73,
@@ -1092,7 +1098,8 @@ struct __attribute__((packed)) mapstats_item
 static const char map_altar_of_wishes[] = "genie.blv";
 
 // Indoor or outdoor reputation for the loaded map.
-#define CURRENT_REP (*(int32_t *) (dword(0x6be1e0) == 2 ? 0x6a1140 : 0x6be514))
+#define OUTDOORS 0x6be1e0
+#define CURRENT_REP (*(int32_t *) (dword(OUTDOORS) == 2 ? 0x6a1140 : 0x6be514))
 
 enum profession
 {
@@ -1243,11 +1250,14 @@ struct __attribute__((packed)) npc_topic_text
 #define NPC_TOPIC_TEXT ((struct npc_topic_text *) NPC_TOPIC_TEXT_ADDR - 1)
 
 // TOptions from MM7Patch v2.5.
-struct __attribute__((packed)) patch_options
+static struct __attribute__((packed)) patch_options
 {
     SKIP(196);
     int fix_unimplemented_spells;
-    SKIP(120);
+    SKIP(48);
+    double mouse_dx;
+    double mouse_dy;
+    SKIP(56);
     int fix_unmarked_artifacts;
     SKIP(8);
     int fix_light_bolt;
@@ -1255,7 +1265,7 @@ struct __attribute__((packed)) patch_options
     SKIP(16);
     int keep_empty_wands;
     SKIP(16);
-};
+} *patch_options;
 
 // my additions
 #define ACTION_EXTRA_CHEST 40
@@ -1312,10 +1322,12 @@ static struct npcprof
 #define ICONS_LOD ((void *) ICONS_LOD_ADDR)
 #define DIALOG1 0x507a3c
 #define DIALOG2 0x507a40
+#define DIALOG7 0x507a54
 #define PARTY_X 0xacd4ec
 #define PARTY_Y 0xacd4f0
 #define PARTY_Z 0xacd4f4
 #define PARTY_DIR 0xacd4f8
+#define PARTY_LOOK_ANGLE 0xacd4fc
 #define PARTY_GOLD 0xacd56c
 // Pointers for images in the shop window: [0] = background, [1+] = wares.
 #define SHOP_IMAGES 0xf8afe4
@@ -1500,7 +1512,9 @@ static int __fastcall (*add_chest_item)(int unused, void *item, int chest_id)
     = (funcptr_t) 0x41ff4b;
 static void __thiscall (*remove_mouse_item)(void *this) = (funcptr_t) 0x4698aa;
 #define MOUSE_THIS_PTR 0x720808
-#define MOUSE_THIS (*(void **) MOUSE_THIS_PTR)
+#define MOUSE_THIS (*(int **) MOUSE_THIS_PTR)
+#define MOUSE_X (MOUSE_THIS[66])
+#define MOUSE_Y (MOUSE_THIS[67])
 static void __stdcall (*start_new_music)(int track) = (funcptr_t) 0x4aa0cf;
 // Technically thiscall, but ecx isn't used.
 static int __stdcall (*monster_resists_condition)(void *monster, int element)
@@ -1515,7 +1529,8 @@ static int __thiscall (*load_bitmap)(void *lod, char *name, int lod_type)
 #define LOADED_BITMAPS 0x6d06cc
 static void __fastcall (*aim_spell)(int spell, int pc, int skill, int flags,
                                     int unknown) = (funcptr_t) 0x427734;
-#define SPELL_ANIM_THIS ((void *) dword(dword(0x71fe94) + 0xe50))
+#define CGAME 0x71fe94
+#define SPELL_ANIM_THIS ((void *) dword(dword(CGAME) + 0xe50))
 static void __thiscall (*spell_face_anim)(void *this, short anim, short pc)
     = (funcptr_t) 0x4a894d;
 #define ACTION_THIS_ADDR 0x50ca50
@@ -1550,8 +1565,9 @@ static int __thiscall (*get_learning_bonus)(void *player)
 static int __thiscall (*find_objlist_item)(void *this, int id)
     = (funcptr_t) 0x42eb1e;
 #define OBJLIST_THIS ((void *) 0x680630)
-static int __thiscall (*launch_object)(struct map_object *object,
-                                       int direction, int speed, int player)
+static int __fastcall (*launch_object)(struct map_object *object,
+                                       int direction, int look_angle,
+                                       int speed, int player)
     = (funcptr_t) 0x42f5c9;
 static int __thiscall (*item_value)(struct item *item) = (funcptr_t) 0x45646e;
 static int __thiscall (*get_ac)(void *player) = (funcptr_t) 0x48e687;
@@ -1595,6 +1611,7 @@ static int *__thiscall (*get_mouse_coords)(void *this, int *buffer)
     = (funcptr_t) 0x469c3d;
 static void __thiscall (*randomize_item)(void *this, int level, int type,
                                          void *item) = (funcptr_t) 0x45664c;
+#define GET_ASYNC_KEY_STATE 0x4d8260
 
 //---------------------------------------------------------------------------//
 
@@ -3707,8 +3724,8 @@ static void __declspec(naked) autobrew(void)
     asm
       {
         lea esi, [ebx+0x1f0+eax*4]
-        push 0x11
-        call dword ptr ds:0x4d8260
+        push 0x11 ; ctrl
+        call dword ptr ds:GET_ASYNC_KEY_STATE
         test ax, ax
         js ctrl
         quit:
@@ -4684,12 +4701,12 @@ static void __declspec(naked) aim_potions_refund_hook(void)
 {
     asm
       {
-        mov ecx, dword ptr [0x507a54] ; current dialog, I think
+        mov ecx, dword ptr [DIALOG7]
         cmp ecx, ebx
         jz quit
         mov ecx, dword ptr [ecx+28] ; dialog param
         call aim_potions_refund
-        mov ecx, dword ptr [0x507a54]
+        mov ecx, dword ptr [DIALOG7]
         quit:
         ret
       }
@@ -5973,7 +5990,7 @@ static void __declspec(naked) aura_of_conflict(void)
         call dword ptr ds:add_buff
         push edi
         push SPELL_ANIM_SWIRLY
-        mov ecx, dword ptr [0x71fe94]
+        mov ecx, dword ptr [CGAME]
         mov ecx, dword ptr [ecx+0xe50]
         call dword ptr ds:spell_face_anim
         push 0x42deaa ; after casting a spell
@@ -6870,6 +6887,78 @@ static void __declspec(naked) learned_mind_spell_reorder(void)
       }
 }
 
+// Allow releasing spells in any direction on a Shift-click.
+static int free_aim_spell(void)
+{
+    int id = dword(MONSTER_COUNT);
+    if (id >= 500) return 0; // TODO: could search for a removed monster
+    // the rotation code is almost verbatim from mmpatch (CastRay)
+    double x0 = patch_options->mouse_dx + MOUSE_X - dword(0xf8babc);
+    double y0 = dword(OUTDOORS) == 2 ? dword(0x6bdf04)
+                             : *(float *) (dword(DRAW_IMAGE_THIS)
+                                           ? dword(dword(CGAME) + 0xe54) + 0xc4
+                                           : 0x507b7c);
+    double z0 = dword(0xf8bac0) - patch_options->mouse_dy - MOUSE_Y + 0.5;
+    double la = dword(PARTY_LOOK_ANGLE) * M_PI / 1024;
+    double z = z0 * cos(la) + y0 * sin(la);
+    double m = y0 * cos(la) - z0 * sin(la);
+    double dir = dword(PARTY_DIR) * M_PI / 1024;
+    double x = x0 * sin(dir) + m * cos(dir);
+    double y = m * sin(dir) - x0 * cos(dir);
+    double s = 2000 / sqrt(x * x + y * y + z * z); // 2000 is arbitrary for now
+    MAP_MONSTERS[id].x = dword(PARTY_X) + (int) (x * s);
+    MAP_MONSTERS[id].y = dword(PARTY_Y) + (int) (y * s);
+    MAP_MONSTERS[id].z = dword(PARTY_Z) + (int) (z * s);
+    MAP_MONSTERS[id].height = dword(0xacce3c) / 2;
+    return id * 8 + 3;
+}
+
+// Hook for the above.
+static void __declspec(naked) free_aim_spell_hook(void)
+{
+    asm
+      {
+        cmp dword ptr [esp+44], 70 ; aim monster action
+        jne skip
+        push 0x10 ; shift
+        call dword ptr ds:GET_ASYNC_KEY_STATE
+        test ax, ax
+        jns skip
+        mov ecx, dword ptr [DIALOG7]
+        mov ecx, dword ptr [ecx+28]
+        mov ax, word ptr [ecx]
+        ; rule out no-projectile spells
+        cmp ax, SPL_IMPLOSION
+        je skip
+        cmp ax, SPL_SLOW
+        je skip
+        cmp ax, SPL_MASS_DISTORTION
+        je skip
+        cmp ax, SPL_CHARM
+        je skip
+        cmp ax, SPL_BERSERK
+        je skip
+        cmp ax, SPL_ENSLAVE
+        je skip
+        cmp ax, SPL_DESTROY_UNDEAD
+        je skip
+        cmp ax, SPL_PARALYZE
+        je skip
+        cmp ax, SPL_CONTROL_UNDEAD
+        je skip
+        call free_aim_spell
+        test eax, eax
+        jnz got_it
+        skip:
+        cmp dword ptr [0xe31af0], ebx ; replaced code
+        ret
+        got_it:
+        mov dword ptr [esp], 0x433daa ; past the mouse target code
+        xor ecx, ecx ; pass the distance check
+        ret
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -7141,6 +7230,10 @@ static inline void misc_spells(void)
     // berserk disables spellcasting in consider_new_spells() below
     hook_call(0x4bc915, mind_guild_spell_reorder, 6);
     hook_call(0x4684f3, learned_mind_spell_reorder, 7);
+    hook_call(0x433d4c, free_aim_spell_hook, 6);
+    patch_byte(0x427c9f + SPL_ROCK_BLAST - 2, 0); // make it aimed
+    patch_dword(0x42e965 + SPL_ROCK_BLAST * 4,
+                dword(0x42e965 + SPL_FIRE_BOLT * 4)); // respect aim
 }
 
 // For consistency with players, monsters revived with Reanimate now have
@@ -7902,7 +7995,7 @@ static void __declspec(naked) load_map_hook(void)
         call reset_disabled_spells
         mov dword ptr [bow_kill_player], esi
         mov dword ptr [bow_kill_time], esi
-        cmp dword ptr [0x6be1e0], 2 ; test if outdoors
+        cmp dword ptr [OUTDOORS], 2
         jne quit
         cmp dword ptr [0x6a1160], esi ; last visit time, 0 if just refilled
         jnz quit
@@ -13086,7 +13179,7 @@ static void __stdcall headache_berserk(struct player *player,
                                find_objlist_item(OBJLIST_THIS, OBJ_BERSERK),
                                monster->x, monster->y,
                                monster->z + monster->height };
-    launch_object(&anim, 0, 0, 0);
+    launch_object(&anim, 0, 0, 0, 0);
     make_sound(SOUND_THIS, word(0x4edf30 + SPL_BERSERK * 2),
                0, 0, -1, 0, 0, 0, 0);
 }
@@ -13368,7 +13461,7 @@ static void save_temple_beacon(void)
     elemdata.y = dword(PARTY_Y);
     elemdata.z = dword(PARTY_Z);
     elemdata.direction = dword(PARTY_DIR);
-    elemdata.look_angle = dword(0xacd4fc);
+    elemdata.look_angle = dword(PARTY_LOOK_ANGLE);
     elemdata.map_index = get_map_index(MAPSTATS, CUR_MAP_FILENAME) - 1;
     change_bit(QBITS, QBIT_TEMPLE_UNDERWATER,
                !uncased_strcmp(CUR_MAP_FILENAME, MAP_SHOALS));
@@ -17311,7 +17404,7 @@ static void __stdcall blaster_eradicate(struct player *player,
                                                      OBJ_BLASTER_ERADICATION),
                                    monster->x, monster->y,
                                    monster->z + monster->height / 2 };
-        launch_object(&anim, 0, 0, 0);
+        launch_object(&anim, 0, 0, 0, 0);
       }
 }
 
@@ -18896,12 +18989,12 @@ static inline void patch_compatibility(void)
 {
     HMODULE patch = GetModuleHandle("MM7patch.dll");
     FARPROC get_options = GetProcAddress(patch, "GetOptions");
-    struct patch_options *options = (void *) get_options();
-    options->fix_unimplemented_spells = FALSE; // conflicts with my hook
-    options->fix_unmarked_artifacts = FALSE; // I do it differently
-    options->fix_light_bolt = FALSE; // I don't want this!
-    options->armageddon_element = MAGIC; // can't read spells.txt this early
-    options->keep_empty_wands = FALSE; // my implementation is better
+    patch_options = (void *) get_options();
+    patch_options->fix_unimplemented_spells = FALSE; // conflicts with my hook
+    patch_options->fix_unmarked_artifacts = FALSE; // I do it differently
+    patch_options->fix_light_bolt = FALSE; // I don't want this!
+    patch_options->armageddon_element = MAGIC; // can't read spells.txt yet
+    patch_options->keep_empty_wands = FALSE; // my implementation is better
     patch_byte(0x42efc9, 10); // new melee recovery limit (for the hint)
 }
 

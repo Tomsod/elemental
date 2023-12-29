@@ -7,7 +7,6 @@
 #include <stdio.h>
 #endif
 
-
 #define byte(address) (*(uint8_t *) (address))
 #define word(address) (*(uint16_t *) (address))
 #define dword(address) (*(uint32_t *) (address))
@@ -12558,6 +12557,18 @@ static inline void new_enchants(void)
     erase_code(0x48d25c, 70); // missile
     erase_code(0x48ce7b, 95); // right hand
     erase_code(0x48cfa6, 95); // left hand
+    // Improve the "+3 to two skills" boni to +5.
+    patch_byte(0x48f4f0, 5); // monks' (check)
+    patch_byte(0x48f4f4, 5); // monks' (bonus)
+    patch_byte(0x48f502, 5); // thieves' (check)
+    patch_byte(0x48f506, 5); // thieves' (bonus)
+    patch_byte(0x48f514, 5); // of identifying (check)
+    patch_byte(0x48f518, 5); // of identifying (bonus)
+    patch_byte(0x48f521, 5); // all three (check)
+    patch_byte(0x48f525, 5); // all three (bonus)
+    // Also boost "of the Ocean".
+    patch_byte(0x48f550, 10); // check
+    patch_byte(0x48f554, 10); // bonus
 }
 
 // Let the Elven Chainmail also improve bow skill.

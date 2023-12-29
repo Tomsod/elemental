@@ -3,7 +3,7 @@ Special Bonuses by Group
 Bonus Stat	Name Add	Prefix	Weap	Staff	Miss	Arm	Shld	Helm	Belt	Cape	Gaunt	Boot	Ring	Amul	Robe	Crown	Value	Lvl	Craft	Craft description	Description fo special Bonuses and values
 
 +10 to all Resistances.	of Protection	N	0	10	0	10	10	10	0	10	0	0	10	10	10	10	1000	B	384	Day of Protection scroll	(+10) on all four resistances
-+10 to all Seven Statistics.	of The Gods	N	5	10	5	10	10	10	10	10	10	10	10	10	10	10	1500	C	382	Day of the Gods scroll	(+10) on all 7 stats
++10 to all Seven Statistics.	of The Gods	N	5	10	5	10	10	10	10	10	10	10	10	10	10	10	2000	C	382	Day of the Gods scroll	(+10) on all 7 stats
 Explosive Impact!	of Carnage	N	0	0	10	0	0	0	0	0	0	0	0	0	0	0	5000	D	396	Dragon Breath scroll	"projectile explodes (fireball radius,dmg=weapdmg)"
 Adds 3-^H[4;8] points of Cold damage.	of Cold	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	500	A	325	Ice Bolt scroll	(3-4) cold damage
 Adds 6-^H[8;16] points of Cold damage.	of Frost	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1000	C	331	Ice Blast scroll	(6-8) cold damage
@@ -61,9 +61,9 @@ Adds 10-^H[20;40] points of Fire damage and +25 Might.	of The Dragon	N	10	5	10	0
 +5 Intellect and Personality.	Wizards'	Y	5	10	5	5	5	5	10	10	10	10	10	10	10	10	500	A	329	Enchant Item scroll	"Intelect (+5), Per (+5)"
 Increased Value.	Antique	Y	10	10	10	10	10	10	0	0	10	0	10	10	10	10	X 10	B	195	Brilliant gem	Gold value increased
 Increased Weapon speed.	Swift	Y	25	15	25	0	0	0	0	0	0	0	0	0	0	0	X 2	B	250	Swift potion	(-20) pts on weapon speed
-+3 Unarmed and Dodging skills.	Monks'	Y	0	5	0	0	0	0	10	5	15	10	5	5	5	0	1500	C	375	Flying Fist scroll	+3 to Dodging and Unarmed skill
-+3 Thievery and Disarm skills.	Thieves'	Y	0	0	0	0	0	0	5	5	20	5	15	5	0	0	1500	B	194	Yellow Topaz gem	+3 to Stealing and Disarm skill
-+3 ID Item and ID Monster skills.	of Identifying	N	0	0	0	0	0	0	5	5	0	5	10	15	0	5	1500	A	191	Rose Crystal gem	+3 to ID Monster and ID Item skill
++5 Unarmed and Dodging skills.	Monks'	Y	0	5	0	0	0	0	10	5	15	10	5	5	5	0	1500	B	375	Flying Fist scroll	+5 to Dodging and Unarmed skill
++5 Thievery and Disarm skills.	Thieves'	Y	0	0	0	0	0	0	5	5	20	5	15	5	0	0	1500	B	194	Yellow Topaz gem	+5 to Thievery and Disarm skill
++5 ID Item and ID Monster skills.	of Identifying	N	0	0	0	0	0	0	5	5	0	5	10	15	0	5	750	A	191	Rose Crystal gem	+5 to ID Monster and ID Item skill
 May deal double damage to Elves.	Elf Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	A	211	Fae Dust reagent	"(+30) to critical roll on all Elf Archers, Elf Spearmen, Elf peasants (male and female)."
 May deal double damage to Undead, and can hit Ghosts.	Undead Slaying	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	B	280	Holy Water	"Attack with Holy and (+20) to critical roll on anyone not immune to it"
 May deal double damage to Titans.	Of David	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	A	343	Mass Distortion scroll	(+30) to critical roll on all Titans
@@ -71,7 +71,7 @@ Regenerate Spell points and Hit points over time.	of Plenty	N	0	5	0	10	0	5	10	10
 Adds ^H[5;8] points of Poison damage; adds Backstab chance.	Assassins'	Y	20	10	0	0	0	0	0	0	0	0	0	0	0	0	1500	C	188	Emerald gem	of Poison + of Backstabbing
 Adds 6-^H[8;16] points of Cold damage and +5 Armor Class.	Barbarians'	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	1500	C	189	Sapphire gem	(6-8) cold damage and +5 AC
 +20 Shock Resistance and Shielding.	of the Storm	N	0	5	0	20	20	20	0	0	0	0	0	0	10	10	1500	C	273	Shock Immunity potion	+20 Shock Resistance and 1/2 damage from missile attacks
-+10 Cold Resistance and +2 Alchemy skill.	of the Ocean	N	0	0	0	20	20	20	0	0	0	0	0	0	10	10	1000	B	233	Recharge potion	+10 Cold Resistance and +2 Alchemy skill
++10 Cold Resistance and +10 Alchemy skill.	of the Ocean	N	0	0	0	20	20	20	0	0	0	0	0	0	10	10	1000	B	233	Recharge potion	+10 Cold Resistance and +10 Alchemy skill
 Prevents damage from drowning.	of Water Walking	N	0	0	0	5	5	5	5	5	0	15	5	5	5	5	1500	C	326	Water Walk scroll	Character with item takes no damage from drowning
 Prevents damage from falling.	of Feather Falling	N	0	0	0	5	0	0	5	5	0	5	15	5	0	0	1000	B	312	Feather Fall scroll	Character with item takes no damage from falling
 Pierces Physical resistance.	Spectral	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	x2	B	346	Spectral Weapon scroll	attacks with Magic if Physical resistance is higher

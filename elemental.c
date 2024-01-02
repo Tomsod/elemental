@@ -915,6 +915,7 @@ enum spells
     SPL_FIRE_AURA = 4,
     SPL_FIREBALL = 6,
     SPL_IMMOLATION = 8,
+    SPL_METEOR_SHOWER = 9,
     SPL_INFERNO = 10,
     SPL_INCINERATE = 11,
     SPL_WIZARD_EYE = 12,
@@ -923,6 +924,7 @@ enum spells
     SPL_LIGHTNING_BOLT = 18,
     SPL_INVISIBILITY = 19,
     SPL_IMPLOSION = 20,
+    SPL_STARBURST = 22,
     SPL_POISON_SPRAY = 24,
     SPL_RECHARGE_ITEM = 28,
     SPL_ENCHANT_ITEM = 30,
@@ -930,6 +932,7 @@ enum spells
     SPL_STUN = 34,
     SPL_SLOW = 35,
     SPL_ROCK_BLAST = 41,
+    SPL_DEATH_BLOSSOM = 43,
     SPL_MASS_DISTORTION = 44,
     SPL_BLESS = 46,
     SPL_SPECTRAL_WEAPON = 47,
@@ -1410,6 +1413,7 @@ static void __thiscall (*init_item)(void *item) = (funcptr_t) 0x402f07;
 static void __fastcall (*print_text)(int *bounds, void *font, int x, int y,
                                      int color, char *text, int unknown)
     = (funcptr_t) 0x44d432;
+static int (*get_game_speed)(void) = (funcptr_t) 0x46bdac;
 static int __thiscall (*get_race)(void *player) = (funcptr_t) 0x490101;
 static int __thiscall (*get_gender)(void *player) = (funcptr_t) 0x490139;
 static int __thiscall (*get_might)(void *player) = (funcptr_t) 0x48c922;
@@ -1472,7 +1476,7 @@ static void __fastcall (*summon_monster)(int id, int x, int y, int z)
     = (funcptr_t) 0x4bbec4;
 static int __thiscall (*dir_cosine)(void *this, int dir)
     = (funcptr_t) 0x402cae;
-#define COSINE_THIS ((void *) 0x56c680)
+#define TRIG_THIS ((void *) 0x56c680)
 static int __thiscall (*get_map_index)(struct mapstats_item *mapstats,
                                        char *filename) = (funcptr_t) 0x4547cf;
 static void *__thiscall (*find_in_lod)(void *lod, char *filename, int unknown)
@@ -4362,8 +4366,8 @@ static void __thiscall genie_lamp(struct player *player)
         case 14:
             if (dword(MONSTER_COUNT) < 500) // check if can summon
               {
-                int dx = dir_cosine(COSINE_THIS, dword(PARTY_DIR)) >> 8;
-                int dy = dir_cosine(COSINE_THIS, dword(PARTY_DIR) - 512) >> 8;
+                int dx = dir_cosine(TRIG_THIS, dword(PARTY_DIR)) >> 8;
+                int dy = dir_cosine(TRIG_THIS, dword(PARTY_DIR) - 512) >> 8;
                 // TODO: check for a wall?
                 summon_monster(68, dword(PARTY_X) + dx, dword(PARTY_Y) + dy,
                                dword(PARTY_Z));
@@ -6887,7 +6891,7 @@ static void __declspec(naked) learned_mind_spell_reorder(void)
 }
 
 // Allow releasing spells in any direction on a Shift-click.
-static int free_aim_spell(void)
+static int __thiscall free_aim_spell(int shower)
 {
     int id = dword(MONSTER_COUNT);
     if (id >= 500) return 0; // TODO: could search for a removed monster
@@ -6897,17 +6901,30 @@ static int free_aim_spell(void)
                              : *(float *) (dword(DRAW_IMAGE_THIS)
                                            ? dword(dword(CGAME) + 0xe54) + 0xc4
                                            : 0x507b7c);
-    double z0 = dword(0xf8bac0) - patch_options->mouse_dy - MOUSE_Y + 0.5;
-    double la = dword(PARTY_LOOK_ANGLE) * M_PI / 1024;
-    double z = z0 * cos(la) + y0 * sin(la);
-    double m = y0 * cos(la) - z0 * sin(la);
+    int middle_y = dword(0xf8bac0);
+    double z0 = middle_y - patch_options->mouse_dy - MOUSE_Y + 0.5;
+    double s = 5120 / 2; // half green gem distance
+    double z, m;
+    if (shower)
+      {
+        // vertical mouse position = distance here, not direction
+        s += s * z0 / middle_y;
+        z = 0; // will add to it later
+        m = y0;
+      }
+    else // projectile, aim to mouse
+      {
+        double la = dword(PARTY_LOOK_ANGLE) * M_PI / 1024;
+        z = z0 * cos(la) + y0 * sin(la);
+        m = y0 * cos(la) - z0 * sin(la);
+      }
     double dir = dword(PARTY_DIR) * M_PI / 1024;
     double x = x0 * sin(dir) + m * cos(dir);
     double y = m * sin(dir) - x0 * cos(dir);
-    double s = 2000 / sqrt(x * x + y * y + z * z); // 2000 is arbitrary for now
+    s /= sqrt(x * x + y * y + z * z);
     MAP_MONSTERS[id].x = dword(PARTY_X) + (int) (x * s);
     MAP_MONSTERS[id].y = dword(PARTY_Y) + (int) (y * s);
-    MAP_MONSTERS[id].z = dword(PARTY_Z) + (int) (z * s);
+    MAP_MONSTERS[id].z = dword(PARTY_Z) + (shower ? 2500 : (int) (z * s));
     MAP_MONSTERS[id].height = dword(0xacce3c) / 2;
     return id * 8 + 3;
 }
@@ -6926,6 +6943,7 @@ static void __declspec(naked) free_aim_spell_hook(void)
         mov ecx, dword ptr [DIALOG7]
         mov ecx, dword ptr [ecx+28]
         mov ax, word ptr [ecx]
+        xor ecx, ecx
         ; rule out no-projectile spells
         cmp ax, SPL_IMPLOSION
         je skip
@@ -6945,6 +6963,13 @@ static void __declspec(naked) free_aim_spell_hook(void)
         je skip
         cmp ax, SPL_CONTROL_UNDEAD
         je skip
+        cmp ax, SPL_METEOR_SHOWER
+        je shower
+        cmp ax, SPL_STARBURST
+        jne aim
+        shower:
+        inc ecx
+        aim:
         call free_aim_spell
         test eax, eax
         jnz got_it
@@ -6954,6 +6979,56 @@ static void __declspec(naked) free_aim_spell_hook(void)
         got_it:
         mov dword ptr [esp], 0x433daa ; past the mouse target code
         xor ecx, ecx ; pass the distance check
+        ret
+      }
+}
+
+// Adjust Death Blossom shoot angle so that it hits its target.
+static int __stdcall death_blossom(int angle, int target)
+{
+    int id = target >> 3;
+    if (id >= dword(MONSTER_COUNT) || (target & 7) != TGT_MONSTER)
+        return angle + 256; // fake or invalid target
+    struct map_monster *monster = &MAP_MONSTERS[id];
+    int dx = monster->x - dword(PARTY_X);
+    int dy = monster->y - dword(PARTY_Y);
+    // TODO: unhardcode projectile speed (1500)
+    double k = 2 * 1500 * 1500 / sqrt(dx * dx + dy * dy) / 128
+               / get_game_speed();
+    double a = tan(angle * M_PI / 1024);
+    double d = k * (k - 4 * a) - 4;
+    if (d < 0) d = 0; // too far, try our best anyway
+    return atan2(k - sqrt(d), 2) / M_PI * 1024;
+}
+
+// Hook for the above.
+static void __declspec(naked) death_blossom_hook(void)
+{
+    asm
+      {
+        cmp dword ptr [OUTDOORS], 2
+        mov eax, 0x4290c1 ; fail message
+        jne skip
+        push dword ptr [ebp-8] ; target
+        push dword ptr [ebp-200] ; angle
+        call death_blossom
+        mov dword ptr [ebp-200], eax
+        mov eax, 0x4289b3 ; generic projectile code
+        skip:
+        jmp eax
+      }
+}
+
+// Increase Death Blossom shards, esp. at GM.
+static void __declspec(naked) death_blossom_gm(void)
+{
+    asm
+      {
+        xor eax, eax
+        inc eax
+        mov ecx, dword ptr [esi+80] ; mastery
+        shl eax, cl
+        mov dword ptr [ebp-12], eax ; shard count
         ret
       }
 }
@@ -7233,6 +7308,11 @@ static inline void misc_spells(void)
     patch_byte(0x427c9f + SPL_ROCK_BLAST - 2, 0); // make it aimed
     patch_dword(0x42e965 + SPL_ROCK_BLAST * 4,
                 dword(0x42e965 + SPL_FIRE_BOLT * 4)); // respect aim
+    patch_byte(0x427c9f + SPL_METEOR_SHOWER - 2, 0); // outdoor spells too
+    patch_byte(0x427c9f + SPL_STARBURST - 2, 0); // (aiming is different here)
+    patch_byte(0x427c9f + SPL_DEATH_BLOSSOM - 2, 0); // hits monsters at an arc
+    patch_pointer(0x42e965 + SPL_DEATH_BLOSSOM * 4, death_blossom_hook);
+    hook_call(0x46c6e8, death_blossom_gm, 7);
 }
 
 // For consistency with players, monsters revived with Reanimate now have
@@ -13661,7 +13741,7 @@ static void __declspec(naked) new_temple_in_bottle(void)
         add dword ptr [esi+0x1938], 80 ; skill points
         sub dword ptr [esi+0x1944], 20 ; birth year
         add word ptr [esi+222], 20 ; temporary age
-        mov ecx, dword ptr [0x71fe94]
+        mov ecx, dword ptr [CGAME]
         mov ecx, dword ptr [ecx+0xe50]
         mov eax, dword ptr [ebp+8] ; player id
         dec eax

@@ -1199,7 +1199,9 @@ enum monster_buffs
 // this is actually a switchtable, and the first 5 entries are garbage
 #define CLASS_SP_STATS ((uint8_t *) 0x48e62a)
 
-#define STARTING_SKILLS 0x4ed6c8
+// exposed as "Class Starting Skills.txt"
+#define STARTING_SKILLS_ADDR 0x4ed6c8
+#define STARTING_SKILLS ((uint8_t (*)[SKILL_COUNT]) STARTING_SKILLS_ADDR)
 // exposed as "Class Skills.txt"
 #define CLASS_SKILLS_ADDR 0x4ed818
 #define CLASS_SKILLS ((uint8_t (*)[SKILL_COUNT]) CLASS_SKILLS_ADDR)
@@ -15960,7 +15962,7 @@ static void __declspec(naked) init_racial_skill(void)
 {
     asm
       {
-        mov dl, byte ptr [STARTING_SKILLS+eax+edi] ; replaced, sorta
+        mov dl, byte ptr [STARTING_SKILLS_ADDR+eax+edi] ; replaced, sorta
         mov ecx, esi
         call dword ptr ds:get_race
         cmp eax, RACE_HUMAN
@@ -16017,7 +16019,7 @@ static void __declspec(naked) check_racial_skill(void)
         je dwarf
         pop ecx
         skip:
-        cmp byte ptr [STARTING_SKILLS+ebx+eax], 2 ; replaced code
+        cmp byte ptr [STARTING_SKILLS_ADDR+ebx+eax], 2 ; replaced code
         ret
         elf:
         cmp eax, SKILL_BOW
@@ -16060,18 +16062,18 @@ static void __declspec(naked) exclude_racial_skill(void)
         cmp eax, dword ptr [added_picks+edx]
         je quit
         skip:
-        cmp byte ptr [STARTING_SKILLS+ebx+eax], 1 ; replaced code, basically
+        cmp byte ptr [STARTING_SKILLS_ADDR+ebx+eax], 1 ; replaced code, almost
         jmp quit
         nonhuman:
         cmp eax, SKILL_BLASTER
         jae skip
         cmp byte ptr [ecx+0xb9], CLASS_MONK
         je monk
-        cmp byte ptr [STARTING_SKILLS+ebx+eax], 1 ; replaced code, again
+        cmp byte ptr [STARTING_SKILLS_ADDR+ebx+eax], 1 ; replaced code, again
         jae race
         jmp quit
         monk:
-        cmp byte ptr [STARTING_SKILLS+ebx+eax], 1 ; also replaced code
+        cmp byte ptr [STARTING_SKILLS_ADDR+ebx+eax], 1 ; also replaced code
         jb race
         jmp quit
         race:
@@ -16255,7 +16257,7 @@ static void __declspec(naked) change_racial_skill(void)
         or edx, -1
         was_human_loop:
         inc edx
-        cmp byte ptr [STARTING_SKILLS+ecx+edx], 2
+        cmp byte ptr [STARTING_SKILLS_ADDR+ecx+edx], 2
         jne was_human_loop
         mov word ptr [edi+0x108+edx*2], 0
         jmp new_race
@@ -16287,7 +16289,7 @@ static void __declspec(naked) change_racial_skill(void)
         or edx, -1
         human_loop:
         inc edx
-        cmp byte ptr [STARTING_SKILLS+ecx+edx], 2
+        cmp byte ptr [STARTING_SKILLS_ADDR+ecx+edx], 2
         jne human_loop
         mov word ptr [edi+0x108+edx*2], 1
         jmp quit
@@ -16303,7 +16305,7 @@ static void __declspec(naked) change_racial_skill(void)
         movzx ecx, byte ptr [edi+0xb9]
         shr ecx, 2
         imul ecx, ecx, SKILL_COUNT
-        cmp byte ptr [STARTING_SKILLS+ecx+edx], 0
+        cmp byte ptr [STARTING_SKILLS_ADDR+ecx+edx], 0
         jne not_removed
         movzx ecx, byte ptr [edi+0xb9]
         mov ecx, dword ptr [excluded_picks+ecx]
@@ -16796,6 +16798,10 @@ static void __declspec(naked) racial_resistances(void)
         movzx eax, word ptr [ecx+0xda] ; pc level
         cmp dword ptr [esp+28], 10
         jae big_bonus
+        test ebp, 0xf ; parity odd for shock, poison, holy
+        jp halve
+        dec eax ; scatter per-two-level increases
+        halve:
         shr eax, 1
         jmp add_bonus
         big_bonus:
@@ -16817,6 +16823,10 @@ static void __declspec(naked) base_racial_resistances(void)
         movzx eax, word ptr [ecx+0xda] ; pc level
         cmp esi, 10
         jae big_bonus
+        test byte ptr [esp+4], 0xf ; parity odd for shock, poison, holy
+        jp halve
+        dec eax ; scatter per-two-level increases
+        halve:
         shr eax, 1
         jmp add_bonus
         big_bonus:
@@ -17288,8 +17298,11 @@ static inline void class_changes(void)
     CLASS_SP_FACTORS[CLASS_MASTER] = 2; // same here
     hook_call(0x492c8d, equip_aligned_relic, 10);
     // Replace starting Spirit with Mind for Druids.
-    byte(STARTING_SKILLS + CLASS_DRUID / 4 * SKILL_COUNT + SKILL_SPIRIT) = 0;
-    byte(STARTING_SKILLS + CLASS_DRUID / 4 * SKILL_COUNT + SKILL_MIND) = 1;
+    STARTING_SKILLS[CLASS_DRUID/4][SKILL_SPIRIT] = 0;
+    STARTING_SKILLS[CLASS_DRUID/4][SKILL_MIND] = 1;
+    // Allow Monks to start with Disarm instead of their nerfed Dagger.
+    STARTING_SKILLS[CLASS_MONK/4][SKILL_DAGGER] = 0;
+    STARTING_SKILLS[CLASS_MONK/4][SKILL_DISARM_TRAPS] = 1;
 }
 
 // Let the Perception skill increase gold looted from monsters.

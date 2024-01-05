@@ -8866,7 +8866,7 @@ static char *__stdcall resistance_hint(char *description, int resistance)
             element = SHOCK;
             base = current->shock_res_base;
             if (race == RACE_GOBLIN)
-                racial_bonus = 5 + current->level_base / 2;
+                racial_bonus = 5 + (current->level_base - 1) / 2;
             break;
         case 21:
             element = COLD;
@@ -8878,7 +8878,7 @@ static char *__stdcall resistance_hint(char *description, int resistance)
             element = POISON;
             base = current->poison_res_base;
             if (race == RACE_DWARF)
-                racial_bonus = 5 + current->level_base / 2;
+                racial_bonus = 5 + (current->level_base - 1) / 2;
             base_immune = current->class == CLASS_LICH;
             break;
         case 23:

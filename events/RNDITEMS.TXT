@@ -625,6 +625,6 @@ Item #	Pic File	1	2	3	4	5	6
 
 
 Bonus chance by level %		1	2	3	4	5	6
-	Standard	0	40	40	40	40	75
-	Special	0	0	10	15	20	25
-Weapons	Special %	0	0	10	20	30	50
+	Standard	0	35	35	35	35	65
+	Special	0	0	15	20	25	35
+Weapons	Special %	0	0	15	25	35	50

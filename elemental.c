@@ -7035,6 +7035,43 @@ static void __declspec(naked) death_blossom_gm(void)
       }
 }
 
+// Make the spc/std bonus relative chance when using Enchant Item equal
+// to their normal generaion odds.  This hook is for GM (tlvl 4/5).
+static void __declspec(naked) enchant_item_spc_chance_gm(void)
+{
+    asm
+      {
+        mov edx, dword ptr [enchant_item_gm_noon]
+        mov ecx, dword ptr [0x5e3f14+edx*4+3*4] ; spc chance
+        mov edx, dword ptr [0x5e3efc+edx*4+3*4] ; std chance
+        add ecx, edx
+        jz skip ; sanity check
+        push edx
+        xor edx, edx
+        div ecx
+        pop ecx
+        cmp edx, ecx
+        skip:
+        ret
+      }
+}
+
+// This hook is for Master and (unused) Expert (tlvl 3).
+static void __declspec(naked) enchant_item_spc_chance_master(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [0x5e3efc+2*4] ; std chance
+        add ecx, dword ptr [0x5e3f14+2*4] ; spc chance
+        jz skip ; sanity check
+        xor edx, edx
+        div ecx
+        cmp edx, dword ptr [0x5e3efc+2*4]
+        skip:
+        ret
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -7315,6 +7352,9 @@ static inline void misc_spells(void)
     patch_byte(0x427c9f + SPL_DEATH_BLOSSOM - 2, 0); // hits monsters at an arc
     patch_pointer(0x42e965 + SPL_DEATH_BLOSSOM * 4, death_blossom_hook);
     hook_call(0x46c6e8, death_blossom_gm, 7);
+    hook_call(0x42ac79, enchant_item_spc_chance_gm, 9);
+    hook_call(0x42af09, enchant_item_spc_chance_master, 9); // master
+    hook_call(0x42b181, enchant_item_spc_chance_master, 9); // expert (unused)
 }
 
 // For consistency with players, monsters revived with Reanimate now have

@@ -941,3 +941,4 @@
 867	"самоцвет %s"	Gem reagent	Shopkeepers
 868	Устойчивость к Мысли увеличена навсегда	Stat boost	Cauldron
 869	Устойчивость к Магии увеличена навсегда	Stat boost	Cauldron
+870	Вы отдаёте ваш Знак ученика	Has token	Promoters (status text)

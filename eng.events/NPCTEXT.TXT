@@ -941,3 +941,4 @@ For example, these are all correct item descriptions:
 867	"%s gemstone"	Gem reagent	Shopkeepers
 868	Mind Resistance increased permanently	Stat boost	Cauldron
 869	Magic Resistance increased permanently	Stat boost	Cauldron
+870	You hand over your Apprentice Token	Has token	Promoters (status text)

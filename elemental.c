@@ -1128,9 +1128,9 @@ enum profession
 };
 
 // New max number of global.evt commands (was 4400 before).
-#define GLOBAL_EVT_LINES 5400
+#define GLOBAL_EVT_LINES 5500
 // New max size of global.evt itself (was 46080 bytes before).
-#define GLOBAL_EVT_SIZE 54000
+#define GLOBAL_EVT_SIZE 55000
 
 #define CURRENT_PLAYER 0x507a6c
 
@@ -1186,7 +1186,7 @@ enum monster_buffs
 // new NPC topic count
 #define TOPIC_COUNT 609
 // count of added NPC text entries
-#define NEW_TEXT_COUNT (869-789)
+#define NEW_TEXT_COUNT (870-789)
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658
@@ -1197,7 +1197,7 @@ enum monster_buffs
 #define CLASS_SP_FACTORS ((uint8_t *) 0x4ed634)
 #define CLASS_STARTING_SP ((uint8_t *) 0x4ed604)
 // this is actually a switchtable, and the first 5 entries are garbage
-#define CLASS_SP_STATS ((uint8_t *) 0x48e62a)
+#define CLASS_SP_STATS ((const uint8_t *) 0x48e62a)
 
 // exposed as "Class Starting Skills.txt"
 #define STARTING_SKILLS_ADDR 0x4ed6c8
@@ -17313,6 +17313,23 @@ static void parse_clsskill(void)
     mm7_free(file);
 }
 
+// Allow showing text on the statusline (as opposed to NPC messages)
+// even in houses, if the script event is correspondingly marked.
+static void __declspec(naked) force_status_text(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [0x5c32a0] ; replaced code
+        cmp byte ptr [esi+9], bl ; our marker (ebx == 0)
+        jnz skip
+        cmp ecx, 1 ; check if global event
+        jne skip
+        inc ecx ; pretend it`s a barrel or somesuch
+        skip:
+        ret
+      }
+}
+
 // Make light and dark promotions more distinct.
 static inline void class_changes(void)
 {
@@ -17343,6 +17360,7 @@ static inline void class_changes(void)
     // Allow Monks to start with Disarm instead of their nerfed Dagger.
     STARTING_SKILLS[CLASS_MONK/4][SKILL_DAGGER] = 0;
     STARTING_SKILLS[CLASS_MONK/4][SKILL_DISARM_TRAPS] = 1;
+    hook_call(0x447bdf, force_status_text, 6);
 }
 
 // Let the Perception skill increase gold looted from monsters.

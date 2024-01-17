@@ -4481,6 +4481,21 @@ static void __declspec(naked) two_handed_bonus_desc_hook(void)
       }
 }
 
+// Penalize high alchemy skill combined with low-power reagents.
+static void __declspec(naked) alchemy_soft_cap(void)
+{
+    asm
+      {
+        movzx eax, byte ptr [ITEMS_TXT_ADDR+eax+30] ; replaced code
+        cmp eax, edi
+        jae skip
+        add edi, eax
+        shr edi, 1
+        skip:
+        ret
+      }
+}
+
 // Misc item tweaks.
 static inline void misc_items(void)
 {
@@ -4541,6 +4556,7 @@ static inline void misc_items(void)
     hook_jump(0x46825f, genie_lamp_hook);
     hook_call(0x420304, id_zero_chest_items, 7);
     hook_call(0x41ddf5, two_handed_bonus_desc_hook, 6);
+    hook_call(0x4162f8, alchemy_soft_cap, 7);
 }
 
 static uint32_t potion_damage;

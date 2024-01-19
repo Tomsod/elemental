@@ -5995,8 +5995,12 @@ static void __declspec(naked) aura_of_conflict(void)
         mov eax, dword ptr [ebp-32]
         mov edx, dword ptr [ebp-36]
         sub dword ptr [eax+0x1940], edx ; sp cost
-        mov eax, 10 * MINUTE
+        test byte ptr [ebx+9], 4 ; turn off flag
+        cmovnz eax, dword ptr ds:remove_buff
+        jnz remove
+        mov eax, 15 * MINUTE
         mul edi ; spell power
+        add eax, 60 * MINUTE
         push esi
         push esi
         push ecx
@@ -6005,10 +6009,12 @@ static void __declspec(naked) aura_of_conflict(void)
         adc edx, dword ptr [CURRENT_TIME_ADDR+4]
         push edx
         push eax
+        mov eax, dword ptr ds:add_buff
+        remove:
         movzx edi, word ptr [ebx+4] ; target pc
         imul ecx, edi, NBUFF_COUNT * 16
         add ecx, offset elemdata.new_pc_buffs + NBUFF_AURA_OF_CONFLICT * 16
-        call dword ptr ds:add_buff
+        call eax ; add or remove
         push edi
         push SPELL_ANIM_SWIRLY
         mov ecx, dword ptr [CGAME]
@@ -6103,6 +6109,14 @@ static int __stdcall alternative_spell_mode(int player_id, int spell)
             count = 1;
             flags = 0x400; // turn off for free
             goto past_checks; // allow unsafe, don't check SP
+        case SPL_AURA_OF_CONFLICT:
+            count = 0;
+            for (int pc = 0; pc < 4; pc++)
+                if (elemdata.new_pc_buffs[pc][NBUFF_AURA_OF_CONFLICT].power)
+                    pcs[count++] = pc;
+            if (!count) return FALSE;
+            flags = 0x420; // blaze it
+            goto past_checks; // as above
         case SPL_BLESS:
             if (player->skills[SKILL_SPIRIT] >= SKILL_EXPERT)
                 return FALSE;

@@ -281,8 +281,8 @@ Item #	Pic File	1	2	3	4	5	6
 277	item165	0	0	0	0	2	1
 278	item165	0	0	0	0	2	1
 279	item165	0	0	0	0	2	1
-280	itemholy	1	2	0	0	0	0
-281	null	0	0	0	0	0	0
+280	item165	0	0	0	0	2	1
+281	itemholy	1	2	0	0	0	0
 282	null	0	0	0	0	0	0
 283	null	0	0	0	0	0	0
 284	null	0	0	0	0	0	0

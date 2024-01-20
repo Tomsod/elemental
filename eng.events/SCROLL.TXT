@@ -281,7 +281,8 @@ The Black Potion of Magic Immunity gives complete immunity to non-elemental magi
 The Black Potion of Pain Reflection damages monsters as they attack you.  To mix this potion, combine the White Noxious Potion and a Potion of Haste."	Pain Reflection
 779	"
 The Black Potion of Divine Mastery increases a character's level until next rest, which affects HP and SP pools and possibly skills.  To mix this potion, add a Potion of Recharge to the White Potion of Luck Boost."	Divine Mastery
-780			Ritual of Dark Containment
+780	"
+The Black Potion of Ultimate Cure completely heals a wounded character.  To mix this potion, add a Potion of Harden Item to the White Potion of Divine Cure."	Ultimate Cure
 781			
 			
 			

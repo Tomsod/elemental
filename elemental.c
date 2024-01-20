@@ -564,6 +564,7 @@ enum items
     NOXIOUS_POTION = 248,
     SHOCKING_POTION = 249,
     SWIFT_POTION = 250,
+    POTION_DIVINE_CURE = 253,
     FIRST_BLACK_POTION = 262,
     SLAYING_POTION = 263,
     PURE_LUCK = 264,
@@ -573,8 +574,9 @@ enum items
     POTION_MAGIC_IMMUNITY = 277,
     POTION_PAIN_REFLECTION = 278,
     POTION_DIVINE_MASTERY = 279,
-    LAST_POTION = 279,
-    HOLY_WATER = 280, // not a potion
+    POTION_ULTIMATE_CURE = 280,
+    LAST_POTION = 280,
+    HOLY_WATER = 281, // not a potion
     FIRST_SCROLL = 300,
     SCROLL_FATE = 399,
     FIRST_BOOK = 400,
@@ -632,7 +634,7 @@ enum items
     ROBE_OF_THE_ARCHMAGISTER = 598,
     FIRST_ORE = 686,
     FIRST_RECIPE = 740,
-    LAST_RECIPE = 779,
+    LAST_RECIPE = 780,
     MAGIC_EMBER = 785,
 };
 
@@ -2419,6 +2421,8 @@ static void __declspec(naked) new_potion_effects(void)
         new:
         cmp edx, HOLY_WATER
         je throw_potions_jump
+        cmp edx, POTION_ULTIMATE_CURE
+        je ultimate_cure
         cmp edx, POTION_PAIN_REFLECTION
         je pain_reflection
         mov ecx, dword ptr [ebp+8] ; pc id
@@ -2460,8 +2464,19 @@ static void __declspec(naked) new_potion_effects(void)
         push edx
         push eax
         call dword ptr ds:add_buff
+        quit:
         push 0x4687a8
         ret
+        ultimate_cure:
+        mov ecx, esi
+        call dword ptr ds:get_full_hp
+        sub eax, dword ptr [esi+0x193c] ; current hp
+        jle quit
+        add eax, dword ptr [MOUSE_ITEM+4] ; potion power
+        push eax
+        mov ecx, esi
+        push 0x4687a8 ; this return address enables overheal
+        jmp dword ptr ds:heal_hp
       }
 }
 
@@ -14239,6 +14254,7 @@ static void __declspec(naked) display_new_belt(void)
 
 // Let Gadgeteer's Belt enhance drunk potion power.
 // This hook is for HP and SP potions.
+// Also here: nerf Divine Power to restore 3x potion power in SP.
 static void __declspec(naked) gadgeteer_cure_potions_bonus(void)
 {
     asm
@@ -14248,9 +14264,13 @@ static void __declspec(naked) gadgeteer_cure_potions_bonus(void)
         push GADGETEERS_BELT
         call dword ptr ds:has_item_in_slot
         mov edx, dword ptr [MOUSE_ITEM+4] ; power
-        cmp dword ptr [MOUSE_ITEM], FIRST_WHITE_POTION
+        cmp dword ptr [MOUSE_ITEM], POTION_DIVINE_CURE
         jb simple
+        ja magic
         lea edx, [edx+edx*4]
+        jmp simple
+        magic:
+        lea edx, [edx+edx*2] ; nerf
         simple:
         test eax, eax
         jz skip

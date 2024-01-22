@@ -2642,13 +2642,11 @@ static void __declspec(naked) expire_new_buffs(void)
       }
 }
 
-// Also remove them when resting, training, travelling etc.
-static void __declspec(naked) reset_new_buffs(void)
+// Shared code for the two hooks below.
+static void __declspec(naked) remove_new_buffs(void)
 {
     asm
       {
-        call dword ptr ds:reset_stat_boni ; replaced call
-        mov eax, dword ptr [ebp-4] ; pc id
         shl eax, 1
         mov ebx, NBUFF_COUNT
         mul ebx
@@ -2660,6 +2658,28 @@ static void __declspec(naked) reset_new_buffs(void)
         dec ebx
         jnz loop
         ret
+      }
+}
+
+// Also remove the new buffs when resting, training, travelling etc.
+static void __declspec(naked) reset_new_buffs(void)
+{
+    asm
+      {
+        call dword ptr ds:reset_stat_boni ; replaced call
+        mov eax, dword ptr [ebp-4] ; pc id
+        jmp remove_new_buffs
+      }
+}
+
+// Finally, make them subject to monster Dispel Magic.
+static void __declspec(naked) dispel_new_buffs(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ebp+16] ; pc id (1-4)
+        dec eax
+        jmp remove_new_buffs
       }
 }
 
@@ -2705,6 +2725,7 @@ static inline void new_potions(void)
     hook_call(0x41d3a7, count_new_buffs, 5);
     hook_call(0x494636, expire_new_buffs, 6);
     hook_call(0x490d48, reset_new_buffs, 5);
+    hook_call(0x4054bc, dispel_new_buffs, 5);
     hook_call(0x48c916, divine_mastery_effect, 7);
 }
 

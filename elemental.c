@@ -853,6 +853,7 @@ enum objlist
     OBJ_ARROW = 545,
     OBJ_FIREARROW = 550,
     OBJ_LASER = 555,
+    OBJ_FIRE_SPIKE = 1060,
     OBJ_ACID_BURST = 3060,
     OBJ_BERSERK = 6060,
     OBJ_FLAMING_POTION = 12000,
@@ -1392,7 +1393,7 @@ static void __thiscall (*add_mouse_item)(void *this, struct item *item)
 static int __thiscall (*put_in_backpack)(void *player, int slot, int item_id)
     = (funcptr_t) 0x4927a0;
 static void __thiscall (*make_sound)(void *this, int sound, int object,
-                                     int loops, int x, int y, int unknown,
+                                     int loops, int x, int y, int angle,
                                      int volume, int playback_rate)
     = (funcptr_t) 0x4aa29b;
 #define SOUND_THIS_ADDR 0xf78f58
@@ -1418,6 +1419,8 @@ static void __fastcall (*print_text)(int *bounds, void *font, int x, int y,
                                      int color, char *text, int unknown)
     = (funcptr_t) 0x44d432;
 static int (*get_game_speed)(void) = (funcptr_t) 0x46bdac;
+static void __fastcall (*projectile_hit)(int projectile, int target)
+    = (funcptr_t) 0x43a9a1;
 static int __thiscall (*get_race)(void *player) = (funcptr_t) 0x490101;
 static int __thiscall (*get_gender)(void *player) = (funcptr_t) 0x490139;
 static int __thiscall (*get_might)(void *player) = (funcptr_t) 0x48c922;
@@ -1571,7 +1574,8 @@ static int __thiscall (*get_learning_bonus)(void *player)
     = (funcptr_t) 0x49130f;
 static int __thiscall (*find_objlist_item)(void *this, int id)
     = (funcptr_t) 0x42eb1e;
-#define OBJLIST_THIS ((void *) 0x680630)
+#define OBJLIST_THIS_ADDR 0x680630
+#define OBJLIST_THIS ((void *) OBJLIST_THIS_ADDR)
 static int __fastcall (*launch_object)(struct map_object *object,
                                        int direction, int look_angle,
                                        int speed, int player)
@@ -7138,6 +7142,40 @@ static void __declspec(naked) enchant_item_spc_chance_master(void)
       }
 }
 
+// Make Fire Spikes multiple-use when fully deployed.
+static void __declspec(naked) preserve_fire_spike(void)
+{
+    asm
+      {
+        cmp word ptr [esi], OBJ_FIRE_SPIKE
+        jne skip
+        mov ax, word ptr [esi+16] ; object speed x
+        or ax, word ptr [esi+18] ; object speed y
+        or ax, word ptr [esi+20] ; object speed z
+        jnz skip
+        dec dword ptr [esi+80] ; spell mastery / hit counter
+        jz skip
+        mov dword ptr [esp], 0x46cbec ; skip past proj removal
+        skip:
+        jmp dword ptr ds:projectile_hit
+      }
+}
+
+// Make Fire Spike limit depend on spell skill value, not mastery.
+static void __declspec(naked) variable_spike_count(void)
+{
+    asm
+      {
+        mov eax, edi ; skill value
+        xor edx, edx
+        mov ecx, 3
+        div ecx
+        dec eax
+        cmp dword ptr [ebp-12], eax ; replaced code (spike count)
+        ret
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -7421,6 +7459,10 @@ static inline void misc_spells(void)
     hook_call(0x42ac79, enchant_item_spc_chance_gm, 9);
     hook_call(0x42af09, enchant_item_spc_chance_master, 9); // master
     hook_call(0x42b181, enchant_item_spc_chance_master, 9); // expert (unused)
+    hook_call(0x46cbb3, preserve_fire_spike, 5);
+    patch_byte(0x428552, -4); // spike durability = old spike limit
+    hook_call(0x42851a, variable_spike_count, 6);
+    erase_code(0x43b00e, 2); // remove variable damage dice
 }
 
 // For consistency with players, monsters revived with Reanimate now have

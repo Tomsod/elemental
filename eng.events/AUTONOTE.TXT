@@ -141,7 +141,7 @@ Note bit	Autonote Text	Category
 140	"The Master instructor of the Mace, Brother Rothham, can be found in the southern region of the swamps of Tatalia."	teacher
 141	"The Grandmaster of the Mace, Patwin Felburn, teaches from his home in the goblin village found in the eastern area of Deyja."	teacher
 142	"My Master, Isram Gallowswell, can be found in the snowy heights of the northeast area of Tatalia. You will gain further instruction in the Shield there."	teacher
-143	"The Grandmaster of the Shield, Fedwin Smithson, can be found on the eastern island of the Evenmorn Islands."	teacher
+143	"The Grandmaster of the Shield, Fedwin Smithson, can be found on the western island of the Evenmorn Islands."	teacher
 144	"The Master tutor of Leather Armor, Rabisa Neldon, lives in the northern regions of Nighon."	teacher
 145	"The Grandmaster of Leather Armor, Miyon the Quick, can be found in the eastern section of the city of Pierpont in the elven region of the Tularean Forest."	teacher
 146	"The Master instructor of uses of Chain Armor, Medwari Dragontracker, can be found in the elven territory of Avlee.  His home is in the city in the northeast."	teacher
@@ -189,7 +189,7 @@ Note bit	Autonote Text	Category
 188	"The Master of Alchemy, Elzbet Winterspoon, can be found in the western region of Nighon."	teacher
 189	"The Grandmaster instructor of Alchemy, Lucid Apple, can be found in the elven territory of Avlee.  His home is on an island somewhere in the central bay."	teacher
 190	"The Master of Learning, Dorothy Senjac, can be found in the southeast region of Nighon."	teacher
-191	"The Grandmaster of Learning, William Smithson, instructs from his home on the eastern island of the Evenmorn Islands."	teacher
+191	"The Grandmaster of Learning, William Smithson, instructs from his home on the western island of the Evenmorn Islands."	teacher
 192	"The Master of Light Magic, Helena Mornigstar, can be found in the cloud city of Celeste!"	teacher
 193	"The Grand Master of Light Magic can be found in the wizards castle, Castle Lambent."	teacher
 194	"The Master of Dark, Seth Darkenmore, can be found in The Pit beneath Deyja!"	teacher

@@ -407,7 +407,7 @@ Q Bit	Quest Note Text	Notes	Owner
 406		LP Sorcerer token warning	0	0
 407		DP Sorcerer token warning	0	0
 408		Barrows graverobbing warning	0	0
-409	0	0	0	0
+409	"Find a manticore lair under Nighon, slay the largest manticore and bring its venom to William Smithson west of the Evenmorn Island."	Monk token quest	0	0
 410	0	0	0	0
 411	0	0	0	0
 412	0	0	0	0

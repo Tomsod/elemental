@@ -226,6 +226,7 @@ enum class
     CLASS_THIEF = 4,
     CLASS_ASSASSIN = 7,
     CLASS_MONK = 8,
+    CLASS_INITIATE = 9,
     CLASS_MASTER = 10,
     CLASS_SNIPER = 19,
     CLASS_RANGER = 20,
@@ -332,6 +333,7 @@ enum new_strings
     STR_MAGIC_IMM,
     STR_AURA_OF_CONFLICT,
     STR_DIVINE_MASTERY,
+    STR_NO_INITIATE_TOKEN,
     NEW_STRING_COUNT
 };
 
@@ -636,6 +638,7 @@ enum items
     FIRST_RECIPE = 740,
     LAST_RECIPE = 780,
     MAGIC_EMBER = 785,
+    INITIATE_TOKEN = 787,
 };
 
 enum item_slot
@@ -869,6 +872,7 @@ enum objlist
     OBJ_KNIFE = 12050,
     OBJ_BLASTER_ERADICATION = 12060,
 };
+#define SPELL_OBJ_IDS 0x4e3ab0
 
 #define ELEMENT(spell) byte(0x5cbecc + (spell) * 0x24)
 
@@ -963,6 +967,7 @@ enum spells
     SPL_DIVINE_INTERVENTION = 88,
     SPL_VAMPIRIC_WEAPON = 91,
     SPL_SHRINKING_RAY = 92,
+    SPL_SHRAPMETAL = 93,
     SPL_CONTROL_UNDEAD = 94,
     SPL_PAIN_REFLECTION = 95,
     SPL_ARMAGEDDON = 98,
@@ -1187,9 +1192,9 @@ enum monster_buffs
 // new NPC greeting count (starting from 1)
 #define GREET_COUNT 224
 // new NPC topic count
-#define TOPIC_COUNT 609
+#define TOPIC_COUNT 611
 // count of added NPC text entries
-#define NEW_TEXT_COUNT (870-789)
+#define NEW_TEXT_COUNT (874-789)
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658
@@ -4786,7 +4791,7 @@ static void __declspec(naked) cast_potions_object(void)
         lea eax, [OBJ_FLAMING_POTION-SPL_FLAMING_POTION*10+eax*2]
         ret
         ordinary:
-        mov ax, word ptr [0x4e3ab0+eax*4-4]
+        mov ax, word ptr [SPELL_OBJ_IDS+eax*4-4]
         ret
       }
 }
@@ -7861,7 +7866,7 @@ static int __fastcall __declspec(naked) parse_spell(char **words,
 }
 
 // Parse "turn undead" and "destory undead" in monsters.txt.
-// Also here: recognize "flying fist" for use by Masters.
+// Also here: recognize "flying fist" and "poison spray".
 static int __fastcall parse_new_spells(char **words, int *extra_words)
 {
     char *first_word = words[1];
@@ -7881,6 +7886,11 @@ static int __fastcall parse_new_spells(char **words, int *extra_words)
       {
         ++*extra_words;
         return SPL_FLYING_FIST;
+      }
+    if (!uncased_strcmp(first_word, "poison"))
+      {
+        ++*extra_words;
+        return SPL_POISON_SPRAY;
       }
     return parse_spell(words, extra_words);
 }
@@ -8039,12 +8049,72 @@ static void __fastcall cast_new_spells(int monster, void *vector, int spell,
         monster_casts_spell(monster, vector, spell, action, skill);
 }
 
+// Pretend Poison Spray is Shrapmetal when a monster casts it.
+static void __declspec(naked) cast_poison_blast(void)
+{
+    asm
+      {
+        mov edx, 3 ; replaced code, basically
+        cmp ecx, SPL_POISON_SPRAY
+        jne skip
+        mov ecx, SPL_SHRAPMETAL
+        skip:
+        cmp ecx, SPL_SPECTRAL_WEAPON ; replaced (actually fate)
+        ret
+      }
+}
+
+// Correct the projectile count (two less than Shrapmetal).
+static void __declspec(naked) poison_blast_count(void)
+{
+    asm
+      {
+        mov edi, 360 ; replaced code
+        cmp dword ptr [ebp+8], SPL_POISON_SPRAY
+        jne skip
+        sub ecx, 2
+        skip:
+        ret
+      }
+}
+
+// Supply the correct projectile ID.
+static void __declspec(naked) poison_blast_projectile(void)
+{
+    asm
+      {
+        mov edx, dword ptr [ebp+8] ; spell id
+        mov dx, word ptr [SPELL_OBJ_IDS+edx*4-4]
+        ret
+      }
+}
+
+// Also set the proper spell ID for the projectile.
+static void __declspec(naked) poison_blast_id(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [ebp+8] ; spell id
+        mov dword ptr [ebp-60], ecx ; was constant
+        ret
+      }
+}
+
 // Make Turn Undead and Destroy Undead castable by monsters.
+// Also enable Poison Spray for Manticores.
 static inline void new_monster_spells(void)
 {
     hook_jump(0x45490e, parse_new_spells);
     hook_jump(0x4270b9, consider_new_spells);
     hook_jump(0x404ac7, cast_new_spells);
+    hook_call(0x404b02, cast_poison_blast, 6);
+    hook_call(0x504614, poison_blast_count, 5);
+    patch_byte(0x405624, 12); // don't overwrite spell id
+    patch_byte(0x4056d8, 12); // read from the changed stack var
+    patch_byte(0x4056ed, 12); // ditto
+    hook_call(0x40562e, poison_blast_projectile, 7);
+    hook_call(0x40566f, poison_blast_id, 7);
+    hook_jump(0x405756, (void *) 0x40586c); // get the correct sound
 }
 
 // Calling atoi directly from assembly doesn't seem to work,
@@ -11166,6 +11236,22 @@ static void __declspec(naked) new_scholar_bonus(void)
       }
 }
 
+// Draw the unique quest manticore 2x bigger.
+static void __declspec(naked) the_largest_manticore(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ebp-40] ; replaced code
+        cmp dword ptr [ecx+820], 16 ; check placemon name
+        jne skip
+        shl eax, 1 ; height
+        shl dword ptr [esi], 1 ; width
+        skip:
+        mov dword ptr [esi+4], eax ; also replaced code
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -11340,6 +11426,13 @@ static inline void misc_rules(void)
     patch_byte(0x4509a8, 6); // was 4
     patch_byte(0x4509b8, 20); // shift trash heap event down to make space
     patch_byte(0x45099b, 21); // another one
+    hook_call(0x44015f, the_largest_manticore, 6);
+    // Enable manticores in town halls.
+    erase_code(0x4bce3d, 12); // the pit
+    erase_code(0x4bcf2b, 12); // celeste
+    erase_code(0x4bcfe9, 12); // tularean
+    erase_code(0x4bd0d2, 12); // erathia
+    erase_code(0x4bd198, 10); // harmondale
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -16699,9 +16792,13 @@ static void __declspec(naked) human_skill_hint(void)
 // Determine maximal currently possible skill rank, accounting for
 // racial skills.  These are generally one rank higher, although
 // higher ranks may remain promotion-locked.
-static int __cdecl get_max_skill_level(int class, int race, int skill)
+static int __cdecl get_max_skill_level(int class, int race,
+                                       int skill, int real)
 {
     int level = CLASS_SKILLS[class][skill];
+    if (real && class == CLASS_INITIATE && skill != SKILL_BODYBUILDING
+        && level == MASTER) // can gm already, but only with a token
+        level = CLASS_SKILLS[class+1][skill];
     if (level == GM)
         return GM;
     int racial_skill;
@@ -16752,15 +16849,17 @@ static int __fastcall get_skill_color(struct player *player,
 {
     int class = player->class;
     int race = get_race(player);
-    if (get_max_skill_level(class, race, skill) >= rank)
+    if (get_max_skill_level(class, race, skill, FALSE) >= rank)
         return colors[CLR_WHITE];
     int stage = class & 3;
-    if (!stage && get_max_skill_level(class + 1, race, skill) >= rank)
+    if (!stage && get_max_skill_level(class + 1, race, skill, FALSE) >= rank)
         return colors[CLR_YELLOW];
     if (stage < 2)
       {
-        int good = get_max_skill_level(class - stage + 2, race, skill) >= rank;
-        int evil = get_max_skill_level(class - stage + 3, race, skill) >= rank;
+        int good = get_max_skill_level(class - stage + 2, race, skill, FALSE)
+                   >= rank;
+        int evil = get_max_skill_level(class - stage + 3, race, skill, FALSE)
+                   >= rank;
         if (good && evil)
             return colors[CLR_GREEN];
         if (good)
@@ -18484,10 +18583,13 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
 #define ACCEPT ((char *) -2)
     gm_quest = 0;
     int train_req = 0;
+    int item = -1;
     static char reply_buffer[200];
     switch (skill)
       {
         case SKILL_STAFF:
+            train_req = 100;
+            goto monk;
         case SKILL_SWORD:
         case SKILL_DAGGER:
         case SKILL_AXE:
@@ -18506,11 +18608,13 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
             gm_quest = 595;
             break;
         case SKILL_SHIELD:
-        case SKILL_LEATHER:
         case SKILL_CHAIN:
         case SKILL_PLATE:
             train_req = 200;
             break;
+        case SKILL_LEATHER:
+            train_req = 200;
+            goto monk;
         case SKILL_FIRE:
         case SKILL_AIR:
         case SKILL_WATER:
@@ -18604,6 +18708,25 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
             break;
         case SKILL_DODGING:
         case SKILL_UNARMED:
+            if ((player->skills[SKILL_DODGING] & SKILL_MASK) < 10
+                || (player->skills[SKILL_UNARMED] & SKILL_MASK) < 10)
+                return DEFAULT; // we'd skip the check w/ token otherwise
+        monk:
+            for (int i = 0; i < 14 * 9; i++)
+              {
+                int j = player->inventory[i] - 1;
+                if (j >= 0 && player->items[j].id == INITIATE_TOKEN)
+                  {
+                    item = i;
+                    break;
+                  }
+              }
+            if (item >= 0)
+                break;
+            if (player->class == CLASS_INITIATE) // can GM only with a token
+                return new_strings[STR_NO_INITIATE_TOKEN];
+            if (train_req) // leather or staff
+                break;
             return DEFAULT;
         case SKILL_IDENTIFY_MONSTER:
             train_req = 1000;
@@ -18622,16 +18745,12 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
                 if (j >= 0 && player->items[j].flags & IFLAGS_STOLEN
                     && item_value(&player->items[j]) >= 3000)
                   {
-                    *new_skill_cost = ~i;
-                    char name_buffer[100];
-                    sprintf(name_buffer, COLOR_FORMAT, colors[CLR_ITEM],
-                            item_name(&player->items[j]));
-                    sprintf(reply_buffer, new_strings[STR_GM_FOR_ITEM],
-                            SKILL_NAMES[skill], name_buffer);
-                    *can_learn_skill = 1;
-                    return reply_buffer;
+                    item = i;
+                    break;
                   }
               }
+            if (item >= 0)
+                break;
             return REFUSE;
         case SKILL_ALCHEMY:
             if (check_bit(QBITS, QBIT_ALCHEMY_GM_QUEST))
@@ -18644,7 +18763,7 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
         case SKILL_LEARNING:
             if (player->level_base < 25)
                 return REFUSE;
-            return DEFAULT;
+            goto monk;
       }
     if (gm_quest)
       {
@@ -18670,12 +18789,27 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
                 break;
             case 4:
             default:
-                return DEFAULT;
+                reply = NULL;
+                break;
           }
-        sprintf(reply_buffer, reply, SKILL_NAMES[skill]);
+        if (reply)
+          {
+            sprintf(reply_buffer, reply, SKILL_NAMES[skill]);
+            return reply_buffer;
+          }
+      }
+    if (item >= 0)
+      {
+        *new_skill_cost = ~item;
+        char name_buffer[100];
+        sprintf(name_buffer, COLOR_FORMAT, colors[CLR_ITEM],
+                item_name(&player->items[player->inventory[item]-1]));
+        sprintf(reply_buffer, new_strings[STR_GM_FOR_ITEM],
+                SKILL_NAMES[skill], name_buffer);
+        *can_learn_skill = 1;
         return reply_buffer;
       }
-    return DEFAULT; // shouldn't be reached
+    return DEFAULT;
 }
 
 // Hook for the above.

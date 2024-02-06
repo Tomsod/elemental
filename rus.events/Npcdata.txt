@@ -93,7 +93,7 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 91	Гонец	34	0	0	0	0	0	150	0	0	0	0	0	0	0	Arbiter death	
 92	Леди Кармин	189	0	0	0	0	0	180	0	0	0	0	0	0	0		
 93	Тарин Витерн	33	0	0	0	75	0	151	0	179	0	0	0	0	0	Lantern Quest	2
-94	Мэзим Даск	41	0	0	0	364	0	153	0	181	0	0	0	0	0	Haldar's Remains Quest	10
+94	Мэзим Даск	41	0	0	0	364	0	153	0	181	611	0	0	0	0	Haldar's Remains Quest	10
 95	Дэврик Пеладиум	85	0	0	0	108	0	155	0	183	0	0	0	0	0	Davrik's Signet Ring Quest	2
 96	Норберт Траш	51	0	0	0	301	0	157	0	185	0	0	0	0	0	Quill	3
 97	Иоханн Керрид	425	0	0	0	322	0	159	0	188	0	0	0	0	0	Faerie Pipes Quest	4
@@ -210,7 +210,7 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 208	Люсид Эппл	643	0	0	0	506	0	0	0	307	435	0	0	0	0	Grand Master Alchemy (14)	14
 209	Агата Путнам	203	0	0	0	497	0	0	0	308	377	0	0	0	0	Expert Learning (5)	5
 210	Дороти Сеньяк	204	0	0	0	358	0	0	0	309	378	0	0	0	0	Master Learning (10)	10
-211	Вильям Смитсон	614	0	0	0	350	0	0	0	310	449	0	0	0	0	Grand Master Learning (9)	9
+211	Вильям Смитсон	614	0	0	0	350	0	0	0	310	610	0	0	0	0	Grand Master Learning (9)	9
 212	Гарик Хоторн	62	0	0	0	513	0	0	0	200	315	0	0	0	0	Expert Staff (10)	10
 213	Флинн Эрин	16	0	0	0	405	0	0	0	203	317	0	0	0	0	Expert Sword (13)	13
 214	Веселый Джек	58	0	0	0	474	0	0	0	206	319	0	0	0	0	Expert Dagger (6)	6

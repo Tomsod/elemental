@@ -608,3 +608,5 @@
 607	Открыть правую сумку	Cavalier Steed
 608	Начать полёт	Cavalier Steed
 609	Грабители могил	Barrows reputation hint
+610	Квест	Monk token quest
+611	Беды с мантикорами	Monk token quest hint

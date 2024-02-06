@@ -608,3 +608,5 @@
 607	Open Right Bag	Cavalier Steed
 608	Start Flying	Cavalier Steed
 609	Graverobbers	Barrows reputation hint
+610	Quest	Monk token quest
+611	Manticore Woes	Monk token quest hint

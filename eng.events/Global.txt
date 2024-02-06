@@ -772,3 +772,4 @@ Global Text
 769	Magic Immunity
 770	Aura of Conflict
 771	Divine Mastery
+772	You have to either be fully promoted, or present an initiate token, to learn this skill level.

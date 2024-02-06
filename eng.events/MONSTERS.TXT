@@ -98,9 +98,9 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 94	Sorcerer	Mage A	25	137	14	875	10%15D12+L3Staff	1	N	Med	Aggress	4	200	90	0	0	Ener	9D4	Light	0	0	0	0	20	"Dispel Magic,E,4"	30	"Destroy Undead,E,4"	20	20	20	10	15	Imm	30	10	10	"Summon,air,Elemental Light A"
 95	Wizard	Mage B	35	227	18	1575	10%25D12+L4Staff	1	N	Med	Aggress	4	220	80	0	0	Ener	12D4	Light	0	0	0	0	30	"Dispel Magic,M,8"	50	"Hour of Power,M,8"	30	30	30	15	20	Imm	40	20	20	"Summon,air,Elemental Light B"
 96	Archmage	Mage C	50	400	30	3000	30%40D12+L5Staff	1	N	Short	Aggress	4	240	70	0	0	Ener	16D4	Light	0	0	0	0	33	"Hour of Power,M,12"	33	"Day of Protection,M,12"	40	40	40	20	25	Imm	50	30	30	"Summon,air,Elemental Light C"
-97	Minicore	Manticore A	18	86	18	504	5%20D8+L3	1	N	Long	Normal	3	260	90	DR	Poison2	Phys	1D12+4	Arrow	0	0	0	0	0	0	0	0	10	10	10	10	10	Imm	10	10	10	0
-98	Manticore 	Manticore B	27	153	25	999	5%40D8+L4	1	N	Med	Aggress	3	280	80	DR	Poison3	Phys	1D12+8	Arrow	0	0	0	0	0	0	0	0	20	20	20	20	20	Imm	20	20	20	0
-99	Scorpicore	Manticore C	36	237	32	1656	10%80D8+L4	1	N	Short	Suicidal	3	300	70	DR	Poison3x2	Phys	2D12+10	Arrow	0	0	0	0	0	0	0	0	30	30	30	30	30	Imm	30	30	30	0
+97	Minicore	Manticore A	40	280	40	2000	10%25D8+L4	1	N	Long	Normal	3	260	90	DR	Poison2	Phys	2D20	0	50	Phys	2D12+4	Arrow	0	0	0	0	10	10	10	20	10	Imm	5	10	10	0
+98	Manticore 	Manticore B	50	400	48	3000	10%50D8+L5	1	N	Med	Aggress	3	280	80	DR	Poison3	Phys	3D20	0	50	Phys	2D12+8	Arrow	10	"Poison Spray,E,6"	0	0	20	20	20	30	20	Imm	10	20	20	0
+99	Scorpicore	Manticore C	60	540	54	4200	20%100D8+L5	1	N	Short	Suicidal	3	300	70	DR	Poison3x2	Phys	4D20	0	50	Phys	2D12+10	Arrow	10	"Poison Spray,M,8"	0	0	30	30	30	40	30	Imm	15	30	30	0
 100	Medusa	Medusa A	35	227	20	1575	10%10D20+L3Misc	1	N	Med	Normal	2	200	80	0	Paralyze	Phys	4D4+8	Arrow	0	0	0	0	0	0	0	0	Imm	Imm	Imm	Imm	Imm	Imm	Imm	150	0	0
 101	Queen Medusa	Medusa B	40	280	25	2000	10%15D20+L4Misc	1	N	Med	Aggress	2	220	80	0	Stone	Phys	5D4+10	Arrow	0	0	0	0	0	0	0	0	Imm	Imm	Imm	Imm	Imm	Imm	Imm	150	0	0
 102	Empress Medusa	Medusa C	45	337	30	2475	30%30D20+L5Misc	1	N	Short	Suicidal	2	240	70	0	Stone	Phys	6D4+12	Arrow	0	0	0	0	0	0	0	0	Imm	Imm	Imm	Imm	Imm	Imm	Imm	150	0	0

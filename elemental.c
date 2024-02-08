@@ -535,7 +535,8 @@ enum items
     SHARKTOOTH_DAGGER = 17,
     BLASTER = 64,
     BLASTER_RIFLE = 65,
-    LAST_BODY_ARMOR = 78, // noble plate armor
+    FIRST_SHIELD = 79,
+    LAST_SHIELD = 88, // not counting relics etc.
     LAST_OLD_PREFIX = 134, // before robes and knives were added
     FIRST_WAND = 135,
     LAST_WAND = 159,
@@ -652,6 +653,7 @@ enum item_slot
     SLOT_CLOAK = 6,
     SLOT_GAUNTLETS = 7,
     SLOT_AMULET = 9,
+    SLOT_COUNT = 16,
     SLOT_ANY = 16, // used by has_item_in_slot()
 };
 
@@ -10129,7 +10131,7 @@ static int __stdcall weighted_monster_preference(struct map_monster *monster)
             continue;
           }
         weights[i] = 1;
-        for (int slot = 0; slot < 16; slot++)
+        for (int slot = 0; slot < SLOT_COUNT; slot++)
           {
             int equipment = player->equipment[slot];
             if (!equipment)
@@ -10137,7 +10139,12 @@ static int __stdcall weighted_monster_preference(struct map_monster *monster)
             struct item *item = &player->items[equipment-1];
             if ((item->bonus2 == SPC_TAUNTING || item->bonus2 == SPC_JESTER
                  || item->id == GIBBET) && !(item->flags & IFLAGS_BROKEN))
+              {
                 weights[i]++;
+                if (ITEMS_TXT[item->id].equip_stat + 1 == ITEM_TYPE_SHIELD
+                    && player->skills[SKILL_SHIELD] >= SKILL_MASTER)
+                    weights[i]++; // double bonus
+              }
           }
         weights[i] += elemdata.new_pc_buffs[i][NBUFF_AURA_OF_CONFLICT].power;
         if (has_item_in_slot(player, SHADOWS_MASK, SLOT_HELM))
@@ -12089,32 +12096,6 @@ static void __declspec(naked) display_cursed_debuff(void)
       }
 }
 
-// Used in train_armor() below to determine who gets training from the block.
-static struct player *blocker;
-
-// Cursed monsters now miss 50% of their attacks against PCs.
-static void __declspec(naked) cursed_monster_hits_player(void)
-{
-    asm
-      {
-        mov ecx, dword ptr [esp+8] ; monster
-        mov edx, dword ptr [ecx+212+MBUFF_CURSED*16]
-        or edx, dword ptr [ecx+212+MBUFF_CURSED*16+4]
-        jz success
-        call dword ptr ds:random
-        and eax, 1
-        jnz success
-        pop ecx
-        mov dword ptr [blocker], eax ; technically not blocked
-        ret 8 ; force a miss (eax == 0)
-        success:
-        pop eax
-        push esi ; replaced code
-        mov esi, dword ptr [esp+8] ; replaced code
-        jmp eax ; check for hit as normal
-      }
-}
-
 // Cursed monsters also miss 50% of attacks against other monsters.
 // Because spells in MvM combat also have a to-hit roll for some reason,
 // only 25% of such spells will succeed if attacker is cursed!  Oh well.
@@ -12831,7 +12812,7 @@ static inline void new_enchants(void)
     hook_call(0x41ec1e, display_cursed_debuff, 13);
     erase_code(0x41ede3, 1); // one more cycle
     // effect on spells handled in cast_new_spells() above
-    hook_call(0x427464, cursed_monster_hits_player, 5);
+    // miss chance vs. player handled in train_armor() below
     hook_call(0x427373, cursed_monster_hits_monster, 5);
     hook_call(0x4275a0, cursed_monster_resists_damage, 5);
     patch_bytes(0x4275ad, mon_res_roll_chunk, 3);
@@ -18175,67 +18156,6 @@ static void __declspec(naked) resist_phys_damage_hook(void)
       }
 }
 
-// Implement M Shield bonus: whenever another party member is attacked,
-// there's a chance to substitute the shield-wearer's AC if it's higher.
-static int __thiscall maybe_cover_ally(struct player *player)
-{
-    int ac = get_ac(player);
-    blocker = player;
-    for (int i = 0; i < 4; i++)
-      {
-        if (PARTY + i == player)
-            continue;
-        int offhand = PARTY[i].equipment[SLOT_OFFHAND];
-        int skill = get_skill(PARTY + i, SKILL_SHIELD);
-        if (offhand && skill >= SKILL_MASTER)
-          {
-            struct item *shield = &PARTY[i].items[offhand-1];
-            struct items_txt_item *data = &ITEMS_TXT[shield->id];
-            if (!(shield->flags & IFLAGS_BROKEN) && data->skill == SKILL_SHIELD
-                && (skill & SKILL_MASK) + data->mod1_dice_count + data->mod2
-                    > random() % 100)
-              {
-                int new_ac = get_ac(PARTY + i);
-                if (new_ac > ac)
-                  {
-                    ac = new_ac;
-                    blocker = PARTY + i;
-                  }
-              }
-          }
-      }
-    return ac;
-}
-
-// Hook for the above.  Also applies the Expert ID Monster bonus.
-static void __declspec(naked) maybe_cover_ally_hook(void)
-{
-    asm
-      {
-        call maybe_cover_ally
-        pop ecx
-        push eax
-        cmp byte ptr [esi+182], EXPERT
-        jb no_bonus
-        add dword ptr [esp], 5
-        no_bonus:
-        jmp ecx
-      }
-}
-
-// Retrieve the calculated AC instead of a second call.
-static void __declspec(naked) recall_covered_ac_chunk(void)
-{
-    asm
-      {
-        pop eax
-        jmp quit
-        nop
-        nop
-        quit:
-      }
-}
-
 // New Master Leather perk: chance to absorb enemy spells, restoring SP.
 // Only works if SP won't overflow the natural limit.
 // Also here: robes of Absorption have a 10% chance of doing the same.
@@ -18422,7 +18342,7 @@ static int __thiscall maybe_parry(struct player *player)
 }
 
 // Defined below.
-static int __stdcall train_armor(void *, void *);
+static int __stdcall train_armor(struct map_monster *, struct player *);
 
 // Hook for the above.  Also checks parrying for melee.
 static void __declspec(naked) maybe_dodge_hook(void)
@@ -18549,6 +18469,20 @@ static void __declspec(naked) id_monster_normal(void)
         add dword ptr [ebp+20], 5
         no_id:
         cmp dword ptr [ecx+344], ebx ; replaced code
+        ret
+      }
+}
+
+// Expert ID Monster bonus: -5 to monster's attack bonus (like Fate).
+static void __declspec(naked) id_monster_expert(void)
+{
+    asm
+      {
+        cmp byte ptr [esi+182], EXPERT
+        jb no_bonus
+        sub edi, 5 ; bless/fate/hop bonus
+        no_bonus:
+        lea ecx, [esi+0x184] ; replaced code
         ret
       }
 }
@@ -19074,29 +19008,32 @@ static void __declspec(naked) alchemy_quest_hook(void)
       }
 }
 
-// A wrapper for monster hit roll,
-// registers armor/shield training on a successfull block.
-static int __stdcall train_armor(void *monster, void *player)
+// A wrapper for monster hit roll, registers armor/shield training
+// on a successfull block.  Also here: handle cursed monster attacks.
+static int __stdcall train_armor(struct map_monster *monster,
+                                 struct player *player)
 {
+    if (monster->spell_buffs[MBUFF_CURSED].expire_time && random() & 1)
+        return FALSE; // missed but technically not blocked
     int result = monster_hits_player(monster, player);
-    if (!result && blocker)
+    if (!result)
       {
-        int body = blocker->equipment[SLOT_BODY_ARMOR];
+        int body = player->equipment[SLOT_BODY_ARMOR];
         if (body)
           {
-            struct item *armor = &blocker->items[body-1];
+            struct item *armor = &player->items[body-1];
             int skill = ITEMS_TXT[armor->id].skill;
             if (!(armor->flags & IFLAGS_BROKEN)
                 && skill >= SKILL_LEATHER && skill <= SKILL_PLATE)
-                elemdata.training[blocker-PARTY][skill]++;
+                elemdata.training[player-PARTY][skill]++;
           }
-        int offhand = blocker->equipment[SLOT_OFFHAND];
+        int offhand = player->equipment[SLOT_OFFHAND];
         if (offhand)
           {
-            struct item *shield = &blocker->items[offhand-1];
+            struct item *shield = &player->items[offhand-1];
             if (!(shield->flags & IFLAGS_BROKEN)
                 && ITEMS_TXT[shield->id].skill == SKILL_SHIELD)
-                elemdata.training[blocker-PARTY][SKILL_SHIELD]++;
+                elemdata.training[player-PARTY][SKILL_SHIELD]++;
           }
       }
     return result;
@@ -19290,6 +19227,52 @@ static void __declspec(naked) halved_physical_condition_resistance(void)
       }
 }
 
+// Used just below, to make sure we loop exactly twice.
+static int double_shield_flag = 0;
+
+// Double most shield boni at Master by looping through the item twice.
+static void __declspec(naked) double_shield_bonus(void)
+{
+    asm
+      {
+        jl fail ; if weapon
+        cmp eax, ITEM_TYPE_SHIELD - 1
+        jne skip
+        cmp word ptr [ebx+0x108+SKILL_SHIELD*2], SKILL_MASTER
+        jb skip
+        not dword ptr [double_shield_flag] ; 0 <-> -1
+        mov ecx, dword ptr [double_shield_flag]
+        mov dword ptr [esp+40], ecx ; loop counter
+        skip:
+        cmp esi, STAT_AC ; we erased this check earlier
+        jne fail
+        cmp eax, ITEM_TYPE_AMULET - 1 ; replaced code
+        ret
+        fail:
+        cmp ebx, esi ; always greater
+        ret
+      }
+}
+
+// Also double shield HP regeneration (which stacks in the mod).
+static void __declspec(naked) double_shield_regen(void)
+{
+    asm
+      {
+        add edx, 4 ; replaced code
+        cmp ecx, FIRST_SHIELD
+        jb skip
+        cmp ecx, LAST_SHIELD
+        ja skip
+        cmp word ptr [esi+0x108+SKILL_SHIELD*2], SKILL_MASTER
+        jb skip
+        add ebx, ebx ; only shield regen here (offhand is 0th slot)
+        skip:
+        cmp edi, SLOT_COUNT ; also replaced
+        ret
+      }
+}
+
 // Tweak various skill effects.
 static inline void skill_changes(void)
 {
@@ -19336,13 +19319,11 @@ static inline void skill_changes(void)
     hook_call(0x48d5a3, resist_phys_damage_hook, 5);
     erase_code(0x48d5a8, 94); // old plate/chain code
     erase_code(0x43a57d, 35); // old GM shield bonus
-    hook_call(0x4274c9, maybe_cover_ally_hook, 5);
-    patch_bytes(0x4274e5, recall_covered_ac_chunk, 5);
     hook_call(0x43a4cf, absorb_monster_spell, 6);
     // absorb_other_spell() called from damage_potions_player()
     hook_call(0x401bf2, absorb_armageddon, 6);
     // Also see cast_new_spells() and dispel_immunity() above.
-    patch_byte(0x49002c, 0x4d); // remove old leather & shield M boni
+    patch_byte(0x490021, -13); // remove old leather M bonus
     patch_dword(0x490097, 0xf08bce8b); // swap instructions
     hook_call(0x49009b, leather_dodging, 5);
     patch_byte(0x4900ab, 0xfa); // eax -> edx
@@ -19353,7 +19334,7 @@ static inline void skill_changes(void)
     hook_call(0x41eaa8, monster_already_id, 5);
     hook_call(0x41eb81, sync_monster_id, 7);
     hook_call(0x4272bc, id_monster_normal, 6);
-    // expert bonus handled in maybe_cover_ally_hook() above
+    hook_call(0x4274a6, id_monster_expert, 6);
     hook_call(0x43a181, id_monster_master, 5);
     hook_call(0x43a69f, id_monster_master, 5);
     // gm bonus applied in pierce_debuff_resistance()
@@ -19391,6 +19372,10 @@ static inline void skill_changes(void)
     erase_code(0x48ffef, 2); // ditto
     patch_pointer(0x4275fd, halved_physical_damage_resistance); // jumptable
     hook_call(0x427682, halved_physical_condition_resistance, 7);
+    erase_code(0x48ee63, 5); // fall through to our hook for all stats
+    hook_call(0x48ee71, double_shield_bonus, 5);
+    hook_call(0x493c67, double_shield_regen, 6);
+    // also double aggro in weighted_monster_preference() above
 }
 
 // Switch off some of MM7Patch's features to ensure compatibility.

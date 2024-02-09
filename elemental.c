@@ -805,7 +805,8 @@ enum qbits
 {
     QBIT_LIGHT_PATH = 99,
     QBIT_DARK_PATH = 100,
-    QBIT_FOUND_OBELISK_TREASURE = 178,
+    QBIT_FIRST_OBELISK = 164,
+    QBIT_LAST_OBELISK = 177,
     QBIT_LOST_DIVINE_INTERVENTION = 226,
     QBIT_DUMMY = 245,
     // my additions
@@ -18637,9 +18638,13 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
             gm_quest = 599;
             break;
         case SKILL_PERCEPTION:
-            if (check_bit(QBITS, QBIT_FOUND_OBELISK_TREASURE))
-                return DEFAULT;
-            return REFUSE;
+          {
+            int obelisks = 0;
+            for (int bit = QBIT_FIRST_OBELISK; bit <= QBIT_LAST_OBELISK; bit++)
+                if (check_bit(QBITS, bit))
+                    obelisks++;
+            return obelisks >= 10 ? DEFAULT : REFUSE;
+          }
         case SKILL_DISARM_TRAPS:
             train_req = 60;
             break;

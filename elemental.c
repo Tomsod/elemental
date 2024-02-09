@@ -18396,17 +18396,20 @@ static int __stdcall maybe_instakill(struct player *player,
     return 0;
 }
 
-// Buff axes slightly by doubling the skill recovery bonus.
+// Buff axes slightly, increasing the skill recovery bonus by 50%.
 // NB: this overwrites some nop's from MM7Patch.
-static void __declspec(naked) double_axe_recovery(void)
+// The value here is halved in multiplicative_recovery() below.
+static void __declspec(naked) boost_axe_recovery(void)
 {
     asm
       {
         and eax, SKILL_MASK ; replaced code
         cmp byte ptr [edi+29], SKILL_AXE
-        jne quit
+        je axe
         add eax, eax
-        quit:
+        ret
+        axe:
+        lea eax, [eax+eax*2]
         ret
       }
 }
@@ -19330,7 +19333,7 @@ static inline void skill_changes(void)
     erase_code(0x48e7f9, 75); // old Leather GM bonus
     hook_call(0x43a03f, maybe_dodge_hook, 5); // melee
     hook_call(0x43a4dc, maybe_dodge_hook, 5); // ranged
-    hook_call(0x48e43b, double_axe_recovery, 5);
+    hook_call(0x48e43b, boost_axe_recovery, 5);
     hook_call(0x41eaa8, monster_already_id, 5);
     hook_call(0x41eb81, sync_monster_id, 7);
     hook_call(0x4272bc, id_monster_normal, 6);
@@ -20880,8 +20883,10 @@ static void __declspec(naked) multiplicative_recovery(void)
         fdiv st(0), st(2)
         fsubr st(0), st(3)
         fmulp
-        fild dword ptr [ebp-32] ; weapon skill bonus
-        fdiv st(0), st(2)
+        fild dword ptr [ebp-32] ; weapon skill bonus (doubled)
+        fld st(2)
+        fadd st(0), st(0)
+        fdivp
         fsubr st(0), st(3)
         fmulp
         fild dword ptr [ebp-36] ; speed bonus

@@ -334,6 +334,24 @@ enum new_strings
     STR_AURA_OF_CONFLICT,
     STR_DIVINE_MASTERY,
     STR_NO_INITIATE_TOKEN,
+    STR_CURSE,
+    STR_WEAKNESS,
+    STR_SLEEP,
+    STR_INEBRIATION,
+    STR_INSANITY,
+    STR_DISEASE,
+    STR_PARALYSIS,
+    STR_STUN,
+    STR_DEATH,
+    STR_PETRIFACTION,
+    STR_ERADICATION,
+    STR_BREAK_ITEM,
+    STR_BREAK_ARMOR,
+    STR_BREAK_WEAPON,
+    STR_STEAL_ITEM,
+    STR_AGING,
+    STR_DRAIN_MAGIC,
+    STR_FEAR,
     NEW_STRING_COUNT
 };
 
@@ -18415,51 +18433,55 @@ static void __declspec(naked) boost_axe_recovery(void)
       }
 }
 
-// Skip the ID fail/success message if the monster is already ID'd.
-static void __declspec(naked) monster_already_id(void)
+// Show any monster data at any rank if the skill is high enough.
+// Also check and update the stored identification level.
+static void __declspec(naked) new_id_monster_check(void)
 {
     asm
       {
-        call dword ptr ds:skill_mastery ; replaced call
         mov ecx, dword ptr [ebp-20] ; monster
-        cmp al, byte ptr [ecx+182] ; stored id level
-        ja quit
-        and dword ptr [ebp-24], 0 ; stored skill
-        quit:
-        ret
-      }
-}
-
-// Set ID flags according to the stored ID level and then update it.
-static void __declspec(naked) sync_monster_id(void)
-{
-    asm
-      {
-        mov dword ptr [ebp-32], PARTY_ADDR ; replaced code
-        mov ecx, dword ptr [ebp-20] ; monster
+        test eax, eax ; zero if no skill
+        jz ok
+        cmp eax, GM ; eax == mastery
+        je ok ; always id all
+        mul edi ; skill value
+        movzx edi, byte ptr [ecx+52] ; monster level
+        add eax, 30
+        sub eax, edi
+        cdq
+        mov di, 10
+        idiv edi
+        cmp eax, GM
+        jle ok
+        mov al, GM
+        ok:
         movzx edx, byte ptr [ecx+182] ; stored id level
-        test edx, edx
-        jz zero
-        dec edx
-        jz one
-        dec edx
-        jz two
-        dec edx
-        jz three
-        mov dword ptr [ebp-56], edi ; edi == 1
-        three:
+        cmp edx, eax
+        jl new
+        mov eax, edx
+        mov dword ptr [ebp-24], ebx ; suppress the face anim
+        new:
+        mov byte ptr [ecx+182], al
+        xor edi, edi
+        inc edi
+        dec eax
+        jz normal
+        dec eax
+        jz expert
+        dec eax
+        jz master
+        dec eax
+        jnz zero
+        mov dword ptr [ebp-56], edi ; gm id
+        master:
         mov dword ptr [ebp-36], edi
-        two:
+        expert:
         mov dword ptr [ebp-40], edi
-        one:
+        normal:
         mov dword ptr [ebp-28], edi
         zero:
-        mov eax, dword ptr [ebp-28]
-        add eax, dword ptr [ebp-40]
-        add eax, dword ptr [ebp-36]
-        add eax, dword ptr [ebp-56]
-        mov byte ptr [ecx+182], al
-        ret
+        mov eax, 0x41eb1a ; past the old code
+        jmp eax
       }
 }
 
@@ -18506,6 +18528,100 @@ static void __declspec(naked) id_monster_master(void)
         mov dword ptr [esp+4], eax
         no_bonus:
         jmp dword ptr ds:damage_player ; replaced call
+      }
+}
+
+// Used just below.
+static const char attack_format_fixed[] = "%s\f00000\t060%s %dd%d+%d\n";
+static const char attack_format_no_fixed[] = "%s\f00000\t060%s %dd%d\n";
+static int second_attack = 0;
+
+// Combine monster attack(s) type and damage on the same line.
+static void __declspec(naked) print_full_monster_attack(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [ebp-20] ; the monster
+        add ecx, dword ptr [second_attack] ; first or second
+        movzx edx, byte ptr [ecx+68] ; fixed damage
+        test edx, edx
+        jz no_fixed
+        push edx
+        no_fixed:
+        movzx eax, byte ptr [ecx+67] ; dice sides
+        push eax
+        movzx eax, byte ptr [ecx+66] ; dice count
+        push eax
+        push dword ptr [ebp-0x1f0] ; element
+        cmp dword ptr [second_attack], ebx
+        mov eax, dword ptr [GLOBAL_TXT_ADDR+18*4] ; "attack"
+        lea ecx, [ebp-0x1f4] ; zero as empty string
+        cmovnz eax, ecx
+        push eax
+        test edx, edx
+        mov eax, offset attack_format_fixed
+        mov ecx, offset attack_format_no_fixed
+        cmovz eax, ecx
+        push eax
+        push esi
+        call dword ptr ds:sprintf
+        lea esp, [ebp-0x204] ; restore
+        ret
+      }
+}
+
+// Global.txt entries for attack boni.  Used just below.
+static char **const monster_bonus_strings[24] = {
+    GLOBAL_TXT + 153, // none
+    new_strings + STR_CURSE,
+    new_strings + STR_WEAKNESS,
+    new_strings + STR_SLEEP,
+    new_strings + STR_INEBRIATION,
+    new_strings + STR_INSANITY,
+    GLOBAL_TXT + 166, // poison green
+    GLOBAL_TXT + 166, // poison yellow
+    GLOBAL_TXT + 166, // poison red
+    new_strings + STR_DISEASE, // green
+    new_strings + STR_DISEASE, // yellow
+    new_strings + STR_DISEASE, // red
+    new_strings + STR_PARALYSIS,
+    new_strings + STR_STUN, // unconscious
+    new_strings + STR_DEATH,
+    new_strings + STR_PETRIFACTION,
+    new_strings + STR_ERADICATION,
+    new_strings + STR_BREAK_ITEM,
+    new_strings + STR_BREAK_ARMOR,
+    new_strings + STR_BREAK_WEAPON,
+    new_strings + STR_STEAL_ITEM,
+    new_strings + STR_AGING,
+    new_strings + STR_DRAIN_MAGIC,
+    new_strings + STR_FEAR,
+};
+
+// Loop the above code twice if the monster has two attacks.
+// Also print the inflicted condition or other attack bonus if present.
+static void __declspec(naked) print_monster_special_bonus(void)
+{
+    asm
+      {
+        cmp byte ptr [eax+70], bl ; second attack chance vs. 0
+        jz bonus
+        xor dword ptr [second_attack], 6 ; second attack offset
+        jz bonus
+        movzx eax, byte ptr [eax+71] ; second attack element
+        mov edx, 0x41ef8f ; back to attack code
+        jmp edx
+        bonus:
+        movzx ecx, byte ptr [eax+63] ; attack bonus
+        mov edx, dword ptr [monster_bonus_strings+ecx*4]
+        push dword ptr [edx]
+        push ebx
+        push dword ptr [GLOBAL_TXT_ADDR+210*4] ; "special"
+        push 0x4e3308 ; the format string
+        push esi
+        call dword ptr ds:sprintf
+        mov dword ptr [esp], 0x41f088 ; print line code
+        ret 16
       }
 }
 
@@ -19339,14 +19455,17 @@ static inline void skill_changes(void)
     hook_call(0x43a03f, maybe_dodge_hook, 5); // melee
     hook_call(0x43a4dc, maybe_dodge_hook, 5); // ranged
     hook_call(0x48e43b, boost_axe_recovery, 5);
-    hook_call(0x41eaa8, monster_already_id, 5);
-    hook_call(0x41eb81, sync_monster_id, 7);
+    hook_jump(0x41eaad, new_id_monster_check);
+    patch_byte(0x41eaa0, 12); // don't skip the hook if zero skill
     hook_call(0x4272bc, id_monster_normal, 6);
     hook_call(0x4274a6, id_monster_expert, 6);
     hook_call(0x43a181, id_monster_master, 5);
     hook_call(0x43a69f, id_monster_master, 5);
     // gm bonus applied in pierce_debuff_resistance()
     // and cursed_monster_resists_damage() above
+    hook_call(0x41efa3, print_full_monster_attack, 5);
+    hook_jump(0x41efd5, print_monster_special_bonus);
+    patch_pointer(0x41f073, GLOBAL_TXT + 210); // "special" for failed id
     hook_call(0x4b268f, gm_teaching_conditions_hook, 6);
     hook_call(0x4b218d, learn_gm_skill, 12);
     hook_call(0x4bd856, keep_text_on_exit, 6);

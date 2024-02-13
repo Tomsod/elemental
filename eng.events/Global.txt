@@ -773,3 +773,21 @@ Global Text
 770	Aura of Conflict
 771	Divine Mastery
 772	You have to either be fully promoted, or present an initiate token, to learn this skill level.
+773	Curse
+774	Weakness
+775	Sleep
+776	Inebriation
+777	Insanity
+778	Disease
+779	Paralysis
+780	Stun
+781	Death
+782	Petrifaction
+783	Eradication
+784	Break Item
+785	Break Armor
+786	Break Weapon
+787	Steal Item
+788	Aging
+789	Drain Magic
+790	Fear

@@ -215,7 +215,7 @@ Merchant   EEEE  EMMM  ----  EMGM  EEEE  NNNN  EMGG  EEEE  NNNN
 Repair     EMGG  NNNN  ----  EMGG  EEME  NNNN  EMMM  ----  EEEE
 Bodybuild. EMGG  EEEE  EMGG  EMMM  EEEE  EEME  NNEN  ----  ----
 Meditation ----  ----  ----  EEEE  EEEE  -NNN  EMMG  EMGG  EMMG
-Perception EEEE  EMGM  EEEE  NNNN  EMGG  EMGG  EEEE  EEEE  EEEE
+Perception EEEE  EMGM  EMMM  NNNN  EMGG  EMGG  EEEE  EEEE  EEEE
 Disarm     NNNE  EMGG  NEEM  ----  NEEE  EEEM  ----  ----  ----
 Dodging    EEEE  EMMM  EMGG  ----  EEEE  EEEE  ----  NEEE  NNNN
 Unarmed    EEEE  EEEE  EMGG  NNNN  NNNN  NNNN  ----  ----  ---N

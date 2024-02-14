@@ -25,7 +25,7 @@ Merchant	E	E	E	E	E	M	M	M	-	-	-	-	E	M	G	M	E	E	E	E	N	N	N	N	E	M	G	G	E	E	E	E	N	N	N	N
 Repair	E	M	G	G	N	N	N	N	-	-	-	-	E	M	G	G	E	E	M	E	N	N	N	N	E	M	M	M	-	-	-	-	E	E	E	E
 Bodybuilding	E	M	G	G	E	E	E	E	E	M	G	G	E	M	M	M	E	E	E	E	E	E	M	E	N	N	E	N	-	-	-	-	-	-	-	-
 Meditation	-	-	-	-	-	-	-	-	-	-	-	-	E	E	E	E	E	E	E	E	-	N	N	N	E	M	M	G	E	M	G	G	E	M	M	G
-Perception	E	E	E	E	E	M	G	M	E	E	E	E	N	N	N	N	E	M	G	G	E	M	G	G	E	E	E	E	E	E	E	E	E	E	E	E
+Perception	E	E	E	E	E	M	G	M	E	M	M	M	N	N	N	N	E	M	G	G	E	M	G	G	E	E	E	E	E	E	E	E	E	E	E	E
 Diplomacy	N	N	N	N	-	-	-	-	N	N	N	N	E	M	G	G	-	-	-	-	E	E	E	E	E	M	M	M	-	-	-	-	N	N	N	N
 Thievery (unused)	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-
 Disarm Traps	N	N	N	E	E	M	G	G	N	E	E	M	-	-	-	-	N	E	E	E	E	E	E	M	-	-	-	-	-	-	-	-	-	-	-	-

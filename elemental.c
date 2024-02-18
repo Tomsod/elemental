@@ -867,6 +867,13 @@ enum item_types
     ITEM_TYPE_SCROLL = 16,
     ITEM_TYPE_BOOK = 17,
     ITEM_TYPE_GEM = 20,
+    ITEM_TYPE_SWORD = 23,
+    ITEM_TYPE_DAGGER = 24,
+    ITEM_TYPE_AXE = 25,
+    ITEM_TYPE_SPEAR = 26,
+    ITEM_TYPE_BOW = 27,
+    ITEM_TYPE_MACE = 28,
+    ITEM_TYPE_STAFF = 30,
     // my additions
     ITEM_TYPE_ROBE = 47,
     ITEM_TYPE_SPECIAL = 48,
@@ -1366,6 +1373,7 @@ static struct npcprof
 #define SHOP_IMAGES 0xf8afe4
 #define MOUSEOVER_BUFFER 0xe31a9c
 #define SCANLINE_OFFSET 0x505828
+#define SHOP_STANDARD_ITEMS 0xad45b4
 #define SHOP_SPECIAL_ITEMS 0xad9f24
 #define CURRENT_TEXT 0xf8b068
 #define STATUS_MESSAGE 0x5c32a8
@@ -1373,6 +1381,16 @@ static struct npcprof
 #define MESSAGE_DIALOG 0x507a64
 #define SHOPKEEPER_MOOD 0xf8b064
 #define SHOP_VOICE_NO_GOLD 2
+
+#define WEAPON_SHOP_STD ((uint16_t (*)[5]) 0x4f0288)
+#define WEAPON_SHOP_SPC ((uint16_t (*)[5]) 0x4f04c8)
+#define ARMOR_SHOP_STD ((uint16_t (*)[2][5]) 0x4f0318)
+#define ARMOR_SHOP_SPC ((uint16_t (*)[2][5]) 0x4f0558)
+#define MAGIC_SHOP_STD ((uint16_t *) 0x4f0430)
+#define MAGIC_SHOP_SPC ((uint16_t *) 0x4f0670)
+#define POTION_SHOP_STD ((uint16_t *) 0x4f044c)
+#define POTION_SHOP_SPC ((uint16_t *) 0x4f068c)
+#define TRAIN_MAX_LEVELS ((int16_t *) 0x4f0798)
 
 #ifdef CHECK_OVERWRITE
 #define sprintf sprintf_mm7
@@ -1648,6 +1666,8 @@ static int *__thiscall (*get_mouse_coords)(void *this, int *buffer)
     = (funcptr_t) 0x469c3d;
 static void __thiscall (*randomize_item)(void *this, int level, int type,
                                          void *item) = (funcptr_t) 0x45664c;
+static void __fastcall (*set_image_mouseover)(void *buffer, void *image,
+                                              int id) = (funcptr_t) 0x40f8a8;
 #define GET_ASYNC_KEY_STATE 0x4d8260
 
 //---------------------------------------------------------------------------//
@@ -4592,16 +4612,16 @@ static inline void misc_items(void)
     hook_call(0x4578cf, compare_special_item_prefix, 5);
     hook_call(0x4567db, rnd_robe_type, 7);
     // Let some armor shops sell robes.
-    patch_word(0x4f0328, ITEM_TYPE_ROBE); // ei std
-    patch_word(0x4f0568, ITEM_TYPE_ROBE); // ei spc
-    patch_word(0x4f05a2, ITEM_TYPE_ROBE); // tularean spc
-    patch_word(0x4f05ba, ITEM_TYPE_ROBE); // celeste spc
-    patch_word(0x4f03a0, ITEM_TYPE_ROBE); // nighon std
-    patch_word(0x4f03a2, ITEM_TYPE_ROBE); // nighon std
-    patch_word(0x4f05e0, ITEM_TYPE_ROBE); // nighon spc
-    patch_word(0x4f05e2, ITEM_TYPE_ROBE); // nighon spc
-    patch_word(0x4f03f0, ITEM_TYPE_ROBE); // castle std
-    patch_word(0x4f0630, ITEM_TYPE_ROBE); // castle spc
+    ARMOR_SHOP_STD[0][1][3] = ITEM_TYPE_ROBE; // ei
+    ARMOR_SHOP_SPC[0][1][3] = ITEM_TYPE_ROBE;
+    ARMOR_SHOP_SPC[3][1][2] = ITEM_TYPE_ROBE; // tularean
+    ARMOR_SHOP_SPC[4][1][4] = ITEM_TYPE_ROBE; // celeste
+    ARMOR_SHOP_STD[6][1][3] = ITEM_TYPE_ROBE; // nighon
+    ARMOR_SHOP_STD[6][1][4] = ITEM_TYPE_ROBE;
+    ARMOR_SHOP_SPC[6][1][3] = ITEM_TYPE_ROBE;
+    ARMOR_SHOP_SPC[6][1][4] = ITEM_TYPE_ROBE;
+    ARMOR_SHOP_STD[10][1][3] = ITEM_TYPE_ROBE; // castle
+    ARMOR_SHOP_SPC[10][1][3] = ITEM_TYPE_ROBE;
     patch_pointer(0x497929, starting_robe);
     hook_call(0x456b57, halve_more_ench, 5);
     patch_dword(0x48f3da, 0x48f532 - 0x48f3de); // of earth: 10 -> 5 HP
@@ -7215,7 +7235,7 @@ static inline void misc_spells(void)
     patch_dword(0x48f7f3, dword(0x48f823));
     patch_dword(0x48f823, poison);
     // Shift the mind resistance icon a few pixels (for aesthetic reasons).
-    patch_dword(0x4e5d58, dword(0x4e5d58) + 4);
+    dword(0x4e5d58) += 4;
     // Change the elements of some hardcoded spell effects.
     // This cannot be done on startup, but is delayed until spells.txt is read.
     hook_jump(0x453b35, spells_txt_tail);
@@ -7324,8 +7344,8 @@ static inline void misc_spells(void)
     hook_call(0x427e6a, zero_item_spells, 5);
     patch_pointer(0x42ea51, aura_of_conflict);
     patch_byte(0x427cd8, 2); // targets a pc
-    patch_dword(0x4e22b8, 276); // spellbook icon x
-    patch_dword(0x4e22bc, 5); // spellbook icon y
+    dword(0x4e22b8) = 276; // spellbook icon x
+    dword(0x4e22bc) = 5; // spellbook icon y
     // generic buff recovery value
     SPELL_INFO[SPL_AURA_OF_CONFLICT].delay_normal = 120;
     SPELL_INFO[SPL_AURA_OF_CONFLICT].delay_expert = 120;
@@ -11302,8 +11322,7 @@ static inline void misc_rules(void)
     hook_jump(0x48ea13, new_stat_thresholds);
     hook_call(0x4506a5, rest_encounters, 13);
     // Upgrade Castle Harmondale (now Nighon) potion shop to item level 5.
-    patch_word(0x4f045e, 5);
-    patch_word(0x4f069e, 5);
+    POTION_SHOP_STD[9] = POTION_SHOP_SPC[9] = 5;
     hook_call(0x41a810, color_broken_ac, 5);
     hook_call(0x4189be, color_broken_ac_2, 5);
     // Localization fix: separate hunter-as-npc and hunter-as-class strings.
@@ -12842,7 +12861,7 @@ static inline void new_enchants(void)
     hook_call(0x439bb3, cursed_weapon, 7);
     // For symmetry, indirectly penalize cursed players' resistances
     // through reducing luck to 10% of base.
-    patch_byte(0x4ede62, 10);
+    byte(0x4ede62) = 10;
     hook_call(0x439b0b, soul_stealing_weapon, 5);
     hook_call(0x439536, reset_critical_hit, 5);
     hook_call(0x439863, check_backstab, 7);
@@ -15221,7 +15240,7 @@ static inline void ranged_blasters(void)
     patch_dword(0x42f055, 0x1950);
     patch_dword(0x42f067, 0x1950);
     patch_byte(0x469863, 2); // equip wands in missile slot
-    patch_byte(0x4e8354, 2); // ditto
+    byte(0x4e8354) = SLOT_MISSILE; // ditto
     patch_byte(0x45f2ed, 2); // fix no sound (preload wand sound on game load)
     hook_call(0x4690ee, preload_equipped_wand_sound, 10);
     // status screen
@@ -15430,7 +15449,7 @@ static void __declspec(naked) charge_shop_wands_standard(void)
 {
     asm
       {
-        lea ecx, [0xad45b4+ecx*4]
+        lea ecx, [SHOP_STANDARD_ITEMS+ecx*4]
         jmp charge_shop_wands_common
       }
 }
@@ -19488,7 +19507,7 @@ static inline void skill_changes(void)
     patch_byte(0x48cee9, 0xeb); // remove old bonus (main hand)
     patch_byte(0x48d014, 0xeb); // offhand
     // thievery backstab is checked in check_backstab() above
-    patch_dword(0x4edd58, 300); // remove 5x multiplier at GM
+    dword(0x4edd58) = 300; // remove 5x multiplier at GM
     hook_call(0x48d7ad, stealing_skill_bonus, 7); // steal from shop
     patch_word(0x48d8ee, 0xce8b); // mov ecx, esi
     hook_call(0x48d8f0, stealing_skill_bonus, 5); // steal from a monster
@@ -20310,7 +20329,7 @@ static inline void throwing_knives(void)
     hook_call(0x42f017, knife_spell, 5);
     hook_call(0x42eecf, knife_sound, 7);
     hook_call(0x4280de, no_knife_double_shot, 7);
-    patch_dword(0x4e3aac + SPL_KNIFE * 4, OBJ_KNIFE); // projectile for knives
+    dword(0x4e3aac + SPL_KNIFE * 4) = OBJ_KNIFE; // projectile for knives
     hook_call(0x428264, knife_velocity, 5);
     // knives treated as arrows in explode_potions_jump() above
     hook_jump(0x4396aa, (void *) 0x439652); // treat knives as arrows when hit
@@ -20322,7 +20341,7 @@ static inline void throwing_knives(void)
     hook_call(0x42ecf9, use_knife_charge, 8);
     hook_call(0x4b954b, knife_repair_dialog, 11);
     // actually repaired in prepare_shop_recharge() and perform_shop_recharge()
-    patch_word(0x4f028e, ITEM_TYPE_MISSILE); // allow EI shop to sell knives
+    WEAPON_SHOP_STD[0][3] = ITEM_TYPE_MISSILE; // allow EI shop to sell knives
 }
 
 // Draw the right options difficulty button in the settings screen.
@@ -21047,9 +21066,9 @@ static inline void balance_tweaks(void)
     erase_code(0x4b4c19, 3); // ditto
     // training price adjusted in increase_training_price() above
     // Decrease training hall level limits according to the dilated levels.
-    word(0x4f07a0) = word(0x4f07a2) = 100; // was 200
-    word(0x4f07a6) = word(0x4f07a8) = 40; // was 50
-    word(0x4f07aa) = 60; // was 100
+    TRAIN_MAX_LEVELS[4] = TRAIN_MAX_LEVELS[5] = 100; // was 200
+    TRAIN_MAX_LEVELS[7] = TRAIN_MAX_LEVELS[8] = 40; // was 50
+    TRAIN_MAX_LEVELS[9] = 60; // was 100
     erase_code(0x48e4cf, 14); // old recovery bonuses
     hook_call(0x48e4e3, multiplicative_recovery, 6);
     word(0x4edd8a) = 90; // buff bow recovery
@@ -21305,8 +21324,7 @@ static void __declspec(naked) sold_scrolls_height_mask(void)
         jne skip
         add ecx, GUILD_SCROLL_Y_ADJ * 2560 ; seems to be x and y at once?
         skip:
-        mov eax, 0x40f8a8 ; replaced call
-        jmp eax
+        jmp dword ptr ds:set_image_mouseover ; replaced call
       }
 }
 
@@ -22578,6 +22596,61 @@ static void __declspec(naked) leave_shop_no_response(void)
       }
 }
 
+// Make sure the game doesn't try to write at a negative offset
+// to the mouseover buffer in case of very tall boots for sale.
+static void __declspec(naked) clip_boots_to_screen(void)
+{
+    asm
+      {
+        cmp ebx, 4 ; top row is 0-3
+        jae skip
+        test edi, edi ; y offset
+        jns skip
+        lea eax, [edi+edi*4]
+        shl eax, 9
+        sub ecx, eax
+        add word ptr [edx+26], di ; adjust image height
+        push edx
+        lea eax, [ebx+1]
+        push eax
+        call dword ptr ds:set_image_mouseover ; replaced call
+        pop edx
+        sub word ptr [edx+26], di ; restore
+        ret 4
+        skip:
+        jmp dword ptr ds:set_image_mouseover
+      }
+}
+
+// Restock empty bottles on every potion shop visit.
+// Apparently some people never have enough of them!
+static void __declspec(naked) always_restock_bottles(void)
+{
+    asm
+      {
+        mov eax, dword ptr [esi+28] ; replaced code (house id)
+        xor edi, edi ; also replaced
+        cmp eax, 42 ; first alchemist
+        jb skip
+        cmp eax, 53 ; last alchemist
+        ja skip
+        lea ecx, [eax+eax*2]
+        lea ecx, [ecx+ecx*8]
+        shl ecx, 4
+        add ecx, SHOP_STANDARD_ITEMS
+        add edi, 6
+        loop:
+        call dword ptr ds:init_item
+        mov dword ptr [ecx], POTION_BOTTLE
+        add ecx, 36
+        dec edi
+        jnz loop
+        mov eax, dword ptr [esi+28] ; restore
+        skip:
+        ret
+      }
+}
+
 // Various changes to stores, guilds and other buildings.
 static inline void shop_changes(void)
 {
@@ -22645,6 +22718,55 @@ static inline void shop_changes(void)
     hook_call(0x456ed3, read_std_craft_items, 7);
     hook_call(0x4570e2, read_spc_craft_items, 5);
     hook_call(0x4b1d63, leave_shop_no_response, 10);
+    // Adjust some shops' treasure levels.
+    for (int i = 1; i <= 11; i++) // not ei
+      {
+        WEAPON_SHOP_STD[i][0]++;
+        if (i == 10) // castle shops are already resp. 2/4 and 3/4
+            continue;
+        WEAPON_SHOP_SPC[i][0]++;
+        ARMOR_SHOP_STD[i][0][0]++;
+        ARMOR_SHOP_STD[i][1][0]++;
+        ARMOR_SHOP_SPC[i][0][0]++;
+        ARMOR_SHOP_SPC[i][1][0]++;
+      }
+    // why were surface bracada/deyja magic shops better than celeste/pit?
+    MAGIC_SHOP_STD[4] = MAGIC_SHOP_STD[5] = 3; // bra/dey
+    MAGIC_SHOP_SPC[4] = MAGIC_SHOP_SPC[5] = 4;
+    MAGIC_SHOP_STD[6] = MAGIC_SHOP_STD[7] = 4; // cel/pit
+    MAGIC_SHOP_SPC[6] = MAGIC_SHOP_SPC[7] = 5;
+    for (int i = 2; i <= 8; i++) // not level 1/2
+        POTION_SHOP_STD[i]++; // reagents
+    // Also tweak the sold item types.
+    // celeste & pit weapon shops tried to teach everything,
+    // but there's a hardcoded limit of 5 skills per shop
+    WEAPON_SHOP_STD[4][3] = ITEM_TYPE_WEAPON; // no axe in cel
+    WEAPON_SHOP_STD[4][4] = ITEM_TYPE_WEAPON2; // no bow either
+    WEAPON_SHOP_SPC[4][4] = ITEM_TYPE_MISSILE; // also here
+    WEAPON_SHOP_STD[5][2] = ITEM_TYPE_SPEAR; // pit is inverse
+    WEAPON_SHOP_STD[5][3] = ITEM_TYPE_MACE; // (compared to cel)
+    WEAPON_SHOP_SPC[5][2] = ITEM_TYPE_STAFF; // those were std
+    WEAPON_SHOP_SPC[5][3] = ITEM_TYPE_AXE; // still taught here
+    WEAPON_SHOP_STD[5][1] = ITEM_TYPE_WEAPON2; // no dagger in pit
+    WEAPON_SHOP_STD[5][4] = ITEM_TYPE_MISSILE; // still knives
+    WEAPON_SHOP_SPC[5][1] = ITEM_TYPE_WEAPON; // also no sword
+    // sell some more 2h weapons in nighon
+    WEAPON_SHOP_STD[6][4] = WEAPON_SHOP_SPC[6][4] = ITEM_TYPE_WEAPON2;
+    // tatalia main shop only sold 1h melee and taught nothing
+    WEAPON_SHOP_STD[7][2] = WEAPON_SHOP_SPC[7][2] = ITEM_TYPE_WEAPON2;
+    WEAPON_SHOP_SPC[7][3] = ITEM_TYPE_SWORD; // the shop is "blades
+    WEAPON_SHOP_SPC[7][4] = ITEM_TYPE_BOW; // and bows", so own it
+    WEAPON_SHOP_STD[7][3] = ITEM_TYPE_DAGGER; // also blades
+    WEAPON_SHOP_STD[7][4] = ITEM_TYPE_STAFF; // staff is too rare
+    // sell cloaks and boots at all armor shops
+    for (int i = 0; i <= 11; i++)
+      {
+        ARMOR_SHOP_STD[i][0][2] = ARMOR_SHOP_SPC[i][0][2] = ITEM_TYPE_CLOAK;
+        ARMOR_SHOP_STD[i][0][4] = ARMOR_SHOP_SPC[i][0][4] = ITEM_TYPE_BOOTS;
+      }
+    hook_call(0x4bb126, clip_boots_to_screen, 5); // standard
+    hook_call(0x4bb1e7, clip_boots_to_screen, 5); // special
+    hook_call(0x4bd5a3, always_restock_bottles, 5);
 }
 
 // Allow non-bouncing projectiles to trigger facets in Altar of Wishes.

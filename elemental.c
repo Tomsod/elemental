@@ -147,6 +147,7 @@ enum spcitems_txt
     SPC_INFERNOS = 12,
     SPC_VENOM = 14,
     SPC_VAMPIRIC = 16,
+    SPC_SHIELDING = 36,
     SPC_DEMON_SLAYING = 39,
     SPC_DRAGON_SLAYING = 40,
     SPC_DARKNESS = 41,
@@ -157,6 +158,7 @@ enum spcitems_txt
     SPC_DAVID = 65,
     SPC_ASSASSINS = 67,
     SPC_BARBARIANS = 68,
+    SPC_STORM = 69,
     // 73+ are my addition
     SPC_SPECTRAL = 73,
     SPC_CURSED = 74,
@@ -516,6 +518,7 @@ enum player_buffs
     PBUFF_MIND_RES = 9,
     PBUFF_PAIN_REFLECTION = 10,
     PBUFF_PRESERVATION = 11,
+    PBUFF_SHIELD = 13,
     PBUFF_COLD_RES = 22,
 };
 
@@ -914,6 +917,7 @@ enum party_buffs
     BUFF_IMMOLATION = 10,
     BUFF_INVISIBILITY = 11,
     BUFF_IMMUTABILITY = 13,
+    BUFF_SHIELD = 14,
     BUFF_WATER_WALK = 18,
     BUFF_WIZARD_EYE = 19,
 };
@@ -11298,6 +11302,45 @@ static void __declspec(naked) the_largest_manticore(void)
       }
 }
 
+// Reduce the stacking of several concurrent shielding effects.
+// Also fix the actual Shield spell which didn't work in vanilla.
+static int __thiscall shield_stacking(struct player *player, int damage)
+{
+    int divisor = 1;
+    if (PARTY_BUFFS[BUFF_SHIELD].expire_time)
+        divisor++;
+    if (player->spell_buffs[PBUFF_SHIELD].expire_time)
+        divisor++;
+    if (has_enchanted_item(player, SPC_SHIELDING)
+        || has_enchanted_item(player, SPC_STORM))
+        divisor++; // these two don't stack anymore
+    if (has_item_in_slot(player, GOVERNORS_ARMOR, SLOT_BODY_ARMOR))
+        divisor++;
+    if (has_item_in_slot(player, KELEBRIM, SLOT_OFFHAND))
+        divisor++;
+    if (has_item_in_slot(player, ELFBANE, SLOT_MAIN_HAND))
+        divisor++;
+    if (has_item_in_slot(player, LADYS_ESCORT, SLOT_ANY))
+        divisor++;
+    if (has_item_in_slot(player, SNIPERS_QUIVER, SLOT_BELT))
+        divisor++;
+    return damage / divisor;
+}
+
+// Hook for the above.
+static void __declspec(naked) shield_stacking_hook(void)
+{
+    asm
+      {
+        push dword ptr [ebp-4] ; damage
+        mov ecx, edi ; player
+        call shield_stacking
+        mov dword ptr [ebp-4], eax
+        mov eax, 0x43a5ac ; past shielding code
+        jmp eax
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -11478,6 +11521,7 @@ static inline void misc_rules(void)
     erase_code(0x4bcfe9, 12); // tularean
     erase_code(0x4bd0d2, 12); // erathia
     erase_code(0x4bd198, 10); // harmondale
+    hook_jump(0x43a4e9, shield_stacking_hook);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -14651,32 +14695,6 @@ static void __declspec(naked) mark_chest_checked(void)
       }
 }
 
-// Let Lady's Escort and Sniper's Quiver halve incoming missile damage.
-static void __declspec(naked) lady_escort_shielding(void)
-{
-    asm
-      {
-        mov ecx, edi ; pc
-        push SLOT_ANY
-        push LADYS_ESCORT
-        call dword ptr ds:has_item_in_slot
-        test eax, eax
-        jz no_ring
-        sar dword ptr [ebp-4], 1 ; total damage
-        no_ring:
-        mov ecx, edi
-        push SLOT_BELT
-        push SNIPERS_QUIVER
-        call dword ptr ds:has_item_in_slot
-        test eax, eax
-        jz skip
-        sar dword ptr [ebp-4], 1
-        skip:
-        lea ebx, [edi+0x1948] ; replaced code
-        ret
-      }
-}
-
 // Add the new properties to some old artifacts,
 // and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
@@ -14800,7 +14818,7 @@ static inline void new_artifacts(void)
     hook_call(0x45028f, fix_static_chest_items, 6);
     hook_call(0x45052f, mark_chest_checked, 6);
     patch_byte(0x456935, 12); // reduce max randomly generated artifacts
-    hook_call(0x43a549, lady_escort_shielding, 6);
+    // lady escort and sniper quiver shielding are in shield_stacking() above
 }
 
 // When calculating missile damage, take note of the weapon's skill.
@@ -19461,7 +19479,7 @@ static inline void skill_changes(void)
     hook_call(0x490f91, shops_cant_repair_blasters_msg, 11);
     hook_call(0x48d5a3, resist_phys_damage_hook, 5);
     erase_code(0x48d5a8, 94); // old plate/chain code
-    erase_code(0x43a57d, 35); // old GM shield bonus
+    // old GM shield bonus jumped over in shield_stacking_hook() above
     hook_call(0x43a4cf, absorb_monster_spell, 6);
     // absorb_other_spell() called from damage_potions_player()
     hook_call(0x401bf2, absorb_armageddon, 6);

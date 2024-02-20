@@ -1,0 +1,13 @@
+Data/Tables/Class HP SP.txt
+Data/Tables/Class Starting Skills.txt
+Data/Tables/Class Starting Stats.txt
+Data/Tables/DecList.txt
+Data/Tables/MonList.txt
+Data/Tables/ObjList.txt
+Data/Tables/SFT.txt
+Data/Tables/Shops.txt
+Data/Tables/Spells2.txt
+DataFiles/ddeclist.bin
+DataFiles/dmonlist.bin
+DataFiles/dobjlist.bin
+DataFiles/dsft.bin

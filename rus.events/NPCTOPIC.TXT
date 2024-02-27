@@ -610,3 +610,12 @@
 609	Грабители могил	Barrows reputation hint
 610	Квест	Monk token quest
 611	Беды с мантикорами	Monk token quest hint
+612	Книжный шкаф	Variable event
+613	Книжный шкаф	Variable event
+614	Плодовое дерево	Variable event
+615	Рудная жила	Variable event
+616	Рудная жила	Variable event
+617	Рудная жила	Variable event
+618	Рудная жила	Variable event
+619	Винная стойка	Variable event
+620	Саркофаг	Variable event

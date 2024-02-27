@@ -946,3 +946,6 @@ For example, these are all correct item descriptions:
 872	"Ask the dwarves for the way to Nighon.  Once there, locals can likely point you to the nearest manticore lair."	Monk token quest in progress	William Smithson
 873	"This should be enough, great!  Here is your reward.  You don't have to be an Initiate to redeem a token, but other classes will generally need to be fully promoted first."	Monk token quest complete	William Smithson
 874	"We used to field a large force of trained manticores, but they were almost entirely wiped out during the war.  If you want the beast to be obedient, you have to start training right after it hatches, yet we have no way to reacquire wild manticore eggs, so our stock remains low.  There should still be some lairs in the deeper parts of the tunnels towards Eeofol, but few dare to venture there, and even fewer return."	Monk token quest hint	Mazim Dusk
+875	There are no items that interest you	No more books	Bookcase variable event
+876	You received an apple	Got normal apple	Fruit tree variable event
+877	Cave-in!	Damage party	Ore vein variable event

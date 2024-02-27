@@ -610,3 +610,12 @@
 609	Graverobbers	Barrows reputation hint
 610	Quest	Monk token quest
 611	Manticore Woes	Monk token quest hint
+612	Bookcase	Variable event
+613	Bookcase	Variable event
+614	Fruit Tree	Variable event
+615	Ore Vein	Variable event
+616	Ore Vein	Variable event
+617	Ore Vein	Variable event
+618	Ore Vein	Variable event
+619	Wine Rack	Variable event
+620	Sarcophagus	Variable event

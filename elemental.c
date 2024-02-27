@@ -741,6 +741,9 @@ enum face_animations
 #define EVT_REP_GROUP 400
 #define EVT_DISABLED_SPELL 401
 #define EVT_MOUSE_ITEM_CONDITION 402
+#define EVT_VARIABLE 403
+
+#define GLOBAL_EVENT_FLAG 0x5c32a0
 
 enum gender
 {
@@ -1168,9 +1171,9 @@ enum profession
 };
 
 // New max number of global.evt commands (was 4400 before).
-#define GLOBAL_EVT_LINES 5500
+#define GLOBAL_EVT_LINES 5650
 // New max size of global.evt itself (was 46080 bytes before).
-#define GLOBAL_EVT_SIZE 55000
+#define GLOBAL_EVT_SIZE 56500
 
 #define CURRENT_PLAYER 0x507a6c
 
@@ -1226,7 +1229,7 @@ enum monster_buffs
 // new NPC topic count
 #define TOPIC_COUNT 611
 // count of added NPC text entries
-#define NEW_TEXT_COUNT (874-789)
+#define NEW_TEXT_COUNT (877-789)
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658
@@ -1314,6 +1317,7 @@ static struct __attribute__((packed)) patch_options
 // my additions
 #define ACTION_EXTRA_CHEST 40
 #define ACTION_PLACE_ORDER 41
+#define ACTION_VARIABLE_EVENT 42
 //vanilla
 #define ACTION_EXIT 113
 #define ACTION_CHANGE_CONVERSATION 405
@@ -1637,7 +1641,7 @@ static int __fastcall (*monster_attack_damage)(void *monster, int attack)
 static int __thiscall (*get_base_resistance)(const void *player, int stat)
     = (funcptr_t) 0x48e737;
 static int __thiscall (*get_base_ac)(void *player) = (funcptr_t) 0x48e64e;
-static void __fastcall (*process_event)(int event, int unknown, int unknown2)
+static void __fastcall (*process_event)(int event, int target, int verbose)
     = (funcptr_t) 0x44686d;
 static void __thiscall (*evt_sub)(void *player, int what, int amount)
     = (funcptr_t) 0x44b9f0;
@@ -8416,6 +8420,9 @@ static void __declspec(naked) cmp_rep(void)
       }
 }
 
+// For the variable events.
+static int evt_variable_id = 0;
+
 // Hook for the new gamescript cmp code.
 static void __declspec(naked) evt_cmp_hook(void)
 {
@@ -8425,6 +8432,8 @@ static void __declspec(naked) evt_cmp_hook(void)
         je rep
         cmp eax, EVT_DISABLED_SPELL
         je spell
+        cmp eax, EVT_VARIABLE
+        je variable
         lea ecx, [eax-0xe0] ; replaced code
         ret
         rep:
@@ -8436,6 +8445,10 @@ static void __declspec(naked) evt_cmp_hook(void)
         quit:
         push 0x44a3e6
         ret 4
+        variable:
+        mov eax, dword ptr [evt_variable_id] ; substitute
+        mov dword ptr [esp], 0x449bea ; back to the first branching
+        ret
       }
 }
 
@@ -8461,6 +8474,8 @@ static void __declspec(naked) evt_add_hook(void)
         je rep
         cmp eax, EVT_DISABLED_SPELL
         je spell
+        cmp eax, EVT_VARIABLE
+        je variable
         sub eax, 307 ; replaced code
         ret
         rep:
@@ -8473,6 +8488,10 @@ static void __declspec(naked) evt_add_hook(void)
         quit:
         push 0x44b90d
         ret 4
+        variable:
+        mov eax, dword ptr [evt_variable_id] ; substitute
+        mov dword ptr [esp], 0x44b057 ; back to the first branching
+        ret
       }
 }
 
@@ -8510,6 +8529,8 @@ static void __declspec(naked) evt_sub_hook(void)
         je rep
         cmp eax, EVT_DISABLED_SPELL
         je spell
+        cmp eax, EVT_VARIABLE
+        je variable
         sub eax, 308 ; replaced code
         ret
         rep:
@@ -8522,6 +8543,10 @@ static void __declspec(naked) evt_sub_hook(void)
         quit:
         push 0x44bb0d
         ret 4
+        variable:
+        mov eax, dword ptr [evt_variable_id] ; substitute
+        mov dword ptr [esp], 0x44ba23 ; back to the first branching
+        ret
       }
 }
 
@@ -8549,6 +8574,8 @@ static void __declspec(naked) evt_set_hook(void)
         je spell
         cmp eax, EVT_MOUSE_ITEM_CONDITION
         je condition
+        cmp eax, EVT_VARIABLE
+        je variable
         sub eax, 307 ; replaced code
         ret
         rep:
@@ -8564,6 +8591,10 @@ static void __declspec(naked) evt_set_hook(void)
         mov dword ptr [MOUSE_ITEM+20], eax
         quit:
         mov dword ptr [esp], 0x44af3b
+        ret
+        variable:
+        mov eax, dword ptr [evt_variable_id] ; substitute
+        mov dword ptr [esp], 0x44a628 ; back to the first branching
         ret
       }
 }
@@ -11341,6 +11372,28 @@ static void __declspec(naked) shield_stacking_hook(void)
       }
 }
 
+// Add a new gamescript command, that calls another event.
+static void __declspec(naked) new_event_command(void)
+{
+    asm
+      {
+        movzx edx, byte ptr [esi+4] ; replaced code
+        cmp edx, 64 ; the new command id
+        jne old
+        movsx eax, word ptr [esi+7] ; variable
+        movzx edx, word ptr [esi+5] ; event
+        push eax
+        push edx
+        push ACTION_VARIABLE_EVENT
+        mov ecx, ACTION_THIS_ADDR
+        call dword ptr ds:add_action
+        xor edx, edx ; fall through to default code
+        old:
+        dec edx ; also replaced
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -11522,6 +11575,7 @@ static inline void misc_rules(void)
     erase_code(0x4bd0d2, 12); // erathia
     erase_code(0x4bd198, 10); // harmondale
     hook_jump(0x43a4e9, shield_stacking_hook);
+    hook_call(0x446970, new_event_command, 5);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -14217,7 +14271,8 @@ static void place_order(void);
 
 // Make a new action that opens an extra chest.
 // We need an action to safely trigger it from inventory etc.
-// Also here: the action for ordering an item in a shop.
+// Also here: the action for ordering an item in a shop,
+// and the action that triggers a gamescript event.
 static void __declspec(naked) action_open_extra_chest(void)
 {
     asm
@@ -14226,6 +14281,8 @@ static void __declspec(naked) action_open_extra_chest(void)
         je chest
         cmp ecx, ACTION_PLACE_ORDER
         je order
+        cmp ecx, ACTION_VARIABLE_EVENT
+        je event
         movzx eax, byte ptr [0x4353a1+eax] ; replaced code
         ret
         chest:
@@ -14236,6 +14293,23 @@ static void __declspec(naked) action_open_extra_chest(void)
         jmp quit
         order:
         call place_order
+        jmp quit
+        event:
+        xor ecx, ecx
+        mov eax, dword ptr [esp+48] ; action param 2
+        test eax, eax
+        setns cl
+        mov dword ptr [GLOBAL_EVENT_FLAG], ecx
+        dec ecx
+        xor eax, ecx ; absolute value
+        mov dword ptr [evt_variable_id], eax
+        xor edx, edx
+        mov ecx, dword ptr [esp+24]
+        push 1
+        call dword ptr ds:process_event
+        xor ecx, ecx
+        mov dword ptr [GLOBAL_EVENT_FLAG], ecx ; restore
+        mov dword ptr [evt_variable_id], ecx ; just in case
         quit:
         mov eax, 118 ; no action
         ret
@@ -17568,7 +17642,7 @@ static void __declspec(naked) force_status_text(void)
 {
     asm
       {
-        mov ecx, dword ptr [0x5c32a0] ; replaced code
+        mov ecx, dword ptr [GLOBAL_EVENT_FLAG] ; replaced code
         cmp byte ptr [esi+9], bl ; our marker (ebx == 0)
         jnz skip
         cmp ecx, 1 ; check if global event
@@ -18971,12 +19045,12 @@ static void __declspec(naked) learn_gm_skill(void)
         inc eax
         mov dword ptr [keep_text], eax
         mov dword ptr [suppress_greet], eax
-        mov dword ptr [0x5c32a0], eax ; use global.evt
+        mov dword ptr [GLOBAL_EVENT_FLAG], eax
         push eax
         xor edx, edx
         mov ecx, dword ptr [gm_quest]
         call dword ptr ds:process_event
-        mov dword ptr [0x5c32a0], ebx
+        mov dword ptr [GLOBAL_EVENT_FLAG], ebx
         xor eax, eax ; set zf
         ret
       }

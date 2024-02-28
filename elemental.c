@@ -4358,13 +4358,14 @@ static void __thiscall genie_lamp(struct player *player)
     elemdata.genie = (day * 8u + 1664525u) * elemdata.genie + 1013904223u;
     remove_mouse_item(MOUSE_THIS); // eat lamp
     char buffer[100];
-    char* status_text = buffer;
+    char *status_text = buffer;
     int good = 0;
     switch (elemdata.genie >> 28)
       {
         case 0:
             good = 1;
-            if (!elemdata.genie_artifact && !(elemdata.genie & 0xf000000))
+            if (!elemdata.genie_artifact
+                && (elemdata.genie >> 18 & 1023) < get_luck(player))
               {
                 struct item artifact;
                 if (generate_artifact(&artifact))

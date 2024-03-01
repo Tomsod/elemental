@@ -518,6 +518,7 @@ enum player_buffs
     PBUFF_MIND_RES = 9,
     PBUFF_PAIN_REFLECTION = 10,
     PBUFF_PRESERVATION = 11,
+    PBUFF_REGENERATION = 12,
     PBUFF_SHIELD = 13,
     PBUFF_COLD_RES = 22,
 };
@@ -549,7 +550,8 @@ enum skill_mastery
 #define CURRENT_TIME_ADDR 0xacce64
 #define CURRENT_TIME (*(uint64_t *) CURRENT_TIME_ADDR)
 #define MINUTE (60 * 128 / 30)
-#define ONE_DAY (24 * 60 * MINUTE)
+#define ONE_HOUR (60 * MINUTE)
+#define ONE_DAY (24 * ONE_HOUR)
 
 enum items
 {
@@ -656,11 +658,13 @@ enum items
     LAST_ARTIFACT = 572,
     SNIPERS_QUIVER = 594,
     ROBE_OF_THE_ARCHMAGISTER = 598,
+    RED_APPLE = 630,
     FIRST_ORE = 686,
     FIRST_RECIPE = 740,
     LAST_RECIPE = 780,
     MAGIC_EMBER = 785,
     INITIATE_TOKEN = 787,
+    GOLDEN_APPLE = 788,
 };
 
 enum item_slot
@@ -1114,9 +1118,6 @@ struct __attribute__((packed)) spell_queue_item
     SKIP(4);
 };
 
-#define SPELL_ANIM_SPARKLES 13
-#define SPELL_ANIM_SWIRLY 19
-
 #define STATE_BITS 0xad45b0
 
 #define SPELL_QUEUE ((struct spell_queue_item *) 0x50bf48)
@@ -1171,9 +1172,9 @@ enum profession
 };
 
 // New max number of global.evt commands (was 4400 before).
-#define GLOBAL_EVT_LINES 5650
+#define GLOBAL_EVT_LINES 5700
 // New max size of global.evt itself (was 46080 bytes before).
-#define GLOBAL_EVT_SIZE 56500
+#define GLOBAL_EVT_SIZE 57000
 
 #define CURRENT_PLAYER 0x507a6c
 
@@ -1229,7 +1230,7 @@ enum monster_buffs
 // new NPC topic count
 #define TOPIC_COUNT 611
 // count of added NPC text entries
-#define NEW_TEXT_COUNT (877-789)
+#define NEW_TEXT_COUNT (878-789)
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658
@@ -1593,7 +1594,7 @@ static void __fastcall (*aim_spell)(int spell, int pc, int skill, int flags,
                                     int unknown) = (funcptr_t) 0x427734;
 #define CGAME 0x71fe94
 #define SPELL_ANIM_THIS ((void *) dword(dword(CGAME) + 0xe50))
-static void __thiscall (*spell_face_anim)(void *this, short anim, short pc)
+static void __thiscall (*spell_face_anim)(void *this, short spell, short pc)
     = (funcptr_t) 0x4a894d;
 #define ACTION_THIS_ADDR 0x50ca50
 #define ACTION_THIS ((void *) ACTION_THIS_ADDR)
@@ -4491,7 +4492,7 @@ static void __thiscall genie_lamp(struct player *player)
         show_face_animation(player, good > 0 ? ANIM_SMILE : ANIM_DISMAY, 0);
     if (good > 1 || good < -1)
         spell_face_anim(SPELL_ANIM_THIS,
-                        good > 0 ? SPELL_ANIM_SWIRLY : SPELL_ANIM_SPARKLES,
+                        good > 0 ? SPL_INVISIBILITY : SPL_FEATHER_FALL,
                         player - PARTY);
     if (status_text)
         show_status_text(status_text, 2);
@@ -4591,6 +4592,18 @@ static void __declspec(naked) alchemy_soft_cap(void)
       }
 }
 
+// Let apples (red or golden) cure weakness, because why not.
+static void __declspec(naked) apple_cure_weakness(void)
+{
+    asm
+      {
+        mov dword ptr [esi+COND_WEAK*8], ebx ; == 0
+        mov dword ptr [esi+COND_WEAK*8+4], ebx
+        mov ecx, SOUND_THIS_ADDR ; replaced code
+        ret
+      }
+}
+
 // Misc item tweaks.
 static inline void misc_items(void)
 {
@@ -4652,6 +4665,7 @@ static inline void misc_items(void)
     hook_call(0x420304, id_zero_chest_items, 7);
     hook_call(0x41ddf5, two_handed_bonus_desc_hook, 6);
     hook_call(0x4162f8, alchemy_soft_cap, 7);
+    hook_call(0x468243, apple_cure_weakness, 5);
 }
 
 static uint32_t potion_damage;
@@ -6095,7 +6109,7 @@ static void __declspec(naked) aura_of_conflict(void)
         jnz remove
         mov eax, 15 * MINUTE
         mul edi ; spell power
-        add eax, 60 * MINUTE
+        add eax, ONE_HOUR
         push esi
         push esi
         push ecx
@@ -6111,7 +6125,7 @@ static void __declspec(naked) aura_of_conflict(void)
         add ecx, offset elemdata.new_pc_buffs + NBUFF_AURA_OF_CONFLICT * 16
         call eax ; add or remove
         push edi
-        push SPELL_ANIM_SWIRLY
+        push SPL_INVISIBILITY
         mov ecx, dword ptr [CGAME]
         mov ecx, dword ptr [ecx+0xe50]
         call dword ptr ds:spell_face_anim
@@ -8626,7 +8640,7 @@ static void __stdcall bounty_rep(int level)
         if (PARTY[i].class == CLASS_BOUNTY_HUNTER)
           {
             PARTY[i].skill_points += rep;
-            spell_face_anim(SPELL_ANIM_THIS, SPELL_ANIM_SPARKLES, i);
+            spell_face_anim(SPELL_ANIM_THIS, SPL_FEATHER_FALL, i);
             show_face_animation(PARTY + i, ANIM_SMILE, 0);
           }
 }
@@ -14082,10 +14096,44 @@ static void __declspec(naked) dark_bottle_temple(void)
 // Add temple in a bottle as a random artifact, with the same
 // properties as the old one.  Also here: Oghma Infinium's effect,
 // and the bag of holding.  All new arts cannot be used un-ID'd.
+// Golden apples are also handled here (no ID check for them).
 static void __declspec(naked) new_temple_in_bottle(void)
 {
     asm
       {
+        cmp eax, GOLDEN_APPLE
+        jne not_apple
+        xor ebx, ebx
+        mov ecx, dword ptr [ebp+8] ; player id
+        dec ecx
+        push ecx
+        push SPL_REGENERATION
+        mov eax, 5 * ONE_HOUR
+        mov edx, dword ptr [CURRENT_TIME_ADDR+4]
+        add eax, dword ptr [CURRENT_TIME_ADDR]
+        adc edx, ebx
+        push ebx
+        push ebx
+        push 10 ; regen power
+        push GM
+        push edx
+        push eax
+        push ebx
+        push ebx
+        push ebx
+        push GM
+        push edx
+        push eax
+        imul ecx, ecx, NBUFF_COUNT * 16
+        lea ecx, [elemdata.new_pc_buffs+ecx+NBUFF_FIRE_IMM*16]
+        call dword ptr ds:add_buff
+        lea ecx, [esi+0x17a0+PBUFF_REGENERATION*16]
+        call dword ptr ds:add_buff
+        mov ecx, dword ptr [CGAME]
+        mov ecx, dword ptr [ecx+0xe50]
+        call dword ptr ds:spell_face_anim
+        mov eax, RED_APPLE ; also ordinary apple effects
+        not_apple:
         test byte ptr [MOUSE_ITEM+20], IFLAGS_ID
         jz not_it
         cmp eax, OGHMA_INFINIUM
@@ -14104,10 +14152,10 @@ static void __declspec(naked) new_temple_in_bottle(void)
         add word ptr [esi+222], 20 ; temporary age
         mov ecx, dword ptr [CGAME]
         mov ecx, dword ptr [ecx+0xe50]
-        mov eax, dword ptr [ebp+8] ; player id
+        mov eax, dword ptr [ebp+8]
         dec eax
         push eax
-        push SPELL_ANIM_SPARKLES
+        push SPL_FEATHER_FALL
         call dword ptr ds:spell_face_anim
         ; one unused parameter
         push 21 ; learn spell

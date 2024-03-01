@@ -949,3 +949,4 @@ For example, these are all correct item descriptions:
 875	There are no items that interest you	No more books	Bookcase variable event
 876	You received an apple	Got normal apple	Fruit tree variable event
 877	Cave-in!	Damage party	Ore vein variable event
+878	You found a golden apple!	Got special apple	Fruit tree variable event

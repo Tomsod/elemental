@@ -788,8 +788,8 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 786	mantveno	Manticore Venom	0	N / A	Misc	0	0	6	0	Venom	106	0	0	0	0	Quest Item:  A bottle of potent manticore venom.
 787	monktokn	Initiate Token	2000	Amulet	Misc	0	0	Special	-10	Token	33	0	0	0	0	"Amulets like this one are given to promising disciples of certain monastic orders, and can be exchanged for Grand Master training in one of the essential Monk skills -- Unarmed, Dodging, Staff, Leather, or Learning.  Initiates are able to receive this training even if they aren't fully promoted yet; others can only redeem the token if their class otherwise allows it."
 788	goldaple	Golden Apple	0	N / A	Misc	0	0	3	0	Apple	107	0	0	0	0	"A particularly rare magical fruit that holds the gentle warmth of sunshine within its flesh.  To use the apple, pick the apple up and left-click over the picture of your character in the inventory screen."
-789	null	_quest/misc789	0	0	0	0	0	0	0	_quest/misc789	0	0	0	0	0	Description here.
-790	null	_quest/misc790	0	0	0	0	0	0	0	_quest/misc790	0	0	0	0	0	Description here.
+789	winebotl	Wine Bottle	0	N / A	Misc	0	0	3	0	Wine	154	0	0	0	0	Red Enrothian wine, pairs well with game and other kinds of meat.  To drink, pick the bottle up and right-click over a character's portrait.		
+790	magcwine	Magic Wine	0	N / A	Misc	0	0	3	0	Wine	154	0	0	0	0	A bottle of enchanted wine that glows with inner light.  To drink, pick the bottle up and right-click over a character's portrait.		
 791	null	_quest/misc791	0	0	0	0	0	0	0	_quest/misc791	0	0	0	0	0	Description here.
 792	null	_quest/misc792	0	0	0	0	0	0	0	_quest/misc792	0	0	0	0	0	Description here.
 793	null	_quest/misc793	0	0	0	0	0	0	0	_quest/misc793	0	0	0	0	0	Description here.

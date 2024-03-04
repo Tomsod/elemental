@@ -665,6 +665,8 @@ enum items
     MAGIC_EMBER = 785,
     INITIATE_TOKEN = 787,
     GOLDEN_APPLE = 788,
+    WINE_BOTTLE = 789,
+    MAGIC_WINE = 790,
 };
 
 enum item_slot
@@ -14096,14 +14098,18 @@ static void __declspec(naked) dark_bottle_temple(void)
 // Add temple in a bottle as a random artifact, with the same
 // properties as the old one.  Also here: Oghma Infinium's effect,
 // and the bag of holding.  All new arts cannot be used un-ID'd.
-// Golden apples are also handled here (no ID check for them).
+// Golden apples are also handled here (no ID check for them),
+// and so are wine bottles (ordinary and magical both).
 static void __declspec(naked) new_temple_in_bottle(void)
 {
     asm
       {
+        cmp eax, MAGIC_WINE
+        je magic
+        cmp eax, WINE_BOTTLE
+        je wine
         cmp eax, GOLDEN_APPLE
         jne not_apple
-        xor ebx, ebx
         mov ecx, dword ptr [ebp+8] ; player id
         dec ecx
         push ecx
@@ -14111,7 +14117,7 @@ static void __declspec(naked) new_temple_in_bottle(void)
         mov eax, 5 * ONE_HOUR
         mov edx, dword ptr [CURRENT_TIME_ADDR+4]
         add eax, dword ptr [CURRENT_TIME_ADDR]
-        adc edx, ebx
+        adc edx, ebx ; ebx == 0
         push ebx
         push ebx
         push 10 ; regen power
@@ -14161,6 +14167,41 @@ static void __declspec(naked) new_temple_in_bottle(void)
         push 21 ; learn spell
         mov ecx, esi
         call dword ptr ds:show_face_animation
+        jmp remove
+        magic:
+        mov ecx, 7
+        stat_loop:
+        cmp word ptr [esi+188+ecx*4-4], NATURAL_STAT_LIMIT
+        jge stat_limit
+        inc word ptr [esi+188+ecx*4-4]
+        stat_limit:
+        loop stat_loop
+        mov ecx, 9
+        res_loop:
+        cmp ecx, 6 ; skip unused res
+        jne ok_res
+        dec ecx
+        dec ecx
+        ok_res:
+        cmp word ptr [esi+0x1774+ecx*2-2], NATURAL_STAT_LIMIT
+        jge res_limit
+        inc word ptr [esi+0x1774+ecx*2-2]
+        res_limit:
+        loop res_loop
+        mov ecx, dword ptr [CGAME]
+        mov ecx, dword ptr [ecx+0xe50]
+        mov eax, dword ptr [ebp+8]
+        dec eax
+        push eax
+        push SPL_FEATHER_FALL
+        call dword ptr ds:spell_face_anim
+        ; also the ordinary wine effect
+        wine:
+        mov dword ptr [esp], ebx ; cannot resist
+        push COND_DRUNK
+        mov ecx, esi
+        call condition_immunity
+        remove:
         mov eax, 0x468e7c ; remove the item
         jmp eax
         bag:

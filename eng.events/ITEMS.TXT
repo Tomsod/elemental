@@ -184,7 +184,7 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 182	null	_item182	0	0	0	0	0	0	0	_item182	0	0	0	0	0	Description here.
 183	null	_item183	0	0	0	0	0	0	0	_item183	0	0	0	0	0	Description here.
 184	null	_item184	0	0	0	0	0	0	0	_item184	0	0	0	0	0	Description here.
-185	null	_item185	0	0	0	0	0	0	0	_item185	0	0	0	0	0	Description here.
+185	item260	Golden Lamp	8000	Gem	Misc	0	0	5	0	Lamp	93	0	0	0	0	"This oil lamp is made of solid gold.  Gaudy, but it'll sell well."
 186	item199	Blue Quartz	250	Gem	Misc	0	0	0	0	Gemstone	79	0	0	0	0	"A gemstone.  It has no magial benefit, so you may as well sell it."
 187	item198	Topaz	500	Gem	Misc	0	0	0	0	Gemstone	79	0	0	0	0	"A gemstone.  It has no magial benefit, so you may as well sell it."
 188	item197	Emerald	2000	Gem	Misc	0	0	0	0	Gemstone	79	0	0	0	0	"A gemstone.  It has no magial benefit, so you may as well sell it."
@@ -615,7 +615,7 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 613	item257	Sealed Letter 7	1400	N / A	Misc	0	0	5	0	Letter	84	0	0	0	0	A sealed letter.		
 614	item258	Letter from Norbert Thrush to Lord Markham	1600	N / A	Misc	0	0	5	0	Letter	84	0	0	0	0	"Quest Item:  A letter from Norbert Thrush to Lord Markham.  Opening a sealed letter is in the poorest of taste, and would be frowned upon by both parties."		
 615	item294	Lich Jar	1800	N / A	Misc	0	0	5	0	Jar	148	0	0	0	0	Quest Item:  Empty Jar		
-616	item260	Genie Lamp	2000	N / A	Misc	0	0	5	0	Lamp	93	0	0	0	0	"The genies captured in these lamps will usually reward those who set them free, though sometimes they take cruel delight in punishing the first living beings they encounter.  To use the genie lamp, pick the lamp up and left-click over the picture of your character in the inventory screen."		
+616	genielmp	Genie Lamp	0	N / A	Misc	0	0	5	0	Lamp	93	0	0	0	0	"The genies captured in these lamps will usually reward those who set them free, though sometimes they take cruel delight in punishing the first living beings they encounter.  To use the genie lamp, pick the lamp up and left-click over the picture of your character in the inventory screen."
 617	item261	Knight Statuette	2500	N / A	Misc	0	0	5	0	Statuette	94	0	0	0	0	Quest Item:  A small statuette of a knightly figure.  The statuette seems to radiate a faint magic.		14
 618	item262	Eagle Statuette	3000	N / A	Misc	0	0	5	0	Statuette	95	0	0	0	0	Quest Item:  A small statuette of a proud eagle.  The statuette seems to radiate a faint magic.		13
 619	item263	Angel Statuette	0	N / A	Misc	0	0	1	0	Statuette	96	0	0	0	0	Quest Item:  A small statuette of an angel.  The statuette seems to radiate a faint magic.		6
@@ -629,7 +629,7 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 627	item271	Thigh Bone	0	N / A	Misc	0	0	3	0	Bone	104	0	0	0	0	A human(?) thigh bone.
 628	item272	Haldar's Remains	0	N / A	Misc	0	0	6	0	Jar	105	0	0	0	0	Quest Item:  This strangely shaped jar resists all attempts to open or break.  Haldar apparently doesn't like to be disturbed. 
 629	item273	Elixir	0	N / A	Misc	0	0	6	0	Bottle	106	0	0	0	0	Quest Item:  A glowing elixir of obviously magical properties.
-630	item274	Red Apple	0	N / A	Misc	0	0	3	0	Apple	107	0	0	0	0	"Apples like these are produced by trees saturated by magic-- usually in the elven lands of Avlee and the Tularean Forest, though not restricted to these areas.  To use the apple, pick the apple up and left-click over the picture of your character in the inventory screen."
+630	item274	Red Apple	300	N / A	Misc	0	0	3	0	Apple	107	0	0	0	0	"Apples like these are produced by trees saturated by magic-- usually in the elven lands of Avlee and the Tularean Forest, though not restricted to these areas.  To use the apple, pick the apple up and left-click over the picture of your character in the inventory screen."
 631	item275	Wealthy Hat	0	N / A	Misc	0	0	4	0	Hat	108	0	0	0	0	"Quest Item: This hat appears to belong to a more affluent member of society, the feather is genuine and the construction is solid.  Unfortunately, it doesn't seem to fit."
 632	item277	Lute	0	N / A	Misc	0	0	4	0	Instrument	110	0	0	0	0	Quest Item: This lute has been masterfully crafted and lovingly maintained.  This instrument clearly belongs to a Bard.
 633	item276	Faerie Pipes	0	N / A	Misc	0	0	1	0	Instrument	109	0	0	0	0	"Quest Item:  Though finely crafted and deceptively simple-looking, these Pipes are quite difficult to play; they seem to have a mind of their own."
@@ -645,7 +645,7 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 643	item372	Golem Right Leg	0	N / A	Misc	0	0	6	0	Golem part	120	0	0	0	0	Quest Item:  The massive right leg of a mighty golem.  It appears to require a bit of assembly before being fully functional.
 644	item373	Golem Right Arm	0	N / A	Misc	0	0	1	0	Golem part	121	0	0	0	0	Quest Item:  The powerful right arm of a mighty golem.  It appears to require a bit of assembly before being fully functional.
 645	item374	Golem Left Arm	0	N / A	Misc	0	0	5	0	Golem part	122	0	0	0	0	Quest Item:  The powerful left arm of a mighty golem.  It appears to require a bit of assembly before being fully functional.
-646	item290	Horseshoe	0	N / A	Misc	0	0	5	0	Horseshoe	123	0	0	0	0	"This flawless horseshoe is made of silver.  To use, pick the horseshoe up and right-click over a character's portrait."
+646	item290	Horseshoe	800	N / A	Misc	0	0	5	0	Horseshoe	123	0	0	0	0	"This flawless horseshoe is made of silver.  To use, pick the horseshoe up and right-click over a character's portrait."
 647	item291	Dragon Egg	0	N / A	Misc	0	0	1	0	Egg	124	0	0	0	0	"Quest Item:  Rough, leathery, and strangely warm, this egg appears nearly ready to hatch."
 648	item292	Lantern of Light	0	N / A	Misc	0	0	4	0	Lantern	125	0	0	0	0	"Quest Item:  This lantern shines with a faint, holy light, though no flame appears to be lit inside."
 649	item293	Worn Belt	0	N / A	Misc	0	0	4	0	Belt	126	0	0	0	0	"Quest Item:  This belt is worn to the point where it should only last about an hour.  Hopefully, that will be long enough."
@@ -685,12 +685,12 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 683	item182	Map to Evenmorn Island	0	Mscroll	Misc	0	1	2	0	Message Scroll	77	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
 684	item182	Neutral Bow Placeholder	0	Mscroll	Misc	0	1	2	0	Message Scroll	35	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
 685	item182	Elf/Human Artifact Placeholder	0	Mscroll	Misc	0	1	2	0	Message Scroll	35	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
-686	item353	Iron-laced Ore	0	N / A	Misc	0	1	2	0	Lump of Ore	137	0	0	0	0	"A small chunk of iron-laced ore.  In the hands of a skilled craftsman, this could make a weapon, an amulet, a ring, armor, or almost any other useful item."
-687	item354	Siertal-laced Ore	0	N / A	Misc	0	1	2	0	Lump of Ore	138	0	0	0	0	"A small chunk of siertal-laced ore.  Stronger and lighter than steel, in the hands of a skilled craftsman siertal could make an exceptional weapon, an amulet, a ring, armor, or almost any other useful item."
-688	item355	Phylt-laced Ore	0	N / A	Misc	0	1	2	0	Lump of Ore	139	0	0	0	0	"A small chunk of phylt-laced ore.  Phylt is often used in steel alloys to increase the durability and enchantability of steel.  In the hands of a skilled craftsman phylt could make a weapon, an amulet, a ring, armor, or almost any other useful item."
-689	item356	Kergar-laced Ore	0	N / A	Misc	0	1	2	0	Lump of Ore	140	0	0	0	0	"A small chunk of kergar-laced ore.  Kergar shares many properties of steel, but is much easier to enchant.  In the hands of a skilled craftsman kergar could easily make a magical weapon, an amulet, a ring, armor, or almost any other item."
-690	item357	Erudine-laced Ore	0	N / A	Misc	0	1	2	0	Lump of Ore	141	0	0	0	0	"A small chunk of erudine-laced ore.  A rare magical ore found in few regions of Erathia, in the hands of a skilled craftsman erudine could make a powerful weapon, an amulet, a ring, armor, or almost any other item."
-691	item358	Stalt-laced Ore	0	N / A	Misc	0	1	2	0	Lump of Ore	142	0	0	0	0	"A small chunk of stalt-laced ore.  Easy to enchant and as hard as obsidian, in the hands of a skilled craftsman stalt could make an incredibly powerful weapon, an amulet, a ring, armor, or almost any other item."
+686	item353	Iron-laced Ore	100	N / A	Misc	0	1	2	0	Lump of Ore	137	0	0	0	0	"A small chunk of iron-laced ore.  In the hands of a skilled craftsman, this could make a weapon, an amulet, a ring, armor, or almost any other useful item."
+687	item354	Siertal-laced Ore	250	N / A	Misc	0	1	2	0	Lump of Ore	138	0	0	0	0	"A small chunk of siertal-laced ore.  Stronger and lighter than steel, in the hands of a skilled craftsman siertal could make an exceptional weapon, an amulet, a ring, armor, or almost any other useful item."
+688	item355	Phylt-laced Ore	500	N / A	Misc	0	1	2	0	Lump of Ore	139	0	0	0	0	"A small chunk of phylt-laced ore.  Phylt is often used in steel alloys to increase the durability and enchantability of steel.  In the hands of a skilled craftsman phylt could make a weapon, an amulet, a ring, armor, or almost any other useful item."
+689	item356	Kergar-laced Ore	1000	N / A	Misc	0	1	2	0	Lump of Ore	140	0	0	0	0	"A small chunk of kergar-laced ore.  Kergar shares many properties of steel, but is much easier to enchant.  In the hands of a skilled craftsman kergar could easily make a magical weapon, an amulet, a ring, armor, or almost any other item."
+690	item357	Erudine-laced Ore	1500	N / A	Misc	0	1	2	0	Lump of Ore	141	0	0	0	0	"A small chunk of erudine-laced ore.  A rare magical ore found in few regions of Erathia, in the hands of a skilled craftsman erudine could make a powerful weapon, an amulet, a ring, armor, or almost any other item."
+691	item358	Stalt-laced Ore	2500	N / A	Misc	0	1	2	0	Lump of Ore	142	0	0	0	0	"A small chunk of stalt-laced ore.  Easy to enchant and as hard as obsidian, in the hands of a skilled craftsman stalt could make an incredibly powerful weapon, an amulet, a ring, armor, or almost any other item."
 692	item400	Crate of Arrowheads	0	N / A	Misc	0	1	2	0	Crate	144	0	0	0	0	A crate of goods.
 693	item401	Crate of Griffin Feathers	0	N / A	Misc	0	1	2	0	Crate	144	0	0	0	0	A crate of goods.
 694	item402	Crate of Tularean Wood	0	N / A	Misc	0	1	2	0	Crate	144	0	0	0	0	A crate of goods.
@@ -787,9 +787,9 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 785	item359	Magic Ember	1500	N / A	Misc	0	1	2	0	Ember	137	0	0	0	0	"This ember is still hot to the touch.  The Fire magic trapped within is highly valued by blacksmiths and enchanters.  To use, pick the item up and right-click over a weapon."
 786	mantveno	Manticore Venom	0	N / A	Misc	0	0	6	0	Venom	106	0	0	0	0	Quest Item:  A bottle of potent manticore venom.
 787	monktokn	Initiate Token	2000	Amulet	Misc	0	0	Special	-10	Token	33	0	0	0	0	"Amulets like this one are given to promising disciples of certain monastic orders, and can be exchanged for Grand Master training in one of the essential Monk skills -- Unarmed, Dodging, Staff, Leather, or Learning.  Initiates are able to receive this training even if they aren't fully promoted yet; others can only redeem the token if their class otherwise allows it."
-788	goldaple	Golden Apple	0	N / A	Misc	0	0	3	0	Apple	107	0	0	0	0	"A particularly rare magical fruit that holds the gentle warmth of sunshine within its flesh.  To use the apple, pick the apple up and left-click over the picture of your character in the inventory screen."
-789	winebotl	Wine Bottle	0	N / A	Misc	0	0	3	0	Wine	154	0	0	0	0	Red Enrothian wine, pairs well with game and other kinds of meat.  To drink, pick the bottle up and right-click over a character's portrait.		
-790	magcwine	Magic Wine	0	N / A	Misc	0	0	3	0	Wine	154	0	0	0	0	A bottle of enchanted wine that glows with inner light.  To drink, pick the bottle up and right-click over a character's portrait.		
+788	goldaple	Golden Apple	2000	N / A	Misc	0	0	3	0	Apple	107	0	0	0	0	"A particularly rare magical fruit that holds the gentle warmth of sunshine within its flesh.  To use the apple, pick the apple up and left-click over the picture of your character in the inventory screen."
+789	winebotl	Wine Bottle	1000	N / A	Misc	0	0	3	0	Wine	154	0	0	0	0	Red Enrothian wine, pairs well with game and other kinds of meat.  To drink, pick the bottle up and right-click over a character's portrait.
+790	magcwine	Magic Wine	3000	N / A	Misc	0	0	3	0	Wine	154	0	0	0	0	A bottle of enchanted wine that glows with inner light.  To drink, pick the bottle up and right-click over a character's portrait.
 791	null	_quest/misc791	0	0	0	0	0	0	0	_quest/misc791	0	0	0	0	0	Description here.
 792	null	_quest/misc792	0	0	0	0	0	0	0	_quest/misc792	0	0	0	0	0	Description here.
 793	null	_quest/misc793	0	0	0	0	0	0	0	_quest/misc793	0	0	0	0	0	Description here.

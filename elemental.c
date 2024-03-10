@@ -1174,9 +1174,9 @@ enum profession
 };
 
 // New max number of global.evt commands (was 4400 before).
-#define GLOBAL_EVT_LINES 5700
+#define GLOBAL_EVT_LINES 5800
 // New max size of global.evt itself (was 46080 bytes before).
-#define GLOBAL_EVT_SIZE 57000
+#define GLOBAL_EVT_SIZE 58000
 
 #define CURRENT_PLAYER 0x507a6c
 
@@ -1228,11 +1228,11 @@ enum monster_buffs
 #define HIRELING_REPLY 0xf8b06c
 
 // new NPC greeting count (starting from 1)
-#define GREET_COUNT 224
+#define GREET_COUNT 230
 // new NPC topic count
-#define TOPIC_COUNT 611
+#define TOPIC_COUNT 626
 // count of added NPC text entries
-#define NEW_TEXT_COUNT (878-789)
+#define NEW_TEXT_COUNT (897-789)
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658

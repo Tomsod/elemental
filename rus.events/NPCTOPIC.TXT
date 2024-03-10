@@ -619,3 +619,9 @@
 618	Рудная жила	Variable event
 619	Винная стойка	Variable event
 620	Саркофаг	Variable event
+621	Яблоки	Rare item buyer
+622	Бутыли вина	Rare item buyer
+623	Глыбы руды	Rare item buyer
+624	Подковы	Rare item buyer
+625	Волшебные угольки	Rare item buyer
+626	Меняю старые лампы на новые!	Rare item buyer

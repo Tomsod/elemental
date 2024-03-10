@@ -379,18 +379,18 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 377	"Мефисто, Древний Волхв"	52	0	0	0	0	0	0	0	0	0	0	0	0	0	
 378	Победитель состязания 7	3	0	0	0	0	0	0	0	0	0	0	0	0	0	
 379	Король Луис	918	0	0	0	0	0	0	0	0	0	0	0	0	0	
-380	Ридрик	64	0	0	0	491	0	195	0	515	516	0	0	0	0	Trade NPC Arrowheads/Wood
+380	Эван Насир	64	0	0	0	491	0	230	0	626	436	0	0	0	0	Buyer NPC Lamps
 381	Гулвульф	77	0	0	0	269	0	189	0	420	429	0	0	0	0	Hint NPC in Steadwick/Pete (3)
 382	Арон Кастро	97	0	0	0	274	0	189	0	418	420	0	0	0	0	Hint NPC in Steadwick/Pete (3)
-383	Пип Хиллер	24	0	0	0	302	0	196	0	517	518	0	0	0	0	Trade NPC Feathers/Arrowheads
-384	Роберт Белкнап	408	0	0	0	322	0	197	0	519	520	0	0	0	0	Trade NPC Wood/Feathers
-385	Инфернон	401	0	0	0	383	0	200	0	525	526	0	0	0	0	Trade NPC Wine/Bottles
+383	Пип Хиллер	24	0	0	0	302	0	228	0	624	436	0	0	0	0	Buyer NPC Horseshoes
+384	Роберт Белкнап	408	0	0	0	322	0	229	0	625	498	0	0	0	0	Buyer NPC Embers
+385	Инфернон	401	0	0	0	383	0	226	0	622	435	0	0	0	0	Buyer NPC Wine
 386	Вако	31	0	0	0	401	0	184	0	527	529	0	0	0	0	Hint NPC in Tatalia (13) wharf area
 387	Ваша Совесть	37	0	0	0	388	0	184	0	529	527	0	0	0	0	Hint NPC in Tatalia (13) wharf area
 388	Аметист Драгоценный	374	0	0	0	516	0	183	0	459	499	0	0	0	0	Hint NPC in Barrow Downs/Pete (11)
 389	Матиас Медвежье Сердце	43	0	0	0	302	0	189	0	572	420	0	0	0	0	Hint NPC in Steadwick/Pete (3)
 390	Таня Кирклин	171	0	0	0	485	0	187	0	495	478	0	0	0	0	Hint NPC in Harmondale (2)
-391	Брахейн Кадарр	32	0	0	0	489	0	187	0	472	477	574	0	0	0	Hint NPC in Harmondale (2)
+391	Брахейн Кадарр	32	0	0	0	489	0	187	0	472	477	574	0	0	0	Hint NPC in Harmondale (2) + dragonscale crafter
 392	Карлин Талион	213	0	0	0	284	0	189	0	499	426	0	0	0	0	Hint NPC in Steadwick (3)
 393	Пегги Тиш	180	0	0	0	283	0	189	0	425	420	0	0	0	0	Hint NPC in Steadwick (3)
 394	Кира Кардрин	191	0	0	0	286	0	189	0	421	418	0	0	0	0	Hint NPC in Steadwick (3)
@@ -421,8 +421,8 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 419	Жасмин Живерс	540	0	0	0	0	0	190	0	423	572	0	0	0	0	Hint NPC in Deyja (5)
 420	Маттрик Боувс	563	0	0	0	484	0	179	0	433	452	0	0	0	0	Hint NPC In Bracada (6)
 421	Алашандра Риз	591	0	0	0	478	0	179	0	452	453	0	0	0	0	Hint NPC In Bracada (6)
-422	Калиндра Голденсайт	169	0	0	0	396	0	198	0	521	522	0	0	0	0	Trade NPC Sand/Wine
-423	Арвин Бенеклауд	324	0	0	0	520	0	199	0	523	524	0	0	0	0	Trade NPC Bottles/Sand
+422	Калиндра Голденсайт	169	0	0	0	396	0	225	0	621	491	0	0	0	0	Buyer NPC Apples
+423	Арвин Бенеклауд	324	0	0	0	520	0	227	0	623	469	0	0	0	0	Buyer NPC Ore
 424	Нивек Арлонд	32	0	0	0	295	0	189	0	444	425	0	0	0	0	Hint NPC in Steadwick (3)
 425	Мирей Варлен	467	0	0	0	313	0	188	0	440	443	0	0	0	0	Hint NPC in Tularean Forest (4)
 426	Шиара Огненный Опал	217	0	0	0	453	0	190	0	444	499	0	0	0	0	Hint NPC in Deyja (5)

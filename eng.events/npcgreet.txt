@@ -285,3 +285,9 @@ Please rescue him!  Not even I can bear to think of my brother in those conditio
 222	*whickers*	*whickers*	Cavalier horse
 223	*groans*	*groans*	Cavalier zombie horse
 224	"My lords, I urge you to return to Castle Harmondale soon!  There have been some unexpected developments in your domain that require your attention.  I cannot say more here."	"My lords, I urge you to return to Castle Harmondale soon!  There have been some unexpected developments in your domain that require your attention.  I cannot say more here."	Probatory access messenger
+225	Greetings, travellers!  If you're looking to make some extra money, I'm interested in buying elven apples.	Hello again!  I still need those apples if you have any.	Calindra Goldensight
+226	Well met.  You don't happen to have any Enrothian wine on you which you'd be willing to sell?	Good day.  I'm still buying wine if you got any.	Infernon
+227	G'day!  Name's Arvin, I'm in charge of purchasing ore from the outpost caravans, and anyone else really.	Oh, it's you.  We're still under our quota for ore shipments.	Arvin Beneclowd
+228	Nice to meet you!  I'm Pip, and I breed the best racing horses in the land!	Hello again.  Found any more horseshoes?	Pip Hillier
+229	Hello.  Fancy making some money on the side?	Hello again.  Pleasant weather, eh?	Robert Belknap
+230	Welcome, my lords!  I have a deal for you that might pleasantly surprise you.	Greetings, my lords!  I'm still ready to extend my most favorable terms to you.	Evan Nasir

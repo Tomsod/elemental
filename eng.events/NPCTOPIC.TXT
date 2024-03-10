@@ -619,3 +619,9 @@
 618	Ore Vein	Variable event
 619	Wine Rack	Variable event
 620	Sarcophagus	Variable event
+621	Apples	Rare item buyer
+622	Wine Bottles	Rare item buyer
+623	Lumps of Ore	Rare item buyer
+624	Horseshoes	Rare item buyer
+625	Magic Embers	Rare item buyer
+626	New Lamps for Old!	Rare item buyer

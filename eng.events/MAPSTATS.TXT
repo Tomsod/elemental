@@ -26,7 +26,7 @@
 23	The Erathian Sewers	d01.blv	0	0	5	672	7	10	3	5	2	1	15	50	50	0	Thief	Thief	1	1-3	Rat	Rat	3	1-3	0	0	1	1-3	3	CAVE	0	Thief guild and sewers.  Many entrance/exits.  Golem guarded treasure	3
 24	Fort Riverstride	d31.blv	0	0	4	336	7	10	3	4	3	1	30	34	33	33	Swordsman	Swordsman	2	1-3	Fighter Chain	Fighter Chain	2	1-3	Archer	Archer	3	1-3	19	STONEROOM	0	Erathian border fort.  Fort lies ontop of river. (fortified bridge)	3	x
 25	The Tularean Caves	d08.blv	0	0	4	672	7	10	4	4	3	1	20	34	33	33	Troglodyte	Troglodyte	2	1-3	Elf Spearman	Elf Spearman	2	1-3	Wyvern	Wyvern	1	1-3	3	CAVE	0	Caves near the elvish castle. Used as POW camp for humans.  Secret entrance to castle thru here	4	x
-26	Clanker's Laboratory	d12.blv	0	0	14	672	7	10	4	14	7	4	25	34	33	33	Beholder	Beholder	1	1-3	Gog	Gog	5	1-3	Golem	Golem	3	1-3	3	CAVE	0	"small laboratory.  Good place for ""experimental"" items."	4	x
+26	Clanker's Laboratory	d12.blv	0	0	14	672	7	10	4	14	7	4	25	34	33	33	Beholder	Beholder	1	1-3	Elemental Fire	Elemental Fire	3	1-3	Golem	Golem	3	1-3	3	CAVE	0	"small laboratory.  Good place for ""experimental"" items."	4	x
 27	The Hall of the Pit	t04.blv	0	0	9	672	7	10	5	9	4	2	20	34	33	33	Harpy	Harpy	3	1-3	Gargoyle	Gargoyle	2	1-3	Zombie	Zombie	4	1-3	3	CAVE	0	Entrance to The Pit.  Small guard station.	5
 28	Watchtower 6	d15.blv	0	0	11	672	7	10	5	11	6	3	25	34	33	33	Necromancer	Necromancer	1	1-3	Lich	Lich	1	1-3	Elemental Earth	Elemental Earth	1	1-3	3	CAVE	0	Last remaining Necromancer border watchtower.	5
 29	The School of Sorcery	d14.blv	0	0	10	672	7	10	6	10	5	2	25	50	50	0	Mage	Mage	2	1-3	Golem	Golem	3	1-3	0	0	1	1-3	19	CAVE	0	The place where all sorcerers learn their craft.	6

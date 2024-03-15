@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -375,6 +376,7 @@ struct __attribute__((packed)) item
     SKIP(1);
     uint64_t temp_ench_time;
 };
+typedef struct item s_item;
 
 #define IFLAGS_ID 1
 #define IFLAGS_BROKEN 2
@@ -389,6 +391,7 @@ struct __attribute__((packed)) spell_buff
     uint8_t caster;
     uint8_t bits;
 };
+typedef struct spell_buff s_spell_buff;
 
 enum skill
 {
@@ -449,7 +452,8 @@ struct __attribute__((packed)) player
     char name[16];
     uint8_t gender;
     uint8_t class;
-    SKIP(2);
+    uint8_t face;
+    SKIP(1);
     union {
         struct {
             uint16_t might_base;
@@ -469,11 +473,15 @@ struct __attribute__((packed)) player
         };
         uint16_t stats[7][2];
     };
-    SKIP(2);
+    uint16_t ac_bonus;
     uint16_t level_base;
-    SKIP(44);
+    uint16_t level_bonus;
+    uint16_t age_bonus;
+    SKIP(40);
     uint16_t skills[SKILL_COUNT];
-    SKIP(166);
+    SKIP(64);
+    uint8_t spells_known[100];
+    SKIP(2);
     uint32_t black_potions[7];
     struct item items[PLAYER_MAX_ITEMS];
     uint32_t inventory[14*9];
@@ -489,23 +497,39 @@ struct __attribute__((packed)) player
         };
         uint16_t res_base[9];
     };
-    SKIP(26);
+    SKIP(4);
+    int16_t fire_res_bonus;
+    int16_t shock_res_bonus;
+    int16_t cold_res_bonus;
+    int16_t poison_res_bonus;
+    SKIP(6);
+    int16_t mind_res_bonus;
+    int16_t magic_res_bonus;
+    SKIP(4);
     struct spell_buff spell_buffs[24];
-    SKIP(20);
+    uint32_t voice;
+    uint32_t old_voice;
+    uint32_t old_face;
+    SKIP(8);
     uint16_t recovery;
     SKIP(2);
     uint32_t skill_points;
-    SKIP(4);
+    int32_t hp;
     int32_t sp;
-    SKIP(4);
+    int32_t birth_year;
     uint32_t equipment[16];
-    SKIP(272);
+    SKIP(198);
+    uint8_t spellbook_page;
+    uint8_t quick_spell;
+    uint8_t bits[512/8];
+    SKIP(8);
     int8_t hp_bonus;
     SKIP(1);
     int8_t sp_bonus;
     SKIP(160);
     uint8_t beacon_casts; // my addition
 };
+typedef struct player s_player;
 
 enum player_buffs
 {
@@ -515,6 +539,7 @@ enum player_buffs
     PBUFF_MAGIC_RES = 3,
     PBUFF_FIRE_RES = 5,
     PBUFF_HAMMERHANDS = 6,
+    PBUFF_HEROISM = 8,
     PBUFF_MIND_RES = 9,
     PBUFF_PAIN_REFLECTION = 10,
     PBUFF_PRESERVATION = 11,
@@ -679,6 +704,7 @@ enum item_slot
     SLOT_BELT = 5,
     SLOT_CLOAK = 6,
     SLOT_GAUNTLETS = 7,
+    SLOT_BOOTS = 8,
     SLOT_AMULET = 9,
     SLOT_COUNT = 16,
     SLOT_ANY = 16, // used by has_item_in_slot()
@@ -708,16 +734,21 @@ struct __attribute__((packed)) items_txt_item
     char *bitmap;
     char *name;
     char *generic_name;
-    SKIP(16);
+    SKIP(4);
+    uint32_t value;
+    SKIP(8);
     uint8_t equip_stat;
     uint8_t skill;
     uint8_t mod1_dice_count;
     SKIP(1);
     uint8_t mod2;
-    SKIP(7);
+    uint8_t type;
+    SKIP(6);
     uint8_t chance[6];
-    SKIP(2);
+    int8_t id_difficulty;
+    SKIP(1);
 };
+typedef struct items_txt_item s_items_txt_item;
 
 #define ITEMS_TXT_ADDR 0x5d2864
 #define ITEMS_TXT ((struct items_txt_item *) ITEMS_TXT_ADDR)
@@ -780,6 +811,7 @@ struct __attribute__((packed)) map_chest
     struct item items[140];
     int16_t slots[140];
 };
+typedef struct map_chest s_map_chest;
 
 #define MAP_CHESTS_ADDR 0x5e4fd0
 #define MAP_CHESTS ((struct map_chest *) MAP_CHESTS_ADDR)
@@ -952,6 +984,7 @@ struct __attribute((packed)) spell_info
     uint8_t damage_fixed;
     uint8_t damage_dice;
 };
+typedef struct spell_info s_spell_info;
 
 #define SPELL_INFO_ADDR 0x4e3c46
 #define SPELL_INFO ((struct spell_info *) SPELL_INFO_ADDR)
@@ -1037,9 +1070,23 @@ struct __attribute__((packed)) map_monster
     SKIP(2);
     uint8_t item_level;
     uint8_t item_type;
-    SKIP(19);
-    uint8_t spell1;
+    uint8_t flight;
+    SKIP(1);
+    uint8_t ai_type;
+    SKIP(2);
+    uint8_t attack_special;
+    SKIP(2);
+    uint8_t attack1_damage_dice_count;
+    uint8_t attack1_damage_dice_sides;
+    uint8_t attack1_damage_add;
+    SKIP(1);
+    uint8_t attack2_chance;
+    uint8_t attack2_element;
     SKIP(5);
+    uint8_t spell1;
+    SKIP(2);
+    uint8_t fire_resistance;
+    SKIP(2);
     uint8_t poison_resistance;
     uint8_t mind_resistance;
     uint8_t holy_resistance;
@@ -1050,7 +1097,10 @@ struct __attribute__((packed)) map_monster
     uint16_t id;
     SKIP(10);
     uint32_t max_hp;
-    SKIP(16);
+    SKIP(4);
+    uint32_t experience;
+    SKIP(4);
+    uint32_t recovery;
     uint32_t preference;
     SKIP(6);
     uint16_t height;
@@ -1058,21 +1108,30 @@ struct __attribute__((packed)) map_monster
     int16_t x;
     int16_t y;
     int16_t z;
-    SKIP(28);
+    SKIP(4);
+    int16_t speed_z;
+    uint16_t direction;
+    SKIP(20);
     uint16_t ai_state;
-    SKIP(5);
-    uint8_t mod_flags; // was padding
+    SKIP(4);
+    uint8_t id_level; // was padding
+    uint8_t mod_flags; // same
 #define MMF_ERADICATED 1
 #define MMF_REANIMATE 2
 #define MMF_ZOMBIE 4
 #define MMF_EXTRA_REAGENT 8
 #define MMF_REAGENT_MORE_LIKELY 16
-    SKIP(28);
+    uint32_t action_time;
+    SKIP(24);
     struct spell_buff spell_buffs[22];
-    SKIP(148);
+    SKIP(144);
+    uint32_t group;
     uint32_t ally;
-    SKIP(120);
+    SKIP(104);
+    uint32_t name_id;
+    SKIP(12);
 };
+typedef struct map_monster s_map_monster;
 
 #define MAP_MONSTERS_ADDR 0x5fefd8
 #define MAP_MONSTERS ((struct map_monster *) MAP_MONSTERS_ADDR)
@@ -1126,10 +1185,13 @@ struct __attribute__((packed)) spell_queue_item
 
 struct __attribute__((packed)) mapstats_item
 {
-    SKIP(44);
+    SKIP(4);
+    char *file_name;
+    SKIP(36);
     uint8_t reputation_group; // my addition
     SKIP(23);
 };
+typedef struct mapstats_item s_mapstats_item;
 
 #define MAPSTATS_ADDR 0x5caa38
 #define MAPSTATS ((struct mapstats_item *) MAPSTATS_ADDR)
@@ -1209,6 +1271,7 @@ struct __attribute__((packed)) spcitem
     uint8_t crown_prob; // ditto
     uint8_t prefix; // and this
 };
+typedef struct spcitem s_spcitem;
 
 enum monster_buffs
 {
@@ -1220,6 +1283,7 @@ enum monster_buffs
     MBUFF_HALVED_ARMOR = 8,
     MBUFF_BERSERK = 9,
     MBUFF_MASS_DISTORTION = 10, // also used for eradication in the mod
+    MBUFF_FATE = 11,
     MBUFF_ENSLAVE = 12,
     MBUFF_DAY_OF_PROTECTION = 13,
 };
@@ -1260,14 +1324,21 @@ struct __attribute__((packed)) map_object
     uint32_t x;
     uint32_t y;
     uint32_t z;
-    SKIP(14);
+    int16_t speed_x;
+    int16_t speed_y;
+    int16_t speed_z;
+    SKIP(8);
     uint16_t age;
     SKIP(4);
     struct item item;
     uint32_t spell_type;
     uint32_t spell_power;
-    SKIP(32);
+    uint32_t spell_mastery;
+    SKIP(4);
+    uint32_t owner;
+    SKIP(20);
 };
+typedef struct map_object s_map_object;
 
 #define AI_REMOVED 11
 #define AI_INVISIBLE 19
@@ -1358,6 +1429,7 @@ struct __attribute__((packed)) event2d
     float multiplier;
     SKIP(16);
 };
+typedef struct event2d s_event2d;
 #define EVENTS2D_ADDR 0x5912b8
 #define EVENTS2D ((struct event2d *) EVENTS2D_ADDR)
 
@@ -1367,6 +1439,33 @@ static struct npcprof
     uint32_t cost;
     char *description, *action, *join, *dismiss;
 } npcprof[NPC_COUNT];
+typedef struct npcprof s_npcprof;
+
+enum sizes
+{
+    SIZE_ITEM = sizeof(struct item),
+    SIZE_BUFF = sizeof(struct spell_buff),
+    SIZE_CHEST = sizeof(struct map_chest),
+    SIZE_PLAYER = sizeof(struct player),
+    SIZE_ITEM_TXT = sizeof(struct items_txt_item),
+    SIZE_SPL_INFO = sizeof(struct spell_info),
+    SIZE_MAPSTAT = sizeof(struct mapstats_item),
+    SIZE_SPCITEM = sizeof(struct spcitem),
+    SIZE_EVENT2D = sizeof(struct event2d),
+};
+
+// Some inline assembly limitations prevent directly addressing these.
+enum struct_offsets
+{
+    S_PL_ITEMS = offsetof(struct player, items),
+    S_PL_ITEM0 = S_PL_ITEMS - SIZE_ITEM,
+    S_PL_STATS = offsetof(struct player, stats),
+    S_PL_RES = offsetof(struct player, res_base),
+    S_SB_POWER = offsetof(struct spell_buff, power),
+    S_MM_HP = offsetof(struct map_monster, hp),
+    S_SPC_PROB = offsetof(struct spcitem, probability),
+    S_SPC_LEVEL = offsetof(struct spcitem, level),
+};
 
 #define CURRENT_CONVERSATION 0xf8b01c
 #define ICONS_LOD_ADDR 0x6d0490
@@ -1880,8 +1979,8 @@ static void __declspec(naked) fire_poison_monster(void)
 {
     asm
       {
-        movzx edx, byte ptr [eax+0x50]
-        movzx eax, byte ptr [eax+0x53]
+        movzx edx, byte ptr [eax].s_map_monster.fire_resistance
+        movzx eax, byte ptr [eax].s_map_monster.poison_resistance
         cmp eax, edx
         jbe fire
         mov eax, edx
@@ -1982,7 +2081,7 @@ static int __thiscall __declspec(naked) is_undead(void *player)
         jnz zombie
         cmp dword ptr [ecx+COND_ZOMBIE*8+4], 0
         jnz zombie
-        cmp byte ptr [ecx+0xb9], CLASS_LICH
+        cmp byte ptr [ecx].s_player.class, CLASS_LICH
         je lich
         ret
         zombie:
@@ -2058,9 +2157,9 @@ static int __thiscall is_immune(struct player *player, unsigned int element)
 }
 
 // Calls the old, replaced function.
-static int __thiscall __declspec(naked) inflict_condition(void *player,
-                                                          int condition,
-                                                          int can_resist)
+static int __thiscall __declspec(naked) old_inflict_condition(void *player,
+                                                              int condition,
+                                                              int can_resist)
 {
     asm
       {
@@ -2079,8 +2178,8 @@ static int __thiscall __declspec(naked) inflict_condition(void *player,
 // Update: also put Preservation's new effect here.
 // Also check for Blaster GM quest and Ellinger's Robe's effects.
 // Finally, Blessed weapons' curse immunity is also handled here.
-static int __thiscall condition_immunity(struct player *player, int condition,
-                                         int can_resist)
+static int __thiscall inflict_condition(struct player *player, int condition,
+                                        int can_resist)
 {
     int robe = has_item_in_slot(player, ELLINGERS_ROBE, SLOT_BODY_ARMOR);
     if (condition == COND_WEAK && robe) // even if can_resist == 0!
@@ -2110,7 +2209,7 @@ static int __thiscall condition_immunity(struct player *player, int condition,
       }
     if (condition == COND_INCINERATED) // fake condition
         condition = COND_DEAD; // is actually death
-    int result = inflict_condition(player, condition, can_resist);
+    int result = old_inflict_condition(player, condition, can_resist);
     if (condition == COND_ERADICATED && result
         && (check_bit(QBITS, QBIT_BLASTER_GM_QUEST_ACTIVE_LIGHT)
             || check_bit(QBITS, QBIT_BLASTER_GM_QUEST_ACTIVE_DARK))
@@ -2351,7 +2450,7 @@ static void __declspec(naked) unzombie_liches(void)
 // get an immunity from zombification, potions, or artifacts.
 static inline void undead_immunities(void)
 {
-    hook_jump(0x492d5d, condition_immunity);
+    hook_jump(0x492d5d, inflict_condition);
     hook_call(0x48dd27, monster_bonus_immunity, 5);
     hook_call(0x48e85f, holy_is_not_magic, 5);
     hook_call(0x48e764, holy_is_not_magic_base, 5);
@@ -2488,12 +2587,12 @@ static void __declspec(naked) new_potion_effects(void)
         je pain_reflection
         mov ecx, dword ptr [ebp+8] ; pc id
         dec ecx
-        imul ecx, ecx, NBUFF_COUNT * 16
+        imul ecx, ecx, NBUFF_COUNT * SIZE_BUFF
         lea eax, [edx*4+NBUFF_FIRE_IMM*4-POTION_FIRE_IMMUNITY*4]
         lea ecx, [elemdata.new_pc_buffs+ecx+eax*4]
         jmp got_buff
         pain_reflection:
-        lea ecx, [esi+0x17a0+PBUFF_PAIN_REFLECTION*16]
+        lea ecx, [esi+PBUFF_PAIN_REFLECTION*SIZE_BUFF].s_player.spell_buffs
         got_buff:
         push ebx
         push ebx
@@ -2509,7 +2608,7 @@ static void __declspec(naked) new_potion_effects(void)
         mov edx, 3 * MINUTE
         jmp multiply
         divine_mastery:
-        mov eax, dword ptr [MOUSE_ITEM+4] ; potion power
+        mov eax, dword ptr [MOUSE_ITEM].s_item.bonus ; potion power
         xor edx, edx
         mov edi, 5 ; unused at this point
         div edi
@@ -2518,7 +2617,7 @@ static void __declspec(naked) new_potion_effects(void)
         push GM
         mov edx, 30 * MINUTE
         multiply:
-        mov eax, dword ptr [MOUSE_ITEM+4]
+        mov eax, dword ptr [MOUSE_ITEM].s_item.bonus
         mul edx
         add eax, dword ptr [CURRENT_TIME_ADDR]
         adc edx, dword ptr [CURRENT_TIME_ADDR+4]
@@ -2531,9 +2630,9 @@ static void __declspec(naked) new_potion_effects(void)
         ultimate_cure:
         mov ecx, esi
         call dword ptr ds:get_full_hp
-        sub eax, dword ptr [esi+0x193c] ; current hp
+        sub eax, dword ptr [esi].s_player.hp
         jle quit
-        add eax, dword ptr [MOUSE_ITEM+4] ; potion power
+        add eax, dword ptr [MOUSE_ITEM].s_item.bonus
         push eax
         mov ecx, esi
         push 0x4687a8 ; this return address enables overheal
@@ -2589,7 +2688,7 @@ static void __declspec(naked) identify_recipes(void)
     asm
       {
         mov dword ptr [SHOP_SPECIAL_ITEMS+eax*4], edx ; replaced code
-        or byte ptr [SHOP_SPECIAL_ITEMS+eax*4+20], IFLAGS_ID
+        or byte ptr [SHOP_SPECIAL_ITEMS+eax*4].s_item.flags, IFLAGS_ID
         ret
       }
 }
@@ -2608,13 +2707,13 @@ static void __declspec(naked) raise_dead_potion(void)
         mov dword ptr [esi+COND_UNCONSCIOUS*8+4], ebx
         mov ecx, esi
         call dword ptr ds:get_full_hp
-        cmp eax, dword ptr [MOUSE_ITEM+4] ; potion power
-        cmova eax, dword ptr [MOUSE_ITEM+4]
-        mov dword ptr [esi+0x193c], eax ; hp
+        cmp eax, dword ptr [MOUSE_ITEM].s_item.bonus ; potion power
+        cmova eax, dword ptr [MOUSE_ITEM].s_item.bonus
+        mov dword ptr [esi].s_player.hp, eax
         push ebx ; cannot resist
         push COND_WEAK
         mov ecx, esi
-        call condition_immunity ; inflict condition
+        call inflict_condition
         quit:
         push 0x468da0 ; post-drink code
         ret
@@ -2644,7 +2743,7 @@ static void __declspec(naked) display_new_buffs(void)
         mov dword ptr [ebp-4], offset new_strings + STR_FIRE_IMM * 4
         sub edx, PARTY_ADDR ; this only works because it`s offset
         shr edx, 13 ; now we have pc number
-        imul edx, edx, NBUFF_COUNT * 16
+        imul edx, edx, NBUFF_COUNT * SIZE_BUFF
         add edx, offset elemdata.new_pc_buffs
         mov edi, offset new_buff_colors + 1
         new:
@@ -2672,7 +2771,7 @@ static void __declspec(naked) count_new_buffs(void)
         yes:
         inc ecx
         no:
-        add eax, 16
+        add eax, SIZE_BUFF
         dec ebx
         jnz loop
         mov eax, dword ptr [ARRUS_FNT] ; replaced code
@@ -2695,10 +2794,10 @@ static void __declspec(naked) expire_new_buffs(void)
         push dword ptr [CURRENT_TIME_ADDR]
         mov ecx, edi
         call dword ptr ds:expire_buff
-        add edi, 16
+        add edi, SIZE_BUFF
         dec ebp
         jnz loop
-        lea edi, [esi+0x17a0] ; replaced code
+        lea edi, [esi].s_player.spell_buffs ; replaced code
         ret
       }
 }
@@ -2715,7 +2814,7 @@ static void __declspec(naked) remove_new_buffs(void)
         loop:
         mov ecx, edi
         call dword ptr ds:remove_buff
-        add edi, 16
+        add edi, SIZE_BUFF
         dec ebx
         jnz loop
         ret
@@ -2749,12 +2848,13 @@ static void __declspec(naked) divine_mastery_effect(void)
 {
     asm
       {
-        movsx eax, word ptr [esi+218] ; replaced code
+        movsx eax, word ptr [esi].s_player.level_base ; replaced code
         add edi, eax ; add to total
         sub esi, PARTY_ADDR - 0x1000
         shr esi, 13 ; got pc id
-        imul esi, esi, NBUFF_COUNT * 16
-        mov ax, word ptr [elemdata.new_pc_buffs+esi+NBUFF_DIVINE_MASTERY*16+8]
+        imul esi, esi, NBUFF_COUNT * SIZE_BUFF
+        mov ax, word ptr [elemdata.new_pc_buffs+esi \
+                          +NBUFF_DIVINE_MASTERY*SIZE_BUFF].s_spell_buff.power
         movsx eax, ax
         ret
       }
@@ -2798,9 +2898,9 @@ static void __declspec(naked) ignore_temp_ench_name(void)
 {
     asm
       {
-        cmp dword ptr [esi+4], eax
+        cmp dword ptr [esi].s_item.bonus, eax ; replaced code (eax == 0)
         jz ignore
-        cmp dword ptr [esi+4], TEMP_ENCH_MARKER
+        cmp dword ptr [esi].s_item.bonus, TEMP_ENCH_MARKER
         jnz quit
         ignore:
         push 0x4565b2
@@ -2815,10 +2915,10 @@ static void __declspec(naked) ignore_temp_ench_desc(void)
 {
     asm
       {
-        mov eax, dword ptr [ecx+4]
+        mov eax, dword ptr [ecx].s_item.bonus ; replaced code
         cmp eax, TEMP_ENCH_MARKER
         jz quit
-        cmp eax, ebx
+        cmp eax, ebx ; also replaced
         quit:
         ret
       }
@@ -2829,9 +2929,9 @@ static void __declspec(naked) ignore_temp_ench_price(void)
 {
     asm
       {
-        cmp dword ptr [esi+4], eax
+        cmp dword ptr [esi].s_item.bonus, eax ; replaced code (eax == 0)
         jz ignore
-        cmp dword ptr [esi+4], TEMP_ENCH_MARKER
+        cmp dword ptr [esi].s_item.bonus, TEMP_ENCH_MARKER
         jnz quit
         ignore:
         push 0x4564a2
@@ -2847,7 +2947,7 @@ static void __declspec(naked) ignore_temp_ench_enchant_item(void)
     asm
       {
         jz quit
-        cmp dword ptr [edi+4], TEMP_ENCH_MARKER
+        cmp dword ptr [edi].s_item.bonus, TEMP_ENCH_MARKER
         quit:
         ret
       }
@@ -2871,11 +2971,12 @@ static void __declspec(naked) temp_elem_damage(void)
         lea edx, [edx+edx*2]
         shl edx, 4
         and dword ptr [extra_temp_damage], 0
-        cmp byte ptr [ITEMS_TXT_ADDR+edx+28], ITEM_TYPE_WEAPON2 - 1
+        cmp byte ptr [ITEMS_TXT_ADDR+edx].s_items_txt_item.equip_stat, \
+            ITEM_TYPE_WEAPON2 - 1
         jne one_handed
-        cmp byte ptr [ITEMS_TXT_ADDR+edx+29], SKILL_SWORD
+        cmp byte ptr [ITEMS_TXT_ADDR+edx].s_items_txt_item.skill, SKILL_SWORD
         je two_handed
-        cmp byte ptr [ITEMS_TXT_ADDR+edx+29], SKILL_AXE
+        cmp byte ptr [ITEMS_TXT_ADDR+edx].s_items_txt_item.skill, SKILL_AXE
         jne one_handed
         two_handed:
         cmp dword ptr [ebp-8], POISON
@@ -2908,25 +3009,25 @@ static void __declspec(naked) temp_elem_damage(void)
         shr eax, 1
         inc dword ptr [extra_temp_damage]
         one_handed:
-        cmp dword ptr [ecx+4], TEMP_ENCH_MARKER
+        cmp dword ptr [ecx].s_item.bonus, TEMP_ENCH_MARKER
         jne quit
         push eax
         xor edx, edx
         push edx
         push edx
-        sub esp, 32
+        sub esp, SIZE_ITEM - 4
         push 1
-        and dword ptr [esp+20], 0
-        mov ecx, dword ptr [ecx+8]
-        mov dword ptr [esp+12], ecx
+        and dword ptr [esp].s_item.flags, 0
+        mov ecx, dword ptr [ecx].s_item.bonus_strength
+        mov dword ptr [esp].s_item.bonus2, ecx
         mov ecx, esp
-        lea edx, [esp+36]
-        lea eax, [esp+40]
+        lea edx, [esp+SIZE_ITEM]
+        lea eax, [esp+SIZE_ITEM+4]
         push eax
         call dword ptr ds:elem_damage
         cmp dword ptr [extra_temp_damage], 0
         jz no_extra
-        cmp dword ptr [esp+36], POISON
+        cmp dword ptr [esp+SIZE_ITEM], POISON
         je poison_temp
         mov ecx, esp
         push eax
@@ -2945,7 +3046,7 @@ static void __declspec(naked) temp_elem_damage(void)
         inc eax
         shr eax, 1
         no_extra:
-        add esp, 36
+        add esp, SIZE_ITEM
         pop ecx
         pop edx
         or dword ptr [ebp-16], edx
@@ -2976,9 +3077,9 @@ static void __declspec(naked) temp_swiftness(void)
 {
     asm
       {
-        cmp dword ptr [edx+4], TEMP_ENCH_MARKER
+        cmp dword ptr [edx].s_item.bonus, TEMP_ENCH_MARKER
         jne no_temp
-        mov ecx, dword ptr [edx+8]
+        mov ecx, dword ptr [edx].s_item.bonus_strength
         cmp ecx, SPC_SWIFT
         je swift
         cmp ecx, SPC_DARKNESS
@@ -2988,8 +3089,8 @@ static void __declspec(naked) temp_swiftness(void)
         je swift
         cmp dword ptr [edx], THE_PERFECT_BOW
         je swift
-        mov ecx, dword ptr [edx+12]
-        cmp ecx, SPC_SWIFT
+        mov ecx, dword ptr [edx].s_item.bonus2 ; replaced code
+        cmp ecx, SPC_SWIFT ; also replaced
         swift:
         ret
       }
@@ -3001,7 +3102,7 @@ static void __declspec(naked) expire_weapon(void)
 {
     asm
       {
-        lea ebx, [edi+0x1f0+eax*4]
+        lea ebx, [edi+eax*4-SIZE_ITEM].s_player.items
         mov ecx, ebx
         push dword ptr [CURRENT_TIME_ADDR+4]
         push dword ptr [CURRENT_TIME_ADDR]
@@ -3074,9 +3175,9 @@ static void __declspec(naked) temp_enchant_height(void)
         cmp dword ptr [ecx], LIVING_WOOD_KNIVES
         jne skip
         knives:
-        movzx eax, byte ptr [ecx+25] ; max charges
+        movzx eax, byte ptr [ecx].s_item.max_charges
         push eax
-        mov edx, dword ptr [ecx+16] ; charges
+        mov edx, dword ptr [ecx].s_item.charges
         test edx, edx
         jz zero
         push edx
@@ -3110,7 +3211,7 @@ static void __declspec(naked) temp_enchant_height(void)
         cmp dword ptr [ebp-24], 2
         jne quit
         mov ecx, dword ptr [ebp-4]
-        cmp dword ptr [ecx+4], TEMP_ENCH_MARKER
+        cmp dword ptr [ecx].s_item.bonus, TEMP_ENCH_MARKER
         jne skip
         push ecx
         call two_handed_bonus_desc
@@ -3196,14 +3297,14 @@ static void __declspec(naked) enchant_weapon(void)
         jnz temporary
         cmp dword ptr [ebp-24], GM
         jne temporary
-        cmp dword ptr [esi+12], 0
+        cmp dword ptr [esi].s_item.bonus2, 0
         jnz temporary
         mov eax, dword ptr [esp+4]
         cmp eax, SPC_INFERNOS
         jne ok
         mov eax, SPC_INFERNOS_2
         ok:
-        mov dword ptr [esi+12], eax
+        mov dword ptr [esi].s_item.bonus2, eax
         xor eax, eax ; set zf
         ret 4
         temporary:
@@ -3212,9 +3313,9 @@ static void __declspec(naked) enchant_weapon(void)
         call can_add_temp_enchant
         test eax, eax
         jz fail
-        mov dword ptr [esi+4], TEMP_ENCH_MARKER
+        mov dword ptr [esi].s_item.bonus, TEMP_ENCH_MARKER
         mov eax, dword ptr [esp+4]
-        mov dword ptr [esi+8], eax
+        mov dword ptr [esi].s_item.bonus_strength, eax
         test eax, eax
         ret 4
         fail:
@@ -3269,12 +3370,12 @@ static void __declspec(naked) weapon_potions(void)
         call can_add_temp_enchant
         test eax, eax
         jz fail
-        mov dword ptr [esi+4], TEMP_ENCH_MARKER
-        mov dword ptr [esi+8], ebx
+        mov dword ptr [esi].s_item.bonus, TEMP_ENCH_MARKER
+        mov dword ptr [esi].s_item.bonus_strength, ebx
         fmul dword ptr [0x4d8470]
         mov ecx, dword ptr [CURRENT_PLAYER]
         mov ecx, dword ptr [0xa74f44+ecx*4] ; PC pointers
-        mov bh, byte ptr [ecx+0xb9] ; class
+        mov bh, byte ptr [ecx].s_player.class
         push SLOT_BELT
         push GADGETEERS_BELT
         call dword ptr ds:has_item_in_slot
@@ -3363,12 +3464,12 @@ static void __declspec(naked) permanent_slaying(void)
         ja quit
         cmp dword ptr [MOUSE_ITEM], MAGIC_EMBER
         jne dragon
-        mov dword ptr [esi+12], SPC_INFERNOS_2 ; same as gm fire aura
+        mov dword ptr [esi].s_item.bonus2, SPC_INFERNOS_2 ; as gm fire aura
         jmp aura
         dragon:
-        mov dword ptr [esi+12], SPC_DRAGON_SLAYING
+        mov dword ptr [esi].s_item.bonus2, SPC_DRAGON_SLAYING
         aura:
-        or dword ptr [esi+20], 16 ; red aura
+        or dword ptr [esi].s_item.flags, 16 ; red aura
         push 0x4168b4
         ret 4
         quit:
@@ -3434,9 +3535,9 @@ static void __declspec(naked) buff_potions_power(void)
         push GADGETEERS_BELT
         call dword ptr ds:has_item_in_slot
         pop ecx
-        mov ah, byte ptr [esi+0xb9] ; class
+        mov ah, byte ptr [esi].s_player.class
         and ah, -4
-        mov edx, dword ptr [MOUSE_ITEM+4]
+        mov edx, dword ptr [MOUSE_ITEM].s_item.bonus
         cmp dword ptr [esp+12], MASTER
         jne resistance
         cmp dword ptr [esp+16], 5
@@ -3455,7 +3556,7 @@ static void __declspec(naked) buff_potions_power(void)
         shr edx, 1
         half:
         add dword ptr [esp+16], edx
-        mov edx, dword ptr [MOUSE_ITEM+4]
+        mov edx, dword ptr [MOUSE_ITEM].s_item.bonus
         cmp ah, CLASS_THIEF
         mov eax, 30 * MINUTE / 4 ; quarter of half hour
         jne quarter
@@ -3825,7 +3926,7 @@ static void __declspec(naked) autobrew(void)
 {
     asm
       {
-        lea esi, [ebx+0x1f0+eax*4]
+        lea esi, [ebx+eax*4-SIZE_ITEM].s_player.items
         push 0x11 ; ctrl
         call dword ptr ds:GET_ASYNC_KEY_STATE
         test ax, ax
@@ -3894,7 +3995,7 @@ static void __declspec(naked) drink_swift_potion(void)
 {
     asm
       {
-        mov word ptr [esi+0x1934], bx ; recovery delay
+        mov word ptr [esi].s_player.recovery, bx ; == 0
         cmp dword ptr [0xacd6b4], ebx ; turn-based flag
         jz quit
         mov ecx, dword ptr [0x4f86d8+12] ; count of tb actors
@@ -3956,18 +4057,18 @@ static void __declspec(naked) pure_potions_power(void)
         intellect:
         inc ecx
         might:
-        mov edx, dword ptr [MOUSE_ITEM+4] ; potion power
+        mov edx, dword ptr [MOUSE_ITEM].s_item.bonus ; potion power
         test edx, edx ; 0 power potions have no permanent effect
         jnz has_power
         push 0x4687a8 ; skip set-drunk-bit code
         ret 4
         has_power:
-        add dx, word ptr [esi+188+ecx*4] ; base attribute
+        add dx, word ptr [esi+S_PL_STATS+ecx*4]
         cmp dx, NATURAL_STAT_LIMIT
         jle ok
         mov dx, NATURAL_STAT_LIMIT
         ok:
-        mov word ptr [esi+188+ecx*4], dx
+        mov word ptr [esi+S_PL_STATS+ecx*4], dx
         ret
       }
 }
@@ -3993,8 +4094,9 @@ static void __declspec(naked) potion_price(void)
 {
     asm
       {
-        mov edi, dword ptr [ITEMS_TXT_ADDR+eax+16] ; base value
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+28], 14 ; potion or bottle
+        mov edi, dword ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.value
+        cmp byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.equip_stat, \
+            ITEM_TYPE_POTION - 1
         je potion
         cmp dword ptr [esi], FIRST_WAND
         jb not_wand
@@ -4008,8 +4110,9 @@ static void __declspec(naked) potion_price(void)
         xor edx, edx ; set zf
         ret
         potion:
-        movzx eax, byte ptr [ITEMS_TXT_ADDR+eax+30] ; value multiplier
-        mul dword ptr [esi+4] ; potion power
+        movzx eax, byte ptr [ITEMS_TXT_ADDR+eax] \
+                            .s_items_txt_item.mod1_dice_count ; value factor
+        mul dword ptr [esi].s_item.bonus ; potion power
         add edi, eax
         ; zf must be unset now
         ret
@@ -4191,9 +4294,9 @@ static void __declspec(naked) rnd_robe_type(void)
         robe:
         mov dword ptr [ebp+12], ITEM_TYPE_ARMOR - 1
         mov dword ptr [ebp+16], FIRST_ROBE ; just skip over all other armor
-        lea eax, [edi+FIRST_ROBE*48+32]
+        lea eax, [edi+4+FIRST_ROBE*SIZE_ITEM_TXT].s_items_txt_item.equip_stat
         mov dword ptr [ebp-4], eax
-        lea eax, [edi+FIRST_ROBE*48+44+ebx]
+        lea eax, [edi+4+FIRST_ROBE*SIZE_ITEM_TXT+ebx].s_items_txt_item.chance
         push 0x456826 ; rnd item by equip stat loop
         ret 4
         special:
@@ -4255,9 +4358,9 @@ static void __declspec(naked) double_halved_ench_price(void)
 {
     asm
       {
-        mov eax, dword ptr [esi+8] ; replaced code
+        mov eax, dword ptr [esi].s_item.bonus_strength ; replaced code
         imul eax, eax, 100 ; replaced code
-        mov ecx, dword ptr [esi+4] ; bonus type
+        mov ecx, dword ptr [esi].s_item.bonus
         cmp ecx, STAT_HP + 1
         je doubled
         cmp ecx, STAT_SP + 1
@@ -4312,7 +4415,7 @@ static void __declspec(naked) generate_broken_items(void)
         add edx, dword ptr [ebp+8] ; treasure level
         cmp edx, 6 ; 6% - tlvl chance
         jae fail
-        or byte ptr [esi+20], IFLAGS_BROKEN
+        or byte ptr [esi].s_item.flags, IFLAGS_BROKEN
         fail:
         mov eax, dword ptr [esi] ; restore
         skip:
@@ -4444,7 +4547,7 @@ static void __thiscall genie_lamp(struct player *player)
                                              COND_DISEASED_RED,
                                              COND_PARALYZED, COND_DEAD,
                                              COND_STONED, COND_ERADICATED };
-                condition_immunity(player, curse[elemdata.genie>>25&7], FALSE);
+                inflict_condition(player, curse[elemdata.genie>>25&7], FALSE);
                 sprintf(status_text, new_strings[STR_GENIE_CURSE],
                         player->name);
                 good = -2;
@@ -4523,7 +4626,7 @@ static void __declspec(naked) id_zero_chest_items(void)
         mov eax, dword ptr [eax-20]
         lea eax, [eax+eax*2]
         shl eax, 4
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+46], 0 ; id difficulty
+        cmp byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.id_difficulty, 0
         jg skip
         inc eax ; clear zf
         quit:
@@ -4584,7 +4687,8 @@ static void __declspec(naked) alchemy_soft_cap(void)
 {
     asm
       {
-        movzx eax, byte ptr [ITEMS_TXT_ADDR+eax+30] ; replaced code
+        movzx eax, byte ptr [ITEMS_TXT_ADDR+eax] \
+                            .s_items_txt_item.mod1_dice_count ; replaced code
         cmp eax, edi
         jae skip
         add edi, eax
@@ -4695,7 +4799,7 @@ static void __declspec(naked) throw_potions_jump(void)
         push 0x4685f6
         ret
         active:
-        mov eax, dword ptr [MOUSE_ITEM+4] ; item bonus
+        mov eax, dword ptr [MOUSE_ITEM].s_item.bonus
         mov dword ptr [potion_damage], eax
         mov eax, dword ptr [MOUSE_ITEM] ; item type
         ; both the four potions and their four spells are contiguous,
@@ -4744,7 +4848,7 @@ static void __declspec(naked) throw_potions_power(void)
         ordinary:
         mov ecx, dword ptr [esp+56] ; PC index
         mov ecx, dword ptr [0xa74f48+ecx*4] ; PC pointers
-        mov bl, byte ptr [ecx+0xb9] ; class
+        mov bl, byte ptr [ecx].s_player.class
         push SLOT_BELT
         push GADGETEERS_BELT
         call dword ptr ds:has_item_in_slot
@@ -4896,7 +5000,7 @@ static void __declspec(naked) cast_potions_jump(void)
         mov edx, edi
         shr edx, 1
         mov ecx, dword ptr [ebp-32]
-        mov al, byte ptr [ecx+0xb9] ; class
+        mov al, byte ptr [ecx].s_player.class
         and al, -4
         cmp al, CLASS_THIEF
         je bonus
@@ -4926,7 +5030,7 @@ static void __declspec(naked) cast_potions_speed(void)
 {
     asm
       {
-        movzx eax, word ptr [eax+ecx+48]
+        movzx eax, word ptr [eax+ecx+48] ; default obj speed
         cmp word ptr [ebx], SPL_FLAMING_POTION
         jb ordinary
         cmp word ptr [ebx], SPL_HOLY_WATER
@@ -5066,7 +5170,7 @@ static void __declspec(naked) damage_potions_monster(void)
         not_holy:
         sub eax, SPL_FLAMING_POTION
         mov dword ptr [ebp-8], eax ; element
-        mov ecx, dword ptr [ebx+0x4c] ; potion power
+        mov ecx, dword ptr [ebx].s_map_object.spell_power
         mov edx, 3
         and eax, 1
         sub edx, eax ; d2 for elec and poison, d3 for fire, cold, and holy
@@ -5086,7 +5190,7 @@ static void __declspec(naked) damage_potions_player(void)
 {
     asm
       {
-        mov eax, dword ptr [ebx+0x48] ; spell id
+        mov eax, dword ptr [ebx].s_map_object.spell_type
         cmp eax, SPL_FLAMING_POTION
         jb ordinary
         cmp eax, SPL_HOLY_WATER
@@ -5097,12 +5201,12 @@ static void __declspec(naked) damage_potions_player(void)
         sub eax, SPL_FLAMING_POTION
         push eax
         ; the higher bits of the potion`s power are here:
-        mov ecx, dword ptr [ebx+0x50] ; spell mastery
+        mov ecx, dword ptr [ebx].s_map_object.spell_mastery
         ; this will only work properly with power < 192
         ; thankfully, potions with power > 135 are not legitimately brewable
         dec ecx
         shl ecx, 6
-        add ecx, dword ptr [ebx+0x4c] ; the rest of potion/spell power
+        add ecx, dword ptr [ebx].s_map_object.spell_power ; the rest of it
         mov edx, 3
         and eax, 1
         sub edx, eax ; d2 for elec and poison, d3 for fire, cold, and holy
@@ -5207,8 +5311,8 @@ static void __declspec(naked) bless_water_reply_sizing(void)
         jmp ordinary
         not_dark:
         push ecx
-        imul eax, eax, 52
-        fld dword ptr [EVENTS2D_ADDR+eax+32] ; temple cost
+        imul eax, eax, SIZE_EVENT2D
+        fld dword ptr [EVENTS2D_ADDR+eax].s_event2d.multiplier ; temple cost
         push 10
         fimul dword ptr [esp]
         fistp dword ptr [esp]
@@ -5272,8 +5376,8 @@ static void __declspec(naked) bless_water_action(void)
         bless:
         mov eax, dword ptr [DIALOG2]
         mov eax, dword ptr [eax+28] ; param = temple id
-        imul eax, eax, 52
-        fld dword ptr [EVENTS2D_ADDR+eax+32] ; temple cost
+        imul eax, eax, SIZE_EVENT2D
+        fld dword ptr [EVENTS2D_ADDR+eax].s_event2d.multiplier ; temple cost
         fistp dword ptr [esp] ; don`t need the return address anymore
         pop ebx
         lea ecx, [ebx*4+ebx] ; price = heal cost x 10
@@ -5293,12 +5397,12 @@ static void __declspec(naked) bless_water_action(void)
         add ecx, 2 ; ecx = 7
         div ecx
         lea ebx, [ebx*2+edx+1] ; water power = temple power * 2 + weekday
-        sub esp, 36
+        sub esp, SIZE_ITEM
         mov ecx, esp
         call dword ptr ds:init_item
         mov dword ptr [esp], HOLY_WATER ; id
-        mov dword ptr [esp+4], ebx ; power
-        mov dword ptr [esp+20], IFLAGS_ID
+        mov dword ptr [esp].s_item.bonus, ebx ; power
+        mov dword ptr [esp].s_item.flags, IFLAGS_ID
         mov ecx, PARTY_BIN_ADDR
         push esp
         call dword ptr ds:add_mouse_item
@@ -5400,20 +5504,21 @@ static void __declspec(naked) feather_fall_jump(void)
     asm
       {
         fld1
-        cmp word ptr [PARTY_BUFF_ADDR+16*BUFF_FEATHER_FALL+10], GM
+        cmp word ptr [PARTY_BUFF_ADDR+BUFF_FEATHER_FALL*SIZE_BUFF] \
+                     .s_spell_buff.skill, GM
         jne no_ff
         fadd dword ptr [jump_multiplier]
         no_ff:
         mov ecx, 4
         check_boots:
         mov eax, dword ptr [0xa74f44+ecx*4] ; PC pointers
-        mov edx, dword ptr [eax+0x1968] ; boots slot
+        mov edx, dword ptr [eax+SLOT_BOOTS*4].s_player.equipment
         test edx, edx
         jz next_pc
         lea edx, [edx+edx*8]
-        cmp dword ptr [eax+0x214+edx*4-36], HERMES_SANDALS
+        cmp dword ptr [eax+edx*4-SIZE_ITEM].s_player.items, HERMES_SANDALS
         je leaping
-        cmp dword ptr [eax+0x214+edx*4-36+12], SPC_LEAPING
+        cmp dword ptr [eax+S_PL_ITEM0+edx*4].s_item.bonus2, SPC_LEAPING
         jne next_pc
         leaping:
         fadd dword ptr [jump_multiplier]
@@ -5477,7 +5582,7 @@ static void __declspec(naked) enchant_item_noon_check(void)
         not_noon:
         push SLOT_AMULET
         push CLANKERS_AMULET
-        mov ecx, [ebp-32]
+        mov ecx, dword ptr [ebp-32]
         call dword ptr ds:has_item_in_slot
         test eax, eax
         bonus:
@@ -5519,7 +5624,7 @@ static void __declspec(naked) enchant_item_halve_expert(void)
     asm
       {
         add edx, ecx ; replaced code
-        mov ecx, dword ptr [esi+4]
+        mov ecx, dword ptr [esi].s_item.bonus
         cmp ecx, STAT_HP + 1
         je halve
         cmp ecx, STAT_SP + 1
@@ -5536,7 +5641,7 @@ static void __declspec(naked) enchant_item_halve_expert(void)
         ; note that the minimum is 3, so we don`t need to check for zero
         shr edx, 1
         normal:
-        mov dword ptr [esi+8], edx ; replaced code
+        mov dword ptr [esi].s_item.bonus_strength, edx ; replaced code
         ret
       }
 }
@@ -5548,7 +5653,7 @@ static void __declspec(naked) enchant_item_halve_others(void)
     asm
       {
         add edx, ecx ; replaced code
-        mov ecx, dword ptr [edi+4]
+        mov ecx, dword ptr [edi].s_item.bonus
         cmp ecx, STAT_HP + 1
         je halve
         cmp ecx, STAT_SP + 1
@@ -5565,7 +5670,7 @@ static void __declspec(naked) enchant_item_halve_others(void)
         ; note that the minimum is 3, so we don`t need to check for zero
         shr edx, 1
         normal:
-        mov dword ptr [edi+8], edx ; replaced code
+        mov dword ptr [edi].s_item.bonus_strength, edx ; replaced code
         ret
       }
 }
@@ -5582,7 +5687,7 @@ static void __declspec(naked) berserk_pc(void)
         cmp dword ptr [ebp-8], esi ; target monster == 0 (just to be sure)
         jnz quit
         movzx ecx, word ptr [ebx+4] ; target player
-        imul ecx, ecx, 6972 ; sizeof(struct player)
+        imul ecx, ecx, SIZE_PLAYER
         add ecx, PARTY_ADDR
         mov esi, ecx
         call dword ptr ds:player_active ; exclude dead etc. players
@@ -5591,7 +5696,7 @@ static void __declspec(naked) berserk_pc(void)
         push 1 ; can resist -- arguable, but avoids abuse
         push COND_INSANE
         mov ecx, esi
-        call condition_immunity ; our wrapper for inflict_condition()
+        call inflict_condition
         quit:
         push 0x42deaa ; post-cast code
         ret 4
@@ -5690,13 +5795,13 @@ static void __declspec(naked) sacrifice_conditions(void)
 {
     asm
       {
-        push 16 * 8 ; all conditions except zombie
+        push COND_ZOMBIE * 8 ; all conditions EXCEPT zombie
         push 0 ; zero out
         push edi ; conditions are at beginning of struct player
         call dword ptr ds:memset_ptr
         add esp, 12
-        and word ptr [edi+222], 0 ; cure aging
-        add edi, 6972 ; replaced code
+        and word ptr [edi].s_player.age_bonus, 0
+        add edi, SIZE_PLAYER ; replaced code
         ret
       }
 }
@@ -5760,7 +5865,8 @@ static void __declspec(naked) wizard_eye_functionality(void)
 {
     asm
       {
-        movzx eax, word ptr [PARTY_BUFF_ADDR+16*BUFF_WIZARD_EYE+10] ; old code
+        movzx eax, word ptr [PARTY_BUFF_ADDR+BUFF_WIZARD_EYE*SIZE_BUFF] \
+                            .s_spell_buff.skill ; replaced code
         cmp eax, GM
         jne quit
         mov dword ptr [ebp-24], 1 ; wizard eye active
@@ -5774,12 +5880,12 @@ static void __declspec(naked) wizard_eye_permanence(void)
 {
     asm
       {
-        cmp esi, PARTY_BUFF_ADDR + 16 * BUFF_WIZARD_EYE
+        cmp esi, PARTY_BUFF_ADDR + BUFF_WIZARD_EYE * SIZE_BUFF
         jne not_eye
-        cmp word ptr [esi+10], GM
+        cmp word ptr [esi].s_spell_buff.skill, GM
         je quit ; caller will also check zf later
         not_eye:
-        mov word ptr [esi+10], bx ; replaced code
+        mov word ptr [esi].s_spell_buff.skill, bx ; replaced code
         cmp ax, bx ; replaced code
         quit:
         ret
@@ -5791,9 +5897,10 @@ static void __declspec(naked) wizard_eye_animation(void)
 {
     asm
       {
-        cmp word ptr [PARTY_BUFF_ADDR+16*BUFF_WIZARD_EYE+10], MASTER
+        cmp word ptr [PARTY_BUFF_ADDR+BUFF_WIZARD_EYE*SIZE_BUFF] \
+                     .s_spell_buff.skill, MASTER
         jg quit ; caller will also check flags
-        cmp dword ptr [PARTY_BUFF_ADDR+16*BUFF_WIZARD_EYE+4], 0 ; replaced code
+        cmp dword ptr [PARTY_BUFF_ADDR+BUFF_WIZARD_EYE*SIZE_BUFF+4], 0 ; repl.
         quit:
         ret
       }
@@ -5804,9 +5911,9 @@ static void __declspec(naked) wizard_eye_display_count(void)
 {
     asm
       {
-        cmp eax, PARTY_BUFF_ADDR + 16 * BUFF_WIZARD_EYE
+        cmp eax, PARTY_BUFF_ADDR + BUFF_WIZARD_EYE * SIZE_BUFF
         jne not_eye
-        cmp word ptr [eax+10], MASTER
+        cmp word ptr [eax].s_spell_buff.skill, MASTER
         jg quit ; caller will also check flags
         not_eye:
         cmp dword ptr [eax+4], ebx ; replaced code
@@ -5824,9 +5931,9 @@ static void __declspec(naked) wizard_eye_display(void)
 {
     asm
       {
-        cmp ecx, PARTY_BUFF_ADDR + 16 * BUFF_WIZARD_EYE
+        cmp ecx, PARTY_BUFF_ADDR + BUFF_WIZARD_EYE * SIZE_BUFF
         jne not_eye ; note that WE is last buff so it`ll never be greater
-        cmp word ptr [ecx+10], MASTER
+        cmp word ptr [ecx].s_spell_buff.skill, MASTER
         not_eye:
         mov ecx, dword ptr [ecx+4] ; replaced code
         jg quit ; caller will also check flags
@@ -5845,9 +5952,10 @@ static void __declspec(naked) wizard_eye_display_duration(void)
 {
     asm
       {
-        cmp dword ptr [ebp-8], PARTY_BUFF_ADDR + 16 * BUFF_WIZARD_EYE
+        cmp dword ptr [ebp-8], PARTY_BUFF_ADDR + BUFF_WIZARD_EYE * SIZE_BUFF
         jne not_eye
-        cmp word ptr [PARTY_BUFF_ADDR+16*BUFF_WIZARD_EYE+10], GM
+        cmp word ptr [PARTY_BUFF_ADDR+BUFF_WIZARD_EYE*SIZE_BUFF] \
+                     .s_spell_buff.skill, GM
         je permanent
         not_eye:
         push 0x41d1b6 ; replaced function call
@@ -5895,12 +6003,13 @@ static void __declspec(naked) wizard_eye_cast(void)
         mov dword ptr [ebp-20], eax ; replaced code
         ret
         remove:
-        mov ecx, PARTY_BUFF_ADDR + 16 * BUFF_WIZARD_EYE
+        mov ecx, PARTY_BUFF_ADDR + BUFF_WIZARD_EYE * SIZE_BUFF
         call dword ptr ds:remove_buff
         mov dx, GM
         test byte ptr [ebx+9], 4 ; turn off flag
         cmovnz dx, si ; si == 0
-        mov word ptr [PARTY_BUFF_ADDR+16*BUFF_WIZARD_EYE+10], dx
+        mov word ptr [PARTY_BUFF_ADDR+BUFF_WIZARD_EYE*SIZE_BUFF] \
+                     .s_spell_buff.skill, dx
         push 0x42deaa ; post-cast code
         ret 8
       }
@@ -5912,7 +6021,8 @@ static void __declspec(naked) wizard_eye_from_day_of_protection(void)
 {
     asm
       {
-        cmp word ptr [PARTY_BUFF_ADDR+16*BUFF_WIZARD_EYE+10], GM
+        cmp word ptr [PARTY_BUFF_ADDR+BUFF_WIZARD_EYE*SIZE_BUFF] \
+                     .s_spell_buff.skill, GM
         je skip
         mov dword ptr [ebp-24], MASTER ; no GM
         fild qword ptr [CURRENT_TIME_ADDR] ; replaced code
@@ -5973,7 +6083,7 @@ static void __declspec(naked) switch_off_immolation(void)
         mov dword ptr [esp+4], eax ; last pushed
         ret
         remove:
-        mov ecx, PARTY_BUFF_ADDR + 16 * BUFF_IMMOLATION
+        mov ecx, PARTY_BUFF_ADDR + BUFF_IMMOLATION * SIZE_BUFF
         call dword ptr ds:remove_buff
         push 0x42deaa ; post-cast code
         ret 8
@@ -6036,7 +6146,7 @@ static void __declspec(naked) spectral_aura(void)
       {
         cmp word ptr [ebx], SPL_SPECTRAL_WEAPON
         je spectral
-        or dword ptr [esi+20], 0x10 ; replaced code
+        or dword ptr [esi].s_item.flags, 0x10 ; replaced code
         push 0x42dea0 ; replaced jump
         ret
         spectral:
@@ -6070,7 +6180,8 @@ static void __declspec(naked) scroll_spell_id(void)
       {
         lea ecx, [eax+eax*2]
         shl ecx, 4
-        movzx esi, byte ptr [ITEMS_TXT_ADDR+ecx+30] ; mod1
+        movzx esi, byte ptr [ITEMS_TXT_ADDR+ecx] \
+                            .s_items_txt_item.mod1_dice_count
         ret
       }
 }
@@ -6084,7 +6195,7 @@ static void __declspec(naked) zero_item_spells(void)
 {
     asm
       {
-        mov eax, dword ptr [ebx+12] ; replaced code
+        mov eax, dword ptr [ebx].s_item.bonus2 ; replaced code
         cmp eax, esi ; replaced code
         jnz quit
         cmp word ptr [ebx], SPL_SPECTRAL_WEAPON
@@ -6105,7 +6216,7 @@ static void __declspec(naked) aura_of_conflict(void)
       {
         mov eax, dword ptr [ebp-32]
         mov edx, dword ptr [ebp-36]
-        sub dword ptr [eax+0x1940], edx ; sp cost
+        sub dword ptr [eax].s_player.sp, edx ; spell cost
         test byte ptr [ebx+9], 4 ; turn off flag
         cmovnz eax, dword ptr ds:remove_buff
         jnz remove
@@ -6123,8 +6234,9 @@ static void __declspec(naked) aura_of_conflict(void)
         mov eax, dword ptr ds:add_buff
         remove:
         movzx edi, word ptr [ebx+4] ; target pc
-        imul ecx, edi, NBUFF_COUNT * 16
-        add ecx, offset elemdata.new_pc_buffs + NBUFF_AURA_OF_CONFLICT * 16
+        imul ecx, edi, NBUFF_COUNT * SIZE_BUFF
+        add ecx, offset elemdata.new_pc_buffs \
+                 + NBUFF_AURA_OF_CONFLICT * SIZE_BUFF
         call eax ; add or remove
         push edi
         push SPL_INVISIBILITY
@@ -6381,7 +6493,7 @@ static void __declspec(naked) fix_gm_spell_cost_display(void)
 {
     asm
       {
-        movzx ecx, word ptr [edi+0x120+eax*2] ; spell skill
+        movzx ecx, word ptr [edi+SKILL_FIRE*2+eax*2].s_player.skills
         test ch, ch
         jz skip
         sub ecx, SKILL_EXPERT ; so that gm == 3 << 6
@@ -6399,7 +6511,7 @@ static void __declspec(naked) souldrinker_remember_monster_hp(void)
 {
     asm
       {
-        add edi, MAP_MONSTERS_ADDR + 40 ; monster hp address
+        add edi, MAP_MONSTERS_ADDR + S_MM_HP
         mov dword ptr [souldrinker_hp_pointer], edi
         movzx eax, word ptr [edi]
         mov dword ptr [souldrinker_old_hp], eax
@@ -6437,10 +6549,10 @@ static void __declspec(naked) wear_off_paralysis(void)
         div ecx
         test edx, edx
         jnz skip
-        lea ecx, [ebx+0xd4+MBUFF_PARALYSIS*16]
+        lea ecx, [ebx+MBUFF_PARALYSIS*SIZE_BUFF].s_map_monster.spell_buffs
         call dword ptr ds:remove_buff
         skip:
-        lea ecx, [ebx+0xd4+MBUFF_FEAR*16] ; replaced code
+        lea ecx, [ebx+MBUFF_FEAR*SIZE_BUFF].s_map_monster.spell_buffs ; repl.
         ret
       }
 }
@@ -6532,7 +6644,7 @@ static void __declspec(naked) lloyd_increase_recall_count(void)
       {
         mov eax, dword ptr [ACTION_THIS_ADDR] ; replaced code
         mov ecx, dword ptr [esp+20] ; pc
-        inc byte ptr [ecx+0x1b3b] ; unused counter
+        inc byte ptr [ecx].s_player.beacon_casts
         ret
       }
 }
@@ -6547,7 +6659,7 @@ static void __declspec(naked) lloyd_starting_tab(void)
       {
         xor edx, edx
         mov dword ptr [cannot_recall], edx
-        movzx eax, byte ptr [eax+0x1b3b] ; our counter
+        movzx eax, byte ptr [eax].s_player.beacon_casts
         inc eax
         lea eax, [eax+eax*2]
         cmp eax, dword ptr [ebp-56] ; spell skill
@@ -6596,7 +6708,8 @@ static void __declspec(naked) lava_walking(void)
       {
         test byte ptr [ecx+eax+47], 0x40 ; replaced code
         jz quit
-        cmp word ptr [PARTY_BUFF_ADDR+BUFF_WATER_WALK*16+10], GM
+        cmp word ptr [PARTY_BUFF_ADDR+BUFF_WATER_WALK*SIZE_BUFF] \
+                     .s_spell_buff.skill, GM
         jb quit
         or byte ptr [STATE_BITS], 0x80 ; water walk state flag
         xor eax, eax ; set zf
@@ -6625,11 +6738,11 @@ static void __declspec(naked) stun_recovery(void)
     asm
       {
         lea eax, [eax+eax*4] ; 20 -> 100
-        mov ecx, dword ptr [esi+124] ; current recovery
+        mov ecx, dword ptr [esi].s_map_monster.recovery
         shr ecx, 1
         sub eax, ecx ; diminishing returns, always below 200
         jbe skip
-        add dword ptr [esi+124], eax
+        add dword ptr [esi].s_map_monster.recovery, eax
         skip:
         cmp dword ptr [0xacd6b4], ebx ; turn-based flag
         jz quit
@@ -6662,7 +6775,7 @@ static void __declspec(naked) stun_power_chunk(void)
 {
     asm
       {
-        mov eax, dword ptr [ebx+76] ; projectile spell power
+        mov eax, dword ptr [ebx].s_map_object.spell_power
         inc eax
         mov dword ptr [ebp-32], eax ; stun flag - now stores power
       }
@@ -6687,9 +6800,9 @@ static void __declspec(naked) armageddon_flyers(void)
 {
     asm
       {
-        cmp byte ptr [esi+58], 0 ; monster flight flag
+        cmp byte ptr [esi].s_map_monster.flight, 0
         jnz skip
-        add word ptr [esi+152], dx ; replaced code (vertical speed)
+        add word ptr [esi].s_map_monster.speed_z, dx ; replaced code
         skip:
         ret
       }
@@ -6729,7 +6842,7 @@ static void __declspec(naked) armageddon_heal_hook(void)
         jnz skip
         call armageddon_heal
         skip:
-        cmp dword ptr [PARTY_BUFF_ADDR+BUFF_IMMOLATION*16+4], esi ; replaced
+        cmp dword ptr [PARTY_BUFF_ADDR+BUFF_IMMOLATION*SIZE_BUFF+4], esi ; repl
         ret
       }
 }
@@ -6764,8 +6877,8 @@ static void __declspec(naked) blink_pc_buffs(void)
 {
     asm
       {
-        mov ecx, dword ptr [edi+0x17a0+eax]
-        mov edx, dword ptr [edi+0x17a0+eax+4]
+        mov ecx, dword ptr [edi+eax].s_player.spell_buffs
+        mov edx, dword ptr [edi+eax+4].s_player.spell_buffs
         sub ecx, dword ptr [CURRENT_TIME_ADDR]
         sbb edx, dword ptr [CURRENT_TIME_ADDR+4]
         jb skip
@@ -6794,7 +6907,7 @@ static void __declspec(naked) mark_learned_guild_spells(void)
         test ecx, ecx
         jz skip
         mov ecx, dword ptr [0xa74f44+ecx*4] ; PC pointers
-        cmp byte ptr [ecx+0x192+esi-1], 0 ; known spell flag
+        cmp byte ptr [ecx+esi-1].s_player.spells_known, 0
         jnz known
         cmp esi, SPL_BERSERK
         sete al
@@ -6808,7 +6921,7 @@ static void __declspec(naked) mark_learned_guild_spells(void)
         lea edx, [eax+eax*2]
         shr eax, 2
         sub edx, eax
-        mov ax, word ptr [ecx+0x108+SKILL_FIRE*2+eax*2]
+        mov ax, word ptr [ecx+SKILL_FIRE*2+eax*2].s_player.skills
         test eax, eax
         jz cannot
         sub esi, edx
@@ -6883,7 +6996,7 @@ static void __declspec(naked) fly_scroll_chunk(void)
       {
         cmp word ptr [ebx+10], si
         jz skip
-        mov byte ptr [PARTY_BUFF_ADDR+BUFF_FLY*16+15], 1
+        mov byte ptr [PARTY_BUFF_ADDR+BUFF_FLY*SIZE_BUFF].s_spell_buff.bits, 1
         skip:
       }
 }
@@ -6894,7 +7007,8 @@ static void __declspec(naked) improved_hammerhands(void)
     asm
       {
         test eax, eax ; true if unarmed
-        movzx eax, word ptr [edi+0x17a0+PBUFF_HAMMERHANDS*16+8] ; replaced code
+        movzx eax, word ptr [edi+PBUFF_HAMMERHANDS*SIZE_BUFF+S_SB_POWER] \
+                            .s_player.spell_buffs ; replaced code
         jz halve
         add eax, eax
         ret
@@ -6915,9 +7029,9 @@ static void __declspec(naked) display_immutability_charges(void)
         mov eax, dword ptr [ebp-16] ; replaced code
         mov dword ptr [ebp-20], ecx ; also replaced code
         mov ecx, dword ptr [ebp-8]
-        cmp ecx, PARTY_BUFF_ADDR + 16 * BUFF_IMMUTABILITY
+        cmp ecx, PARTY_BUFF_ADDR + BUFF_IMMUTABILITY * SIZE_BUFF
         jne quit
-        movzx ecx, word ptr [ecx+8] ; buff power
+        movzx ecx, word ptr [ecx].s_spell_buff.power
         push ecx
         push dword ptr [eax]
 #ifdef __clang__
@@ -6941,7 +7055,7 @@ static void __declspec(naked) turn_undead_damage(void)
       {
         test eax, eax ; -1 if no object created
         js skip
-        push dword ptr [edi+40] ; target hp
+        push dword ptr [edi].s_map_monster.hp
         push esi
         push esi
         push esi
@@ -6952,9 +7066,9 @@ static void __declspec(naked) turn_undead_damage(void)
         call dword ptr ds:damage_monster_from_party
         add esp, 12
         pop eax
-        cmp word ptr [edi+40], ax ; not hurt, not scared
+        cmp word ptr [edi].s_map_monster.hp, ax ; not hurt, not scared
         je skip
-        cmp word ptr [edi+40], si ; check if dead
+        cmp word ptr [edi].s_map_monster.hp, si ; check if dead
         jle skip
         mov eax, dword ptr [ebp-16] ; replaced code
         shl eax, 7 ; ditto
@@ -6972,9 +7086,10 @@ static void __declspec(naked) immutability_double_cost(void)
 {
     asm
       {
-        sub word ptr [PARTY_BUFF_ADDR+BUFF_IMMUTABILITY*16+8], 2
+        sub word ptr [PARTY_BUFF_ADDR+BUFF_IMMUTABILITY*SIZE_BUFF] \
+                     .s_spell_buff.power, 2
         jg ok
-        mov ecx, PARTY_BUFF_ADDR + BUFF_IMMUTABILITY * 16
+        mov ecx, PARTY_BUFF_ADDR + BUFF_IMMUTABILITY * SIZE_BUFF
         call dword ptr ds:remove_buff
         ok:
         mov eax, 0x4930f6 ; resisted code path
@@ -6987,9 +7102,10 @@ static void __declspec(naked) immutability_triple_cost(void)
 {
     asm
       {
-        sub word ptr [PARTY_BUFF_ADDR+BUFF_IMMUTABILITY*16+8], 3
+        sub word ptr [PARTY_BUFF_ADDR+BUFF_IMMUTABILITY*SIZE_BUFF] \
+                     .s_spell_buff.power, 3
         jg ok
-        mov ecx, PARTY_BUFF_ADDR + BUFF_IMMUTABILITY * 16
+        mov ecx, PARTY_BUFF_ADDR + BUFF_IMMUTABILITY * SIZE_BUFF
         call dword ptr ds:remove_buff
         ok:
         mov eax, 0x4930f6 ; resisted code path
@@ -7020,7 +7136,7 @@ static void __declspec(naked) learned_mind_spell_reorder(void)
 {
     asm
       {
-        lea eax, [esi+0x192+edi] ; replaced code
+        lea eax, [esi+edi].s_player.spells_known ; replaced code
         cmp edi, SPL_BERSERK - 1
         sete cl
         cmp edi, SPL_PSYCHIC_SHOCK - 1
@@ -7169,7 +7285,7 @@ static void __declspec(naked) death_blossom_gm(void)
       {
         xor eax, eax
         inc eax
-        mov ecx, dword ptr [esi+80] ; mastery
+        mov ecx, dword ptr [esi].s_map_object.spell_mastery
         shl eax, cl
         mov dword ptr [ebp-12], eax ; shard count
         ret
@@ -7220,11 +7336,11 @@ static void __declspec(naked) preserve_fire_spike(void)
       {
         cmp word ptr [esi], OBJ_FIRE_SPIKE
         jne skip
-        mov ax, word ptr [esi+16] ; object speed x
-        or ax, word ptr [esi+18] ; object speed y
-        or ax, word ptr [esi+20] ; object speed z
+        mov ax, word ptr [esi].s_map_object.speed_x
+        or ax, word ptr [esi].s_map_object.speed_y
+        or ax, word ptr [esi].s_map_object.speed_z
         jnz skip
-        dec dword ptr [esi+80] ; spell mastery / hit counter
+        dec dword ptr [esi].s_map_object.spell_mastery ; hit counter
         jz skip
         mov dword ptr [esp], 0x46cbec ; skip past proj removal
         skip:
@@ -7450,16 +7566,16 @@ static inline void misc_spells(void)
     hook_call(0x441688, blink_mass_buffs, 6);
     erase_code(0x441690, 10); // rest of old duration check
     patch_byte(0x4417c2, 0xb8); // mov eax, dword
-    patch_dword(0x4417c3, PBUFF_HAMMERHANDS * 16);
+    patch_dword(0x4417c3, PBUFF_HAMMERHANDS * SIZE_BUFF);
     hook_call(0x4417c7, blink_pc_buffs, 11);
     patch_byte(0x441800, 0xb8); // mov eax, dword
-    patch_dword(0x441801, PBUFF_BLESS * 16);
+    patch_dword(0x441801, PBUFF_BLESS * SIZE_BUFF);
     hook_call(0x441805, blink_pc_buffs, 11);
     patch_byte(0x44183e, 0xb8); // mov eax, dword
-    patch_dword(0x44183f, PBUFF_PRESERVATION * 16);
+    patch_dword(0x44183f, PBUFF_PRESERVATION * SIZE_BUFF);
     hook_call(0x441843, blink_pc_buffs, 11);
     patch_byte(0x44187c, 0xb8); // mov eax, dword
-    patch_dword(0x44187d, PBUFF_PAIN_REFLECTION * 16);
+    patch_dword(0x44187d, PBUFF_PAIN_REFLECTION * SIZE_BUFF);
     hook_call(0x441881, blink_pc_buffs, 11);
     hook_call(0x4b16be, mark_learned_guild_spells, 6);
     patch_bytes(0x42a9c7, ww_scroll_chunk, 10);
@@ -7547,22 +7663,22 @@ static void __declspec(naked) zombify(void)
 {
     asm
       {
-        mov byte ptr [edi+0x53], IMMUNE
-        mov byte ptr [edi+0x54], IMMUNE
-        cmp byte ptr [edi+0x55], IMMUNE
+        mov byte ptr [edi].s_map_monster.poison_resistance, IMMUNE
+        mov byte ptr [edi].s_map_monster.mind_resistance, IMMUNE
+        cmp byte ptr [edi].s_map_monster.holy_resistance, IMMUNE
         jne not_immune
-        mov byte ptr [edi+0x55], 0
+        mov byte ptr [edi].s_map_monster.holy_resistance, 0
         not_immune:
-        mov dword ptr [edi+116], 0 ; xp
-        or byte ptr [edi+183], MMF_ZOMBIE
+        mov dword ptr [edi].s_map_monster.experience, 0
+        or byte ptr [edi].s_map_monster.mod_flags, MMF_ZOMBIE
         mov eax, dword ptr [ebp-4] ; reanimate power
         lea eax, [eax+eax*4]
         add eax, eax
-        cmp eax, dword ptr [edi+108] ; max hp
+        cmp eax, dword ptr [edi].s_map_monster.max_hp
         jg low_hp
-        mov dword ptr [edi+108], eax
+        mov dword ptr [edi].s_map_monster.max_hp, eax
         low_hp:
-        lea ecx, [edi+212+MBUFF_ENSLAVE*16]
+        lea ecx, [edi+MBUFF_ENSLAVE*SIZE_BUFF].s_map_monster.spell_buffs
         xor eax, eax
         push eax
         push eax
@@ -7583,7 +7699,7 @@ static void __declspec(naked) destroy_undead_chunk(void)
 {
     asm
       {
-        cmp byte ptr [eax+0x55], IMMUNE
+        cmp byte ptr [eax].s_map_monster.holy_resistance, IMMUNE
         nop
         nop
         nop
@@ -7595,7 +7711,8 @@ static void __declspec(naked) control_undead_chunk(void)
 {
     asm
       {
-        cmp byte ptr [MAP_MONSTERS_ADDR+eax+0x55], IMMUNE
+        cmp byte ptr [MAP_MONSTERS_ADDR+eax].s_map_monster.holy_resistance, \
+            IMMUNE
       }
 }
 
@@ -7606,7 +7723,7 @@ static void __declspec(naked) turn_undead_chunk(void)
 {
     asm
       {
-        cmp byte ptr [edi+0x55], IMMUNE
+        cmp byte ptr [edi].s_map_monster.holy_resistance, IMMUNE
         nop
         nop
         nop
@@ -7620,7 +7737,7 @@ static void __declspec(naked) zombificable_chunk(void)
 {
     asm
       {
-        cmp byte ptr [esi+0xb9], CLASS_LICH
+        cmp byte ptr [esi].s_player.class, CLASS_LICH
         _emit 0x74
         _emit 0x0d
         mov eax, dword ptr [ebp-0x2c]
@@ -7645,30 +7762,33 @@ static void __declspec(naked) undead_slaying_element(void)
 {
     asm
       {
-        movsx edx, word ptr [esi+40] ; monster hp
+        movsx edx, word ptr [esi].s_map_monster.hp
         mov dword ptr [old_monster_hp], edx ; store for later
         and dword ptr [ebp-20], 0 ; zero out the damage just in case
         cmp dword ptr [ebp-8], PHYSICAL ; main attack element
         jne skip
-        mov al, byte ptr [esi+89] ; monster physical res
-        cmp al, byte ptr [esi+85] ; monster holy res
+        mov al, byte ptr [esi].s_map_monster.physical_resistance
+        cmp al, byte ptr [esi].s_map_monster.holy_resistance
         seta dl
-        cmp dword ptr [esi+212+MBUFF_DAY_OF_PROTECTION*16], 0
+        cmp dword ptr [esi+MBUFF_DAY_OF_PROTECTION*SIZE_BUFF] \
+                      .s_map_monster.spell_buffs, 0
         jnz protected
-        cmp dword ptr [esi+212+MBUFF_DAY_OF_PROTECTION*16+4], 0
+        cmp dword ptr [esi+MBUFF_DAY_OF_PROTECTION*SIZE_BUFF+4] \
+                      .s_map_monster.spell_buffs, 0
         jz compare
         protected:
-        sub al, byte ptr [esi+212+MBUFF_DAY_OF_PROTECTION*16+8]
+        sub al, byte ptr [esi+MBUFF_DAY_OF_PROTECTION*SIZE_BUFF+S_SB_POWER] \
+                         .s_map_monster.spell_buffs
         jb negative
         compare:
-        cmp al, byte ptr [esi+86] ; monster magic res
+        cmp al, byte ptr [esi].s_map_monster.magic_resistance
         negative:
         seta dh
         test ebx, ebx ; projectile
         jz prepare
-        cmp dword ptr [ebx+72], SPL_ARROW
+        cmp dword ptr [ebx].s_map_object.spell_type, SPL_ARROW
         je prepare
-        cmp dword ptr [ebx+72], SPL_KNIFE
+        cmp dword ptr [ebx].s_map_object.spell_type, SPL_KNIFE
         jne skip
         prepare:
         push ebx ; backup
@@ -7681,23 +7801,24 @@ static void __declspec(naked) undead_slaying_element(void)
         jz weapon
         ; bow
         mov ecx, 1 ; no looping
-        mov eax, dword ptr [edi+0x1950] ; bow slot
+        mov eax, dword ptr [edi+SLOT_MISSILE*4].s_player.equipment
         jmp check_slot
         weapon:
         mov ecx, 2 ; main hand first
         check_hand:
-        mov eax, dword ptr [edi+ecx*4+0x1944] ; one of hand slots
+        mov eax, dword ptr [edi+ecx*4-4].s_player.equipment
         check_slot:
         test eax, eax
         jz other_hand
         lea eax, [eax+eax*8]
-        lea eax, [edi+0x214+eax*4-36]
-        test byte ptr [eax+20], IFLAGS_BROKEN
+        lea eax, [edi+eax*4-SIZE_ITEM].s_player.items
+        test byte ptr [eax].s_item.flags, IFLAGS_BROKEN
         jnz other_hand
         mov edx, dword ptr [eax] ; id
         lea edx, [edx+edx*2]
         shl edx, 4
-        cmp byte ptr [ITEMS_TXT_ADDR+edx+28], 2 ; equip stat 0-2 = weapon
+        cmp byte ptr [ITEMS_TXT_ADDR+edx].s_items_txt_item.equip_stat, \
+            ITEM_TYPE_MISSILE - 1
         ja other_hand
         inc dword ptr [esp+8] ; have a weapon
         cmp dword ptr [eax], SWORD_OF_LIGHT
@@ -7713,11 +7834,11 @@ static void __declspec(naked) undead_slaying_element(void)
         je undead
         cmp dword ptr [eax], JUSTICE
         je undead
-        cmp dword ptr [eax+12], SPC_UNDEAD_SLAYING
+        cmp dword ptr [eax].s_item.bonus2, SPC_UNDEAD_SLAYING
         je undead
-        cmp dword ptr [eax+4], TEMP_ENCH_MARKER
+        cmp dword ptr [eax].s_item.bonus, TEMP_ENCH_MARKER
         jne skip_undead
-        cmp dword ptr [eax+8], SPC_UNDEAD_SLAYING
+        cmp dword ptr [eax].s_item.bonus_strength, SPC_UNDEAD_SLAYING
         jne skip_undead
         undead:
         inc dword ptr [esp+4] ; have an undead slaying weapon
@@ -7727,15 +7848,15 @@ static void __declspec(naked) undead_slaying_element(void)
         jz other_hand
         cmp dword ptr [eax], FLATTENER
         je spectral
-        cmp dword ptr [eax+12], SPC_SPECTRAL
+        cmp dword ptr [eax].s_item.bonus2, SPC_SPECTRAL
         je spectral
-        cmp dword ptr [eax+12], SPC_WRAITH
+        cmp dword ptr [eax].s_item.bonus2, SPC_WRAITH
         je spectral
-        cmp dword ptr [eax+4], TEMP_ENCH_MARKER
+        cmp dword ptr [eax].s_item.bonus, TEMP_ENCH_MARKER
         jne other_hand
-        cmp dword ptr [eax+8], SPC_SPECTRAL
+        cmp dword ptr [eax].s_item.bonus_strength, SPC_SPECTRAL
         je spectral
-        cmp dword ptr [eax+8], SPC_WRAITH
+        cmp dword ptr [eax].s_item.bonus_strength, SPC_WRAITH
         jne other_hand
         spectral:
         inc dword ptr [esp] ; have a spectral weapon
@@ -7845,18 +7966,18 @@ static void __declspec(naked) delayed_reanimation(void)
 {
     asm
       {
-        test byte ptr [esi+183], MMF_REANIMATE
+        test byte ptr [esi].s_map_monster.mod_flags, MMF_REANIMATE
         jnz reanimate
-        mov word ptr [esi+176], 5 ; replaced code
+        mov word ptr [esi].s_map_monster.ai_state, 5 ; replaced code
         ret
         reanimate:
-        and byte ptr [esi+183], ~MMF_REANIMATE
-        mov dword ptr [esi+116], 0 ; no more xp
-        mov dword ptr [esi+708], 0 ; group
-        mov dword ptr [esi+712], 9999 ; ally
+        and byte ptr [esi].s_map_monster.mod_flags, ~MMF_REANIMATE
+        mov dword ptr [esi].s_map_monster.experience, 0
+        mov dword ptr [esi].s_map_monster.group, 0
+        mov dword ptr [esi].s_map_monster.ally, 9999
         mov ecx, dword ptr [ebp-12] ; monster num
         call dword ptr ds:resurrect_monster
-        lea ecx, [esi+212+MBUFF_ENSLAVE*16]
+        lea ecx, [esi+MBUFF_ENSLAVE*SIZE_BUFF].s_map_monster.spell_buffs
         xor eax, eax
         push eax
         push eax
@@ -7880,10 +8001,10 @@ static void __declspec(naked) zombie_face_on_tpk(void)
         mov ecx, dword ptr [eax+COND_ZOMBIE*8]
         or ecx, dword ptr [eax+COND_ZOMBIE*8+4]
         jz skip
-        mov edx, dword ptr [eax+0x1924] ; old voice
-        mov dword ptr [eax+0x1920], edx ; current voice
-        mov edx, dword ptr [eax+0x1928] ; old face
-        mov byte ptr [eax+0xba], dl ; current face
+        mov edx, dword ptr [eax].s_player.old_voice
+        mov dword ptr [eax].s_player.voice, edx
+        mov edx, dword ptr [eax].s_player.old_face
+        mov byte ptr [eax].s_player.face, dl
         mov ecx, 4
         get_pc_id:
         cmp eax, dword ptr [0xa74f44+ecx*4] ; PC pointers
@@ -8073,7 +8194,7 @@ static void __fastcall cast_new_spells(int monster, void *vector, int spell,
                 int damage = spell_damage(spell, skill, mastery, 0);
                 if (damage_player(&PARTY[i], damage, ELEMENT(spell))
                     && !PARTY[i].conditions[COND_AFRAID])
-                    condition_immunity(&PARTY[i], COND_AFRAID, 0);
+                    inflict_condition(&PARTY[i], COND_AFRAID, 0);
               }
         make_sound(SOUND_THIS, spell_sound, 0, 0, -1, 0, 0, 0, 0);
       }
@@ -8185,7 +8306,7 @@ static inline void new_monster_spells(void)
 
 // Calling atoi directly from assembly doesn't seem to work,
 // probably because it's not relocated.
-static funcptr_t atoi_ptr = atoi;
+static const funcptr_t atoi_ptr = atoi;
 
 // Parse the new "reputation group" column in mapstats.txt.
 static void __declspec(naked) parse_mapstats_rep(void)
@@ -8205,8 +8326,8 @@ static void __declspec(naked) parse_mapstats_rep(void)
         push edi
         call dword ptr ds:atoi_ptr
         pop ecx
-        imul ecx, ebx, 68 ; struct size
-        mov byte ptr [esi+ecx+44], al ; unused byte
+        imul ecx, ebx, SIZE_MAPSTAT
+        mov byte ptr [esi+ecx].s_mapstats_item.reputation_group, al
         push 0x45472a ; default case
         ret 4
       }
@@ -8411,9 +8532,7 @@ static void __declspec(naked) show_zero_rep(void)
       {
         xor eax, eax
         mov ecx, dword ptr [reputation_index]
-        ; clang refuses to compile [rep_group+ecx*4], so I have to improvise
-        mov edx, offset reputation_group
-        cmp dword ptr [edx+ecx*4], eax
+        cmp dword ptr [reputation_group+ecx*4], eax
         jz zero
         call dword ptr ds:get_eff_reputation
         zero:
@@ -8605,7 +8724,7 @@ static void __declspec(naked) evt_set_hook(void)
         jmp quit
         condition:
         mov eax, dword ptr [ebp+12]
-        mov dword ptr [MOUSE_ITEM+20], eax
+        mov dword ptr [MOUSE_ITEM].s_item.flags, eax
         quit:
         mov dword ptr [esp], 0x44af3b
         ret
@@ -8652,7 +8771,7 @@ static void __declspec(naked) bounty_hook(void)
 {
     asm
       {
-        movzx ebx, byte ptr [0x5cccc0+eax+8] ; monsters.txt level
+        movzx ebx, byte ptr [0x5cccc0+eax-44].s_map_monster.level
         push ebx
         call bounty_rep
         mov eax, ebx
@@ -8801,10 +8920,10 @@ static void __declspec(naked) hp_burnout(void)
         jz healthy
         shr eax, 1 ; undead max hp penalty
         healthy:
-        sub eax, dword ptr [esi+6460] ; current hp
+        sub eax, dword ptr [esi].s_player.hp
         jge no_burnout
         sar eax, 2 ; 25%, rounded up
-        add dword ptr [esi+6460], eax ; burnout
+        add dword ptr [esi].s_player.hp, eax ; burnout
         mov dword ptr [ebp-4], 1 ; hp changed
         push 0x493d93 ; skip hp regen code
         ret 4
@@ -8820,7 +8939,7 @@ static void __declspec(naked) hp_burnout(void)
         no_bb_regen:
         test ebx, ebx
         jz no_regen
-        mov eax, dword ptr [esi+112] ; replaced code
+        mov eax, dword ptr [esi+COND_DEAD*8] ; replaced code
         ret
         no_regen:
         push 0x493d1e ; replaced jump
@@ -8845,7 +8964,7 @@ static void __declspec(naked) sp_burnout(void)
 {
     asm
       {
-        cmp dword ptr [esi+6464], 0
+        cmp dword ptr [esi].s_player.sp, 0
         jz no_drain
         test byte ptr [STATE_BITS], 0x30 ; if enemies are near
         jz no_reaper
@@ -8854,7 +8973,7 @@ static void __declspec(naked) sp_burnout(void)
         push GRIM_REAPER
         call dword ptr ds:has_item_in_slot
         or dword ptr [ebp-4], eax ; sp maybe changed
-        sub dword ptr [esi+6464], eax
+        sub dword ptr [esi].s_player.sp, eax
         jz no_drain
         no_reaper:
         mov ecx, esi
@@ -8862,7 +8981,7 @@ static void __declspec(naked) sp_burnout(void)
         push ELOQUENCE_TALISMAN
         call dword ptr ds:has_item_in_slot
         or dword ptr [ebp-4], eax
-        sub dword ptr [esi+6464], eax
+        sub dword ptr [esi].s_player.sp, eax
         no_drain:
         xor eax, eax ; zombies have no sp
         cmp dword ptr [ebp-24], 0 ; zombie
@@ -8873,11 +8992,11 @@ static void __declspec(naked) sp_burnout(void)
         jz compare_sp
         shr eax, 1 ; jar-less liches have half sp
         compare_sp:
-        sub eax, dword ptr [esi+6464] ; current sp
+        sub eax, dword ptr [esi].s_player.sp
         jg meditation_regen
         je quit
         sar eax, 2 ; 25%, rounded up
-        add dword ptr [esi+6464], eax ; burnout
+        add dword ptr [esi].s_player.sp, eax ; burnout
         mov dword ptr [ebp-4], 1 ; sp changed
         quit:
         push 0x493f3a ; skip old lich/zombie code
@@ -8895,7 +9014,7 @@ static void __declspec(naked) sp_burnout(void)
         div ecx
         cmp eax, edi
         cmova eax, edi
-        add dword ptr [esi+6464], eax
+        add dword ptr [esi].s_player.sp, eax
         mov dword ptr [ebp-4], 1 ; sp changed
         jmp quit
       }
@@ -8907,9 +9026,9 @@ static void __declspec(naked) healing_potions(void)
 {
     asm
       {
-        cmp dword ptr [esi+6460], eax
+        cmp dword ptr [esi].s_player.hp, eax
         jge skip
-        add dword ptr [esi+6460], ecx ; replaced code
+        add dword ptr [esi].s_player.hp, ecx ; replaced code
         cmp dword ptr [esp+8], 0x4687a8 ; check if called from potion code
         je skip
         ret
@@ -8945,9 +9064,9 @@ static void __declspec(naked) divine_intervention_hp(void)
 {
     asm
       {
-        cmp dword ptr [edx+6460], eax ; current vs max hp
+        cmp dword ptr [edx].s_player.hp, eax ; current vs max
         jge quit
-        mov dword ptr [edx+6460], eax ; replaced code
+        mov dword ptr [edx].s_player.hp, eax ; replaced code
         quit:
         ret
       }
@@ -8958,9 +9077,9 @@ static void __declspec(naked) divine_intervention_sp(void)
 {
     asm
       {
-        cmp dword ptr [ecx+6464], eax ; current vs max sp
+        cmp dword ptr [ecx].s_player.sp, eax ; current vs max
         jge quit
-        mov dword ptr [ecx+6464], eax ; replaced code
+        mov dword ptr [ecx].s_player.sp, eax ; replaced code
         quit:
         ret
       }
@@ -8971,9 +9090,9 @@ static void __declspec(naked) sacrifice_hp(void)
 {
     asm
       {
-        cmp dword ptr [edi+6460], eax ; current vs max hp
+        cmp dword ptr [edi].s_player.hp, eax ; current vs max
         jge quit
-        mov dword ptr [edi+6460], eax ; replaced code
+        mov dword ptr [edi].s_player.hp, eax ; replaced code
         quit:
         ret
       }
@@ -8984,9 +9103,9 @@ static void __declspec(naked) sacrifice_sp(void)
 {
     asm
       {
-        cmp dword ptr [edi+6464], eax ; current vs max sp
+        cmp dword ptr [edi].s_player.sp, eax ; current vs max
         jge quit
-        mov dword ptr [edi+6464], eax ; replaced code
+        mov dword ptr [edi].s_player.sp, eax ; replaced code
         quit:
         ret
       }
@@ -8998,9 +9117,9 @@ static void __declspec(naked) healer_or_temple_hp(void)
 {
     asm
       {
-        cmp dword ptr [esi+6460], eax ; current vs max hp
+        cmp dword ptr [esi].s_player.hp, eax ; current vs max hp
         jge quit
-        mov dword ptr [esi+6460], eax ; replaced code
+        mov dword ptr [esi].s_player.hp, eax ; replaced code
         quit:
         ret
       }
@@ -9011,9 +9130,9 @@ static void __declspec(naked) expert_healer_hp(void)
 {
     asm
       {
-        cmp dword ptr [esi+6340], eax ; current vs max hp
+        cmp dword ptr [esi-120].s_player.hp, eax ; current vs max
         jge quit
-        mov dword ptr [esi+6340], eax ; replaced code
+        mov dword ptr [esi-120].s_player.hp, eax ; replaced code
         quit:
         ret
       }
@@ -9024,9 +9143,9 @@ static void __declspec(naked) master_healer_hp(void)
 {
     asm
       {
-        cmp dword ptr [esi+6180], eax ; current vs max hp
+        cmp dword ptr [esi-280].s_player.hp, eax ; current vs max
         jge quit
-        mov dword ptr [esi+6180], eax ; replaced code
+        mov dword ptr [esi-280].s_player.hp, eax ; replaced code
         quit:
         ret
       }
@@ -9123,8 +9242,8 @@ static void __declspec(naked) temple_wizard_eye_power(void)
         mov ecx, SPL_WIZARD_EYE
         mov eax, dword ptr [DIALOG2]
         mov eax, dword ptr [eax+28] ; param = temple id
-        imul eax, eax, 52
-        fld dword ptr [EVENTS2D_ADDR+eax+32] ; temple cost
+        imul eax, eax, SIZE_EVENT2D
+        fld dword ptr [EVENTS2D_ADDR+eax].s_event2d.multiplier ; temple cost
         push 5
         fidiv dword ptr [esp] ; temple power = cost / 5
         fistp dword ptr [esp]
@@ -9143,8 +9262,8 @@ static void __declspec(naked) temple_other_spells_power(void)
         div edi
         mov eax, dword ptr [DIALOG2]
         mov eax, dword ptr [eax+28] ; param = temple id
-        imul eax, eax, 52
-        fld dword ptr [EVENTS2D_ADDR+eax+32] ; temple cost
+        imul eax, eax, SIZE_EVENT2D
+        fld dword ptr [EVENTS2D_ADDR+eax].s_event2d.multiplier ; temple cost
         push 5
         fidiv dword ptr [esp] ; temple power = cost / 5
         fistp dword ptr [esp]
@@ -9462,7 +9581,7 @@ static void __declspec(naked) melee_damage_check_main_weapon_first(void)
     asm
       {
         inc edi
-        lea edx, [esi+0x1948+SLOT_MAIN_HAND*4]
+        lea edx, [esi+SLOT_MAIN_HAND*4].s_player.equipment
         ret
       }
 }
@@ -9662,7 +9781,7 @@ static void __declspec(naked) rest_encounters(void)
         xor eax, eax ; set zf
         ret
         not_peasant:
-        test byte ptr [esi+36+2], 8 ; hostile
+        test byte ptr [esi+2].s_map_monster.bits, 8 ; hostile
         jnz quit
         mov ecx, esi
         xor edx, edx
@@ -9681,12 +9800,12 @@ static void __declspec(naked) color_broken_ac(void)
         call dword ptr ds:color_stat ; replaced call
         mov ecx, 16
         check_broken:
-        mov edx, dword ptr [ebp+0x1948+ecx*4-4] ; equipped items
+        mov edx, dword ptr [ebp+ecx*4-4].s_player.equipment
         test edx, edx
         jz next
         lea edx, [edx+edx*8]
-        lea edx, [ebp+0x214+edx*4-36]
-        test byte ptr [edx+20], IFLAGS_BROKEN
+        lea edx, [ebp+edx*4-SIZE_ITEM].s_player.items
+        test byte ptr [edx].s_item.flags, IFLAGS_BROKEN
         jz next
         mov eax, dword ptr [colors+CLR_RED*4]
         ret
@@ -10114,7 +10233,7 @@ static void __declspec(naked) variable_wand_power(void)
         test eax, eax
         jz no_belt
         add dword ptr [esp+8], SKILL_GM + 5 ; spell skill
-        mov al, byte ptr [esi+0xb9] ; class
+        mov al, byte ptr [esi].s_player.class
         and al, -4
         cmp al, CLASS_THIEF
         jne no_belt
@@ -10157,7 +10276,7 @@ static void __declspec(naked) recharge_spent_charges_sub_spell(void)
 {
     asm
       {
-        sub eax, dword ptr [ecx+16] ; discount remaining charges
+        sub eax, dword ptr [ecx].s_item.charges ; discount remaining ones
         mov dword ptr [ebp-20], eax ; replaced code
         fild dword ptr [ebp-20] ; replaced code
         ret
@@ -10170,8 +10289,8 @@ static void __declspec(naked) recharge_spent_charges_add_spell(void)
     asm
       {
         movzx eax, al ; replaced code
-        add eax, dword ptr [ecx+16] ; previous charges
-        mov byte ptr [ecx+25], al ; replaced code
+        add eax, dword ptr [ecx].s_item.charges
+        mov byte ptr [ecx].s_item.max_charges, al ; replaced code
         ret
       }
 }
@@ -10181,7 +10300,7 @@ static void __declspec(naked) recharge_spent_charges_sub_potion(void)
 {
     asm
       {
-        sub eax, dword ptr [esi+16] ; discount remaining charges
+        sub eax, dword ptr [esi].s_item.charges ; discount remaining ones
         mov dword ptr [ebp-20], eax ; replaced code
         fild dword ptr [ebp-20] ; replaced code
         ret
@@ -10194,12 +10313,12 @@ static void __declspec(naked) recharge_spent_charges_add_potion(void)
     asm
       {
         movzx eax, al ; replaced code
-        add eax, dword ptr [esi+16] ; previous charges
+        add eax, dword ptr [esi].s_item.charges
         jle min
-        mov byte ptr [esi+25], al ; replaced code
+        mov byte ptr [esi].s_item.max_charges, al ; replaced code
         ret
         min:
-        mov byte ptr [esi+25], 1
+        mov byte ptr [esi].s_item.max_charges, 1
         ret
       }
 }
@@ -10392,35 +10511,35 @@ static void __declspec(naked) tavern_buff_on_rest(void)
         test edx, edx
         js skip
         mov ax, word ptr [edx]
-        mov word ptr [esi+0xbe], ax
+        mov word ptr [esi+S_PL_STATS+2], ax
         mov ax, word ptr [edx+2]
-        mov word ptr [esi+0xc2], ax
+        mov word ptr [esi+S_PL_STATS+6], ax
         mov ax, word ptr [edx+4]
-        mov word ptr [esi+0xc6], ax
+        mov word ptr [esi+S_PL_STATS+10], ax
         mov ax, word ptr [edx+6]
-        mov word ptr [esi+0xca], ax
+        mov word ptr [esi+S_PL_STATS+14], ax
         mov ax, word ptr [edx+8]
-        mov word ptr [esi+0xd2], ax
+        mov word ptr [esi+S_PL_STATS+22], ax
         mov ax, word ptr [edx+10]
-        mov word ptr [esi+0xce], ax
+        mov word ptr [esi+S_PL_STATS+18], ax
         mov ax, word ptr [edx+12]
-        mov word ptr [esi+0xd6], ax
+        mov word ptr [esi+S_PL_STATS+26], ax
         mov ax, word ptr [edx+14]
-        mov word ptr [esi+0xd8], ax
+        mov word ptr [esi].s_player.ac_bonus, ax
         mov ax, word ptr [edx+16]
-        mov word ptr [esi+0xdc], ax
+        mov word ptr [esi].s_player.level_bonus, ax
         mov ax, word ptr [edx+18]
-        mov word ptr [esi+0x178a], ax
+        mov word ptr [esi].s_player.fire_res_bonus, ax
         mov ax, word ptr [edx+20]
-        mov word ptr [esi+0x178c], ax
+        mov word ptr [esi].s_player.shock_res_bonus, ax
         mov ax, word ptr [edx+22]
-        mov word ptr [esi+0x178e], ax
+        mov word ptr [esi].s_player.cold_res_bonus, ax
         mov ax, word ptr [edx+24]
-        mov word ptr [esi+0x1790], ax
+        mov word ptr [esi].s_player.poison_res_bonus, ax
         mov ax, word ptr [edx+26]
-        mov word ptr [esi+0x1798], ax
+        mov word ptr [esi].s_player.mind_res_bonus, ax
         mov ax, word ptr [edx+28]
-        mov word ptr [esi+0x179a], ax
+        mov word ptr [esi].s_player.magic_res_bonus, ax
         skip:
         mov ecx, esi ; replaced code
         mov dword ptr [esi+COND_UNCONSCIOUS*8], edi ; replaced code
@@ -10536,7 +10655,7 @@ static void __declspec(naked) increase_training_price(void)
 {
     asm
       {
-        movzx eax, word ptr [ebx+0xda] ; player level
+        movzx eax, word ptr [ebx].s_player.level_base
         cmp eax, 20
         jbe skip
         mov dword ptr [ebp-20], eax ; unused at this point
@@ -10556,9 +10675,9 @@ static void __declspec(naked) temple_heal_price(void)
 {
     asm
       {
-        cmp word ptr [edi+0xda], 10 ; pc level
+        cmp word ptr [edi].s_player.level_base, 10
         jbe skip
-        fild word ptr [edi+0xda]
+        fild word ptr [edi].s_player.level_base
         fidiv dword ptr [ten]
         fmul st(0), st(0)
         fmulp
@@ -10783,7 +10902,7 @@ static void __declspec(naked) disable_flight(void)
 {
     asm
       {
-        cmp dword ptr [PARTY_ADDR+eax-0x1b3c+0x1940], ecx ; replaced code
+        cmp dword ptr [PARTY_ADDR+eax-SIZE_PLAYER].s_player.sp, ecx ; replaced
         jg skip
         mov dword ptr [0xacd53c], ecx ; disable flight
         skip:
@@ -10808,12 +10927,14 @@ static void __declspec(naked) berserk_no_run_away(void)
 {
     asm
       {
-        movzx eax, byte ptr [ebx+60] ; replaced code
+        movzx eax, byte ptr [ebx].s_map_monster.ai_type ; replaced code
         dec eax ; ditto
         jz quit
-        cmp dword ptr [ebx+212+MBUFF_BERSERK*16], 0
+        cmp dword ptr [ebx+MBUFF_BERSERK*SIZE_BUFF] \
+                      .s_map_monster.spell_buffs, 0
         jnz berserk
-        cmp dword ptr [ebx+212+MBUFF_BERSERK*16+4], 0
+        cmp dword ptr [ebx+MBUFF_BERSERK*SIZE_BUFF+4] \
+                      .s_map_monster.spell_buffs, 0
         jz skip
         berserk:
         xor eax, eax ; suicidal
@@ -10832,31 +10953,33 @@ static void __declspec(naked) charge_zero_wands(void)
 {
     asm
       {
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+28], ITEM_TYPE_WAND - 1
+        cmp byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.equip_stat, \
+            ITEM_TYPE_WAND - 1
         je wand
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+28], ITEM_TYPE_POTION - 1 ; replaced
+        cmp byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.equip_stat, \
+            ITEM_TYPE_POTION - 1 ; replaced code
         ret
         wand:
-        cmp eax, DRAGONS_WRATH * 48 ; initialized separately, a bit later
+        cmp eax, DRAGONS_WRATH * SIZE_ITEM_TXT ; inited separately, a bit later
         je skip
-        cmp byte ptr [edi+25], 0
+        cmp byte ptr [edi].s_item.max_charges, 0
         jnz quit
-        mov al, byte ptr [ITEMS_TXT_ADDR+eax+32] ; mod2 (max charges)
+        mov al, byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.mod2 ; max chrgs
         inc al
-        mov byte ptr [edi+25], al ; max charges
+        mov byte ptr [edi].s_item.max_charges, al
         call dword ptr ds:random
         mov ecx, 6
         xor edx, edx
         div ecx
-        add byte ptr [edi+25], dl ; + 0 to 5
+        add byte ptr [edi].s_item.max_charges, dl ; + 0 to 5
         call dword ptr ds:random
-        movzx ecx, byte ptr [edi+25]
-        mov dword ptr [edi+16], ecx ; current charges
+        movzx ecx, byte ptr [edi].s_item.max_charges
+        mov dword ptr [edi].s_item.charges, ecx
         xor edx, edx
         shr ecx, 1 ; preused up to 50%
         div ecx
         inc edx
-        sub dword ptr [edi+16], edx
+        sub dword ptr [edi].s_item.charges, edx
         skip:
         test edi, edi ; clear zf
         quit:
@@ -10894,9 +11017,9 @@ static void __declspec(naked) lich_physical_age(void)
 {
     asm
       {
-        cmp byte ptr [esi+0xb9], CLASS_LICH
+        cmp byte ptr [esi].s_player.class, CLASS_LICH
         je lich
-        movsx ecx, word ptr [esi+0xde] ; replaced code
+        movsx ecx, word ptr [esi].s_player.age_bonus ; replaced code
         ret
         lich:
         mov eax, 25 ; young age
@@ -10910,9 +11033,9 @@ static void __declspec(naked) lich_mental_age(void)
 {
     asm
       {
-        movsx ecx, word ptr [esi+0xde] ; replaced code
+        movsx ecx, word ptr [esi].s_player.age_bonus ; replaced code
         add eax, ecx ; replaced code
-        cmp byte ptr [esi+0xb9], CLASS_LICH
+        cmp byte ptr [esi].s_player.class, CLASS_LICH
         je lich
         ret
         lich:
@@ -11037,7 +11160,7 @@ static void __declspec(naked) delay_dismiss_hireling_reply(void)
         mov dword ptr [esp], 0x4456fa ; skip any reply
         ret
         ok:
-        mov ecx, dword ptr [npcprof+eax*4+16] ; replaced code, almost
+        mov ecx, dword ptr [npcprof+eax*4].s_npcprof.dismiss ; replaced, almost
         ret
       }
 }
@@ -11340,7 +11463,7 @@ static void __declspec(naked) the_largest_manticore(void)
     asm
       {
         mov eax, dword ptr [ebp-40] ; replaced code
-        cmp dword ptr [ecx+820], 16 ; check placemon name
+        cmp dword ptr [ecx].s_map_monster.name_id, 16 ; check placemon name
         jne skip
         shl eax, 1 ; height
         shl dword ptr [esi], 1 ; width
@@ -11635,7 +11758,7 @@ static void __declspec(naked) aim_remove_fear(void)
         mov ecx, dword ptr [esp+32] ; skill override
         test ecx, ecx
         jnz override
-        movzx ecx, word ptr [eax+298] ; mind skill
+        movzx ecx, word ptr [eax+SKILL_MIND*2].s_player.skills
         override:
         push 0x427807 ; test-if-GM hammerhands code
         ret 4
@@ -11667,7 +11790,7 @@ static void __declspec(naked) stone_to_flesh_chunk(void)
 {
     asm
       {
-        imul edi, edi, 60*60*24 ; one day (M duration)
+        imul edi, edi, 60 * 60 * 24 ; one day (M duration)
         _emit 0xeb ; jmp
         _emit 0xc1 ; to 0x42b5dd
       }
@@ -11725,7 +11848,7 @@ static void __declspec(naked) elixir_of_life_applicable(void)
       {
         lea ecx, [PARTY_ADDR+edi]
         call dword ptr ds:get_full_hp
-        cmp eax, dword ptr [PARTY_ADDR+edi+0x193c]
+        cmp eax, dword ptr [PARTY_ADDR+edi].s_player.hp
         jg ok
         mov eax, dword ptr [PARTY_ADDR+edi+COND_DRUNK*8]
         or eax, dword ptr [PARTY_ADDR+edi+COND_DRUNK*8+4]
@@ -11753,10 +11876,10 @@ static void __declspec(naked) elixir_of_life_new_cures(void)
         call dword ptr ds:timed_cure_condition
         test al, al
         jz not_zombie
-        mov eax, dword ptr [PARTY_ADDR+edi+0x1924] ; old voice
-        mov dword ptr [PARTY_ADDR+edi+0x1920], eax
-        mov edx, dword ptr [PARTY_ADDR+edi+0x1928] ; old face
-        mov byte ptr [PARTY_ADDR+edi+0xba], dl
+        mov eax, dword ptr [PARTY_ADDR+edi].s_player.old_voice
+        mov dword ptr [PARTY_ADDR+edi].s_player.voice, eax
+        mov edx, dword ptr [PARTY_ADDR+edi].s_player.old_face
+        mov byte ptr [PARTY_ADDR+edi].s_player.face, dl
         movzx ecx, word ptr [ebx+4] ; pc number
         call dword ptr ds:update_face
         not_zombie:
@@ -11898,17 +12021,17 @@ static void __declspec(naked) pierce_debuff_resistance(void)
         weapon:
         mov ecx, dword ptr [ebp-8] ; stored edi
         ; vanilla debuffs only happen from main hand
-        mov edx, dword ptr [ecx+0x1948+SLOT_MAIN_HAND*4]
+        mov edx, dword ptr [ecx+SLOT_MAIN_HAND*4].s_player.equipment
         test edx, edx
         jz not_spell
         lea edx, [edx+edx*8]
-        test byte ptr [ecx+0x214+edx*4-36+20], IFLAGS_BROKEN
+        test byte ptr [ecx+edx*4+S_PL_ITEM0].s_item.flags, IFLAGS_BROKEN
         jnz not_spell
         not_broken:
-        mov eax, dword ptr [ecx+0x214+edx*4-36]
+        mov eax, dword ptr [ecx+edx*4-SIZE_ITEM].s_player.items
         lea eax, [eax+eax*2]
         shl eax, 4
-        movzx eax, byte ptr [ITEMS_TXT_ADDR+eax+29]
+        movzx eax, byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.skill
         push eax
         call dword ptr ds:get_skill
         and eax, SKILL_MASK
@@ -11923,7 +12046,7 @@ static void __declspec(naked) pierce_debuff_resistance(void)
         jne not_projectile
         mov eax, dword ptr [ebp-4] ; stored esi
         shrinking_ray:
-        mov eax, dword ptr [eax+76] ; spell skill
+        mov eax, dword ptr [eax].s_map_object.spell_power
         jmp not_spell
         not_projectile:
         cmp dword ptr [ebp+4], 0x427db8 ; start of cast spell function
@@ -11934,12 +12057,14 @@ static void __declspec(naked) pierce_debuff_resistance(void)
         mov eax, dword ptr [eax-56] ; spell skill
         not_spell:
         shl eax, 1 ; double the skill to make the effect noticeable
-        mov edx, dword ptr [edi+212+MBUFF_CURSED*16]
-        or edx, dword ptr [edi+212+MBUFF_CURSED*16+4]
+        mov edx, dword ptr [edi+MBUFF_CURSED*SIZE_BUFF] \
+                           .s_map_monster.spell_buffs
+        or edx, dword ptr [edi+MBUFF_CURSED*SIZE_BUFF+4] \
+                          .s_map_monster.spell_buffs
         jz not_cursed
         add eax, 10 ; effectively lowers res by 25% before skill bonus
         not_cursed:
-        cmp byte ptr [edi+182], GM
+        cmp byte ptr [edi].s_map_monster.id_level, GM
         jb no_id_bonus
         add eax, 5 ; less than curse, but still something
         no_id_bonus:
@@ -12123,7 +12248,7 @@ static void __declspec(naked) spcitems_probability_address_chunk(void)
 {
     asm
       {
-        mov edx, offset spcitems + 8
+        mov edx, offset spcitems + S_SPC_PROB
         nop
       }
 }
@@ -12133,7 +12258,7 @@ static void __declspec(naked) spcitems_level_address_chunk(void)
 {
     asm
       {
-        mov ecx, offset spcitems + 24
+        mov ecx, offset spcitems + S_SPC_LEVEL
         nop
       }
 }
@@ -12145,7 +12270,7 @@ static void __declspec(naked) spcitems_probability_from_level_chunk(void)
     asm
       {
         mov eax, dword ptr [ebp-8]
-        movzx eax, byte ptr [ecx-16+eax]
+        movzx eax, byte ptr [ecx-S_SPC_LEVEL+eax].s_spcitem.probability
       }
 }
 
@@ -12154,7 +12279,7 @@ static void __declspec(naked) spcitems_probability_address_chunk_2(void)
 {
     asm
       {
-        mov ebx, offset spcitems + 8
+        mov ebx, offset spcitems + S_SPC_PROB
         nop
       }
 }
@@ -12207,13 +12332,13 @@ static void __declspec(naked) parse_prefix_flag(void)
         ret
         prefix:
         mov ecx, dword ptr [ebp-16]
-        mov byte ptr [ecx+27], 0
+        mov byte ptr [ecx].s_spcitem.prefix, 0
         cmp byte ptr [esi], 'y'
         je yes
         cmp byte ptr [esi], 'Y'
         jne no
         yes:
-        mov byte ptr [ecx+27], dl
+        mov byte ptr [ecx].s_spcitem.prefix, dl
         no:
         test edx, edx ; set flags
         ret
@@ -12225,8 +12350,8 @@ static void __declspec(naked) read_prefix_flag(void)
 {
     asm
       {
-        imul ecx, eax, 28
-        cmp byte ptr [spcitems+ecx-1], 1 ; our value
+        imul ecx, eax, SIZE_SPCITEM
+        cmp byte ptr [spcitems+ecx-SIZE_SPCITEM].s_spcitem.prefix, 1
         ret ; jz follows shortly
       }
 }
@@ -12257,8 +12382,10 @@ static void __declspec(naked) cursed_monster_hits_monster(void)
     asm
       {
         mov ecx, dword ptr [esp+12] ; attacker
-        mov edx, dword ptr [ecx+212+MBUFF_CURSED*16]
-        or edx, dword ptr [ecx+212+MBUFF_CURSED*16+4]
+        mov edx, dword ptr [ecx+MBUFF_CURSED*SIZE_BUFF] \
+                           .s_map_monster.spell_buffs
+        or edx, dword ptr [ecx+MBUFF_CURSED*SIZE_BUFF+4] \
+                          .s_map_monster.spell_buffs
         jz success
         call dword ptr ds:random
         and eax, 1
@@ -12282,12 +12409,14 @@ static void __declspec(naked) cursed_monster_resists_damage(void)
         add eax, edx ; replaced code
         mov esi, 30
         mov ecx, dword ptr [ebp+8] ; monster
-        mov edx, dword ptr [ecx+212+MBUFF_CURSED*16]
-        or edx, dword ptr [ecx+212+MBUFF_CURSED*16+4]
+        mov edx, dword ptr [ecx+MBUFF_CURSED*SIZE_BUFF] \
+                           .s_map_monster.spell_buffs
+        or edx, dword ptr [ecx+MBUFF_CURSED*SIZE_BUFF+4] \
+                          .s_map_monster.spell_buffs
         jz not_cursed
         add esi, 10
         not_cursed:
-        cmp byte ptr [ecx+182], GM
+        cmp byte ptr [ecx].s_map_monster.id_level, GM
         jb no_bonus
         add esi, 5
         no_bonus:
@@ -12378,12 +12507,12 @@ static void __declspec(naked) cursed_weapon(void)
       {
         test ebx, ebx
         jz melee
-        cmp dword ptr [ebx+72], SPL_ARROW
+        cmp dword ptr [ebx].s_map_object.spell_type, SPL_ARROW
         je bow
-        cmp dword ptr [ebx+72], SPL_KNIFE
+        cmp dword ptr [ebx].s_map_object.spell_type, SPL_KNIFE
         jne fail
         bow:
-        mov eax, dword ptr [edi+0x1950] ; bow slot
+        mov eax, dword ptr [edi+SLOT_MISSILE*4].s_player.equipment
         xor ecx, ecx
         jmp check
         melee:
@@ -12392,7 +12521,7 @@ static void __declspec(naked) cursed_weapon(void)
         call dword ptr ds:has_enchanted_item
         test eax, eax
         jnz fear
-        cmp byte ptr [edi+0xb9], CLASS_BLACK_KNIGHT
+        cmp byte ptr [edi].s_player.class, CLASS_BLACK_KNIGHT
         ja no_zombie
         test byte ptr [NPC_ADDR+HORSE_DEYJA*76+8], NPC_HIRED
         jnz fear
@@ -12409,13 +12538,13 @@ static void __declspec(naked) cursed_weapon(void)
         call terrifying_helmet
         no_fear:
         mov ecx, 2
-        mov eax, dword ptr [edi+0x194c] ; main hand
+        mov eax, dword ptr [edi+SLOT_MAIN_HAND*4].s_player.equipment
         check:
         test eax, eax
         jz offhand
         lea eax, [eax+eax*8]
-        lea eax, [edi+0x214+eax*4-36]
-        test byte ptr [eax+20], IFLAGS_BROKEN
+        lea eax, [edi+eax*4-SIZE_ITEM].s_player.items
+        test byte ptr [eax].s_item.flags, IFLAGS_BROKEN
         jnz offhand
         cmp dword ptr [eax], VIPER
         je viper
@@ -12437,19 +12566,19 @@ static void __declspec(naked) cursed_weapon(void)
         pop ecx
         pop eax
         not_headache:
-        cmp byte ptr [edi+0xb9], CLASS_BLACK_KNIGHT
+        cmp byte ptr [edi].s_player.class, CLASS_BLACK_KNIGHT
         jne not_knight
         test ecx, ecx
         jnz cursed
         not_knight:
-        cmp dword ptr [eax+12], SPC_CURSED
+        cmp dword ptr [eax].s_item.bonus2, SPC_CURSED
         je cursed
-        cmp dword ptr [eax+12], SPC_WRAITH
+        cmp dword ptr [eax].s_item.bonus2, SPC_WRAITH
         je cursed
         offhand:
         dec ecx
         jle fail
-        mov eax, dword ptr [edi+0x1948] ; offhand
+        mov eax, dword ptr [edi+SLOT_OFFHAND*4].s_player.equipment
         jmp check
         cursed:
         push eax
@@ -12463,7 +12592,7 @@ static void __declspec(naked) cursed_weapon(void)
         mov eax, dword ptr [eax]
         lea eax, [eax+eax*2]
         shl eax, 4
-        movzx eax, byte ptr [ITEMS_TXT_ADDR+eax+29]
+        movzx eax, byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.skill
         push eax
         mov ecx, edi
         call dword ptr ds:get_skill
@@ -12485,7 +12614,7 @@ static void __declspec(naked) cursed_weapon(void)
         push ecx
         push edx
         push eax
-        lea ecx, [esi+212] ; cursed debuff
+        lea ecx, [esi+MBUFF_CURSED*SIZE_BUFF].s_map_monster.spell_buffs
         call dword ptr ds:add_buff
         push 0
         push esi
@@ -12520,14 +12649,14 @@ static void __declspec(naked) soul_stealing_weapon(void)
         call kill_checks
         test ebx, ebx
         jnz quit
-        movzx eax, byte ptr [edi+0xb9] ; class
+        movzx eax, byte ptr [edi].s_player.class
         movzx ebx, byte ptr [0x4ed634+eax] ; sp multiplier
-        mov eax, dword ptr [edi+0x194c] ; main hand
+        mov eax, dword ptr [edi+SLOT_MAIN_HAND*4].s_player.equipment
         test eax, eax
         jz offhand
         lea eax, [eax+eax*8]
-        lea eax, [edi+0x214+eax*4-36]
-        test byte ptr [eax+20], IFLAGS_BROKEN
+        lea eax, [edi+eax*4-SIZE_ITEM].s_player.items
+        test byte ptr [eax].s_item.flags, IFLAGS_BROKEN
         jnz offhand
         cmp dword ptr [eax], ETHRICS_STAFF
         jne no_zombie
@@ -12541,29 +12670,29 @@ static void __declspec(naked) soul_stealing_weapon(void)
         jz quit
         cmp dword ptr [eax], SACRIFICIAL_DAGGER
         je soul_mainhand
-        cmp dword ptr [eax+12], SPC_SOUL_STEALING
+        cmp dword ptr [eax].s_item.bonus2, SPC_SOUL_STEALING
         jne offhand
         soul_mainhand:
-        movzx eax, byte ptr [esi+52] ; monster level
-        add dword ptr [edi+6464], eax ; add SP -- overheal is OK here
+        movzx eax, byte ptr [esi].s_map_monster.level
+        add dword ptr [edi].s_player.sp, eax ; overheal is OK here
         offhand:
         test ebx, ebx
         jz quit
         xor ebx, ebx ; restore
-        mov eax, dword ptr [edi+0x1948] ; offhand
+        mov eax, dword ptr [edi+SLOT_OFFHAND*4].s_player.equipment
         test eax, eax
         jz quit
         lea eax, [eax+eax*8]
-        lea eax, [edi+0x214+eax*4-36]
-        test byte ptr [eax+20], IFLAGS_BROKEN
+        lea eax, [edi+eax*4-SIZE_ITEM].s_player.items
+        test byte ptr [eax].s_item.flags, IFLAGS_BROKEN
         jnz quit
         cmp dword ptr [eax], SACRIFICIAL_DAGGER
         je soul_offhand
-        cmp dword ptr [eax+12], SPC_SOUL_STEALING
+        cmp dword ptr [eax].s_item.bonus2, SPC_SOUL_STEALING
         jne quit
         soul_offhand:
-        movzx eax, byte ptr [esi+52] ; monster level
-        add dword ptr [edi+6464], eax ; add SP -- overheal is OK here
+        movzx eax, byte ptr [esi].s_map_monster.level
+        add dword ptr [edi].s_player.sp, eax ; overheal is OK here
         quit:
         mov ecx, dword ptr [ebp-24] ; replaced code
         xor edx, edx ; replaced code
@@ -12591,10 +12720,10 @@ static void __declspec(naked) check_backstab(void)
 {
     asm
       {
-        cmp word ptr [ecx+0x108+SKILL_THIEVERY*2], SKILL_GM
+        cmp word ptr [ecx+SKILL_THIEVERY*2].s_player.skills, SKILL_GM
         jae backstab
         mov edx, dword ptr [PARTY_DIR]
-        sub dx, word ptr [esi+154] ; monster direction
+        sub dx, word ptr [esi].s_map_monster.direction
         test dh, 6 ; we want no more than +/-512 mod 2048 difference
         jnp quit ; PF == 1 will match 0x000 and 0x110 only
         backstab:
@@ -12612,31 +12741,34 @@ static void __declspec(naked) turn_afraid_monster(void)
 {
     asm
       {
-        test byte ptr [ebx+38], 8 ; hostile bit
+        test byte ptr [ebx+2].s_map_monster.bits, 8 ; hostile bit
         jz skip
-        mov edx, dword ptr [ebx+212+MBUFF_FEAR*16]
-        or edx, dword ptr [ebx+212+MBUFF_FEAR*16+4]
+        mov edx, dword ptr [ebx+MBUFF_FEAR*SIZE_BUFF].s_map_monster.spell_buffs
+        or edx, dword ptr [ebx+MBUFF_FEAR*SIZE_BUFF+4] \
+                          .s_map_monster.spell_buffs
         jnz turn
-        cmp byte ptr [ebx+60], 1 ; ai type
+        cmp byte ptr [ebx].s_map_monster.ai_type, 1
         jb skip ; suicidal
         je turn ; wimp
-        test byte ptr [ebx+36+2], 2 ; no flee bit
+        test byte ptr [ebx+2].s_map_monster.bits, 2 ; no flee bit
         jnz skip
-        mov edx, dword ptr [ebx+212+MBUFF_BERSERK*16]
-        or edx, dword ptr [ebx+212+MBUFF_BERSERK*16+4]
+        mov edx, dword ptr [ebx+MBUFF_BERSERK*SIZE_BUFF] \
+                           .s_map_monster.spell_buffs
+        or edx, dword ptr [ebx+MBUFF_BERSERK*SIZE_BUFF+4] \
+                          .s_map_monster.spell_buffs
         jnz skip
-        movzx edx, word ptr [ebx+40] ; monster hp
+        movzx edx, word ptr [ebx].s_map_monster.hp
         lea edx, [edx+edx*4] ; 1/5th == 20%
-        cmp byte ptr [ebx+60], 3 ; aggressive
+        cmp byte ptr [ebx].s_map_monster.ai_type, 3 ; aggressive
         jne check_hp
         shl edx, 1 ; 1/10th == 10%
         check_hp:
-        cmp edx, dword ptr [ebx+108] ; full hp
+        cmp edx, dword ptr [ebx].s_map_monster.max_hp
         ja skip
         turn:
         xor ax, 0x400 ; turn around
         skip:
-        mov word ptr [ebx+154], ax ; replaced code
+        mov word ptr [ebx].s_map_monster.direction, ax ; replaced code
         ret
       }
 }
@@ -12649,13 +12781,13 @@ static void __declspec(naked) lightweight_armor(void)
     asm
       {
         call dword ptr ds:ftol ; replaced code
-        mov ecx, dword ptr [esi+0x1954] ; armor slot
+        mov ecx, dword ptr [esi+SLOT_BODY_ARMOR*4].s_player.equipment
         lea ecx, [ecx+ecx*8]
-        cmp dword ptr [esi+0x214+ecx*4-36], ELVEN_CHAINMAIL
+        cmp dword ptr [esi+S_PL_ITEM0+ecx*4], ELVEN_CHAINMAIL
         je lightweight
-        cmp dword ptr [esi+0x214+ecx*4-36], RED_DRAGON_SCALE_MAIL
+        cmp dword ptr [esi+S_PL_ITEM0+ecx*4], RED_DRAGON_SCALE_MAIL
         je lightweight
-        cmp dword ptr [esi+0x214+ecx*4-36+12], SPC_LIGHTWEIGHT
+        cmp dword ptr [esi+S_PL_ITEM0+ecx*4].s_item.bonus2, SPC_LIGHTWEIGHT
         jne quit
         lightweight:
         sub eax, 10
@@ -12673,9 +12805,9 @@ static void __declspec(naked) lightweight_shield(void)
     asm
       {
         call dword ptr ds:ftol ; replaced code
-        mov ecx, dword ptr [esi+0x1948] ; offhand slot
+        mov ecx, dword ptr [esi+SLOT_OFFHAND*4].s_player.equipment
         lea ecx, [ecx+ecx*8]
-        cmp dword ptr [esi+0x214+ecx*4-36+12], SPC_LIGHTWEIGHT
+        cmp dword ptr [esi+S_PL_ITEM0+ecx*4].s_item.bonus2, SPC_LIGHTWEIGHT
         jne quit
         sub eax, 10
         jge quit
@@ -12738,7 +12870,7 @@ static void __declspec(naked) dispel_party_buffs(void)
       {
         mov esi, PARTY_BUFF_ADDR
         check_buff:
-        mov cl, byte ptr [esi+14] ; caster
+        mov cl, byte ptr [esi].s_spell_buff.caster
         test cl, cl
         jnz has_caster
         call dword ptr ds:random
@@ -12753,7 +12885,7 @@ static void __declspec(naked) dispel_party_buffs(void)
         mov ecx, esi
         call dword ptr ds:remove_buff
         resisted:
-        add esi, 16
+        add esi, SIZE_BUFF
         cmp esi, PARTY_ADDR
         jl check_buff
         xor ebx, ebx
@@ -12771,7 +12903,7 @@ static void __declspec(naked) magic_school_affinity(void)
 {
     asm
       {
-        mov eax, dword ptr [eax+0x214+12] ; replaced code
+        mov eax, dword ptr [eax+12].s_player.items ; replaced code
         cmp eax, SPC_BODY_AFFINITY
         ja quit
         cmp eax, SPC_FIRE_AFFINITY
@@ -12818,7 +12950,7 @@ static void __declspec(naked) dont_lower_magic_bonus(void)
 {
     asm
       {
-        and eax, 31 ; replaced code
+        and eax, SKILL_MASK / 2 ; replaced code
         cmp dword ptr [esp+24], eax
         jg quit
         mov dword ptr [esp+24], eax ; replaced code
@@ -12835,19 +12967,20 @@ static void __declspec(naked) blessed_rightnand_weapon(void)
     asm
       {
         cmp esi, STAT_MELEE_ATTACK
-        mov ecx, dword ptr [ebx+0x214+eax*4-36]
+        mov ecx, dword ptr [ebx+S_PL_ITEM0+eax*4]
         jne skip
         lea edx, [ecx+ecx*2]
         shl edx, 4
-        mov eax, dword ptr [ebx+0x214+eax*4-36+12]
+        mov eax, dword ptr [ebx+S_PL_ITEM0+eax*4].s_item.bonus2
         cmp eax, SPC_BLESSED
         jne not_blessed
         add dword ptr [esp+20], 10 ; stat bonus
-        cmp byte ptr [ITEMS_TXT_ADDR+edx+28], ITEM_TYPE_WEAPON2 - 1
+        cmp byte ptr [ITEMS_TXT_ADDR+edx].s_items_txt_item.equip_stat, \
+            ITEM_TYPE_WEAPON2 - 1
         jne not_blessed
-        cmp byte ptr [ITEMS_TXT_ADDR+edx+29], SKILL_SWORD
+        cmp byte ptr [ITEMS_TXT_ADDR+edx].s_items_txt_item.skill, SKILL_SWORD
         je extra_blessed
-        cmp byte ptr [ITEMS_TXT_ADDR+edx+29], SKILL_AXE
+        cmp byte ptr [ITEMS_TXT_ADDR+edx].s_items_txt_item.skill, SKILL_AXE
         jne not_blessed
         extra_blessed:
         add dword ptr [esp+20], 5
@@ -12858,9 +12991,9 @@ static void __declspec(naked) blessed_rightnand_weapon(void)
         not_sword:
         cmp eax, SPC_MASTERFUL
         jne skip
-        cmp byte ptr [ITEMS_TXT_ADDR+edx+29], SKILL_NONE ; club
+        cmp byte ptr [ITEMS_TXT_ADDR+edx].s_items_txt_item.skill, SKILL_NONE
         jne skip
-        add dword ptr [esp+20], 5
+        add dword ptr [esp+20], 5 ; club bonus
         skip:
         mov eax, ecx ; replaced code, effectively
         ret
@@ -12874,15 +13007,15 @@ static void __declspec(naked) blessed_offhand_weapon(void)
       {
         cmp esi, STAT_MELEE_ATTACK
         jne skip
-        cmp dword ptr [ebx+0x214+eax*4-36+12], SPC_BLESSED
+        cmp dword ptr [ebx+S_PL_ITEM0+eax*4].s_item.bonus2, SPC_BLESSED
         jne not_blessed
         add dword ptr [esp+20], 10 ; stat bonus
         not_blessed:
-        cmp dword ptr [ebx+0x214+eax*4-36], SWORD_OF_LIGHT
+        cmp dword ptr [ebx+S_PL_ITEM0+eax*4], SWORD_OF_LIGHT
         jne skip
         add dword ptr [esp+20], 20
         skip:
-        mov ebx, dword ptr [ebx+0x214+eax*4-36] ; replaced code
+        mov ebx, dword ptr [ebx+S_PL_ITEM0+eax*4] ; replaced code
         ret
       }
 }
@@ -12894,11 +13027,11 @@ static void __declspec(naked) blessed_missile_weapon(void)
       {
         cmp esi, STAT_RANGED_ATTACK
         jne skip
-        cmp dword ptr [ebx+0x214+eax*4-36+12], SPC_BLESSED
+        cmp dword ptr [ebx+S_PL_ITEM0+eax*4].s_item.bonus2, SPC_BLESSED
         jne skip
         add dword ptr [esp+20], 10 ; stat bonus
         skip:
-        mov ebx, dword ptr [ebx+0x214+eax*4-36] ; replaced code
+        mov ebx, dword ptr [ebx+S_PL_ITEM0+eax*4] ; replaced code
         ret
       }
 }
@@ -12961,7 +13094,8 @@ static inline void new_enchants(void)
     erase_code(0x4565c7, 60); // old prefix code
     // Spectral weapons are handled in undead_slaying_element() above.
     // Implement the monster cursed condition.
-    patch_dword(0x41ec01, 212); // start from debuff 0 (cursed)
+    // start from debuff 0 (cursed)
+    patch_dword(0x41ec01, offsetof(struct map_monster, spell_buffs));
     hook_call(0x41ec1e, display_cursed_debuff, 13);
     erase_code(0x41ede3, 1); // one more cycle
     // effect on spells handled in cast_new_spells() above
@@ -13224,7 +13358,7 @@ static void __declspec(naked) display_worn_rdsm_body(void)
         robw_xy:
         mov edi, offset robw_body_xy
         coords:
-        mov ebx, dword ptr [edx+20] ; preserve
+        mov ebx, dword ptr [edx].s_item.flags ; preserve
         mov eax, dword ptr [esp+40] ; body type
         mov edx, dword ptr [edi+eax*8]
         mov edi, dword ptr [edi+eax*8+4]
@@ -13413,7 +13547,7 @@ static void __declspec(naked) display_worn_rdsm_arm_idle(void)
         xchg eax, ebx
         mov ecx, edi
         mov edx, dword ptr [esp+52] ; worn item
-        mov edx, dword ptr [edx+0x1f0+20] ; item bits
+        mov edx, dword ptr [edx+S_PL_ITEM0].s_item.flags
         push 0x43dd7d ; code after setting coords
         ret 8
         skip:
@@ -13433,14 +13567,14 @@ static void __declspec(naked) set_dragon_charges(void)
       {
         cmp eax, DRAGONS_WRATH
         jne not_it
-        cmp byte ptr [edx+25], MAX_DRAGON_CHARGES ; make sure it`s not inited
-        je not_it
-        mov dword ptr [edx+16], MAX_DRAGON_CHARGES
-        mov byte ptr [edx+25], MAX_DRAGON_CHARGES
+        cmp byte ptr [edx].s_item.max_charges, MAX_DRAGON_CHARGES
+        je not_it ; make sure it`s not inited
+        mov dword ptr [edx].s_item.charges, MAX_DRAGON_CHARGES
+        mov byte ptr [edx].s_item.max_charges, MAX_DRAGON_CHARGES
         mov eax, dword ptr [CURRENT_TIME_ADDR]
-        mov dword ptr [edx+28], eax
+        mov dword ptr [edx].s_item.temp_ench_time, eax
         mov eax, dword ptr [CURRENT_TIME_ADDR+4]
-        mov dword ptr [edx+32], eax
+        mov dword ptr [edx+4].s_item.temp_ench_time, eax
         mov eax, dword ptr [edx] ; restore
         not_it:
         lea eax, [eax+eax*2] ; replaced code
@@ -13480,30 +13614,30 @@ static void __declspec(naked) regen_dragon_charges(void)
         jne skip
         call regen_living_knives
         skip:
-        mov eax, dword ptr [ecx+20] ; replaced code
+        mov eax, dword ptr [ecx].s_item.flags ; replaced code
         test al, 8 ; replaced code
         ret
         dragon:
         mov eax, dword ptr [CURRENT_TIME_ADDR]
         mov edx, dword ptr [CURRENT_TIME_ADDR+4]
-        sub eax, dword ptr [ecx+28]
-        sbb edx, dword ptr [ecx+32]
+        sub eax, dword ptr [ecx].s_item.temp_ench_time
+        sbb edx, dword ptr [ecx+4].s_item.temp_ench_time
         idiv dword ptr [half_hour]
         cmp eax, 0
         jle quit
-        cmp dword ptr [ecx+16], MAX_DRAGON_CHARGES
+        cmp dword ptr [ecx].s_item.charges, MAX_DRAGON_CHARGES
         jae full
-        add dword ptr [ecx+16], eax
-        cmp dword ptr [ecx+16], MAX_DRAGON_CHARGES
+        add dword ptr [ecx].s_item.charges, eax
+        cmp dword ptr [ecx].s_item.charges, MAX_DRAGON_CHARGES
         jbe full
-        mov dword ptr [ecx+16], MAX_DRAGON_CHARGES
+        mov dword ptr [ecx].s_item.charges, MAX_DRAGON_CHARGES
         full:
         mov eax, dword ptr [CURRENT_TIME_ADDR]
         sub eax, edx ; set last charge regen time to remainder
         mov edx, dword ptr [CURRENT_TIME_ADDR+4]
         sbb edx, 0 ; (full half-hours are spent now)
-        mov dword ptr [ecx+28], eax
-        mov dword ptr [ecx+32], edx
+        mov dword ptr [ecx].s_item.temp_ench_time, eax
+        mov dword ptr [ecx+4].s_item.temp_ench_time, edx
         quit:
         xor eax, eax ; set zf
         ret
@@ -13515,9 +13649,9 @@ static void __declspec(naked) regen_dragon_shooting(void)
 {
     asm
       {
-        lea ecx, [eax+0x1f0] ; item
+        lea ecx, [eax-SIZE_ITEM].s_player.items
         call regen_dragon_charges ; works here too
-        cmp dword ptr [ecx+16], edi ; replaced code, basically
+        cmp dword ptr [ecx].s_item.charges, edi ; replaced code, basically
         mov ecx, dword ptr [ecx] ; just in case
         ret
       }
@@ -13530,7 +13664,8 @@ static void __declspec(naked) cannot_recharge_dragon(void)
       {
         cmp dword ptr [ecx], DRAGONS_WRATH
         je cant
-        cmp byte ptr [ITEMS_TXT_ADDR+28+eax], 12 ; replaced code
+        cmp byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.equip_stat, \
+            ITEM_TYPE_WAND - 1 ; replaced code
         ret
         cant:
         cmp ecx, esi ; unset zf
@@ -13590,9 +13725,9 @@ static void __declspec(naked) headache_mind_damage(void)
         je viper
         cmp eax, STORM_TRIDENT
         je skip
-        cmp dword ptr [ebx+12], SPC_JESTER
+        cmp dword ptr [ebx].s_item.bonus2, SPC_JESTER
         je jester
-        cmp dword ptr [ebx+12], SPC_INFERNOS_2
+        cmp dword ptr [ebx].s_item.bonus2, SPC_INFERNOS_2
         je infernos
         sub eax, IRON_FEATHER ; replaced code
         skip:
@@ -13708,7 +13843,7 @@ static void __declspec(naked) check_lightning_redraw(void)
 {
     asm
       {
-        lea eax, [ebx+0x191+ebp]  ; replaced code
+        lea eax, [ebx+ebp-1].s_player.spells_known ; replaced code
         cmp byte ptr [eax+esi], 0 ; replaced code
         jnz quit
         cmp ebp, 11 ; air
@@ -13733,12 +13868,12 @@ static void __declspec(naked) check_lightning_mouseover(void)
 {
     asm
       {
-        cmp byte ptr [ecx+0x192+eax], bl ; replaced code
+        cmp byte ptr [ecx+eax].s_player.spells_known, bl ; replaced code
         jnz quit
         cmp eax, 6 ; lightning bolt
         jne nope
         mov ecx, dword ptr [esp+36] ; player
-        cmp byte ptr [ecx+0x1a4e], 1 ; air
+        cmp byte ptr [ecx].s_player.spellbook_page, 1 ; air
         jne nope
         push SLOT_MAIN_HAND
         push STORM_TRIDENT
@@ -13757,12 +13892,12 @@ static void __declspec(naked) check_lightning_click(void)
 {
     asm
       {
-        cmp byte ptr [ecx+0x192+eax], bl ; replaced code
+        cmp byte ptr [ecx+eax].s_player.spells_known, bl ; replaced code
         jnz quit
         cmp eax, 6 ; lightning bolt
         jne nope
         mov ecx, dword ptr [esp+36] ; player
-        cmp byte ptr [ecx+0x1a4e], 1 ; air
+        cmp byte ptr [ecx].s_player.spellbook_page, 1 ; air
         jne nope
         push SLOT_MAIN_HAND
         push STORM_TRIDENT
@@ -13782,7 +13917,7 @@ static void __declspec(naked) check_air_button(void)
 {
     asm
       {
-        cmp word ptr [edi+0x122], bx ; replaced code
+        cmp word ptr [edi+SKILL_AIR*2].s_player.skills, bx ; replaced code
         jnz quit
         mov ecx, edi
         push SLOT_MAIN_HAND
@@ -13823,7 +13958,7 @@ static void __declspec(naked) free_quick_lightning(void)
 {
     asm
       {
-        cmp eax, dword ptr [esi+0x1940] ; replaced code
+        cmp eax, dword ptr [esi].s_player.sp ; replaced code
         jle quit
         cmp ecx, SPL_LIGHTNING_BOLT
         jne nope
@@ -13853,7 +13988,7 @@ static void __declspec(naked) lightning_spear_skill(void)
         mov ecx, dword ptr [ebp-32] ; PC
         test byte ptr [ebx+9], 4 ; flag means 'cast from trident' here
         jnz trident
-        cmp byte ptr [ecx+0x192+SPL_LIGHTNING_BOLT-1], 0
+        cmp byte ptr [ecx+SPL_LIGHTNING_BOLT-1].s_player.spells_known, 0
         jnz pass
         mov eax, 0x4290c1 ; fail spell
         jmp eax
@@ -13865,7 +14000,8 @@ static void __declspec(naked) lightning_spear_skill(void)
         mov ecx, eax
         call dword ptr ds:skill_mastery
         mov dword ptr [ebp-24], eax
-        movzx eax, word ptr [SPELL_INFO_ADDR+SPL_LIGHTNING_BOLT*20+8+eax*2]
+        movzx eax, word ptr [SPELL_INFO_ADDR+SPL_LIGHTNING_BOLT*SIZE_SPL_INFO \
+                             +eax*2-2].s_spell_info.delay_normal
         mov dword ptr [ebp-180], eax ; recovery
         pass:
         mov eax, 0x4289b3 ; attack spells
@@ -13900,7 +14036,8 @@ static void __declspec(naked) ellingers_robe_preservation(void)
         call dword ptr ds:has_item_in_slot
         test eax, eax
         jg quit
-        cmp dword ptr [esi+0x1854], 0 ; replaced code
+        cmp dword ptr [esi+PBUFF_PRESERVATION*SIZE_BUFF+4] \
+                      .s_player.spell_buffs, 0 ; replaced code
         quit:
         ret
       }
@@ -13993,8 +14130,12 @@ static void __declspec(naked) movemap_leavetiab(void)
         mov dword ptr [esp+60], eax ; replaced code
         lea eax, [esi+31]
         push eax
+#ifdef __clang__
         mov eax, offset leavetiab
         push eax
+#else
+        push offset leavetiab
+#endif
         call dword ptr ds:uncased_strcmp
         add esp, 8
         mov dword ptr [tiab_strcmp], eax ; for later
@@ -14025,9 +14166,9 @@ static void __declspec(naked) movemap_immediate(void)
         mov dword ptr [0x576cbc], eax ; replaced code
         cmp dword ptr [tiab_strcmp], ebx
         jnz quit
-        mov eax, 0x44
+        mov eax, SIZE_MAPSTAT
         mul dword ptr [elemdata.map_index]
-        mov ecx, dword ptr [MAPSTATS_ADDR+eax+4] ; file name
+        mov ecx, dword ptr [MAPSTATS_ADDR+eax].s_mapstats_item.file_name
         quit:
         ret
       }
@@ -14044,9 +14185,9 @@ static void __declspec(naked) movemap_dialog(void)
         lea eax, [edi+31] ; replaced code
         ret
         tiab:
-        mov eax, 0x44
+        mov eax, SIZE_MAPSTAT
         mul dword ptr [elemdata.map_index]
-        mov eax, dword ptr [MAPSTATS_ADDR+eax+4] ; file name
+        mov eax, dword ptr [MAPSTATS_ADDR+eax].s_mapstats_item.file_name
         ret
       }
 }
@@ -14130,17 +14271,17 @@ static void __declspec(naked) new_temple_in_bottle(void)
         push GM
         push edx
         push eax
-        imul ecx, ecx, NBUFF_COUNT * 16
-        lea ecx, [elemdata.new_pc_buffs+ecx+NBUFF_FIRE_IMM*16]
+        imul ecx, ecx, NBUFF_COUNT * SIZE_BUFF
+        lea ecx, [elemdata.new_pc_buffs+ecx+NBUFF_FIRE_IMM*SIZE_BUFF]
         call dword ptr ds:add_buff
-        lea ecx, [esi+0x17a0+PBUFF_REGENERATION*16]
+        lea ecx, [esi+PBUFF_REGENERATION*SIZE_BUFF].s_player.spell_buffs
         call dword ptr ds:add_buff
         mov ecx, dword ptr [CGAME]
         mov ecx, dword ptr [ecx+0xe50]
         call dword ptr ds:spell_face_anim
         mov eax, RED_APPLE ; also ordinary apple effects
         not_apple:
-        test byte ptr [MOUSE_ITEM+20], IFLAGS_ID
+        test byte ptr [MOUSE_ITEM].s_item.flags, IFLAGS_ID
         jz not_it
         cmp eax, OGHMA_INFINIUM
         je oghma
@@ -14153,9 +14294,9 @@ static void __declspec(naked) new_temple_in_bottle(void)
         sub eax, 616 ; replaced code
         ret
         oghma:
-        add dword ptr [esi+0x1938], 80 ; skill points
-        sub dword ptr [esi+0x1944], 20 ; birth year
-        add word ptr [esi+222], 20 ; temporary age
+        add dword ptr [esi].s_player.skill_points, 80
+        sub dword ptr [esi].s_player.birth_year, 20
+        add word ptr [esi].s_player.age_bonus, 20
         mov ecx, dword ptr [CGAME]
         mov ecx, dword ptr [ecx+0xe50]
         mov eax, dword ptr [ebp+8]
@@ -14171,9 +14312,9 @@ static void __declspec(naked) new_temple_in_bottle(void)
         magic:
         mov ecx, 7
         stat_loop:
-        cmp word ptr [esi+188+ecx*4-4], NATURAL_STAT_LIMIT
+        cmp word ptr [esi+S_PL_STATS+ecx*4-4], NATURAL_STAT_LIMIT
         jge stat_limit
-        inc word ptr [esi+188+ecx*4-4]
+        inc word ptr [esi+S_PL_STATS+ecx*4-4]
         stat_limit:
         loop stat_loop
         mov ecx, 9
@@ -14183,9 +14324,9 @@ static void __declspec(naked) new_temple_in_bottle(void)
         dec ecx
         dec ecx
         ok_res:
-        cmp word ptr [esi+0x1774+ecx*2-2], NATURAL_STAT_LIMIT
+        cmp word ptr [esi+S_PL_RES+ecx*2-2], NATURAL_STAT_LIMIT
         jge res_limit
-        inc word ptr [esi+0x1774+ecx*2-2]
+        inc word ptr [esi+S_PL_RES+ecx*2-2]
         res_limit:
         loop res_loop
         mov ecx, dword ptr [CGAME]
@@ -14200,7 +14341,7 @@ static void __declspec(naked) new_temple_in_bottle(void)
         mov dword ptr [esp], ebx ; cannot resist
         push COND_DRUNK
         mov ecx, esi
-        call condition_immunity
+        call inflict_condition
         remove:
         mov eax, 0x468e7c ; remove the item
         jmp eax
@@ -14259,7 +14400,7 @@ static void __declspec(naked) equipped_sword_of_light(void)
 {
     asm
       {
-        cmp eax, SWORD_OF_LIGHT * 48
+        cmp eax, SWORD_OF_LIGHT * SIZE_ITEM_TXT
         jne not_it
         mov dword ptr [esp+4], offset itemsole
         not_it:
@@ -14274,7 +14415,7 @@ static void __declspec(naked) sword_of_light_rmb(void)
       {
         cmp dword ptr [eax], SWORD_OF_LIGHT
         jne not_it
-        test byte ptr [eax+20], IFLAGS_ID
+        test byte ptr [eax].s_item.flags, IFLAGS_ID
         jz not_it
         mov dword ptr [esp+4], offset itemsole
         not_it:
@@ -14347,7 +14488,7 @@ static void __declspec(naked) open_regular_chest(void)
         call dword ptr ds:open_chest ; replaced call
         test eax, eax
         jz quit
-        mov ecx, PARTY_BUFF_ADDR + BUFF_INVISIBILITY * 16
+        mov ecx, PARTY_BUFF_ADDR + BUFF_INVISIBILITY * SIZE_BUFF
         call dword ptr ds:remove_buff
         or eax, 1
         mov dword ptr [0x576eac], eax ; refresh screen
@@ -14456,7 +14597,8 @@ static void __declspec(naked) titan_belt_damage_bonus(void)
         call dword ptr ds:has_item_in_slot
         pop ecx
         test eax, eax
-        movzx eax, word ptr [ecx+0x1828] ; replaced code
+        movzx eax, word ptr [ecx+PBUFF_HEROISM*SIZE_BUFF+S_SB_POWER] \
+                            .s_player.spell_buffs ; replaced code
         jz no_belt
         add eax, 12 ; belt bonus
         no_belt:
@@ -14498,9 +14640,9 @@ static void __declspec(naked) flattener_2h(void)
 {
     asm
       {
-        mov eax, [ecx+0x1948+SLOT_MAIN_HAND*4]
+        mov eax, [ecx+SLOT_MAIN_HAND*4].s_player.equipment
         lea eax, [eax+eax*8]
-        cmp dword ptr [ecx+0x214+eax*4-36], FLATTENER
+        cmp dword ptr [ecx+eax*4-SIZE_ITEM].s_player.items, FLATTENER
         jne skip
         mov eax, 4 ; pass the check
         ret 4
@@ -14515,9 +14657,10 @@ static void __declspec(naked) flattener_2h_body(void)
 {
     asm
       {
-        cmp edx, FLATTENER * 48
+        cmp edx, FLATTENER * SIZE_ITEM_TXT
         je quit
-        cmp byte ptr [ITEMS_TXT_ADDR+edx+29], SKILL_SPEAR ; replaced code
+        ; replaced code next line:
+        cmp byte ptr [ITEMS_TXT_ADDR+edx].s_items_txt_item.skill, SKILL_SPEAR
         quit:
         ret
       }
@@ -14528,9 +14671,10 @@ static void __declspec(naked) flattener_2h_body_eax(void)
 {
     asm
       {
-        cmp eax, FLATTENER * 48
+        cmp eax, FLATTENER * SIZE_ITEM_TXT
         je quit
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_SPEAR ; replaced code
+        ; replaced code next line:
+        cmp byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.skill, SKILL_SPEAR
         quit:
         ret
       }
@@ -14582,7 +14726,7 @@ static void __declspec(naked) higher_ethric_drain(void)
       {
         cmp dword ptr [0x506d94], 2 ; resting flag
         je quit
-        sub dword ptr [esi+0x193c], 5
+        sub dword ptr [esi].s_player.hp, 5
         quit:
         ret
       }
@@ -14646,7 +14790,7 @@ static void __declspec(naked) gadgeteer_cure_potions_bonus(void)
         push SLOT_BELT
         push GADGETEERS_BELT
         call dword ptr ds:has_item_in_slot
-        mov edx, dword ptr [MOUSE_ITEM+4] ; power
+        mov edx, dword ptr [MOUSE_ITEM].s_item.bonus ; power
         cmp dword ptr [MOUSE_ITEM], POTION_DIVINE_CURE
         jb simple
         ja magic
@@ -14659,7 +14803,7 @@ static void __declspec(naked) gadgeteer_cure_potions_bonus(void)
         jz skip
         mov eax, edx
         shr eax, 1
-        mov cl, byte ptr [esi+0xb9] ; class
+        mov cl, byte ptr [esi].s_player.class
         and cl, -4
         cmp cl, CLASS_THIEF
         je skip
@@ -14675,10 +14819,10 @@ static void __declspec(naked) gadgeteer_recharge_potion_bonus(void)
 {
     asm
       {
-        fild dword ptr [MOUSE_ITEM+4] ; replaced code
+        fild dword ptr [MOUSE_ITEM].s_item.bonus ; replaced code
         mov ecx, dword ptr [CURRENT_PLAYER]
         mov ecx, dword ptr [0xa74f44+ecx*4] ; PC pointers
-        mov bl, byte ptr [ecx+0xb9] ; class
+        mov bl, byte ptr [ecx].s_player.class
         push SLOT_BELT
         push GADGETEERS_BELT
         call dword ptr ds:has_item_in_slot
@@ -14727,15 +14871,15 @@ static void __declspec(naked) plant_seed(void)
         pop eax
         pop eax
         jz skip
-        or byte ptr [esi+183], MMF_EXTRA_REAGENT
-        mov al, byte ptr [edi+0xb9] ; class
+        or byte ptr [esi].s_map_monster.mod_flags, MMF_EXTRA_REAGENT
+        mov al, byte ptr [edi].s_player.class
         and al, -4
         cmp al, CLASS_RANGER
         je bonus
         cmp al, CLASS_DRUID
         jne skip
         bonus:
-        or byte ptr [esi+183], MMF_REAGENT_MORE_LIKELY
+        or byte ptr [esi].s_map_monster.mod_flags, MMF_REAGENT_MORE_LIKELY
         skip:
         mov cx, word ptr [esi+40] ; restore
         inc eax ; clear zf
@@ -14752,11 +14896,12 @@ static void __declspec(naked) harvest_seed(void)
     asm
       {
         mov edi, 20 ; drop chance
-        test byte ptr [esi+183], MMF_ERADICATED + MMF_ZOMBIE
+        test byte ptr [esi].s_map_monster.mod_flags, \
+             MMF_ERADICATED + MMF_ZOMBIE
         jnz skip
         cmp dword ptr [ebp-40], 0 ; vanilla reagent
         jnz quit
-        movzx edi, byte ptr [esi+183]
+        movzx edi, byte ptr [esi].s_map_monster.mod_flags
         and edi, MMF_EXTRA_REAGENT + MMF_REAGENT_MORE_LIKELY
         jz skip
         shr edi, 3 ; flags also double as drop chance
@@ -14766,7 +14911,7 @@ static void __declspec(naked) harvest_seed(void)
         and eax, 3
         lea eax, [eax+eax*4]
         add dword ptr [ebp-40], eax
-        movzx eax, byte ptr [esi+52] ; monster level
+        movzx eax, byte ptr [esi].s_map_monster.level
         xor edx, edx
         add eax, 10
         mov ecx, 20
@@ -14803,7 +14948,7 @@ static void __declspec(naked) mark_guaranteed_artifacts(void)
         mov byte ptr [elemdata.artifacts_found-FIRST_ARTIFACT+eax], 0x80
         cmp dword ptr [ebp+4], 0x45051a ; if called from chest generator
         jne not_chest
-        or byte ptr [edi+21], 5 ; flag for mm7patch art refund
+        or byte ptr [edi+1].s_item.flags, 5 ; flag for mm7patch art refund
         not_chest:
         jmp dword ptr ds:set_specitem_bonus ; replaced call
       }
@@ -14818,9 +14963,9 @@ static void __declspec(naked) fix_static_chest_items(void)
       {
         jl quit ; replaced jump
         mov ecx, dword ptr [esp+32]
-        test byte ptr [ecx+2], 0x40 ; true if chest already checked
+        test byte ptr [ecx].s_map_chest.bits, 0x40 ; true if already checked
         jnz skip
-        test byte ptr [ebx+21], 5 ; set by mm7patch for tlvl6 artifacts
+        test byte ptr [ebx+1].s_item.flags, 5 ; set by mm7patch for tlvl6 arts
         jz not_random
         jp skip ; can appear in this loop, but aren`t preplaced
         not_random:
@@ -14837,7 +14982,7 @@ static void __declspec(naked) fix_static_chest_items(void)
         cmp byte ptr [elemdata.artifacts_found-FIRST_ARTIFACT+eax], 0
         jnz replace
         mov byte ptr [elemdata.artifacts_found-FIRST_ARTIFACT+eax], 0x80
-        or byte ptr [ebx+21], 5 ; flag for mm7patch art refund
+        or byte ptr [ebx+1].s_item.flags, 5 ; flag for mm7patch art refund
         skip:
         mov dword ptr [esp], 0x45051e ; replaced jump adress
         quit:
@@ -14853,8 +14998,8 @@ static void __declspec(naked) mark_chest_checked(void)
 {
     asm
       {
-        or byte ptr [ebx+2], 0x40 ; the mark
-        add ebx, 5324 ; replaced code
+        or byte ptr [ebx].s_map_chest.bits, 0x40 ; the mark
+        add ebx, SIZE_CHEST ; replaced code
         ret
       }
 }
@@ -14916,7 +15061,7 @@ static inline void new_artifacts(void)
     hook_call(0x493e33, ellingers_robe_preservation, 6);
     hook_call(0x48dc59, ellingers_robe_preservation, 6);
     hook_call(0x494494, ellingers_robe_preservation, 6);
-    // weakness immunity is in condition_immunity() above
+    // weakness immunity is in inflict_condition() above
     // magic bonus is in artifact_stat_bonus()
     // Viper swiftness is in temp_swiftness() above
     // poison damage is also in headache_mind_damage()
@@ -14990,9 +15135,9 @@ static void __declspec(naked) check_missile_skill(void)
 {
     asm
       {
-        movzx eax, byte ptr [ITEMS_TXT_ADDR+esi+29] ; item skill
+        movzx eax, byte ptr [ITEMS_TXT_ADDR+esi].s_items_txt_item.skill
         mov dword ptr [ebp-8], eax ; unused var
-        movzx eax, byte ptr [ITEMS_TXT_ADDR+esi+32] ; replaced code
+        movzx eax, byte ptr [ITEMS_TXT_ADDR+esi].s_items_txt_item.mod2 ; repl.
         ret
       }
 }
@@ -15037,8 +15182,7 @@ static void __declspec(naked) blaster_ranged_recovery(void)
     asm
       {
         inc dword ptr [esp+4] ; melee -> ranged
-        push 0x48e19b ; replaced call
-        ret
+        jmp dword ptr ds:get_attack_delay ; replaced call
       }
 }
 
@@ -15066,7 +15210,7 @@ static void __declspec(naked) missile_on_shift_click(void)
 {
     asm
       {
-        movzx ecx, byte ptr [eax+0x1a4f] ; replaced code
+        movzx ecx, byte ptr [eax].s_player.quick_spell ; replaced code
         test ecx, ecx
         jz no_spell
         ret
@@ -15129,16 +15273,16 @@ static void __declspec(naked) postpone_drawing_blaster(void)
     asm
       {
         and dword ptr [draw_blaster], 0
-        mov eax, dword ptr [ebx+0x1948+SLOT_MISSILE*4] ; replaced code
+        mov eax, dword ptr [ebx+SLOT_MISSILE*4].s_player.equipment ; replaced
         test eax, eax ; replaced code
         jz quit
         lea edx, [eax+eax*8]
-        mov edx, dword ptr [ebx+0x214+edx*4-36]
+        mov edx, dword ptr [ebx+edx*4-SIZE_ITEM].s_player.items
         cmp edx, BLASTER
         je skip
         lea edx, [edx+edx*2]
         shl edx, 4
-        cmp byte ptr [ITEMS_TXT_ADDR+edx+29], SKILL_DAGGER
+        cmp byte ptr [ITEMS_TXT_ADDR+edx].s_items_txt_item.skill, SKILL_DAGGER
         jne quit
         skip:
         mov byte ptr [draw_blaster], 1
@@ -15155,10 +15299,10 @@ static void __declspec(naked) draw_blaster_behind_belt(void)
       {
         cmp dword ptr [draw_blaster], 1
         je blaster
-        mov eax, dword ptr [ebx+0x1948+SLOT_BELT*4] ; replaced code
+        mov eax, dword ptr [ebx+SLOT_BELT*4].s_player.equipment ; replaced code
         ret
         blaster:
-        mov eax, dword ptr [ebx+0x1948+SLOT_MISSILE*4]
+        mov eax, dword ptr [ebx+SLOT_MISSILE*4].s_player.equipment
         add dword ptr [draw_blaster], 1 ; now it == 2
         push 0x43d043 ; missile draw code
         ret 4
@@ -15172,11 +15316,11 @@ static void __declspec(naked) return_from_drawing_blaster(void)
       {
         cmp dword ptr [draw_blaster], 2
         je belt
-        mov eax, dword ptr [eax+0x1948+SLOT_CLOAK*4] ; replaced code
+        mov eax, dword ptr [eax+SLOT_CLOAK*4].s_player.equipment ; replaced
         ret
         belt:
         mov ebx, eax
-        mov eax, dword ptr [ebx+0x1948+SLOT_BELT*4]
+        mov eax, dword ptr [ebx+SLOT_BELT*4].s_player.equipment
         and dword ptr [draw_blaster], 0
         push 0x43d8b7 ; belt draw code
         ret 4
@@ -15191,7 +15335,7 @@ static void __declspec(naked) adjust_female_blaster(void)
         cmp dword ptr [draw_blaster], 2
         jne quit
         mov eax, dword ptr [esp+36] ; player
-        cmp byte ptr [eax+184], 1 ; sex
+        cmp byte ptr [eax].s_player.gender, 1
         jne quit
         sub ebx, 15
         sub ecx, 10
@@ -15242,14 +15386,14 @@ static void __declspec(naked) preload_equipped_wand_sound(void)
       {
         cmp dword ptr [MOUSE_ITEM], 604 ; replaced code (wetsuit)
         je quit
-        cmp edi, 12 ; equipped item type
+        cmp edi, ITEM_TYPE_WAND - 1
         jne quit
         wand:
-        mov eax, dword ptr [ebx+0x1948+SLOT_MISSILE*4]
+        mov eax, dword ptr [ebx+SLOT_MISSILE*4].s_player.equipment
         test eax, eax ; just in case
         jz skip
         lea eax, [eax+eax*8]
-        mov eax, dword ptr [ebx+0x214+eax*4-36]
+        mov eax, dword ptr [ebx+eax*4-SIZE_ITEM].s_player.items
         push 0x469528 ; sound code
         ret 4
         skip:
@@ -15269,7 +15413,7 @@ static void __declspec(naked) print_wand_to_hit(void)
     asm
       {
         mov ecx, edi
-        mov eax, dword ptr [ecx+0x1948+SLOT_MISSILE*4]
+        mov eax, dword ptr [ecx+SLOT_MISSILE*4].s_player.equipment
         test eax, eax
         jnz have_missile
         no_missile:
@@ -15277,16 +15421,17 @@ static void __declspec(naked) print_wand_to_hit(void)
         jmp print
         have_missile:
         lea eax, [eax+eax*8]
-        test byte ptr [ecx+0x214+eax*4-36+20], IFLAGS_BROKEN
+        test byte ptr [ecx+S_PL_ITEM0+eax*4].s_item.flags, IFLAGS_BROKEN
         jnz no_missile
-        mov eax, dword ptr [ecx+0x214+eax*4-36]
+        mov eax, dword ptr [ecx+eax*4-SIZE_ITEM].s_player.items
         lea eax, [eax+eax*2]
         shl eax, 4
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+28], 12 ; wand
+        cmp byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.equip_stat, \
+            ITEM_TYPE_WAND - 1
         je always
-        cmp byte ptr [ecx+0xb9], CLASS_SNIPER
+        cmp byte ptr [ecx].s_player.class, CLASS_SNIPER
         jne not_always
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_BOW
+        cmp byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.skill, SKILL_BOW
         jne not_always
         always:
         push dword ptr [new_strings+STR_ALWAYS*4]
@@ -15308,7 +15453,7 @@ static void __declspec(naked) print_wand_to_hit_ref(void)
     asm
       {
         mov ecx, ebp
-        mov eax, dword ptr [ecx+0x1948+SLOT_MISSILE*4]
+        mov eax, dword ptr [ecx+SLOT_MISSILE*4].s_player.equipment
         test eax, eax
         jnz have_missile
         no_missile:
@@ -15316,16 +15461,17 @@ static void __declspec(naked) print_wand_to_hit_ref(void)
         jmp print
         have_missile:
         lea eax, [eax+eax*8]
-        test byte ptr [ecx+0x214+eax*4-36+20], IFLAGS_BROKEN
+        test byte ptr [ecx+S_PL_ITEM0+eax*4].s_item.flags, IFLAGS_BROKEN
         jnz no_missile
-        mov eax, dword ptr [ecx+0x214+eax*4-36]
+        mov eax, dword ptr [ecx+eax*4-SIZE_ITEM].s_player.items
         lea eax, [eax+eax*2]
         shl eax, 4
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+28], 12 ; wand
+        cmp byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.equip_stat, \
+            ITEM_TYPE_WAND - 1
         je always
-        cmp byte ptr [ecx+0xb9], CLASS_SNIPER
+        cmp byte ptr [ecx].s_player.class, CLASS_SNIPER
         jne not_always
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_BOW
+        cmp byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.skill, SKILL_BOW
         jne not_always
         always:
         push dword ptr [new_strings+STR_ALWAYS*4]
@@ -15361,7 +15507,8 @@ static void __declspec(naked) get_parsed_wand_spell(void)
       {
         lea eax, [eax+eax*2]
         shl eax, 4
-        movzx ecx, byte ptr [ITEMS_TXT_ADDR+eax+30] ; mod1
+        movzx ecx, byte ptr [ITEMS_TXT_ADDR+eax] \
+                            .s_items_txt_item.mod1_dice_count
         ret
       }
 }
@@ -15374,7 +15521,8 @@ static void __declspec(naked) get_parsed_wand_spell_sound(void)
         pop edx
         lea eax, [eax+eax*2]
         shl eax, 4
-        movzx eax, byte ptr [ITEMS_TXT_ADDR+eax+30]
+        movzx eax, byte ptr [ITEMS_TXT_ADDR+eax] \
+                            .s_items_txt_item.mod1_dice_count
         push eax
         jmp edx
       }
@@ -15384,16 +15532,18 @@ static void __declspec(naked) get_parsed_wand_spell_sound(void)
 // TODO: fix wand recovery being displayed incorrectly
 static inline void ranged_blasters(void)
 {
+#define OFFSET_MISSILE (offsetof(struct player, equipment) \
+                        + SLOT_MISSILE * sizeof(uint32_t))
     // actual shooting
-    patch_dword(0x42ed08, 0x1950); // check missile slot for wands and blasters
+    patch_dword(0x42ed08, OFFSET_MISSILE); // check slot for wands and blasters
     erase_code(0x439633, 4); // extraneous blaster damage function params
     patch_dword(0x439641, 0x48d1e4 - 0x439645); // melee -> ranged damage
     hook_call(0x48d24d, check_missile_skill, 7);
     hook_call(0x48d2ab, check_missile_skill_2, 6);
     hook_call(0x4282e6, blaster_ranged_recovery, 5);
-    patch_dword(0x4283ac, 0x1950); // attach missile weapon to blaster proj
+    patch_dword(0x4283ac, OFFSET_MISSILE); // attached weapon to blaster proj
     // displaying the damage range
-    patch_dword(0x48d382, 0x1950); // check missile slot for blasters
+    patch_dword(0x48d382, OFFSET_MISSILE); // check missile slot for blasters
     patch_byte(0x48d39d, 31); // ranged damage min stat
     patch_byte(0x48d3a6, 32); // ranged damage max stat
     // missiles in melee
@@ -15410,23 +15560,23 @@ static inline void ranged_blasters(void)
     hook_call(0x43d090, adjust_female_blaster, 6);
     // blasters and wetsuits
     hook_call(0x4690d1, missile_wetsuit_blaster, 16);
-    patch_dword(0x43ce6c, 0x1950); // draw missile weapon in a wetsuit
+    patch_dword(0x43ce6c, OFFSET_MISSILE); // draw missile weapon in a wetsuit
     hook_call(0x43cea9, adjust_wetsuit_blaster, 7);
     erase_code(0x43ceb0, 9);
     erase_code(0x43cebf, 2);
     // use wands from missile slot
     patch_dword(0x42ee6d, dword(0x42ee6d) + 4); // main hand -> missile slot
-    patch_dword(0x42ee89, 0x1950);
-    patch_dword(0x42ee9b, 0x1950);
-    patch_dword(0x42f02f, 0x1950);
-    patch_dword(0x42f055, 0x1950);
-    patch_dword(0x42f067, 0x1950);
+    patch_dword(0x42ee89, OFFSET_MISSILE);
+    patch_dword(0x42ee9b, OFFSET_MISSILE);
+    patch_dword(0x42f02f, OFFSET_MISSILE);
+    patch_dword(0x42f055, OFFSET_MISSILE);
+    patch_dword(0x42f067, OFFSET_MISSILE);
     patch_byte(0x469863, 2); // equip wands in missile slot
     byte(0x4e8354) = SLOT_MISSILE; // ditto
     patch_byte(0x45f2ed, 2); // fix no sound (preload wand sound on game load)
     hook_call(0x4690ee, preload_equipped_wand_sound, 10);
     // status screen
-    patch_dword(0x48d40b, 0x1950); // check for wand in missile slot
+    patch_dword(0x48d40b, OFFSET_MISSILE); // check for wand in missile slot
     hook_call(0x418cc3, print_wand_to_hit, 6);
     hook_call(0x41a910, print_wand_to_hit_ref, 6);
     // replace some wand spells
@@ -15473,7 +15623,7 @@ static void __declspec(naked) red_empty_wands(void)
         cmp dword ptr [edi], LAST_WAND
         ja not_it
         charged:
-        cmp dword ptr [edi+16], ecx ; charges vs. 0
+        cmp dword ptr [edi].s_item.charges, ecx ; == 0
         jnz not_it
         or al, IFLAGS_BROKEN ; for display only
         not_it:
@@ -15488,15 +15638,15 @@ static void __declspec(naked) display_wand_charges(void)
 {
     asm
       {
-        cmp byte ptr [edi+28], 12 ; wand
+        cmp byte ptr [edi].s_items_txt_item.equip_stat, ITEM_TYPE_WAND - 1
         je wand
         xor eax, eax ; set zf
         ret
         wand:
         pop edx
-        movzx eax, byte ptr [ecx+25] ; max charges
+        movzx eax, byte ptr [ecx].s_item.max_charges
         push eax
-        mov eax, dword ptr [ecx+16] ; replaced code
+        mov eax, dword ptr [ecx].s_item.charges ; replaced code
         test eax, eax
         jnz quit
         push dword ptr [GLOBAL_TXT_ADDR+464*4]
@@ -15515,10 +15665,10 @@ static void __declspec(naked) wand_price(void)
 {
     asm
       {
-        movzx ecx, byte ptr [ITEMS_TXT_ADDR+eax+32] ; mod2 (default charges)
+        movzx ecx, byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.mod2
         shl ecx, 1
-        movzx eax, byte ptr [esi+25] ; max charges
-        add eax, dword ptr [esi+16] ; charges
+        movzx eax, byte ptr [esi].s_item.max_charges
+        add eax, dword ptr [esi].s_item.charges
         add eax, 2 ; even totally spent wands cost something
         mul edi
         div ecx
@@ -15533,15 +15683,15 @@ static void __declspec(naked) preused_wands(void)
 {
     asm
       {
-        mov ebx, dword ptr [esi+16] ; charges
-        mov byte ptr [esi+25], bl ; max charges
+        mov ebx, dword ptr [esi].s_item.charges
+        mov byte ptr [esi].s_item.max_charges, bl
         shr ebx, 1 ; up to 50%
         jz quit
         call dword ptr ds:random
         xor edx, edx
         div ebx
         inc edx
-        sub dword ptr [esi+16], edx
+        sub dword ptr [esi].s_item.charges, edx
         quit:
         ret
       }
@@ -15565,7 +15715,7 @@ static void __declspec(naked) preused_wands_3(void)
     asm
       {
         lea eax, [eax+edx+1] ; replaced code
-        mov dword ptr [ebp-52+16], eax ; replaced code
+        mov dword ptr [ebp-52].s_item.charges, eax ; replaced code
         push esi
         push ebx
         lea esi, [ebp-52]
@@ -15611,7 +15761,7 @@ static void __declspec(naked) charge_shop_wands_common(void)
 {
     asm
       {
-        mov dword ptr [ecx+20], 1 ; replaced code (item flags)
+        mov dword ptr [ecx].s_item.flags, 1 ; replaced code
         cmp dword ptr [ecx], THROWING_KNIVES
         je recharge
         cmp dword ptr [ecx], FIRST_WAND
@@ -15619,8 +15769,8 @@ static void __declspec(naked) charge_shop_wands_common(void)
         cmp dword ptr [ecx], LAST_WAND
         ja quit
         recharge:
-        movzx edx, byte ptr [ecx+25] ; max charges
-        mov dword ptr [ecx+16], edx ; charges
+        movzx edx, byte ptr [ecx].s_item.max_charges
+        mov dword ptr [ecx].s_item.charges, edx
         quit:
         ret
       }
@@ -15654,23 +15804,23 @@ static void __declspec(naked) shop_recharge_dialog(void)
 {
     asm
       {
-        lea esi, [edi+0x214+eax*4-36] ; replaced code
+        lea esi, [edi+eax*4-SIZE_ITEM].s_player.items ; replaced code
         cmp dword ptr [esi], FIRST_WAND
         jb not_wand
         cmp dword ptr [esi], LAST_WAND
         jbe wand
         not_wand:
-        test byte ptr [esi+20], 2 ; replaced code
+        test byte ptr [esi].s_item.flags, 2 ; replaced code
         ret
         wand:
-        movzx eax, byte ptr [esi+25] ; max charges
-        sub eax, dword ptr [esi+16] ; current charges
+        movzx eax, byte ptr [esi].s_item.max_charges
+        sub eax, dword ptr [esi].s_item.charges
         ja rechargeable
         xor ebx, ebx ; set zf
         ret
         rechargeable:
         mov edx, dword ptr [DIALOG2]
-        imul edx, dword ptr [edx+28], 52
+        imul edx, dword ptr [edx+28], SIZE_EVENT2D
         fld dword ptr [0x5912d8+edx] ; store price multiplier
         fld st(0)
         fmul dword ptr [shop_recharge_multiplier]
@@ -15680,7 +15830,7 @@ static void __declspec(naked) shop_recharge_dialog(void)
         pop ebx ; == restored charges
         cmp ebx, 0
         jbe cannot
-        add ebx, dword ptr [esi+16] ; current charges
+        add ebx, dword ptr [esi].s_item.charges
         push 4
         fimul dword ptr [esp]
         fstp dword ptr [esp]
@@ -15734,7 +15884,7 @@ static void __declspec(naked) prepare_shop_recharge(void)
         jbe wand
         not_wand:
         mov dword ptr [ebp-8], eax ; replaced code
-        test byte ptr [esi+20], IFLAGS_BROKEN ; replaced code
+        test byte ptr [esi].s_item.flags, IFLAGS_BROKEN ; replaced code
         jnz skip ; actual repair takes priority
         cmp dword ptr [esi], THROWING_KNIVES
         je knives
@@ -15752,8 +15902,8 @@ static void __declspec(naked) prepare_shop_recharge(void)
         fld st(0)
         multiply:
         fmul dword ptr [shop_recharge_multiplier]
-        movzx eax, byte ptr [esi+25] ; max charges
-        sub eax, dword ptr [esi+16] ; current charges
+        movzx eax, byte ptr [esi].s_item.max_charges
+        sub eax, dword ptr [esi].s_item.charges
         jbe cannot_recharge
         push eax
         fimul dword ptr [esp]
@@ -15771,7 +15921,7 @@ static void __declspec(naked) prepare_shop_recharge(void)
         quit:
         ret
         recharge:
-        add eax, dword ptr [esi+16]
+        add eax, dword ptr [esi].s_item.charges
         mov dword ptr [new_charges], eax
         cmp dword ptr [esi], THROWING_KNIVES
         je old_price
@@ -15798,7 +15948,7 @@ static void __declspec(naked) perform_shop_recharge(void)
         jb repair
         cmp dword ptr [esi], LAST_WAND
         jbe recharge
-        test byte ptr [esi+20], IFLAGS_BROKEN
+        test byte ptr [esi].s_item.flags, IFLAGS_BROKEN
         jnz repair ; actual repair first
         cmp dword ptr [esi], THROWING_KNIVES
         je recharge
@@ -15806,10 +15956,10 @@ static void __declspec(naked) perform_shop_recharge(void)
         jne repair
         recharge:
         mov eax, dword ptr [new_charges]
-        mov dword ptr [esi+16], eax ; charges
-        mov byte ptr [esi+25], al ; max charges
+        mov dword ptr [esi].s_item.charges, eax
+        mov byte ptr [esi].s_item.max_charges, al
         repair:
-        mov eax, dword ptr [esi+20] ; replaced code
+        mov eax, dword ptr [esi].s_item.flags ; replaced code
         mov ecx, edi ; replaced code
         ret
       }
@@ -15849,14 +15999,14 @@ static void __declspec(naked) stun_message(void)
 {
     asm
       {
-        cmp word ptr [esi+40], bx ; check if mon hp > 0
+        cmp word ptr [esi].s_map_monster.hp, bx ; == 0
         jg message
         push 0x439cba ; skip over message code
         ret 8
         message:
         pop ecx
         push dword ptr [ebp-12] ; damage
-        lea eax, [edi+168] ; replaced code
+        lea eax, [edi].s_player.name ; replaced code
         jmp ecx
       }
 }
@@ -15866,7 +16016,7 @@ static void __declspec(naked) paralysis_message(void)
 {
     asm
       {
-        cmp word ptr [esi+40], 0 ; mon hp
+        cmp word ptr [esi].s_map_monster.hp, 0
         jg message
         push 0x439d6e ; skip over message code
         ret 12
@@ -15953,11 +16103,11 @@ static void __declspec(naked) multihit_message_check(void)
         inc ecx ; clear zf
         jmp record_hit ; will only be used for splitter`s fireball
         have_proj:
-        mov eax, dword ptr [ecx+88] ; owner
+        mov eax, dword ptr [ecx].s_map_object.owner
         cmp eax, dword ptr [last_hit_player]
         je check_spell
         mov dword ptr [last_hit_player], eax
-        mov eax, dword ptr [ecx+72] ; spell id
+        mov eax, dword ptr [ecx].s_map_object.spell_type
         reset_spell:
         mov dword ptr [last_hit_spell], eax
         record_hit:
@@ -15967,7 +16117,7 @@ static void __declspec(naked) multihit_message_check(void)
         mov byte ptr [killed_only_target], dl
         ret ; zf == 0 here
         check_spell:
-        mov eax, dword ptr [ecx+72] ; spell id
+        mov eax, dword ptr [ecx].s_map_object.spell_type
         cmp eax, dword ptr [last_hit_spell]
         jne reset_spell
         cmp dword ptr [only_target], esi
@@ -16001,7 +16151,7 @@ static void __declspec(naked) splitter_fireball_message(void)
         lea eax, [ebx*8-8+TGT_PARTY]
         mov dword ptr [last_hit_player], eax
         mov dword ptr [last_hit_spell], SPL_FIREBALL
-        movsx eax, word ptr [edi+138] ; replaced code
+        movsx eax, word ptr [edi].s_map_monster.height ; replaced code
         ret
       }
 }
@@ -16017,7 +16167,7 @@ static void __declspec(naked) hit_qualifier(void)
         cmovz eax, dword ptr [new_strings+STR_HITS*4+ecx*4]
         cmovnz eax, dword ptr [new_strings+STR_SHOOTS*4+ecx*4]
         push eax
-        lea eax, dword ptr [edi+168] ; replaced code
+        lea eax, dword ptr [edi].s_player.name ; replaced code
         jmp edx
       }
 }
@@ -16216,7 +16366,7 @@ static void __declspec(naked) racial_stat(void)
         cmp edx, 6
         adc edx, -1 ; 7 -> 6
         no_swap:
-        movzx edx, word ptr [esi+0xbc+edx*4] ; base stat
+        movzx edx, word ptr [esi+S_PL_STATS+edx*4]
         imul edx
         idiv ecx
         pop ecx
@@ -16358,14 +16508,14 @@ static void __declspec(naked) human_skill_point(void)
       {
         test edx, edx ; edx == new_level % 10
         jnz no_reset
-        and dword ptr [ebx+0x1a50], ~0x24c360 ; reset player bits
+        and dword ptr [ebx].s_player.bits, ~0x24c360 ; reset the wells
         no_reset:
         cmp eax, 7 ; level 20+
         jae extra
         mov edx, eax
         jmp human
         extra:
-        movzx eax, word ptr [ebx+218] ; new level
+        movzx eax, word ptr [ebx].s_player.level_base
         lea ecx, [eax-1]
         mul eax
         mul ecx
@@ -16395,7 +16545,7 @@ static void __declspec(naked) human_skill_point(void)
         shr eax, 3
         add edx, eax
         not_human:
-        add dword ptr [ebx+0x1938], edx ; replaced code, almost
+        add dword ptr [ebx].s_player.skill_points, edx ; replaced code, almost
         mov dword ptr [added_skill_points], edx ; for the statusline
         mov ecx, ebx ; restore
         ret
@@ -16416,7 +16566,7 @@ static void __declspec(naked) init_racial_skill(void)
         je human
         cmp edi, SKILL_BLASTER
         jae skip
-        cmp byte ptr [esi+0xb9], CLASS_MONK
+        cmp byte ptr [esi].s_player.class, CLASS_MONK
         je skip
         cmp eax, RACE_ELF
         je elf
@@ -16451,7 +16601,7 @@ static void __declspec(naked) check_racial_skill(void)
       {
         cmp eax, SKILL_BLASTER
         jae skip
-        cmp byte ptr [ecx+0xb9], CLASS_MONK
+        cmp byte ptr [ecx].s_player.class, CLASS_MONK
         je skip
         push ecx
         push eax
@@ -16505,7 +16655,7 @@ static void __declspec(naked) exclude_racial_skill(void)
         jne nonhuman
         cmp eax, SKILL_LEARNING
         je invert ; this will clear zf
-        movzx edx, byte ptr [ecx+0xb9]
+        movzx edx, byte ptr [ecx].s_player.class
         cmp eax, dword ptr [added_picks+edx]
         je quit
         skip:
@@ -16514,7 +16664,7 @@ static void __declspec(naked) exclude_racial_skill(void)
         nonhuman:
         cmp eax, SKILL_BLASTER
         jae skip
-        cmp byte ptr [ecx+0xb9], CLASS_MONK
+        cmp byte ptr [ecx].s_player.class, CLASS_MONK
         je monk
         cmp byte ptr [STARTING_SKILLS_ADDR+ebx+eax], 1 ; replaced code, again
         jae race
@@ -16538,7 +16688,7 @@ static void __declspec(naked) exclude_racial_skill(void)
         cmp eax, SKILL_AXE
         racial:
         setne dl
-        cmp byte ptr [ecx+0xb9], CLASS_MONK
+        cmp byte ptr [ecx].s_player.class, CLASS_MONK
         jne invert
         test edx, edx
         jmp quit
@@ -16555,7 +16705,7 @@ static void __declspec(naked) preserve_racial_skill(void)
 {
     asm
       {
-        movzx esi, byte ptr [ecx+0xb9] ; replaced code, sort of
+        movzx esi, byte ptr [ecx].s_player.class ; replaced code, sort of
         call dword ptr ds:get_race
         mov ecx, esi
         cmp eax, RACE_ELF
@@ -16646,10 +16796,10 @@ static void __declspec(naked) reset_races(void)
 {
     asm
       {
-        mov byte ptr [PARTY_ADDR+0xba], 17
-        mov byte ptr [PARTY_ADDR+0x1b3c+0xba], 3
-        mov byte ptr [PARTY_ADDR+0x1b3c*2+0xba], 14
-        mov byte ptr [PARTY_ADDR+0x1b3c*3+0xba], 10
+        mov byte ptr [PARTY_ADDR].s_player.face, 17
+        mov byte ptr [PARTY_ADDR+SIZE_PLAYER].s_player.face, 3
+        mov byte ptr [PARTY_ADDR+SIZE_PLAYER*2].s_player.face, 14
+        mov byte ptr [PARTY_ADDR+SIZE_PLAYER*3].s_player.face, 10
         cmp dword ptr [0x507a4c], 0
         jz too_early
         xor ecx, ecx
@@ -16674,7 +16824,7 @@ static void __declspec(naked) change_racial_skill(void)
       {
         mov ecx, edi
         call dword ptr ds:get_race
-        mov byte ptr [edi+0xba], dl
+        mov byte ptr [edi].s_player.face, dl
         mov edx, eax
         mov ecx, edi
         call dword ptr ds:get_race
@@ -16686,18 +16836,18 @@ static void __declspec(naked) change_racial_skill(void)
         je was_dwarf
         cmp edx, RACE_GOBLIN
         je was_goblin
-        mov word ptr [edi+0x108+SKILL_LEARNING*2], 0
+        mov word ptr [edi+SKILL_LEARNING*2].s_player.skills, 0
         mov ecx, dword ptr [esp+20] ; player id
         push eax
         call unshift_human_buttons
         pop eax
-        movzx ecx, byte ptr [edi+0xb9]
+        movzx ecx, byte ptr [edi].s_player.class
         mov edx, dword ptr [added_picks+ecx]
         cmp edx, SKILL_NONE
         je no_extra
-        mov word ptr [edi+0x108+edx*2], 0
+        mov word ptr [edi+edx*2].s_player.skills, 0
         no_extra:
-        cmp byte ptr [edi+0xb9], CLASS_MONK
+        cmp byte ptr [edi].s_player.class, CLASS_MONK
         je new_race
         shr ecx, 2
         imul ecx, ecx, SKILL_COUNT
@@ -16706,18 +16856,18 @@ static void __declspec(naked) change_racial_skill(void)
         inc edx
         cmp byte ptr [STARTING_SKILLS_ADDR+ecx+edx], 2
         jne was_human_loop
-        mov word ptr [edi+0x108+edx*2], 0
+        mov word ptr [edi+edx*2].s_player.skills, 0
         jmp new_race
         was_elf:
-        mov word ptr [edi+0x108+SKILL_BOW*2], 0
+        mov word ptr [edi+SKILL_BOW*2].s_player.skills, 0
         jmp new_race
         was_goblin:
-        cmp byte ptr [edi+0xb9], CLASS_MONK ; monks know sword
+        cmp byte ptr [edi].s_player.class, CLASS_MONK ; monks know sword
         je new_race
-        mov word ptr [edi+0x108+SKILL_SWORD*2], 0
+        mov word ptr [edi+SKILL_SWORD*2].s_player.skills, 0
         jmp new_race
         was_dwarf:
-        mov word ptr [edi+0x108+SKILL_AXE*2], 0
+        mov word ptr [edi+SKILL_AXE*2].s_player.skills, 0
         new_race:
         cmp eax, RACE_ELF
         je elf
@@ -16725,12 +16875,12 @@ static void __declspec(naked) change_racial_skill(void)
         je goblin
         cmp eax, RACE_DWARF
         je dwarf
-        mov word ptr [edi+0x108+SKILL_LEARNING*2], 1
+        mov word ptr [edi+SKILL_LEARNING*2].s_player.skills, 1
         mov ecx, dword ptr [esp+20] ; player id
         call shift_human_buttons
-        cmp byte ptr [edi+0xb9], CLASS_MONK
+        cmp byte ptr [edi].s_player.class, CLASS_MONK
         je quit
-        movzx ecx, byte ptr [edi+0xb9]
+        movzx ecx, byte ptr [edi].s_player.class
         shr ecx, 2
         imul ecx, ecx, SKILL_COUNT
         or edx, -1
@@ -16738,7 +16888,7 @@ static void __declspec(naked) change_racial_skill(void)
         inc edx
         cmp byte ptr [STARTING_SKILLS_ADDR+ecx+edx], 2
         jne human_loop
-        mov word ptr [edi+0x108+edx*2], 1
+        mov word ptr [edi+edx*2].s_player.skills, 1
         jmp quit
         elf:
         mov edx, SKILL_BOW
@@ -16749,20 +16899,20 @@ static void __declspec(naked) change_racial_skill(void)
         dwarf:
         mov edx, SKILL_AXE
         got_skill:
-        movzx ecx, byte ptr [edi+0xb9]
+        movzx ecx, byte ptr [edi].s_player.class
         shr ecx, 2
         imul ecx, ecx, SKILL_COUNT
         cmp byte ptr [STARTING_SKILLS_ADDR+ecx+edx], 0
         jne not_removed
-        movzx ecx, byte ptr [edi+0xb9]
+        movzx ecx, byte ptr [edi].s_player.class
         mov ecx, dword ptr [excluded_picks+ecx]
-        mov word ptr [edi+0x108+ecx*2], 0
+        mov word ptr [edi+ecx*2].s_player.skills, 0
         not_removed:
-        cmp byte ptr [edi+0xb9], CLASS_MONK
+        cmp byte ptr [edi].s_player.class, CLASS_MONK
         je quit
-        mov word ptr [edi+0x108+edx*2], 1
+        mov word ptr [edi+edx*2].s_player.skills, 1
         quit:
-        movzx eax, byte ptr [edi+0xba]
+        movzx eax, byte ptr [edi].s_player.face
         ret
       }
 }
@@ -17140,7 +17290,7 @@ static void __declspec(naked) dwarf_monk_axe_show(void)
         cmp eax, SKILL_AXE
         jne skip
         mov ecx, dword ptr [ebp-16] ; player
-        mov dl, byte ptr [ecx+0xb9] ; class
+        mov dl, byte ptr [ecx].s_player.class
         and edx, -4
         cmp dl, CLASS_MONK
         jne skip
@@ -17167,7 +17317,7 @@ static void __declspec(naked) dwarf_monk_axe_buy_1(void)
         jnz quit
         cmp esi, SKILL_AXE
         jne skip
-        mov dl, byte ptr [edi+0xb9] ; class
+        mov dl, byte ptr [edi].s_player.class
         and edx, -4
         cmp dl, CLASS_MONK
         jne skip
@@ -17196,7 +17346,7 @@ static void __declspec(naked) dwarf_monk_axe_buy_2(void)
         jnz quit
         cmp eax, SKILL_AXE + 36
         jne skip
-        mov dl, byte ptr [edi+0xb9] ; class
+        mov dl, byte ptr [edi].s_player.class
         and edx, -4
         cmp dl, CLASS_MONK
         jne skip
@@ -17222,7 +17372,7 @@ static void __declspec(naked) race_hint(void)
 {
     asm
       {
-        imul eax, eax, 0x1b3c ; replaced code
+        imul eax, eax, SIZE_PLAYER ; replaced code
         mov edx, dword ptr [esi+8] ; PC area width
         shr edx, 1
         add edx, dword ptr [esi] ; PC area left
@@ -17232,7 +17382,7 @@ static void __declspec(naked) race_hint(void)
         race:
         push ecx
         lea ecx, [ebx+eax]
-        lea edi, [ecx+0xa8] ; PC name
+        lea edi, [ecx].s_player.name
         call dword ptr ds:get_race
         mov eax, dword ptr [new_strings+STR_HUMANS*4+eax*4]
         pop ecx ; restore
@@ -17248,7 +17398,7 @@ static void __declspec(naked) racial_resistances(void)
       {
         cmp dword ptr [esp+28], 0
         jz no_bonus
-        movzx eax, word ptr [ecx+0xda] ; pc level
+        movzx eax, word ptr [ecx].s_player.level_base
         cmp dword ptr [esp+28], 10
         jae big_bonus
         test ebp, 0xf ; parity odd for shock, poison, holy
@@ -17273,7 +17423,7 @@ static void __declspec(naked) base_racial_resistances(void)
       {
         test esi, esi
         jz no_bonus
-        movzx eax, word ptr [ecx+0xda] ; pc level
+        movzx eax, word ptr [ecx].s_player.level_base
         cmp esi, 10
         jae big_bonus
         test byte ptr [esp+4], 0xf ; parity odd for shock, poison, holy
@@ -17296,10 +17446,10 @@ static void __declspec(naked) get_lich_race(void)
 {
     asm
       {
-        movsx eax, byte ptr [ecx+0xba] ; replaced code, almost
+        movsx eax, byte ptr [ecx].s_player.face ; replaced code, almost
         cmp eax, 19
         jle alive
-        movsx eax, byte ptr [ecx+0x1928] ; old face
+        movsx eax, byte ptr [ecx].s_player.old_face
         alive:
         mov ecx, eax
         ret
@@ -17312,7 +17462,7 @@ static void __declspec(naked) get_lich_paperdoll(void)
 {
     asm
       {
-        movsx ecx, byte ptr [ecx+0xba]
+        movsx ecx, byte ptr [ecx].s_player.face
         push 0x490108
         ret
       }
@@ -17412,16 +17562,16 @@ static void __declspec(naked) champion_leadership(void)
     asm
       {
         mov esi, eax
-        cmp byte ptr [PARTY_ADDR+0xb9], CLASS_CHAMPION
+        cmp byte ptr [PARTY_ADDR].s_player.class, CLASS_CHAMPION
         setz al
         add esi, eax
-        cmp byte ptr [PARTY_ADDR+0x1b3c+0xb9], CLASS_CHAMPION
+        cmp byte ptr [PARTY_ADDR+SIZE_PLAYER].s_player.class, CLASS_CHAMPION
         setz al
         add esi, eax
-        cmp byte ptr [PARTY_ADDR+0x1b3c*2+0xb9], CLASS_CHAMPION
+        cmp byte ptr [PARTY_ADDR+SIZE_PLAYER*2].s_player.class, CLASS_CHAMPION
         setz al
         add esi, eax
-        cmp byte ptr [PARTY_ADDR+0x1b3c*3+0xb9], CLASS_CHAMPION
+        cmp byte ptr [PARTY_ADDR+SIZE_PLAYER*3].s_player.class, CLASS_CHAMPION
         setz al
         add esi, eax
         shl esi, 1
@@ -17437,7 +17587,7 @@ static void __declspec(naked) sniper_accuracy(void)
       {
         test ebx, ebx
         jz weapon
-        cmp dword ptr [ebx+72], SPL_ARROW
+        cmp dword ptr [ebx].s_map_object.spell_type, SPL_ARROW
         jb quit ; blades spell etc.
         weapon:
         call dword ptr ds:random
@@ -17482,9 +17632,9 @@ static void __declspec(naked) sniper_accuracy(void)
         no_crit:
         test ebx, ebx
         jz not_it
-        cmp dword ptr [ebx+72], SPL_ARROW
+        cmp dword ptr [ebx].s_map_object.spell_type, SPL_ARROW
         jne not_it
-        cmp byte ptr [edi+0xb9], CLASS_SNIPER
+        cmp byte ptr [edi].s_player.class, CLASS_SNIPER
         jne not_it
         mov eax, 1
         ret
@@ -17546,18 +17696,18 @@ static void __declspec(naked) lich_vampiric_touch(void)
         call dword ptr ds:is_bare_fisted ; replaced call
         test eax, eax
         jnz unarmed
-        mov ecx, dword ptr [edi+0x194c] ; mainhand item
+        mov ecx, dword ptr [edi+SLOT_MAIN_HAND*4].s_player.equipment
         test ecx, ecx
         jz skip
         lea ecx, [ecx+ecx*8]
-        mov ecx, dword ptr [edi+0x214+ecx*4-36] ; id
+        mov ecx, dword ptr [edi+ecx*4-SIZE_ITEM].s_player.items ; id
         cmp ecx, GRIM_REAPER
         je grim
         cmp ecx, FLATTENER
         je flat
         lea ecx, [ecx+ecx*2]
         shl ecx, 4
-        cmp byte ptr [ITEMS_TXT_ADDR+ecx+29], SKILL_STAFF
+        cmp byte ptr [ITEMS_TXT_ADDR+ecx].s_items_txt_item.skill, SKILL_STAFF
         jne skip
         push SKILL_STAFF
         mov ecx, edi
@@ -17569,13 +17719,13 @@ static void __declspec(naked) lich_vampiric_touch(void)
         push edi
         call maybe_instakill
         or dword ptr [ebp-32], eax ; force a hit even if 0 damage
-        cmp byte ptr [edi+0xb9], CLASS_LICH
+        cmp byte ptr [edi].s_player.class, CLASS_LICH
         jne not_lich
         mov eax, dword ptr [ebp-20] ; damage
         xor edx, edx
         mov ecx, 5
         div ecx
-        add dword ptr [edi+0x193c], eax ; HP (overheal is ok)
+        add dword ptr [edi].s_player.hp, eax ; overheal is ok
         not_lich:
         mov eax, 1 ; hammerhands applies as well
         skip:
@@ -17815,7 +17965,7 @@ static void __declspec(naked) perception_extra_item(void)
         mov ecx, dword ptr [0xa74f48+ecx*4] ; player pointers
         call dword ptr ds:get_perception_bonus
         no_player:
-        movzx edx, byte ptr [ebx+53] ; base chance
+        movzx edx, byte ptr [ebx].s_map_monster.item_chance
         add eax, 50
         mul edx
         cmp esi, eax
@@ -17863,7 +18013,7 @@ static void __declspec(naked) lenient_alchemy_allow(void)
         mov dword ptr [ebp-4], eax
         mov dword ptr [botched_potion], edx ; not zero here
         skip:
-        lea eax, [esi+0x157c] ; replaced code
+        lea eax, [esi].s_player.inventory ; replaced code
         ret
       }
 }
@@ -17880,7 +18030,7 @@ static void __declspec(naked) botched_potion_power(void)
         jz skip
         sar eax, 2
         sub dword ptr [ecx], eax
-        or byte ptr [ecx-4+20+1], 0x20 ; unused flag
+        or byte ptr [ecx-4+1].s_item.flags, 0x20 ; unused flag
         skip:
         ret
       }
@@ -17892,13 +18042,13 @@ static void __declspec(naked) botched_potion_catalyst_1(void)
 {
     asm
       {
-        mov dword ptr [eax+0x214], ecx ; replaced code
-        test byte ptr [MOUSE_ITEM+20+1], 0x20 ; our flag
+        mov dword ptr [eax].s_player.items, ecx ; replaced code
+        test byte ptr [MOUSE_ITEM+1].s_item.flags, 0x20 ; our flag
         jz skip
-        or byte ptr [eax+0x214+20+1], 0x20
-        mov ecx, dword ptr [eax+0x214+4]
+        or byte ptr [eax+S_PL_ITEMS+1].s_item.flags, 0x20
+        mov ecx, dword ptr [eax+S_PL_ITEMS].s_item.bonus
         shr ecx, 2
-        sub dword ptr [eax+0x214+4], ecx
+        sub dword ptr [eax+S_PL_ITEMS].s_item.bonus, ecx
         skip:
         ret
       }
@@ -17909,11 +18059,11 @@ static void __declspec(naked) botched_potion_catalyst_2(void)
 {
     asm
       {
-        mov dword ptr [eax+0x214+4], ecx ; replaced code
-        test byte ptr [eax+0x214+20+1], 0x20
+        mov dword ptr [eax+S_PL_ITEMS].s_item.bonus, ecx ; replaced code
+        test byte ptr [eax+S_PL_ITEMS+1].s_item.flags, 0x20
         jz skip
         shr ecx, 2
-        sub dword ptr [eax+0x214+4], ecx
+        sub dword ptr [eax+S_PL_ITEMS].s_item.bonus, ecx
         skip:
         ret
       }
@@ -17924,7 +18074,7 @@ static void __declspec(naked) display_botched_potion(void)
 {
     asm
       {
-        mov eax, dword ptr [eax+20] ; replaced code
+        mov eax, dword ptr [eax].s_item.flags ; replaced code
         test ah, 0x20
         jnz display
         test ah, 1 ; replaced code
@@ -18014,9 +18164,10 @@ static void __declspec(naked) draw_erad_hook(void)
 {
     asm
       {
-        test byte ptr [ecx+183], MMF_ERADICATED
+        test byte ptr [ecx].s_map_monster.mod_flags, MMF_ERADICATED
         jnz draw
-        cmp dword ptr [ecx+372], eax ; replaced code
+        cmp dword ptr [ecx+MBUFF_MASS_DISTORTION*SIZE_BUFF] \
+                      .s_map_monster.spell_buffs, eax ; replaced code
         ret
         draw:
         push esi
@@ -18031,9 +18182,10 @@ static void __declspec(naked) draw_erad_hook_out(void)
 {
     asm
       {
-        test byte ptr [edi+37], MMF_ERADICATED
+        test byte ptr [edi-146].s_map_monster.mod_flags, MMF_ERADICATED
         jnz draw
-        cmp dword ptr [edi+226], edx ; replaced code
+        cmp dword ptr [edi-146+MBUFF_MASS_DISTORTION*SIZE_BUFF] \
+                      .s_map_monster.spell_buffs, edx ; replaced code
         ret
         draw:
         push ecx ; preserve
@@ -18095,9 +18247,9 @@ static void __declspec(naked) erad_stop_moving(void)
 {
     asm
       {
-        test byte ptr [esi+183], MMF_ERADICATED
+        test byte ptr [esi].s_map_monster.mod_flags, MMF_ERADICATED
         mov ax, AI_REMOVED ; we need zf == 1 if flag set
-        cmovz ax, word ptr [esi+176] ; replaced code, almost
+        cmovz ax, word ptr [esi].s_map_monster.ai_state ; replaced code, almost
         ret
       }
 }
@@ -18110,15 +18262,15 @@ static void __declspec(naked) raise_ench_item_difficulty(void)
     asm
       {
         xor eax, eax
-        cmp byte ptr [esi+33], al ; ordinary items only
+        cmp byte ptr [esi].s_items_txt_item.type, al ; ordinary items only
         jnz no_ench
         mov ecx, dword ptr [esp+24] ; item
-        mov edx, dword ptr [ecx+4]
+        mov edx, dword ptr [ecx].s_item.bonus
         test edx, edx
         jz no_std
         cmp edx, TEMP_ENCH_MARKER
         je no_std
-        mov eax, dword ptr [ecx+8]
+        mov eax, dword ptr [ecx].s_item.bonus_strength
         add eax, eax
         mov ecx, 5
         cmp edx, STAT_HP + 1
@@ -18137,11 +18289,11 @@ static void __declspec(naked) raise_ench_item_difficulty(void)
         add eax, eax
         jmp divide
         no_std:
-        mov edx, dword ptr [ecx+12]
+        mov edx, dword ptr [ecx].s_item.bonus2
         test edx, edx
         jz no_ench
-        imul edx, edx, 28
-        mov eax, dword ptr [spcitems+edx-8] ; value
+        imul edx, edx, SIZE_SPCITEM
+        mov eax, dword ptr [spcitems+edx-SIZE_SPCITEM].s_spcitem.value
         cmp eax, 10
         ja spc
         jb ok
@@ -18155,7 +18307,7 @@ static void __declspec(naked) raise_ench_item_difficulty(void)
         xor edx, edx
         div ecx
         no_ench:
-        movsx ecx, byte ptr [esi+46] ; replaced code, almost
+        movsx ecx, byte ptr [esi].s_items_txt_item.id_difficulty ; repl, almost
         mov edx, SKILL_IDENTIFY_ITEM
         cmp dword ptr [esp], 0x491149 ; can repair func
         jb id
@@ -18184,7 +18336,7 @@ static void __declspec(naked) unid_item_sell_price(void)
 {
     asm
       {
-        test byte ptr [ecx+20], IFLAGS_ID
+        test byte ptr [ecx].s_item.flags, IFLAGS_ID
         jz unid
         call dword ptr ds:item_value
         ret
@@ -18192,7 +18344,7 @@ static void __declspec(naked) unid_item_sell_price(void)
         mov edx, dword ptr [ecx]
         lea eax, [edx+edx*2]
         shl eax, 4
-        mov eax, dword ptr [ITEMS_TXT_ADDR+eax+16] ; base value
+        mov eax, dword ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.value
         cmp edx, FIRST_WAND
         jb quit
         cmp edx, LAST_WAND
@@ -18213,7 +18365,7 @@ static void __declspec(naked) read_unid_scroll(void)
 {
     asm
       {
-        test byte ptr [MOUSE_ITEM+20], IFLAGS_ID
+        test byte ptr [MOUSE_ITEM].s_item.flags, IFLAGS_ID
         jz unid
         mov eax, [MOUSE_ITEM] ; replaced code
         ret
@@ -18235,7 +18387,7 @@ static void __declspec(naked) read_unid_book(void)
 {
     asm
       {
-        test byte ptr [MOUSE_ITEM+20], IFLAGS_ID
+        test byte ptr [MOUSE_ITEM].s_item.flags, IFLAGS_ID
         jz unid
         lea edi, [edx-400] ; replaced code
         ret
@@ -18416,24 +18568,24 @@ static void __declspec(naked) absorb_monster_spell(void)
         jnz spell
         ret
         spell:
-        mov ecx, dword ptr [ebx+76] ; spell skill
+        mov ecx, dword ptr [ebx].s_map_object.spell_power
         call dword ptr ds:skill_mastery
         mov ecx, edi
         push eax
-        push dword ptr [ebx+72] ; spell id
+        push dword ptr [ebx].s_map_object.spell_type
         call absorb_spell
         test eax, eax
         jz hit
         mov dword ptr [esp], 0x43a99a ; skip hit code
         ret
         hit:
-        cmp dword ptr [ebx+72], SPL_INCINERATE
+        cmp dword ptr [ebx].s_map_object.spell_type, SPL_INCINERATE
         jne skip
         call dword ptr ds:random
         xor edx, edx
         mov ecx, 100
         div ecx
-        mov eax, dword ptr [ebx+76] ; spell power
+        mov eax, dword ptr [ebx].s_map_object.spell_power
         and eax, SKILL_MASK
         lea eax, [eax+eax*2]
         cmp eax, edx
@@ -18456,7 +18608,7 @@ static void __declspec(naked) absorb_monster_spell(void)
         push 1 ; can resist through preservation etc.
         push COND_INCINERATED
         mov ecx, edi
-        call condition_immunity ; inflict condition
+        call inflict_condition
         skip:
         mov dword ptr [esp], 0x43a5ac ; replaced jump
         ret
@@ -18468,8 +18620,8 @@ static void __declspec(naked) absorb_other_spell(void)
 {
     asm
       {
-        push dword ptr [ebx+80] ; spell rank
-        push dword ptr [ebx+72] ; spell id
+        push dword ptr [ebx].s_map_object.spell_mastery
+        push dword ptr [ebx].s_map_object.spell_type
         call absorb_spell
         test eax, eax
         jz hit
@@ -18624,7 +18776,7 @@ static void __declspec(naked) boost_axe_recovery(void)
     asm
       {
         and eax, SKILL_MASK ; replaced code
-        cmp byte ptr [edi+29], SKILL_AXE
+        cmp byte ptr [edi].s_items_txt_item.skill, SKILL_AXE
         je axe
         add eax, eax
         ret
@@ -18646,7 +18798,7 @@ static void __declspec(naked) new_id_monster_check(void)
         cmp eax, GM ; eax == mastery
         je ok ; always id all
         mul edi ; skill value
-        movzx edi, byte ptr [ecx+52] ; monster level
+        movzx edi, byte ptr [ecx].s_map_monster.level
         add eax, 30
         sub eax, edi
         cdq
@@ -18656,13 +18808,13 @@ static void __declspec(naked) new_id_monster_check(void)
         jle ok
         mov al, GM
         ok:
-        movzx edx, byte ptr [ecx+182] ; stored id level
+        movzx edx, byte ptr [ecx].s_map_monster.id_level
         cmp edx, eax
         jl new
         mov eax, edx
         mov dword ptr [ebp-24], ebx ; suppress the face anim
         new:
-        mov byte ptr [ecx+182], al
+        mov byte ptr [ecx].s_map_monster.id_level, al
         xor edi, edi
         inc edi
         dec eax
@@ -18691,11 +18843,12 @@ static void __declspec(naked) id_monster_normal(void)
 {
     asm
       {
-        cmp byte ptr [ecx+182], bl
+        cmp byte ptr [ecx].s_map_monster.id_level, bl
         jz no_id
         add dword ptr [ebp+20], 5
         no_id:
-        cmp dword ptr [ecx+344], ebx ; replaced code
+        cmp dword ptr [ecx+MBUFF_HALVED_ARMOR*SIZE_BUFF+4] \
+                      .s_map_monster.spell_buffs, ebx ; replaced code
         ret
       }
 }
@@ -18705,11 +18858,11 @@ static void __declspec(naked) id_monster_expert(void)
 {
     asm
       {
-        cmp byte ptr [esi+182], EXPERT
+        cmp byte ptr [esi].s_map_monster.id_level, EXPERT
         jb no_bonus
         sub edi, 5 ; bless/fate/hop bonus
         no_bonus:
-        lea ecx, [esi+0x184] ; replaced code
+        lea ecx, [esi+MBUFF_FATE*SIZE_BUFF].s_map_monster.spell_buffs ; repl.
         ret
       }
 }
@@ -18719,7 +18872,7 @@ static void __declspec(naked) id_monster_master(void)
 {
     asm
       {
-        cmp byte ptr [esi+182], MASTER
+        cmp byte ptr [esi].s_map_monster.id_level, MASTER
         jb no_bonus
         cmp dword ptr [esp+8], ENERGY ; energy damage is an exception
         jae no_bonus
@@ -18744,14 +18897,14 @@ static void __declspec(naked) print_full_monster_attack(void)
       {
         mov ecx, dword ptr [ebp-20] ; the monster
         add ecx, dword ptr [second_attack] ; first or second
-        movzx edx, byte ptr [ecx+68] ; fixed damage
+        movzx edx, byte ptr [ecx].s_map_monster.attack1_damage_add
         test edx, edx
         jz no_fixed
         push edx
         no_fixed:
-        movzx eax, byte ptr [ecx+67] ; dice sides
+        movzx eax, byte ptr [ecx].s_map_monster.attack1_damage_dice_sides
         push eax
-        movzx eax, byte ptr [ecx+66] ; dice count
+        movzx eax, byte ptr [ecx].s_map_monster.attack1_damage_dice_count
         push eax
         push dword ptr [ebp-0x1f0] ; element
         cmp dword ptr [second_attack], ebx
@@ -18805,15 +18958,15 @@ static void __declspec(naked) print_monster_special_bonus(void)
 {
     asm
       {
-        cmp byte ptr [eax+70], bl ; second attack chance vs. 0
+        cmp byte ptr [eax].s_map_monster.attack2_chance, bl ; == 0
         jz bonus
         xor dword ptr [second_attack], 6 ; second attack offset
         jz bonus
-        movzx eax, byte ptr [eax+71] ; second attack element
+        movzx eax, byte ptr [eax].s_map_monster.attack2_element
         mov edx, 0x41ef8f ; back to attack code
         jmp edx
         bonus:
-        movzx ecx, byte ptr [eax+63] ; attack bonus
+        movzx ecx, byte ptr [eax].s_map_monster.attack_special
         mov edx, dword ptr [monster_bonus_strings+ecx*4]
         push dword ptr [edx]
         push ebx
@@ -19086,7 +19239,7 @@ static void __declspec(naked) gm_teaching_conditions_hook(void)
         mov eax, dword ptr [0xf8b02c] ; restore new skill
         jl quit
         lea ecx, [eax-7] ; replaced code
-        cmp ecx, 28 ; replaced code
+        cmp ecx, SKILL_ALCHEMY - 7 ; replaced code
         quit:
         ret
         custom:
@@ -19299,7 +19452,7 @@ static void __declspec(naked) meditation_quest_hook(void)
     asm
       {
         call meditation_quest
-        mov dword ptr [0x506d98], 480
+        mov dword ptr [0x506d98], 480 ; replaced code
         ret
       }
 }
@@ -19404,11 +19557,11 @@ static void __declspec(naked) level_skill_bonus(void)
 {
     asm
       {
-        movzx ebx, word ptr [eax+0x108+edi*2] ; replaced code, almost
+        movzx ebx, word ptr [eax+edi*2].s_player.skills ; replaced code, almost
         mov ecx, eax
         call dword ptr ds:get_level
         mov ecx, dword ptr [ebp-4] ; pc
-        movzx ecx, word ptr [ecx+0xda] ; base level
+        movzx ecx, word ptr [ecx].s_player.level_base
         sub eax, ecx
         jbe skip
         cmp ecx, 20
@@ -19451,9 +19604,9 @@ static void __declspec(naked) store_weapon_quality_bonus(void)
 {
     asm
       {
-        movzx edx, byte ptr [ITEMS_TXT_ADDR+eax+29] ; replaced code
+        movzx edx, byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.skill ; repl.
         cmp edx, SKILL_BLASTER
-        cmovbe ecx, dword ptr [ITEMS_TXT_ADDR+eax+32] ; mod2 (can`t cmov cl)
+        cmovbe ecx, dword ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.mod2
         mov byte ptr [weapon_mod2], cl
         xor ecx, ecx ; restore
         ret
@@ -19491,9 +19644,9 @@ static void __declspec(naked) flawless_theft(void)
     asm
       {
         mov ecx, dword ptr [ebp-20] ; current pc
-        cmp word ptr [ecx+0x108+SKILL_THIEVERY*2], SKILL_GM
+        cmp word ptr [ecx+SKILL_THIEVERY*2].s_player.skills, SKILL_GM
         jae quit
-        or word ptr [eax+0x1f0+20], IFLAGS_STOLEN ; replaced code, almost
+        or word ptr [eax+S_PL_ITEM0].s_item.flags, IFLAGS_STOLEN ; almost repl
         quit:
         ret
       }
@@ -19523,11 +19676,13 @@ static void __declspec(naked) halved_physical_damage_resistance(void)
 {
     asm
       {
-        cmp dword ptr [eax+212+MBUFF_HALVED_ARMOR*16], edx
+        cmp dword ptr [eax+MBUFF_HALVED_ARMOR*SIZE_BUFF] \
+                      .s_map_monster.spell_buffs, edx
         jnz ok
-        cmp dword ptr [eax+212+MBUFF_HALVED_ARMOR*16+4], edx
+        cmp dword ptr [eax+MBUFF_HALVED_ARMOR*SIZE_BUFF+4] \
+                      .s_map_monster.spell_buffs, edx
         ok:
-        movzx eax, byte ptr [eax+89] ; old code (mons phys res)
+        movzx eax, byte ptr [eax].s_map_monster.physical_resistance ; old code
         jz quit
         shr eax, 1 ; halve
         quit:
@@ -19542,9 +19697,11 @@ static void __declspec(naked) halved_physical_condition_resistance(void)
     asm
       {
         mov edi, dword ptr [ebp+8] ; replaced code (get monster)
-        movzx esi, byte ptr [edi+89] ; replaced code (phys res)
-        mov edx, dword ptr [edi+212+MBUFF_HALVED_ARMOR*16]
-        or edx, dword ptr [edi+212+MBUFF_HALVED_ARMOR*16+4]
+        movzx esi, byte ptr [edi].s_map_monster.physical_resistance ; replaced
+        mov edx, dword ptr [edi+MBUFF_HALVED_ARMOR*SIZE_BUFF] \
+                           .s_map_monster.spell_buffs
+        or edx, dword ptr [edi+MBUFF_HALVED_ARMOR*SIZE_BUFF+4] \
+                          .s_map_monster.spell_buffs
         jz quit
         shr esi, 1 ; halve
         quit:
@@ -19563,7 +19720,7 @@ static void __declspec(naked) double_shield_bonus(void)
         jl fail ; if weapon
         cmp eax, ITEM_TYPE_SHIELD - 1
         jne skip
-        cmp word ptr [ebx+0x108+SKILL_SHIELD*2], SKILL_MASTER
+        cmp word ptr [ebx+SKILL_SHIELD*2].s_player.skills, SKILL_MASTER
         jb skip
         not dword ptr [double_shield_flag] ; 0 <-> -1
         mov ecx, dword ptr [double_shield_flag]
@@ -19589,7 +19746,7 @@ static void __declspec(naked) double_shield_regen(void)
         jb skip
         cmp ecx, LAST_SHIELD
         ja skip
-        cmp word ptr [esi+0x108+SKILL_SHIELD*2], SKILL_MASTER
+        cmp word ptr [esi+SKILL_SHIELD*2].s_player.skills, SKILL_MASTER
         jb skip
         add ebx, ebx ; only shield regen here (offhand is 0th slot)
         skip:
@@ -19673,7 +19830,7 @@ static inline void skill_changes(void)
     hook_call(0x43260e, suppress_greet_after_gm, 6);
     hook_call(0x4b273c, master_spell_skill, 9);
     erase_code(0x46c1b4, 4); // preserve arrow age to determine shot timing
-    // blaster quest completed in condition_immunity() above
+    // blaster quest completed in inflict_condition() above
     hook_call(0x4941d0, bb_quest_hook, 7);
     hook_call(0x4341f6, meditation_quest_hook, 10);
     hook_call(0x416544, alchemy_quest_hook, 6);
@@ -19737,11 +19894,13 @@ static void __declspec(naked) robe_crown_ench_chance(void)
         mov ecx, dword ptr [esi]
         lea ecx, [ecx+ecx*2]
         shl ecx, 4
-        cmp byte ptr [edi+ecx+34], 1 ; base ac
+        cmp byte ptr [edi+4+ecx].s_items_txt_item.mod1_dice_count, 1 ; base ac
         ja skip
-        cmp byte ptr [edi+ecx+32], ITEM_TYPE_ARMOR - 1
+        cmp byte ptr [edi+4+ecx].s_items_txt_item.equip_stat, \
+            ITEM_TYPE_ARMOR - 1
         je reroll
-        cmp byte ptr [edi+ecx+32], ITEM_TYPE_HELM - 1
+        cmp byte ptr [edi+4+ecx].s_items_txt_item.equip_stat, \
+            ITEM_TYPE_HELM - 1
         jne skip
         reroll:
         call dword ptr ds:random
@@ -19765,7 +19924,7 @@ static void __declspec(naked) staff_ench_chance(void)
         mov ecx, dword ptr [esi]
         lea ecx, [ecx+ecx*2]
         shl ecx, 4
-        cmp byte ptr [edi+ecx+33], SKILL_STAFF
+        cmp byte ptr [edi+4+ecx].s_items_txt_item.skill, SKILL_STAFF
         jne skip
         call dword ptr ds:random
         xor edx, edx
@@ -19798,17 +19957,19 @@ static void __declspec(naked) std_ench_group(void)
 {
     asm
       {
-        cmp byte ptr [edi+ecx+32], ITEM_TYPE_ARMOR - 1
+        cmp byte ptr [edi+4+ecx].s_items_txt_item.equip_stat, \
+            ITEM_TYPE_ARMOR - 1
         jne not_robe
-        cmp byte ptr [edi+ecx+33], SKILL_MISC
+        cmp byte ptr [edi+4+ecx].s_items_txt_item.skill, SKILL_MISC
         je robe
         not_robe:
-        cmp byte ptr [edi+ecx+32], ITEM_TYPE_HELM - 1
+        cmp byte ptr [edi+4+ecx].s_items_txt_item.equip_stat, \
+            ITEM_TYPE_HELM - 1
         jne not_crown
-        cmp byte ptr [edi+ecx+34], 0
+        cmp byte ptr [edi+4+ecx].s_items_txt_item.mod1_dice_count, 0
         je crown
         not_crown:
-        movzx ecx, byte ptr [edi+ecx+32] ; replaced code
+        movzx ecx, byte ptr [edi+4+ecx].s_items_txt_item.equip_stat ; replaced
         ret
         robe:
         mov ecx, 12
@@ -19824,17 +19985,20 @@ static void __declspec(naked) std_ench_group_ei(void)
 {
     asm
       {
-        cmp byte ptr [ITEMS_TXT_ADDR+ecx+28], ITEM_TYPE_ARMOR - 1
+        cmp byte ptr [ITEMS_TXT_ADDR+ecx].s_items_txt_item.equip_stat, \
+            ITEM_TYPE_ARMOR - 1
         jne not_robe
-        cmp byte ptr [ITEMS_TXT_ADDR+ecx+29], SKILL_MISC
+        cmp byte ptr [ITEMS_TXT_ADDR+ecx].s_items_txt_item.skill, SKILL_MISC
         je robe
         not_robe:
-        cmp byte ptr [ITEMS_TXT_ADDR+ecx+28], ITEM_TYPE_HELM - 1
+        cmp byte ptr [ITEMS_TXT_ADDR+ecx].s_items_txt_item.equip_stat, \
+            ITEM_TYPE_HELM - 1
         jne not_crown
-        cmp byte ptr [ITEMS_TXT_ADDR+ecx+30], 0
+        cmp byte ptr [ITEMS_TXT_ADDR+ecx].s_items_txt_item.mod1_dice_count, 0
         jz crown
         not_crown:
-        movzx ecx, byte ptr [ITEMS_TXT_ADDR+ecx+28] ; replaced code
+        ; replaced code next line:
+        movzx ecx, byte ptr [ITEMS_TXT_ADDR+ecx].s_items_txt_item.equip_stat
         ret
         robe:
         mov ecx, 12
@@ -19853,7 +20017,7 @@ static void __declspec(naked) spc_ench_group(void)
         mov ecx, dword ptr [esi]
         lea ecx, [ecx+ecx*2]
         shl ecx, 4
-        movzx edx, byte ptr [edi+ecx+32]
+        movzx edx, byte ptr [edi+4+ecx].s_items_txt_item.equip_stat
         cmp edx, ITEM_TYPE_WEAPON - 1
         je weapon
         cmp edx, ITEM_TYPE_WEAPON2 - 1
@@ -19866,7 +20030,7 @@ static void __declspec(naked) spc_ench_group(void)
         mov dword ptr [ebp-8], edx
         ret
         weapon:
-        cmp byte ptr [edi+ecx+33], SKILL_STAFF
+        cmp byte ptr [edi+4+ecx].s_items_txt_item.skill, SKILL_STAFF
         je staff
         mov dword ptr [ebp-8], 0 ; any non-staff weapon
         ret
@@ -19874,12 +20038,12 @@ static void __declspec(naked) spc_ench_group(void)
         mov dword ptr [ebp-8], 1 ; staff
         ret
         armor:
-        cmp byte ptr [edi+ecx+33], SKILL_MISC
+        cmp byte ptr [edi+4+ecx].s_items_txt_item.skill, SKILL_MISC
         jne other
         mov dword ptr [ebp-8], 17 ; robe
         ret
         helm:
-        cmp byte ptr [edi+ecx+34], 0
+        cmp byte ptr [edi+4+ecx].s_items_txt_item.mod1_dice_count, 0
         jnz other
         mov dword ptr [ebp-8], 18 ; crown
         ret
@@ -19912,7 +20076,7 @@ static void __declspec(naked) spc_ench_group_ei(void)
         mov esi, dword ptr [edi]
         lea esi, [esi+esi*2]
         shl esi, 4
-        movzx eax, byte ptr [ITEMS_TXT_ADDR+esi+28]
+        movzx eax, byte ptr [ITEMS_TXT_ADDR+esi].s_items_txt_item.equip_stat
         cmp eax, ITEM_TYPE_WEAPON - 1
         je weapon
         cmp eax, ITEM_TYPE_WEAPON2 - 1
@@ -19926,7 +20090,7 @@ static void __declspec(naked) spc_ench_group_ei(void)
         lea eax, [ebp-3696] ; replaced code
         ret
         weapon:
-        cmp byte ptr [ITEMS_TXT_ADDR+esi+29], SKILL_STAFF
+        cmp byte ptr [ITEMS_TXT_ADDR+esi].s_items_txt_item.skill, SKILL_STAFF
         je staff
         mov al, 0 ; any non-staff weapon
         jmp quit
@@ -19934,12 +20098,12 @@ static void __declspec(naked) spc_ench_group_ei(void)
         mov al, 1 ; staff
         jmp quit
         armor:
-        cmp byte ptr [ITEMS_TXT_ADDR+esi+29], SKILL_MISC
+        cmp byte ptr [ITEMS_TXT_ADDR+esi].s_items_txt_item.skill, SKILL_MISC
         jne quit
         mov al, 17 ; robe
         jmp quit
         helm:
-        cmp byte ptr [ITEMS_TXT_ADDR+esi+30], 0
+        cmp byte ptr [ITEMS_TXT_ADDR+esi].s_items_txt_item.mod1_dice_count, 0
         jnz quit
         mov al, 18 ; crown
         jmp quit
@@ -20059,16 +20223,16 @@ static void __declspec(naked) equipped_knife_sprite(void)
       {
         cmp dword ptr [edi], BOOMERANG_KNIFE ; an exception
         je skip
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_DAGGER
+        cmp byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.skill, SKILL_DAGGER
         je knife
         skip:
         pop edx
-        push dword ptr [ITEMS_TXT_ADDR+eax] ; replaced code
+        push dword ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.bitmap ; replaced
         jmp edx
         knife:
         push eax ; preserve
         push ecx ; ditto
-        push dword ptr [ITEMS_TXT_ADDR+eax] ; inventory sprite name
+        push dword ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.bitmap
 #ifdef __clang__
         mov eax, offset knife_buffer
         push eax
@@ -20122,20 +20286,20 @@ static void __declspec(naked) knife_displayed_damage(void)
 {
     asm
       {
-        mov eax, dword ptr [esi+0x1948+SLOT_MISSILE*4]
+        mov eax, dword ptr [esi+SLOT_MISSILE*4].s_player.equipment
         test eax, eax
         jz quit
         lea eax, [eax+eax*8]
-        test byte ptr [esi+0x214+eax*4-36+20], IFLAGS_BROKEN
+        test byte ptr [esi+S_PL_ITEM0+eax*4].s_item.flags, IFLAGS_BROKEN
         jnz skip
-        mov eax, dword ptr [esi+0x214+eax*4-36]
+        mov eax, dword ptr [esi+eax*4-SIZE_ITEM].s_player.items
         lea eax, [eax+eax*2]
         shl eax, 4
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_DAGGER
+        cmp byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.skill, SKILL_DAGGER
         je dagger
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_BOW
+        cmp byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.skill, SKILL_BOW
         jne skip
-        mov ax, word ptr [esi+0x108+SKILL_BOW*2] ; replaced code
+        mov ax, word ptr [esi+SKILL_BOW*2].s_player.skills ; replaced code
         test ax, ax ; ditto
         quit:
         ret
@@ -20166,12 +20330,12 @@ static void __declspec(naked) knife_spell(void)
       {
         cmp ecx, SPL_ARROW
         jne quit
-        mov eax, dword ptr [esi+0x1948+SLOT_MISSILE*4]
+        mov eax, dword ptr [esi+SLOT_MISSILE*4].s_player.equipment
         lea eax, [eax+eax*8]
-        mov eax, dword ptr [esi+0x214+eax*4-36]
+        mov eax, dword ptr [esi+eax*4-SIZE_ITEM].s_player.items
         lea eax, [eax+eax*2]
         shl eax, 4
-        cmp byte ptr [ITEMS_TXT_ADDR+eax+29], SKILL_DAGGER
+        cmp byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.skill, SKILL_DAGGER
         jne quit
         mov ecx, SPL_KNIFE
         mov dword ptr [ebp-20], 2 ; sound flag
@@ -20203,7 +20367,7 @@ static void __declspec(naked) no_knife_double_shot(void)
       {
         xor ecx, ecx
         cmp eax, SPL_ARROW - 1
-        cmove cx, word ptr [esi+0x108+SKILL_BOW*2] ; replaced movzx
+        cmove cx, word ptr [esi+SKILL_BOW*2].s_player.skills ; replaced movzx
         ret
       }
 }
@@ -20248,24 +20412,24 @@ static void __declspec(naked) init_knife_charges(void)
         cmp eax, LIVING_WOOD_KNIVES
         jne quit
         mov eax, dword ptr [CURRENT_TIME_ADDR]
-        mov dword ptr [esi+28], eax
+        mov dword ptr [esi].s_item.temp_ench_time, eax
         mov eax, dword ptr [CURRENT_TIME_ADDR+4]
-        mov dword ptr [esi+32], eax
+        mov dword ptr [esi+4].s_item.temp_ench_time, eax
         charges:
         call dword ptr ds:random
         xor edx, edx
         div ebx
         add ebx, edx
         dec ebx
-        mov byte ptr [esi+25], bl ; max charges
-        mov dword ptr [esi+16], ebx ; charges
+        mov byte ptr [esi].s_item.max_charges, bl
+        mov dword ptr [esi].s_item.charges, ebx
         cmp dword ptr [esi], LIVING_WOOD_KNIVES
         je full
         shr ebx, 1
         call dword ptr ds:random
         xor edx, edx
         div ebx
-        sub dword ptr [esi+16], edx
+        sub dword ptr [esi].s_item.charges, edx
         full:
         mov eax, dword ptr [esi] ; restore
         quit:
@@ -20308,8 +20472,8 @@ static void __declspec(naked) use_knife_charge(void)
 {
     asm
       {
-        lea ecx, [esi+0x214+eax*4-36] ; missile weapon
-        test byte ptr [ecx+20], IFLAGS_BROKEN ; replaced code, almost
+        lea ecx, [esi+eax*4-SIZE_ITEM].s_player.items ; missile weapon
+        test byte ptr [ecx].s_item.flags, IFLAGS_BROKEN ; replaced code, almost
         jnz quit
         cmp dword ptr [ecx], THROWING_KNIVES
         je knives
@@ -20317,9 +20481,9 @@ static void __declspec(naked) use_knife_charge(void)
         jne skip
         call regen_living_knives ; update charges
         knives:
-        cmp dword ptr [ecx+16], 0 ; charges
+        cmp dword ptr [ecx].s_item.charges, 0
         jz fail
-        dec dword ptr [ecx+16]
+        dec dword ptr [ecx].s_item.charges
         skip:
         xor eax, eax ; set zf
         ret
@@ -20377,24 +20541,24 @@ static void __declspec(naked) regen_living_knives(void)
       {
         mov eax, dword ptr [CURRENT_TIME_ADDR]
         mov edx, dword ptr [CURRENT_TIME_ADDR+4]
-        sub eax, dword ptr [ecx+28] ; recharge timer low
-        sbb edx, dword ptr [ecx+32] ; recharge timer high
+        sub eax, dword ptr [ecx].s_item.temp_ench_time
+        sbb edx, dword ptr [ecx+4].s_item.temp_ench_time
         jb quit
         div dword ptr [five_minutes]
         test eax, eax
         jz quit
-        add dword ptr [ecx+16], eax ; charges
-        movzx eax, byte ptr [ecx+25] ; max charges
-        cmp dword ptr [ecx+16], eax
+        add dword ptr [ecx].s_item.charges, eax
+        movzx eax, byte ptr [ecx].s_item.max_charges
+        cmp dword ptr [ecx].s_item.charges, eax
         jbe ok
-        mov dword ptr [ecx+16], eax
+        mov dword ptr [ecx].s_item.charges, eax
         ok:
         mov eax, dword ptr [CURRENT_TIME_ADDR]
         sub eax, edx ; set timer to remainder
         mov edx, dword ptr [CURRENT_TIME_ADDR+4]
         sbb edx, 0
-        mov dword ptr [ecx+28], eax
-        mov dword ptr [ecx+32], edx
+        mov dword ptr [ecx].s_item.temp_ench_time, eax
+        mov dword ptr [ecx+4].s_item.temp_ench_time, edx
         quit:
         ret
       }
@@ -20405,8 +20569,8 @@ static void __declspec(naked) knife_repair_dialog(void)
 {
     asm
       {
-        lea esi, [edi+0x214+eax*4-36] ; replaced code
-        test byte ptr [esi+20], IFLAGS_BROKEN ; replaced code
+        lea esi, [edi+eax*4-SIZE_ITEM].s_player.items ; replaced code
+        test byte ptr [esi].s_item.flags, IFLAGS_BROKEN ; replaced code
         jnz quit ; broken status takes priority
         cmp dword ptr [esi], THROWING_KNIVES
         je knives
@@ -20417,11 +20581,11 @@ static void __declspec(naked) knife_repair_dialog(void)
         quit:
         ret
         knives:
-        movzx eax, byte ptr [esi+25] ; max charges
-        sub eax, dword ptr [esi+16] ; current charges
+        movzx eax, byte ptr [esi].s_item.max_charges
+        sub eax, dword ptr [esi].s_item.charges
         jbe skip
         mov edx, dword ptr [DIALOG2]
-        imul edx, dword ptr [edx+28], 52
+        imul edx, dword ptr [edx+28], SIZE_EVENT2D
         fld dword ptr [0x5912d8+edx] ; store price multiplier
         fld1 ; 20% bonus
         fadd st(0), st(1)
@@ -20432,7 +20596,7 @@ static void __declspec(naked) knife_repair_dialog(void)
         pop ebx ; == restored charges
         cmp ebx, 0
         jbe cannot
-        add ebx, dword ptr [esi+16] ; current charges
+        add ebx, dword ptr [esi].s_item.charges
         sub esp, 4
         fstp dword ptr [esp]
         mov ecx, esi
@@ -20483,8 +20647,8 @@ static void __declspec(naked) knife_price(void)
         jne multiply
         mov ecx, 120 ; +3 knives min + max
         multiply:
-        movzx eax, byte ptr [esi+25] ; max charges
-        add eax, dword ptr [esi+16] ; charges
+        movzx eax, byte ptr [esi].s_item.max_charges
+        add eax, dword ptr [esi].s_item.charges
         mul edi
         div ecx
         test eax, eax
@@ -20574,7 +20738,7 @@ static void __declspec(naked) difficult_monster_recovery(void)
 {
     asm
       {
-        mov eax, dword ptr [0x5cccc0+eax+80] ; replaced code
+        mov eax, dword ptr [0x5cccc0+eax-44].s_map_monster.recovery ; replaced
         cmp dword ptr [elemdata.difficulty], ebx
         jz skip
         mov ecx, eax
@@ -20594,7 +20758,7 @@ static void __declspec(naked) difficult_monster_recovery_esi(void)
 {
     asm
       {
-        mov esi, dword ptr [0x5cccc0+esi+80] ; replaced code
+        mov esi, dword ptr [0x5cccc0+esi-44].s_map_monster.recovery ; replaced
         cmp dword ptr [elemdata.difficulty], ecx
         jz skip
         mov ebx, esi
@@ -20699,7 +20863,7 @@ static void __declspec(naked) difficult_gold_pile(void)
 {
     asm
       {
-        mov eax, dword ptr [ecx+12] ; replaced code
+        mov eax, dword ptr [ecx].s_item.bonus2 ; replaced code
         cmp ecx, offset order_gold ; this is not a real item
         je skip
         cmp dword ptr [elemdata.difficulty], ebx
@@ -20710,7 +20874,7 @@ static void __declspec(naked) difficult_gold_pile(void)
         shr eax, 1
         lower:
         neg eax
-        add eax, dword ptr [ecx+12]
+        add eax, dword ptr [ecx].s_item.bonus2
         skip:
         mov dword ptr [ebp-120], eax ; replaced code
         ret
@@ -20758,6 +20922,7 @@ static void __declspec(naked) difficult_looted_gold(void)
 // I need to exempt box traders from difficulty gold penalties,
 // as the profit margin is their entire point, so I'll use
 // evt.Sub("Gold", -sell_price) for them, and make it give irreducible gold.
+// TODO: unnecessary now that the traders are removed
 static void __declspec(naked) subtract_negative_gold(void)
 {
     asm
@@ -20780,13 +20945,13 @@ static void __declspec(naked) faster_monster_swing(void)
 {
     asm
       {
-        cmp dword ptr [ebx+184], eax ; replaced code (check for swing finish)
-        jge quit
+        cmp dword ptr [ebx].s_map_monster.action_time, eax ; replaced code
+        jge quit ; if finished already
         xor eax, eax
         inc eax
-        cmp dword ptr [ebx+124], eax ; mon recovery
+        cmp dword ptr [ebx].s_map_monster.recovery, eax
         jge skip
-        mov cx, word ptr [ebx+176] ; mon ai state
+        mov cx, word ptr [ebx].s_map_monster.ai_state
         shl eax, cl
         test eax, 0x4300c ; attack states
         jnz quit
@@ -21147,7 +21312,7 @@ static void __declspec(naked) warhorse_armsmaster_bonus(void)
         test byte ptr [NPC_ADDR+HORSE_TATALIA*76+8], NPC_HIRED
         jz quit
         mov ecx, dword ptr [ebp-4] ; PC
-        cmp byte ptr [ecx+0xb9], CLASS_BLACK_KNIGHT
+        cmp byte ptr [ecx].s_player.class, CLASS_BLACK_KNIGHT
         ja quit
         add esi, 3
         quit:
@@ -21570,14 +21735,14 @@ static void __declspec(naked) print_restore_sp(void)
 {
     asm
       {
-        cmp word ptr [ecx+0x108+eax*2-36*2], bx ; replaced code
+        cmp word ptr [ecx+eax*2-36*2].s_player.skills, bx ; replaced code
         jz quit
         cmp eax, SKILL_DARK + 36 ; no learning/meditation
         ja skip
         mov byte ptr [restore_sp_buffer], bl ; will remain 0 if no prompt
         call dword ptr ds:get_full_sp
         mov ecx, dword ptr [ebp-24] ; player
-        cmp dword ptr [ecx+0x1940], eax ; sp
+        cmp dword ptr [ecx].s_player.sp, eax
         jge skip
         call guild_sp_price
         push eax
@@ -21611,7 +21776,7 @@ static void __declspec(naked) print_restore_sp_display(void)
 {
     asm
       {
-        cmp word ptr [ecx+0x108+eax*2-36*2], bx ; replaced code
+        cmp word ptr [ecx+eax*2-36*2].s_player.skills, bx ; replaced code
         jz quit
         cmp eax, SKILL_DARK + 36 ; no learning/meditation
         ja skip
@@ -21817,7 +21982,7 @@ static void __declspec(naked) query_order(void)
         mov eax, dword ptr [DIALOG2]
         mov eax, dword ptr [eax+28] ; house id
         lea eax, [eax+eax*8]
-        lea eax, [elemdata.current_orders+eax*4-36]
+        lea eax, [elemdata.current_orders+eax*4-SIZE_ITEM]
         push eax
         mov ecx, PARTY_BIN_ADDR
         call dword ptr ds:add_mouse_item
@@ -22654,7 +22819,7 @@ static void __declspec(naked) right_click_order_hint(void)
       {
         cmp dword ptr [CURRENT_CONVERSATION], CONV_CONFIRM_ORDER
         je order
-        lea ecx, [SHOP_SPECIAL_ITEMS+eax*4-36] ; replaced code
+        lea ecx, [SHOP_SPECIAL_ITEMS+eax*4-SIZE_ITEM] ; replaced code
         ret
         order:
         mov eax, dword ptr [ebp-4] ; active item
@@ -22997,7 +23162,7 @@ static inline void one_more_map(void)
         0x460b96, 0x47a404, 0x49595c, 0x497f94, 0x4abfe0, 0x4ac0d1, 0x4b2a1f,
         0x4b3518, 0x4b41ea, 0x4b69df, 0x4b6a91, 0x4b6de2, 0x4be05a };
     for (int idx = 0; idx < sizeof(mapstats) / sizeof(int); idx++)
-        patch_dword(mapstats[idx], dword(mapstats[idx]) - 68); // start from 0
+        patch_dword(mapstats[idx], dword(mapstats[idx]) - SIZE_MAPSTAT);
     // map track reference at 0x4abf71 is tricky as it's overriden by mmext
     patch_word(0x4abf62, 0x9048); // dec eax; nop (adjust map index)
     patch_byte(0x4abf64, 0x7c); // jl ... (now "no map found" is -1)

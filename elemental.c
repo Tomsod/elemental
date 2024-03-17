@@ -669,7 +669,7 @@ enum items
     STORM_TRIDENT = 559,
     ELLINGERS_ROBE = 560,
     VIPER = 561,
-    TEMPLE_IN_BOTTLE = 562,
+    FENCERS_FRIEND = 562,
     SWORD_OF_LIGHT = 563,
     OGHMA_INFINIUM = 564,
     GRIM_REAPER = 565,
@@ -1375,7 +1375,8 @@ static struct __attribute__((packed)) patch_options
 {
     SKIP(196);
     int fix_unimplemented_spells;
-    SKIP(48);
+    SKIP(44);
+    int axe_gm_perk_chance;
     double mouse_dx;
     double mouse_dy;
     SKIP(56);
@@ -1387,6 +1388,7 @@ static struct __attribute__((packed)) patch_options
     int keep_empty_wands;
     SKIP(16);
 } *patch_options;
+typedef struct patch_options s_patch_options;
 
 // my additions
 #define ACTION_EXTRA_CHEST 40
@@ -9439,6 +9441,8 @@ static int __thiscall get_critical_chance(struct player *player,
                     crit += 25;
                 else if (weapon->id == CHARELE)
                     crit += 20;
+                else if (weapon->id == FENCERS_FRIEND)
+                    crit += 10;
                 else if (weapon->id == CLOVER && crit > 0)
                     crit *= 2; // must be applied last
               }
@@ -12583,11 +12587,18 @@ static void __declspec(naked) cursed_weapon(void)
         cursed:
         push eax
         call dword ptr ds:random
-        mov ecx, 5 ; 20% chance
+        mov ecx, 5 ; 20%/40% chance
         xor edx, edx
         div ecx
+        dec edx
+        jge not_friend
+        push SLOT_ANY
+        push FENCERS_FRIEND
+        mov ecx, edi
+        call dword ptr ds:has_item_in_slot
+        dec eax
+        not_friend:
         pop eax
-        test edx, edx
         jnz fail
         mov eax, dword ptr [eax]
         lea eax, [eax+eax*2]
@@ -13182,7 +13193,7 @@ static void __declspec(naked) elven_chainmail_bow_bonus(void)
 // Implement the Sacrificial Dagger SP bonus.
 // Also here: Headache's mental penalty, Ellinger's Robe magic boost,
 // Sword of Light, Clover, Clanker's Amulet, Gardener's Gloves, Shadow's Mask,
-// and Sniper's Quiver's boni.
+// Sniper's Quiver and Fencer's Friend's boni.
 static void __declspec(naked) artifact_stat_bonus(void)
 {
     asm
@@ -13258,6 +13269,12 @@ static void __declspec(naked) artifact_stat_bonus(void)
         add dword ptr [esp+20], 8
         ret
         not_quiver:
+        cmp eax, FENCERS_FRIEND
+        jne not_friend
+        cmp esi, STAT_AC
+        jne quit
+        add edi, 10
+        not_friend:
         sub eax, PUCK ; replaced code
         quit:
         ret
@@ -13715,6 +13732,7 @@ static void __declspec(naked) jump_over_specitems(void)
 // the same bonus damage as Iron Feather, and Viper deals 15 poison damage.
 // Items "of The Jester" also do bonus Mind damage, and Fire Aura-specific
 // nerfed "of Infernos" enchantment does the same 3d6 Fire as the regular one.
+// Finally, Fencer's Friend has the Vampiric property.
 static void __declspec(naked) headache_mind_damage(void)
 {
     asm
@@ -13725,6 +13743,8 @@ static void __declspec(naked) headache_mind_damage(void)
         je viper
         cmp eax, STORM_TRIDENT
         je skip
+        cmp eax, FENCERS_FRIEND
+        je friend
         cmp dword ptr [ebx].s_item.bonus2, SPC_JESTER
         je jester
         cmp dword ptr [ebx].s_item.bonus2, SPC_INFERNOS_2
@@ -13759,16 +13779,20 @@ static void __declspec(naked) headache_mind_damage(void)
         mov edx, 6
         mov dword ptr [esp], 0x439eb9 ; roll dice code
         ret
+        friend:
+        mov dword ptr [esp], 0x439f58 ; vampiric code
+        ret
       }
 }
 
-// Headache also has a 20% chance to cause Berserk.
+// Headache also has a 20% (40% with FF) chance to cause Berserk.
 // Called from cursed_weapon() above.
 static void __stdcall headache_berserk(struct player *player,
                                        struct map_monster *monster)
 {
     int skill = get_skill(player, SKILL_AXE);
-    if (random() % 5 || !debuff_monster(monster, MIND, skill & SKILL_MASK))
+    if (random() % 5 > has_item_in_slot(player, FENCERS_FRIEND, SLOT_ANY)
+        || !debuff_monster(monster, MIND, skill & SKILL_MASK))
         return;
     remove_buff(monster->spell_buffs + MBUFF_CHARM);
     remove_buff(monster->spell_buffs + MBUFF_ENSLAVE);
@@ -14236,12 +14260,11 @@ static void __declspec(naked) dark_bottle_temple(void)
       }
 }
 
-// Add temple in a bottle as a random artifact, with the same
-// properties as the old one.  Also here: Oghma Infinium's effect,
-// and the bag of holding.  All new arts cannot be used un-ID'd.
+// Allow using Oghma Infinium and the bag of holding, by dragging the item
+// to the character's portrait.  Both new arts cannot be used unidentified.
 // Golden apples are also handled here (no ID check for them),
 // and so are wine bottles (ordinary and magical both).
-static void __declspec(naked) new_temple_in_bottle(void)
+static void __declspec(naked) new_consumable_items(void)
 {
     asm
       {
@@ -14287,9 +14310,6 @@ static void __declspec(naked) new_temple_in_bottle(void)
         je oghma
         cmp eax, BAG_OF_HOLDING
         je bag
-        cmp eax, TEMPLE_IN_BOTTLE
-        jne not_it
-        mov eax, 650 ; old bottle
         not_it:
         sub eax, 616 ; replaced code
         ret
@@ -14685,8 +14705,8 @@ static void __declspec(naked) flattener_2h_body_eax(void)
 static int __stdcall flattener(struct player *player,
                                struct map_monster *monster)
 {
-    if (random() % 5)
-        return 0;
+    if (random() % 5 > has_item_in_slot(player, FENCERS_FRIEND, SLOT_ANY))
+        return 0; // 20% or 40% chance
     int mres = monster->magic_resistance;
     if (monster->spell_buffs[MBUFF_DAY_OF_PROTECTION].expire_time)
         mres += monster->spell_buffs[MBUFF_DAY_OF_PROTECTION].power;
@@ -15004,6 +15024,48 @@ static void __declspec(naked) mark_chest_checked(void)
       }
 }
 
+// Read just below, written in patch_compatibility().  Stores default chance.
+static int normal_axe_chance;
+// This one just remembers the result of FF equip check, as either 100 or 50.
+static int current_mace_chance;
+
+// Fencer's Friend's main ability: double the chance of special weapon effects.
+// This hook is for MM7Patch axe perk and partly for vanilla mace perks.
+static void __declspec(naked) double_axe_mace_chance(void)
+{
+    asm
+      {
+        push ecx
+        push SLOT_ANY
+        push FENCERS_FRIEND
+        mov ecx, edi
+        call dword ptr ds:has_item_in_slot
+        mov ecx, eax
+        mov eax, 100 ; normal skill% chance
+        shr eax, cl ; possibly change to skill/50
+        mov dword ptr [current_mace_chance], eax ; remember
+        mov eax, dword ptr [normal_axe_chance]
+        shr eax, cl ; from skill/60 to skill/30
+        setz cl ; just in case
+        add eax, ecx
+        mov ecx, dword ptr [patch_options]
+        mov dword ptr [ecx].s_patch_options.axe_gm_perk_chance, eax
+        pop ecx ; restore
+        jmp dword ptr ds:skill_mastery ; replaced call
+      }
+}
+
+// Use the stored chance value.  Called for both M and GM perks.
+static void __declspec(naked) provide_mace_chance(void)
+{
+    asm
+      {
+        xor edx, edx
+        div dword ptr [current_mace_chance] ; was just 100
+        ret
+      }
+}
+
 // Add the new properties to some old artifacts,
 // and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
@@ -15073,7 +15135,7 @@ static inline void new_artifacts(void)
     hook_call(0x4b738c, bottle_temple_blessing, 9);
     hook_call(0x4b6f64, dark_bottle_temple, 6);
     hook_call(0x4b7574, dark_bottle_temple, 6);
-    hook_call(0x46816f, new_temple_in_bottle, 5);
+    hook_call(0x46816f, new_consumable_items, 5);
     hook_call(0x49a55c, do_not_respawn_temple, 5);
     hook_call(0x43e380, equipped_sword_of_light, 5);
     hook_call(0x43e590, equipped_sword_of_light, 5);
@@ -15082,7 +15144,7 @@ static inline void new_artifacts(void)
     // light magic bonus is too in artifact_stat_bonus()
     // alignment restriction is in sacrificial_dagger_goblin_only()
     // also has dagger-like doubled to-hit bonus
-    // oghma infinium effect is in new_temple_in_bottle()
+    // oghma infinium effect is in new_consumable_items()
     // grim reaper sp drain is in sp_burnout() above
     // witchbane magic immunity is in is_immune() above
     // and its sp penalty is in get_new_full_sp() below
@@ -15128,6 +15190,9 @@ static inline void new_artifacts(void)
     hook_call(0x45052f, mark_chest_checked, 6);
     patch_byte(0x456935, 12); // reduce max randomly generated artifacts
     // lady escort and sniper quiver shielding are in shield_stacking() above
+    hook_call(0x4397bb, double_axe_mace_chance, 5);
+    hook_call(0x4397ec, provide_mace_chance, 6); // stun
+    hook_call(0x439818, provide_mace_chance, 6); // paralysis
 }
 
 // When calculating missile damage, take note of the weapon's skill.
@@ -18689,6 +18754,7 @@ static int __thiscall maybe_dodge(struct player *player)
 // This code shows the statusline etc. by itself.
 static int __thiscall maybe_parry(struct player *player)
 {
+    int friend = -1;
     for (int slot = SLOT_MAIN_HAND; slot >= SLOT_OFFHAND; slot--)
       {
         int equip = player->equipment[slot];
@@ -18701,7 +18767,11 @@ static int __thiscall maybe_parry(struct player *player)
         if (type != SKILL_SWORD && type != SKILL_SPEAR)
             continue;
         int skill = get_skill(player, type);
-        if (skill > SKILL_GM && (skill & SKILL_MASK) > random() % 100)
+        if (skill < SKILL_GM)
+            continue;
+        if (friend < 0)
+            friend = has_item_in_slot(player, FENCERS_FRIEND, SLOT_ANY);
+        if ((skill & SKILL_MASK) > random() % (friend ? 50 : 100))
           {
             char buffer[40];
             sprintf(buffer, new_strings[STR_PARRY], player->name);
@@ -19875,6 +19945,7 @@ static inline void patch_compatibility(void)
     patch_options->armageddon_element = MAGIC; // can't read spells.txt yet
     patch_options->keep_empty_wands = FALSE; // my implementation is better
     patch_byte(0x42efc9, 10); // new melee recovery limit (for the hint)
+    normal_axe_chance = patch_options->axe_gm_perk_chance; // we may change it
 }
 
 // Let robes, crowns and hats have an increased chance to generate enchanted,

@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <winuser.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -11,6 +12,7 @@
 #define byte(address) (*(uint8_t *) (address))
 #define word(address) (*(uint16_t *) (address))
 #define dword(address) (*(uint32_t *) (address))
+#define pointer(address) (*(void **) (address))
 
 #ifdef CHECK_OVERWRITE
 static FILE *owlog, *binary;
@@ -84,7 +86,7 @@ static void hook_jump(uintptr_t address, funcptr_t func)
     DWORD OldProtect;
     VirtualProtect((LPVOID) address, 5, PAGE_EXECUTE_READWRITE, &OldProtect);
     byte(address) = 0xe9;
-    dword(address + 1) = (uintptr_t) func - address - 5;
+    pointer(address + 1) = (char *) func - address - 5;
     VirtualProtect((LPVOID) address, 5, OldProtect, &OldProtect);
 }
 
@@ -95,7 +97,7 @@ static void hook_call(uintptr_t address, funcptr_t func, int length)
     VirtualProtect((LPVOID) address, length, PAGE_EXECUTE_READWRITE,
                    &OldProtect);
     byte(address) = 0xe8;
-    dword(address + 1) = (uintptr_t) func - address - 5;
+    pointer(address + 1) = (char *) func - address - 5;
     if (length > 5)
         memset((void *) (address + 5), 0x90, length - 5);
     VirtualProtect((LPVOID) address, length, OldProtect, &OldProtect);
@@ -1373,7 +1375,13 @@ struct __attribute__((packed)) npc_topic_text
 // TOptions from MM7Patch v2.5.
 static struct __attribute__((packed)) patch_options
 {
-    SKIP(196);
+    SKIP(36);
+    int inventory_key;
+    int char_screen_key;
+    int double_speed_key;
+    int quick_load_key;
+    int autorun_key;
+    SKIP(140);
     int fix_unimplemented_spells;
     SKIP(44);
     int axe_gm_perk_chance;
@@ -1394,6 +1402,7 @@ typedef struct patch_options s_patch_options;
 #define ACTION_EXTRA_CHEST 40
 #define ACTION_PLACE_ORDER 41
 #define ACTION_VARIABLE_EVENT 42
+#define ACTION_THIRD_KEY_CONFIG_PAGE 43
 //vanilla
 #define ACTION_EXIT 113
 #define ACTION_CHANGE_CONVERSATION 405
@@ -1474,6 +1483,7 @@ enum struct_offsets
 #define ICONS_LOD ((void *) ICONS_LOD_ADDR)
 #define DIALOG1 0x507a3c
 #define DIALOG2 0x507a40
+#define DIALOG5 0x507a4c
 #define DIALOG7 0x507a54
 #define PARTY_X 0xacd4ec
 #define PARTY_Y 0xacd4f0
@@ -1613,7 +1623,10 @@ static int __fastcall (*get_monsters_around_party)(int *buffer,
 static void __fastcall (*damage_monster_from_party)(int source, int monster,
                                                     void *force_vector)
     = (funcptr_t) 0x439463;
-static funcptr_t print_string = (funcptr_t) 0x44ce34;
+static void __fastcall (*print_string)(void *dialog, void *font, int x, int y,
+                                       int color, const char *string,
+                                       int unknown_1, int unknown_2,
+                                       int unknown_3) = (funcptr_t) 0x44ce34;
 static void __thiscall (*remove_buff)(void *buff) = (funcptr_t) 0x4585be;
 // Not dead, stoned, paralyzed, etc.
 static int __thiscall (*player_active)(void *player) = (funcptr_t) 0x492c03;
@@ -1692,7 +1705,8 @@ static int __thiscall (*has_enchanted_item)(void *player, int enchantment)
     = (funcptr_t) 0x48d6b6;
 static int __thiscall (*load_bitmap)(void *lod, char *name, int lod_type)
     = (funcptr_t) 0x40fb2c;
-#define LOADED_BITMAPS 0x6d06cc
+#define LOADED_BITMAPS_ADDR 0x6d06cc
+#define LOADED_BITMAPS ((uint32_t (*)[18]) 0x6d06cc)
 static void __fastcall (*aim_spell)(int spell, int pc, int skill, int flags,
                                     int unknown) = (funcptr_t) 0x427734;
 #define CGAME 0x71fe94
@@ -1769,7 +1783,8 @@ static void __fastcall (*message_dialog)(int event, int label, int type)
 #define MESSAGE_MARKER 0xd00d
 static void __thiscall (*draw_background)(void *this, int x, int y,
                                           void *image) = (funcptr_t) 0x4a5e42;
-#define DRAW_IMAGE_THIS 0xdf1a68
+#define DRAW_IMAGE_THIS_ADDR 0xdf1a68
+#define DRAW_IMAGE_THIS ((void *) DRAW_IMAGE_THIS_ADDR)
 static void __thiscall (*draw_over_other)(void *this, int x, int y,
                                           void *image) = (funcptr_t) 0x4a6204;
 static void __fastcall (*set_mouse_mask)(int *buffer, void *image, int id)
@@ -1781,6 +1796,18 @@ static void __thiscall (*randomize_item)(void *this, int level, int type,
 static void __fastcall (*set_image_mouseover)(void *buffer, void *image,
                                               int id) = (funcptr_t) 0x40f8a8;
 #define GET_ASYNC_KEY_STATE 0x4d8260
+static int __thiscall (*get_config_key_color)(int id) = (funcptr_t) 0x414d2f;
+static char *__stdcall (*get_key_name)(int key) = (funcptr_t) 0x45ae65;
+static int __thiscall (*parse_key_name)(void *this, const char *name)
+    = (funcptr_t) 0x45ac03;
+#define KEY_THIS_ADDR 0x69ac80
+#define KEY_THIS ((void *) KEY_THIS_ADDR)
+static void __fastcall (*read_registry)(const char *key, char *buffer,
+                                        int length, const char *default_value)
+    = (funcptr_t) 0x464c2c;
+static void __fastcall (*write_registry)(const char *key, const char *value)
+    = (funcptr_t) 0x464b3f;
+static void __thiscall (*unload_bitmap)(void *bitmap) = (funcptr_t) 0x40f788;
 
 //---------------------------------------------------------------------------//
 
@@ -3929,7 +3956,7 @@ static void __declspec(naked) autobrew(void)
     asm
       {
         lea esi, [ebx+eax*4-SIZE_ITEM].s_player.items
-        push 0x11 ; ctrl
+        push VK_CONTROL
         call dword ptr ds:GET_ASYNC_KEY_STATE
         test ax, ax
         js ctrl
@@ -7159,7 +7186,7 @@ static int __thiscall free_aim_spell(int shower)
     // the rotation code is almost verbatim from mmpatch (CastRay)
     double x0 = patch_options->mouse_dx + MOUSE_X - dword(0xf8babc);
     double y0 = dword(OUTDOORS) == 2 ? dword(0x6bdf04)
-                             : *(float *) (dword(DRAW_IMAGE_THIS)
+                             : *(float *) (dword(DRAW_IMAGE_THIS_ADDR)
                                            ? dword(dword(CGAME) + 0xe54) + 0xc4
                                            : 0x507b7c);
     int middle_y = dword(0xf8bac0);
@@ -7197,7 +7224,7 @@ static void __declspec(naked) free_aim_spell_hook(void)
       {
         cmp dword ptr [esp+44], 70 ; aim monster action
         jne skip
-        push 0x10 ; shift
+        push VK_SHIFT
         call dword ptr ds:GET_ASYNC_KEY_STATE
         test ax, ax
         jns skip
@@ -14524,6 +14551,7 @@ static void place_order(void);
 // We need an action to safely trigger it from inventory etc.
 // Also here: the action for ordering an item in a shop,
 // and the action that triggers a gamescript event.
+// Also also, an action for opening the new key config page is here too.
 static void __declspec(naked) action_open_extra_chest(void)
 {
     asm
@@ -14534,6 +14562,8 @@ static void __declspec(naked) action_open_extra_chest(void)
         je order
         cmp ecx, ACTION_VARIABLE_EVENT
         je event
+        cmp ecx, ACTION_THIRD_KEY_CONFIG_PAGE
+        je page
         movzx eax, byte ptr [0x4353a1+eax] ; replaced code
         ret
         chest:
@@ -14561,6 +14591,9 @@ static void __declspec(naked) action_open_extra_chest(void)
         xor ecx, ecx
         mov dword ptr [GLOBAL_EVENT_FLAG], ecx ; restore
         mov dword ptr [evt_variable_id], ecx ; just in case
+        jmp quit
+        page:
+        mov dword ptr [0x506d88], ebx ; set page index var to zero
         quit:
         mov eax, 118 ; no action
         ret
@@ -19933,6 +19966,9 @@ static inline void skill_changes(void)
     // also double aggro in weighted_monster_preference() above
 }
 
+// Used in extra_key_config() below.
+static int *hotkey_settings[6];
+
 // Switch off some of MM7Patch's features to ensure compatibility.
 static inline void patch_compatibility(void)
 {
@@ -19946,6 +19982,15 @@ static inline void patch_compatibility(void)
     patch_options->keep_empty_wands = FALSE; // my implementation is better
     patch_byte(0x42efc9, 10); // new melee recovery limit (for the hint)
     normal_axe_chance = patch_options->axe_gm_perk_chance; // we may change it
+    hotkey_settings[0] = (int *) patch_options + 13419; // TODO: will break!
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+    hotkey_settings[1] = &patch_options->quick_load_key;
+    hotkey_settings[2] = &patch_options->double_speed_key;
+    hotkey_settings[3] = &patch_options->autorun_key;
+    hotkey_settings[4] = &patch_options->inventory_key;
+    hotkey_settings[5] = &patch_options->char_screen_key;
+#pragma GCC diagnostic pop
 }
 
 // Let robes, crowns and hats have an increased chance to generate enchanted,
@@ -20517,7 +20562,7 @@ static void __declspec(naked) also_init_knife_charges(void)
         mov esi, eax
         call init_knife_charges
         mov eax, esi ; restore
-        mov ebx, DRAW_IMAGE_THIS ; ditto
+        mov ebx, DRAW_IMAGE_THIS_ADDR ; ditto
         mov ecx, PARTY_BIN_ADDR ; replaced code
         ret
       }
@@ -21594,7 +21639,7 @@ static void __thiscall restock_scrolls(int guild)
         if (image)
           {
             int bitmap = load_bitmap(ICONS_LOD, ITEMS_TXT[id].bitmap, 2);
-            dword(SHOP_IMAGES + (i + 1) * 4) = LOADED_BITMAPS + bitmap * 72;
+            pointer(SHOP_IMAGES + (i + 1) * 4) = LOADED_BITMAPS[bitmap];
           }
       }
 }
@@ -22087,7 +22132,7 @@ static void __declspec(naked) query_order(void)
         push dword ptr [SHOP_IMAGES]
         push 8
         push 8
-        mov ecx, DRAW_IMAGE_THIS
+        mov ecx, DRAW_IMAGE_THIS_ADDR
         call dword ptr ds:draw_background
         mov ecx, dword ptr [SHOP_IMAGES+4]
         movzx eax, word ptr [ecx+24] ; sprite width
@@ -22104,7 +22149,7 @@ static void __declspec(naked) query_order(void)
         push ecx
         push edx
         push eax
-        mov ecx, DRAW_IMAGE_THIS
+        mov ecx, DRAW_IMAGE_THIS_ADDR
         call dword ptr ds:draw_over_other
         push 1
         mov edx, dword ptr [SHOP_IMAGES+4]
@@ -22121,7 +22166,7 @@ static void __declspec(naked) query_order(void)
         push dword ptr [SHOP_IMAGES+8]
         push 260 + 36
         push eax
-        mov ecx, DRAW_IMAGE_THIS
+        mov ecx, DRAW_IMAGE_THIS_ADDR
         call dword ptr ds:draw_over_other
         pop ecx
         push 2
@@ -22139,7 +22184,7 @@ static void __declspec(naked) query_order(void)
         push dword ptr [SHOP_IMAGES+8]
         push 260
         push eax
-        mov ecx, DRAW_IMAGE_THIS
+        mov ecx, DRAW_IMAGE_THIS_ADDR
         call dword ptr ds:draw_over_other
         pop ecx
         push 2
@@ -22164,7 +22209,7 @@ static void __declspec(naked) query_order(void)
         push ecx
         push edx
         push eax
-        mov ecx, DRAW_IMAGE_THIS
+        mov ecx, DRAW_IMAGE_THIS_ADDR
         call dword ptr ds:draw_over_other
         push 3
         mov edx, dword ptr [SHOP_IMAGES+12]
@@ -22188,7 +22233,7 @@ static void __declspec(naked) query_order(void)
         push ecx
         push edx
         push eax
-        mov ecx, DRAW_IMAGE_THIS
+        mov ecx, DRAW_IMAGE_THIS_ADDR
         call dword ptr ds:draw_over_other
         push 4
         mov edx, dword ptr [SHOP_IMAGES+16]
@@ -22199,7 +22244,7 @@ static void __declspec(naked) query_order(void)
         push dword ptr [SHOP_IMAGES+20]
         push 410
         push 520
-        mov ecx, DRAW_IMAGE_THIS
+        mov ecx, DRAW_IMAGE_THIS_ADDR
         call dword ptr ds:draw_background
         xor ebx, ebx
         push ebx
@@ -22802,7 +22847,7 @@ static void __declspec(naked) preload_order_images(void)
         push dword ptr [ITEMS_TXT_ADDR+eax] ; item picture
         call dword ptr ds:load_bitmap
         lea eax, [eax+eax*8]
-        lea eax, [LOADED_BITMAPS+eax*8]
+        lea eax, [LOADED_BITMAPS_ADDR+eax*8]
         mov dword ptr [SHOP_IMAGES+4], eax
         push 2
         mov eax, dword ptr [order_ore] ; item id
@@ -22812,7 +22857,7 @@ static void __declspec(naked) preload_order_images(void)
         mov ecx, ebp ; icons.lod
         call dword ptr ds:load_bitmap
         lea eax, [eax+eax*8]
-        lea eax, [LOADED_BITMAPS+eax*8]
+        lea eax, [LOADED_BITMAPS_ADDR+eax*8]
         mov dword ptr [SHOP_IMAGES+8], eax
         push 2
         mov eax, dword ptr [order_gold] ; item id
@@ -22822,7 +22867,7 @@ static void __declspec(naked) preload_order_images(void)
         mov ecx, ebp ; icons.lod
         call dword ptr ds:load_bitmap
         lea eax, [eax+eax*8]
-        lea eax, [LOADED_BITMAPS+eax*8]
+        lea eax, [LOADED_BITMAPS_ADDR+eax*8]
         mov dword ptr [SHOP_IMAGES+12], eax
         cmp dword ptr [have_order_reagent], edi ; == 0
         jz no_reagent
@@ -22834,7 +22879,7 @@ static void __declspec(naked) preload_order_images(void)
         mov ecx, ebp ; icons.lod
         call dword ptr ds:load_bitmap
         lea eax, [eax+eax*8]
-        lea eax, [LOADED_BITMAPS+eax*8]
+        lea eax, [LOADED_BITMAPS_ADDR+eax*8]
         mov dword ptr [SHOP_IMAGES+16], eax
         no_reagent:
         push 2
@@ -22847,7 +22892,7 @@ static void __declspec(naked) preload_order_images(void)
         mov ecx, ebp ; icons.lod
         call dword ptr ds:load_bitmap
         lea eax, [eax+eax*8]
-        lea eax, [LOADED_BITMAPS+eax*8]
+        lea eax, [LOADED_BITMAPS_ADDR+eax*8]
         mov dword ptr [SHOP_IMAGES+20], eax
         push edi
         push dword ptr [new_strings+STR_CONFIRM_ORDER*4]
@@ -23326,6 +23371,422 @@ static inline void new_hireling_types(void)
     erase_code(0x477515, 1); // off by one
 }
 
+// The game could not properly display keys like F5 or ~ in the config menu.
+// Some of these (like 1-6) do not actually work right, but whatever.
+static int __stdcall more_key_names(char *buffer, int key)
+{
+    switch (key)
+      {
+        case VK_ESCAPE: // still opens the menu even if remapped
+            strcpy(buffer, "ESC");
+            break;
+        case VK_F1:
+        case VK_F2:
+        case VK_F3:
+        case VK_F4: // fullscreen, doesn't work well
+        case VK_F5:
+        case VK_F6:
+        case VK_F7:
+        case VK_F8:
+        case VK_F9:
+        case VK_F10: // doesn't work at all!
+        case VK_F11:
+        case VK_F12:
+            sprintf(buffer, "F%d", key - VK_F1 + 1);
+            break;
+        case VK_OEM_3:
+            buffer[0] = '~';
+            goto single;
+        case '1': // changing another key to 1-6 breaks both!
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+        case '0':
+            buffer[0] = key;
+            goto single;
+        case VK_OEM_MINUS:
+            buffer[0] = '_'; // '-' already taken
+            goto single;
+        case VK_OEM_PLUS:
+            buffer[0] = '=';
+            goto single;
+        case VK_OEM_4:
+            buffer[0] = '[';
+            goto single;
+        case VK_OEM_6:
+            buffer[0] = ']';
+        single:
+            buffer[1] = 0;
+            break;
+        case VK_CAPITAL: // TODO: recheck this
+            strcpy(buffer, "CAPS_LOCK");
+            break;
+        case VK_SHIFT: // does not work for most mappings
+            strcpy(buffer, "SHIFT");
+            break;
+        case VK_LWIN:
+            strcpy(buffer, "LOGO");
+            break;
+        case VK_RWIN:
+            strcpy(buffer, "RLOGO");
+            break;
+        case VK_SNAPSHOT:
+            strcpy(buffer, "PRINT_SCR");
+            break;
+        default:
+            return FALSE;
+      }
+    return TRUE;
+}
+
+// Hook for the above.
+static void __declspec(naked) more_key_names_hook(void)
+{
+    asm
+      {
+        push eax
+        push esi
+        call more_key_names
+        test eax, eax
+        jnz skip
+        pop eax
+        push 0x4e91dc ; replaced code
+        jmp eax
+        skip:
+        add dword ptr [esp], 8 ; skip strcpy
+        ret
+      }
+}
+
+// Also recognize the new names when they're read from registry.
+static int __cdecl parse_new_key_names(const char *name)
+{
+    if (!name[1])
+      {
+        int single = name[0];
+        if (single >= 'A' && single <= 'Z' || single >= '0' && single <= '9')
+            return single;
+        switch (single)
+          {
+            case '~':
+                return VK_OEM_3;
+            case '_':
+                return VK_OEM_MINUS;
+            case '=':
+                return VK_OEM_PLUS;
+            case '[':
+                return VK_OEM_4;
+            case ']':
+                return VK_OEM_6;
+            default:
+                return -1;
+          }
+      }
+    if (!strcmp(name, "ESC"))
+        return VK_ESCAPE;
+    if (!strcmp(name, "CAPS_LOCK"))
+        return VK_CAPITAL;
+    if (!strcmp(name, "SHIFT"))
+        return VK_SHIFT;
+    if (!strcmp(name, "LOGO"))
+        return VK_LWIN;
+    if (!strcmp(name, "RLOGO"))
+        return VK_RWIN;
+    if (!strcmp(name, "PRINT_SCR"))
+        return VK_SNAPSHOT;
+    if (name[0] == 'F')
+      {
+        int id = atoi(name + 1);
+        if (id >= 1 && id <= 12)
+            return VK_F1 + id - 1;
+      }
+    return -1;
+}
+
+// The extended key config screen data array (was [28] before).
+static int config_keys[42];
+// The loaded bitmap index for "page 3" pressed button image.
+static int page_3_button;
+
+// Draw the pressed button and print all the keys for the new, third page.
+static void print_new_config_page(void)
+{
+    draw_background(DRAW_IMAGE_THIS, 19, 324, LOADED_BITMAPS[page_3_button]);
+    void *dialog = pointer(DIALOG5);
+    void *font = pointer(0x5c346c);
+    static const char *const hotkeys[] = { "STEP LEFT", "STEP RIGHT",
+                                           "QUICK SAVE", "QUICK LOAD",
+                                           "2X SPEED", "AUTORUN",
+                                           "INVENTORY", "CHARACTER", };
+    for (int line = 0; line < 8; line++)
+      {
+        int y = line % 7, x = line / 7;
+        print_string(dialog, font, 23 + x * 224, 142 + y * 21,
+                     colors[CLR_WHITE], hotkeys[line], 0, 0, 0);
+        print_string(dialog, font, 127 + x * 223, 142 + y * 21,
+                     get_config_key_color(line + 28),
+                     get_key_name(config_keys[line+28]), 0, 0, 0);
+      }
+}
+
+// Hook for the above.
+static void __declspec(naked) print_new_config_page_hook(void)
+{
+    asm
+      {
+        cmp dword ptr [0x506d88], 1 ; replaced code (current page)
+        jb new_page ; our index is 0
+        ret
+        new_page:
+        mov dword ptr [esp], 0x414d29 ; calling function end
+        jmp print_new_config_page
+      }
+}
+
+// Handle editing the keys on the new page.
+static void __declspec(naked) third_page_field_press(void)
+{
+    asm
+      {
+        je first ; replaced jump
+        ja second
+        cmp eax, 8 ; not a full page yet
+        jae forbid
+        add eax, 14 ; total of 28
+        second:
+        add eax, 14 ; replaced code
+        first:
+        ret
+        forbid:
+        mov dword ptr [esp], 0x4342b5 ; angry beep code
+        ret
+      }
+}
+
+// Don't register two unmapped (zero) new keybindings as a conflict.
+static void __declspec(naked) allow_empty_keys(void)
+{
+    asm
+      {
+        cmp esi, dword ptr [config_keys+eax*4] ; replaced code, almost
+        jne ok
+        test esi, esi
+        jnz fail
+        cmp ecx, 29
+        ja ok
+        cmp eax, 29
+        ja ok
+        fail:
+        test ebx, ebx ; == 0
+        ok:
+        ret ; next op is jne
+      }
+}
+
+// Register the [] strafing keys as repeatable.
+static void __declspec(naked) smooth_strafing(void)
+{
+    asm
+      {
+        je ok ; replaced jump
+        cmp eax, 26 ; replaced code
+        je ok
+        cmp eax, 28 ; step left
+        je ok
+        cmp eax, 29 ; step right
+        ok:
+        ret ; je is next
+      }
+}
+
+// Remember the old keybindings so as not to write to registry needlessly.
+static int old_step_left, old_step_right;
+
+// Populate the extended keymap array with the current bindings.
+// Also loads the 3rd page button gfx.
+static void init_new_keys(void)
+{
+    for (int i = 0; i < 6; i++)
+        config_keys[30+i] = *hotkey_settings[i];
+    old_step_left = dword(KEY_THIS_ADDR + 12 + 28 * 4);
+    old_step_right = dword(KEY_THIS_ADDR + 12 + 29 * 4);
+    page_3_button = load_bitmap(ICONS_LOD, "optkb_3", 2);
+}
+
+// Hook for the above.
+static void __declspec(naked) init_new_keys_hook(void)
+{
+    asm
+      {
+        call init_new_keys
+        xor eax, eax ; replaced code
+        ret 48 ; stack fixup was replaced too
+      }
+}
+
+// The names of registry entries for the new keybindings.
+static const char *const registry_keys[] = {
+    "KEY_QUICKSAVE", "KEY_QUICKLOAD", "KEY_2XSPEED",
+    "KEY_AUTORUN", "KEY_INVENTORY", "KEY_CHARACTER",
+};
+
+// Update and save the new keybindings on exiting the menu, also unload bitmap.
+static void save_new_keys(void)
+{
+    if (old_step_left != config_keys[28])
+        write_registry("KEY_STEPLEFT", config_keys[28] == VK_OEM_4 ? "DEFAULT"
+                                              : get_key_name(config_keys[28]));
+    if (old_step_right != config_keys[29])
+        write_registry("KEY_STEPRIGHT", config_keys[29] == VK_OEM_6 ? "DEFAULT"
+                                              : get_key_name(config_keys[29]));
+    for (int i = 0; i < 6; i++)
+        if (*hotkey_settings[i] != config_keys[30+i])
+          {
+            write_registry(registry_keys[i], get_key_name(config_keys[30+i]));
+            *hotkey_settings[i] = config_keys[30+i];
+          }
+    unload_bitmap(LOADED_BITMAPS[page_3_button]);
+}
+
+// Hook for the above.
+static void __declspec(naked) save_new_keys_hook(void)
+{
+    asm
+      {
+        call save_new_keys
+        mov ecx, KEY_THIS_ADDR ; replaced code
+        ret
+      }
+}
+
+// For resetting the default values.
+static int saved_hotkey_settings[6];
+
+// Read the values stored in registry for the new keybindings.
+static void read_registry_keys(void)
+{
+    char value[32];
+    for (int i = 0; i < 6; i++)
+      {
+        saved_hotkey_settings[i] = *hotkey_settings[i];
+        read_registry(registry_keys[i], value, 32, "DEFAULT");
+        if (strcmp(value, "DEFAULT"))
+          {
+            int parsed = parse_key_name(KEY_THIS, value);
+            if (parsed != -1)
+                *hotkey_settings[i] = parsed;
+          }
+      }
+}
+
+// Hook for the above.  Also sets the repeat flag for [] strafe keys.
+static void __declspec(naked) read_registry_keys_hook(void)
+{
+    asm
+      {
+        push edi
+        push 32
+        call dword ptr ds:read_registry ; replaced call
+        call read_registry_keys
+        xor ebx, ebx ; smooth strafing
+        ret
+      }
+}
+
+// Unset all registry entries when pressing the "default" button.
+static void default_new_keys(void)
+{
+    for (int i = 0; i < 6; i++)
+      {
+        write_registry(registry_keys[i], "DEFAULT");
+        *hotkey_settings[i] = config_keys[30+i] = saved_hotkey_settings[i];
+      }
+    memset((void *) 0x506cec + 30, 0, 42 - 30); // conflict flags
+}
+
+// Hook for the above.
+static void __declspec(naked) default_new_keys_hook(void)
+{
+    asm
+      {
+        call default_new_keys
+        mov ecx, KEY_THIS_ADDR ; replaced code
+        ret
+      }
+}
+
+// Disallow mapping to 1-6 because it breaks the game badly until restart.
+static void __declspec(naked) forbid_character_keys(void)
+{
+    asm
+      {
+        movzx eax, byte ptr [0x69ad80] ; replaced code
+        cmp eax, '1'
+        jb ok
+        cmp eax, '6'
+        ja ok
+        push ebx
+        push ebx
+        push ebx
+        push ebx
+        push -1
+        push ebx
+        push ebx
+        push SOUND_BUZZ
+        mov ecx, SOUND_THIS_ADDR
+        call dword ptr ds:make_sound
+        mov dword ptr [esp], 0x41439d ; past remap code
+        ok:
+        ret
+      }
+}
+
+// Allow changing patch- and mod-specific hotkeys ingame.
+static inline void extra_key_config(void)
+{
+    hook_call(0x45afe3, more_key_names_hook, 5);
+    hook_call(0x45ae44, parse_new_key_names, 5);
+    erase_code(0x45ae4d, 20); // old A-Z key code
+    hook_call(0x4143d0, print_new_config_page_hook, 7);
+    hook_call(0x43156e, third_page_field_press, 5);
+    patch_byte(0x431288, ACTION_THIRD_KEY_CONFIG_PAGE); // was "back"
+    // Extend the configured keys array.
+    static const uintptr_t refs[] = {
+        0x414362, 0x414376, 0x4314bb, 0x4315b7, 0x4315dd,
+        0x431621, 0x4324ac, 0x4324d0, 0x4324f4, 0x432531,
+    };
+    for (int i = 0; i < sizeof(refs) / sizeof(uintptr_t); i++)
+        patch_pointer(refs[i], config_keys);
+    // We also have one direct reference for every vanilla keybinding.
+    static const uintptr_t keys[28] = {
+        0x414432, 0x414484, 0x4144d5, 0x41452a, 0x41457d, 0x4145d1, 0x414623,
+        0x414674, 0x4146c9, 0x41471d, 0x414771, 0x4147c5, 0x414815, 0x414865,
+        0x4148cb, 0x41491e, 0x41496f, 0x4149c4, 0x414a17, 0x414a6b, 0x414abd,
+        0x414b0e, 0x414b63, 0x414bb7, 0x414c0b, 0x414c5f, 0x414caf, 0x414cff,
+    };
+    for (int i = 0; i < 28; i++)
+        patch_pointer(keys[i], config_keys + i);
+    patch_byte(0x4314a7, 42 / 4); // extend the other array into the free space
+    patch_byte(0x414359, 42 / 4 + 1); // also here (reset on remap)
+    patch_byte(0x414394, 36); // loop that sets mapping conflict flags
+    patch_byte(0x41439a, 36); // ditto
+    patch_byte(0x432449, 42); // this loop checks for existing flags
+    patch_byte(0x432543, 30); // add two hidden vanilla keybindings
+    patch_byte(0x431633, 30); // also here (reset defaults)
+    hook_call(0x41437a, allow_empty_keys, 7);
+    hook_call(0x43251a, smooth_strafing, 5);
+    hook_call(0x431495, init_new_keys_hook, 5);
+    hook_call(0x43254a, save_new_keys_hook, 5);
+    hook_call(0x45a8f1, read_registry_keys_hook, 5);
+    hook_call(0x43158f, default_new_keys_hook, 5);
+    hook_call(0x41434b, forbid_character_keys, 7);
+}
+
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
                     LPVOID const reserved)
 {
@@ -23375,6 +23836,7 @@ BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
         shop_changes();
         one_more_map();
         new_hireling_types();
+        extra_key_config();
       }
     return TRUE;
 }

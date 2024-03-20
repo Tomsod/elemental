@@ -791,3 +791,4 @@ Global Text
 788	Aging
 789	Drain Magic
 790	Fear
+791	"You carry no healing potions!"

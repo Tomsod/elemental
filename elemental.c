@@ -357,6 +357,7 @@ enum new_strings
     STR_AGING,
     STR_DRAIN_MAGIC,
     STR_FEAR,
+    STR_NO_HEALING_POTIONS,
     NEW_STRING_COUNT
 };
 
@@ -608,6 +609,7 @@ enum items
     POTION_BOTTLE = 220,
     CATALYST = 221,
     FIRST_POTION = 222,
+    POTION_CURE_WOUNDS = 222,
     FIRST_COMPLEX_POTION = 225,
     MAGIC_POTION = 227,
     FIRST_LAYERED_POTION = 228,
@@ -772,6 +774,7 @@ enum face_animations
 #define SOUND_GOLD 200
 #define SOUND_TURN_PAGE_UP 204
 #define SOUND_SPELL_FAIL 209
+#define SOUND_DRINK 210
 #define SOUND_DIE 18100
 
 #define EVT_QBITS 16
@@ -1514,6 +1517,8 @@ enum struct_offsets
 #define POTION_SHOP_SPC ((uint16_t *) 0x4f068c)
 #define TRAIN_MAX_LEVELS ((int16_t *) 0x4f0798)
 
+#define TURN_BASED 0xacd6b4
+
 #ifdef CHECK_OVERWRITE
 #define sprintf sprintf_mm7
 #define fread fread_mm7
@@ -1808,6 +1813,12 @@ static void __fastcall (*read_registry)(const char *key, char *buffer,
 static void __fastcall (*write_registry)(const char *key, const char *value)
     = (funcptr_t) 0x464b3f;
 static void __thiscall (*unload_bitmap)(void *bitmap) = (funcptr_t) 0x40f788;
+// Actually it's not the entire function, but we don't need the first half.
+static char __stdcall (*check_key_pressed)(int key) = (funcptr_t) 0x45b118;
+static void __thiscall (*set_recovery_delay)(void *player, int delay)
+    = (funcptr_t) 0x48e962;
+#define TURN_BASED_THIS ((void *) 0x4f86d8)
+static void __thiscall (*turn_based_pass)(void *this) = (funcptr_t) 0x40471c;
 
 //---------------------------------------------------------------------------//
 
@@ -4025,7 +4036,7 @@ static void __declspec(naked) drink_swift_potion(void)
     asm
       {
         mov word ptr [esi].s_player.recovery, bx ; == 0
-        cmp dword ptr [0xacd6b4], ebx ; turn-based flag
+        cmp dword ptr [TURN_BASED], ebx
         jz quit
         mov ecx, dword ptr [0x4f86d8+12] ; count of tb actors
         cmp ecx, ebx ; just in case
@@ -6773,7 +6784,7 @@ static void __declspec(naked) stun_recovery(void)
         jbe skip
         add dword ptr [esi].s_map_monster.recovery, eax
         skip:
-        cmp dword ptr [0xacd6b4], ebx ; turn-based flag
+        cmp dword ptr [TURN_BASED], ebx
         jz quit
         mov edx, dword ptr [ebp-24] ; monster id
         shl edx, 3
@@ -8421,11 +8432,11 @@ static void load_game_data(void)
     last_hit_player = 0;
     replaced_chest = -1;
     dword(CURRENT_PLAYER) = elemdata.current_player;
-    if (dword(0xacd6b4)) // game was saved in TB mode
+    if (dword(TURN_BASED)) // game was saved in TB mode
       {
         for (struct player *player = PARTY; player < PARTY + 4; player++)
             player->recovery = player->recovery * 32 * 32 / 15 / 15; // adjust
-        dword(0xacd6b4) = 0; // reset TB mode to prevent garbage recovery
+        dword(TURN_BASED) = 0; // reset it to prevent garbage recovery
       }
 }
 
@@ -10857,7 +10868,7 @@ static void __declspec(naked) restrict_flying_up(void)
     asm
       {
         jge disable ; if too high
-        cmp dword ptr [0xacd6b4], ecx ; test for TB mode
+        cmp dword ptr [TURN_BASED], ecx ; == 0
         jz ok
         cmp dword ptr [0x4f86dc], 3 ; TB phase
         jne fail
@@ -10887,7 +10898,7 @@ static void __declspec(naked) restrict_flying_down(void)
         cmp dword ptr [0xacd53c], ecx ; if already flying
         jz fail
         low:
-        cmp dword ptr [0xacd6b4], ecx ; test for TB mode
+        cmp dword ptr [TURN_BASED], ecx ; == 0
         jz ok
         cmp dword ptr [0x4f86dc], 3 ; TB phase
         jne fail
@@ -10911,7 +10922,7 @@ static void __declspec(naked) restrict_free_fall(void)
       {
         cmp dword ptr [0xacd53c], eax ; replaced code
         jz quit
-        cmp dword ptr [0xacd6b4], eax ; test for TB mode
+        cmp dword ptr [TURN_BASED], eax ; == 0
         jz ok
         cmp dword ptr [0x4f86dc], 3 ; TB phase
         jne fail
@@ -19461,7 +19472,7 @@ static void __stdcall kill_checks(struct player *player,
           {
             int new_player = player - PARTY + 1;
             // these are the animtime counters for turn-based/normal mode
-            int new_time = dword(dword(0xacd6b4) ? 0x50ba5c : 0x50ba84)
+            int new_time = dword(dword(TURN_BASED) ? 0x50ba5c : 0x50ba84)
                          - proj->age;
             if (new_player == bow_kill_player && new_time == bow_kill_time
                 && check_bit(QBITS, QBIT_BOW_GM_QUEST_ACTIVE)
@@ -19966,8 +19977,10 @@ static inline void skill_changes(void)
     // also double aggro in weighted_monster_preference() above
 }
 
+// The mod's new hotkey.
+static int quick_heal_key = 0;
 // Used in extra_key_config() below.
-static int *hotkey_settings[6];
+static int *hotkey_settings[] = { [6] = &quick_heal_key };
 
 // Switch off some of MM7Patch's features to ensure compatibility.
 static inline void patch_compatibility(void)
@@ -20903,7 +20916,7 @@ static void __declspec(naked) difficult_monster_recovery_after(void)
         lower:
         sub dword ptr [ebp+8], eax
         skip:
-        cmp dword ptr [0xacd6b4], 1 ; replaced code
+        cmp dword ptr [TURN_BASED], 1 ; replaced code
         ret
       }
 }
@@ -23522,8 +23535,9 @@ static void print_new_config_page(void)
     static const char *const hotkeys[] = { "STEP LEFT", "STEP RIGHT",
                                            "QUICK SAVE", "QUICK LOAD",
                                            "2X SPEED", "AUTORUN",
-                                           "INVENTORY", "CHARACTER", };
-    for (int line = 0; line < 8; line++)
+                                           "INVENTORY", "CHARACTER",
+                                           "QUICK HEAL", };
+    for (int line = 0; line < 9; line++)
       {
         int y = line % 7, x = line / 7;
         print_string(dialog, font, 23 + x * 224, 142 + y * 21,
@@ -23555,7 +23569,7 @@ static void __declspec(naked) third_page_field_press(void)
       {
         je first ; replaced jump
         ja second
-        cmp eax, 8 ; not a full page yet
+        cmp eax, 9 ; not a full page yet
         jae forbid
         add eax, 14 ; total of 28
         second:
@@ -23611,7 +23625,7 @@ static int old_step_left, old_step_right;
 // Also loads the 3rd page button gfx.
 static void init_new_keys(void)
 {
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < 7; i++)
         config_keys[30+i] = *hotkey_settings[i];
     old_step_left = dword(KEY_THIS_ADDR + 12 + 28 * 4);
     old_step_right = dword(KEY_THIS_ADDR + 12 + 29 * 4);
@@ -23631,8 +23645,8 @@ static void __declspec(naked) init_new_keys_hook(void)
 
 // The names of registry entries for the new keybindings.
 static const char *const registry_keys[] = {
-    "KEY_QUICKSAVE", "KEY_QUICKLOAD", "KEY_2XSPEED",
-    "KEY_AUTORUN", "KEY_INVENTORY", "KEY_CHARACTER",
+    "KEY_QUICKSAVE", "KEY_QUICKLOAD", "KEY_2XSPEED", "KEY_AUTORUN",
+    "KEY_INVENTORY", "KEY_CHARACTER", "KEY_QUICKHEAL",
 };
 
 // Update and save the new keybindings on exiting the menu, also unload bitmap.
@@ -23644,7 +23658,7 @@ static void save_new_keys(void)
     if (old_step_right != config_keys[29])
         write_registry("KEY_STEPRIGHT", config_keys[29] == VK_OEM_6 ? "DEFAULT"
                                               : get_key_name(config_keys[29]));
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < 7; i++)
         if (*hotkey_settings[i] != config_keys[30+i])
           {
             write_registry(registry_keys[i], get_key_name(config_keys[30+i]));
@@ -23665,13 +23679,13 @@ static void __declspec(naked) save_new_keys_hook(void)
 }
 
 // For resetting the default values.
-static int saved_hotkey_settings[6];
+static int saved_hotkey_settings[7];
 
 // Read the values stored in registry for the new keybindings.
 static void read_registry_keys(void)
 {
     char value[32];
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < 7; i++)
       {
         saved_hotkey_settings[i] = *hotkey_settings[i];
         read_registry(registry_keys[i], value, 32, "DEFAULT");
@@ -23701,7 +23715,7 @@ static void __declspec(naked) read_registry_keys_hook(void)
 // Unset all registry entries when pressing the "default" button.
 static void default_new_keys(void)
 {
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < 7; i++)
       {
         write_registry(registry_keys[i], "DEFAULT");
         *hotkey_settings[i] = config_keys[30+i] = saved_hotkey_settings[i];
@@ -23746,6 +23760,125 @@ static void __declspec(naked) forbid_character_keys(void)
       }
 }
 
+// Riding on a MM7Patch hook.  Requires care to emulate the original function.
+static int __declspec(naked) __thiscall patch_active_player_check(void *player)
+{
+    asm
+      {
+        push ecx
+        push ecx
+        call dummy_call
+        xor eax, eax ; must have failed for patch reasons
+        ret
+        dummy_call:
+        push ebp
+        mov ebp, esp
+        push ebx
+        push esi
+        push edi
+        call dword ptr ds:check_inactive_player
+        test eax, eax
+        jnz ok
+        mov eax, 0x4685f6 ; inactive pc code
+        jmp eax
+        ok:
+        leave
+        add esp, 12
+        ret
+      }
+}
+
+// A new hotkey for chugging a healing potion.  Idea from MAW.
+// TODO: should we look into porter etc. inventories?
+static void quick_heal(void)
+{
+    int current = dword(CURRENT_PLAYER);
+    if (!current)
+        return;
+    struct player *player = &PARTY[current-1];
+    int wounded = get_full_hp(player) - player->hp;
+    if (wounded <= 0 || !patch_active_player_check(player))
+        return;
+    int found_player = -2, found_slot, top_heal = -wounded;
+    for (int p = -1; p < 4; p++)
+        for (int i = 14 * 9 - 1; i >= 0; i--)
+          {
+            struct item *check;
+            if (p < 0)
+              {
+                check = (void *) MOUSE_ITEM;
+                i = 0; // no inner loop
+              }
+            else
+              {
+                int slot = PARTY[p].inventory[i];
+                if (slot <= 0)
+                    continue;
+                check = &PARTY[p].items[slot-1];
+              }
+            int heal;
+            switch (check->id)
+              {
+                case POTION_CURE_WOUNDS:
+                    heal = check->bonus + 10 - wounded;
+                    break;
+                case POTION_DIVINE_CURE:
+                    heal = check->bonus * 5 - wounded;
+                    break;
+                case POTION_ULTIMATE_CURE:
+                    heal = check->bonus;
+                    break;
+                default:
+                    continue;
+              }
+            // we want smallest overheal OR strongest non-full heal
+            if (top_heal < 0 ? heal > top_heal : heal < top_heal && heal >= 0)
+              {
+                top_heal = heal;
+                found_player = p;
+                found_slot = i;
+              }
+          }
+    if (found_player == -2)
+      {
+        show_status_text(new_strings[STR_NO_HEALING_POTIONS], 2);
+        make_sound(SOUND_THIS, SOUND_BUZZ, 0, 0, -1, 0, 0, 0, 0);
+        return;
+      }
+    player->hp += top_heal + wounded; // assuming the player is not dead etc.
+    show_face_animation(player, ANIM_SMILE, 0);
+    make_sound(SOUND_THIS, SOUND_DRINK, 0, 0, -1, 0, 0, 0, 0);
+    if (found_player < 0)
+        remove_mouse_item(MOUSE_THIS);
+    else
+        delete_backpack_item(PARTY + found_player, found_slot);
+    if (dword(TURN_BASED))
+      {
+        dword(0xae2f78 + current * 4) = 100; // tb recovery??
+        set_recovery_delay(player, 100);
+        turn_based_pass(TURN_BASED_THIS);
+      }
+    else
+        // the float is an adjustable recovery multiplier, usually 1.0
+        set_recovery_delay(player, *(float *) 0x6be224 * 100 * 128 / 60);
+}
+
+// React to pressing the mod-specific keys.  Main screen only!
+static void __declspec(naked) new_hotkeys(void)
+{
+    asm
+      {
+        mov esi, 0x721458 ; replaced code
+        push dword ptr [quick_heal_key]
+        call dword ptr ds:check_key_pressed
+        test al, al
+        jz not_heal
+        call quick_heal
+        not_heal:
+        ret
+      }
+}
+
 // Allow changing patch- and mod-specific hotkeys ingame.
 static inline void extra_key_config(void)
 {
@@ -23773,8 +23906,8 @@ static inline void extra_key_config(void)
         patch_pointer(keys[i], config_keys + i);
     patch_byte(0x4314a7, 42 / 4); // extend the other array into the free space
     patch_byte(0x414359, 42 / 4 + 1); // also here (reset on remap)
-    patch_byte(0x414394, 36); // loop that sets mapping conflict flags
-    patch_byte(0x41439a, 36); // ditto
+    patch_byte(0x414394, 37); // loop that sets mapping conflict flags
+    patch_byte(0x41439a, 37); // ditto
     patch_byte(0x432449, 42); // this loop checks for existing flags
     patch_byte(0x432543, 30); // add two hidden vanilla keybindings
     patch_byte(0x431633, 30); // also here (reset defaults)
@@ -23785,6 +23918,7 @@ static inline void extra_key_config(void)
     hook_call(0x45a8f1, read_registry_keys_hook, 5);
     hook_call(0x43158f, default_new_keys_hook, 5);
     hook_call(0x41434b, forbid_character_keys, 7);
+    hook_call(0x42fc9d, new_hotkeys, 5);
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

@@ -772,7 +772,7 @@ Global Text
 769	Magic Immunity
 770	Aura of Conflict
 771	Divine Mastery
-772	You have to either be fully promoted, or present an initiate token, to learn this skill level.
+772	Anchored Mana
 773	Curse
 774	Weakness
 775	Sleep
@@ -792,3 +792,5 @@ Global Text
 789	Drain Magic
 790	Fear
 791	"You carry no healing potions!"
+792	You have to either be fully promoted, or present an initiate token, to learn this skill level.
+793	Your magic is wrested out of your body!

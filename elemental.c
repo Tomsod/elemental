@@ -338,7 +338,7 @@ enum new_strings
     STR_MAGIC_IMM,
     STR_AURA_OF_CONFLICT,
     STR_DIVINE_MASTERY,
-    STR_NO_INITIATE_TOKEN,
+    STR_ANCHORED_MANA,
     STR_CURSE,
     STR_WEAKNESS,
     STR_SLEEP,
@@ -358,6 +358,8 @@ enum new_strings
     STR_DRAIN_MAGIC,
     STR_FEAR,
     STR_NO_HEALING_POTIONS,
+    STR_NO_INITIATE_TOKEN,
+    STR_MANA_ANCHOR_TRIGGERED,
     NEW_STRING_COUNT
 };
 
@@ -562,6 +564,7 @@ enum new_player_buffs
     NBUFF_MAGIC_IMM,
     NBUFF_AURA_OF_CONFLICT,
     NBUFF_DIVINE_MASTERY,
+    NBUFF_ANCHORED_MANA,
     NBUFF_COUNT
 };
 
@@ -2773,6 +2776,7 @@ static const uint8_t new_buff_colors[NBUFF_COUNT][3] = {
       { 0x80, 0x80, 0x80 }, // earth
       { 0xeb, 0x0f, 0xff }, // mind
       { 0xff, 0xff, 0x9b }, // light
+      { 0x00, 0x80, 0xff }, // water
 };
 
 // Inject the new player buffs into the loop for buff duration window.
@@ -2790,7 +2794,7 @@ static void __declspec(naked) display_new_buffs(void)
         add edx, offset elemdata.new_pc_buffs
         mov edi, offset new_buff_colors + 1
         new:
-        cmp dword ptr [ebp-4], offset new_strings + STR_DIVINE_MASTERY * 4 + 4
+        cmp dword ptr [ebp-4], offset new_strings + STR_ANCHORED_MANA * 4 + 4
         skip:
         ret
       }
@@ -6679,15 +6683,39 @@ static void __declspec(naked) town_portal_without_dialog(void)
       }
 }
 
-// Appropriate an unused spell counter for
-// Lloyd's Beacon recalls, which are now limited.
-static void __declspec(naked) lloyd_increase_recall_count(void)
+// On a beacon recall, increase caster's recall counter,
+// and activate any mana anchors present on party members.
+static void __thiscall beacon_recall_effects(struct player *caster)
+{
+    caster->beacon_casts++;
+    for (int p = 0; p < 4; p++)
+      {
+        struct spell_buff *anchor
+            = &elemdata.new_pc_buffs[p][NBUFF_ANCHORED_MANA];
+        if (anchor->expire_time)
+          {
+            int power = anchor->power;
+            struct player *player = PARTY + p;
+            remove_buff(anchor);
+            if (player->sp < power)
+                power = player->sp;
+            if (!power)
+                continue;
+            player->sp -= power;
+            damage_player(player, power * (elemdata.difficulty + 1), MAGIC);
+            show_status_text(new_strings[STR_MANA_ANCHOR_TRIGGERED], 5);
+          }
+      }
+}
+
+// Hook for the above.
+static void __declspec(naked) beacon_recall_effects_hook(void)
 {
     asm
       {
-        mov eax, dword ptr [ACTION_THIS_ADDR] ; replaced code
         mov ecx, dword ptr [esp+20] ; pc
-        inc byte ptr [ecx].s_player.beacon_casts
+        call beacon_recall_effects
+        mov eax, dword ptr [ACTION_THIS_ADDR] ; replaced code
         ret
       }
 }
@@ -7585,7 +7613,7 @@ static inline void misc_spells(void)
     hook_call(0x44b2b4, update_new_tp_region, 8);
     hook_jump(0x4339f9, town_portal_from_main_screen);
     hook_call(0x4339d0, town_portal_without_dialog, 5);
-    hook_call(0x4336ee, lloyd_increase_recall_count, 5);
+    hook_call(0x4336ee, beacon_recall_effects_hook, 5);
     hook_call(0x42b570, lloyd_starting_tab, 5);
     hook_call(0x433433, lloyd_disable_recall, 5);
     // Reduce Lloyd's Beacon duration to 2 days/skill.
@@ -21855,27 +21883,31 @@ static int __thiscall guild_sp_price(struct player *player)
         level = 100;
     else
         level *= level;
-    int beacon = 2; // penalize abusing beacons to replenish SP
-    for (struct player *each = PARTY; each < PARTY + 4; each++)
-        beacon += each->beacon_casts;
-    if (merchant > 66) // at most 1/3 base price for services
-        return base_price * val * level * 1 * beacon / (100 * 3 * 2);
-    return base_price * val * level * (100 - merchant) * beacon
-                            / (100 * 100 * 2);
+    if (merchant > 100 * 2 / 3) // at most 1/3 base price for services
+        return base_price * val * level * 1 / (100 * 3);
+    return base_price * val * level * (100 - merchant) / (100 * 100);
 }
 
 // Restore active PC's spell points, charge gold, return 0 if not enough.
+// Also place a mana anchor (to discourage Lloyd's Beacon abuse).
 static int guild_restore_sp(void)
 {
-    struct player *current = &PARTY[dword(CURRENT_PLAYER)-1];
-    int max_sp = get_full_sp(current);
-    if (current->sp >= max_sp)
+    int current = dword(CURRENT_PLAYER) - 1;
+    struct player *player = &PARTY[current];
+    int max_sp = get_full_sp(player);
+    if (player->sp >= max_sp)
         return TRUE; // do nothing
-    int price = guild_sp_price(current);
+    int price = guild_sp_price(player);
     if (dword(PARTY_GOLD) < price)
         return FALSE;
     spend_gold(price);
-    current->sp = max_sp;
+    struct spell_buff *anchor
+        = &elemdata.new_pc_buffs[current][NBUFF_ANCHORED_MANA];
+    int new_power = anchor->power + max_sp - player->sp; // cumulative
+    if (new_power >= 1 << 16) // guard from overflow
+        new_power = (1 << 16) - 1;
+    add_buff(anchor, CURRENT_TIME + 2 * ONE_HOUR, 0, new_power, 0, 0);
+    player->sp = max_sp;
     return TRUE;
 }
 

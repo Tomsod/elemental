@@ -863,6 +863,8 @@ static struct elemdata
     uint64_t map_enter_time;
     // Stores new player buffs (mostly potion effects).
     struct spell_buff new_pc_buffs[4][NBUFF_COUNT];
+    // The amount of bank money that had persisted for a full week.
+    int last_bank_gold;
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -1518,6 +1520,7 @@ enum struct_offsets
 #define TRAIN_MAX_LEVELS ((int16_t *) 0x4f0798)
 
 #define TURN_BASED 0xacd6b4
+#define BANK_GOLD 0xacd570
 
 #ifdef CHECK_OVERWRITE
 #define sprintf sprintf_mm7
@@ -9659,15 +9662,17 @@ static void __declspec(naked) bank_interest(void)
         mov dword ptr [last_bank_week], esi
         jb no_interest
         mov ecx, eax
-        mov ebx, dword ptr [0xacd570] ; bank gold
+        mov ebx, dword ptr [BANK_GOLD]
+        mov eax, dword ptr [elemdata.last_bank_gold]
         push 100
         interest:
-        mov eax, ebx
         xor edx, edx
         div dword ptr [esp]
         add ebx, eax
+        mov eax, ebx
         loop interest
-        mov dword ptr [0xacd570], ebx ; new bank gold
+        mov dword ptr [BANK_GOLD], ebx
+        mov dword ptr [elemdata.last_bank_gold], ebx
         pop eax
         no_interest:
         mov ebx, esi ; replaced code
@@ -9683,6 +9688,38 @@ static void __declspec(naked) bank_interest_2(void)
       {
         call bank_interest
         mov edi, ebx
+        ret
+      }
+}
+
+// Only add 1% to the money that stayed in the bank for a full week.
+// In particular, check if this amount should be reduced on a withdraw.
+static void __declspec(naked) bank_withdraw(void)
+{
+    asm
+      {
+        sub esi, dword ptr [BANK_GOLD]
+        neg esi
+        cmp esi, dword ptr [elemdata.last_bank_gold]
+        jae ok
+        mov dword ptr [elemdata.last_bank_gold], esi
+        ok:
+        mov dword ptr [BANK_GOLD], esi ; almost the replaced code
+        ret
+      }
+}
+
+// Also update this value on a gamescript-triggered bank gold reset.
+// TODO: could also hook add and subtract, but for now that's unnecessary
+static void __declspec(naked) evt_set_bank_gold(void)
+{
+    asm
+      {
+        mov dword ptr [BANK_GOLD], eax ; replaced code
+        cmp eax, dword ptr [elemdata.last_bank_gold]
+        jae ok
+        mov dword ptr [elemdata.last_bank_gold], eax
+        ok:
         ret
       }
 }
@@ -10833,7 +10870,7 @@ static void generate_tax_text(void)
     sprintf(buffer, new_npc_text[843+fealty-790], tax_money);
     sprintf(tax_text, "%s  %s  %s  %s", new_npc_text[837-790],
             new_npc_text[840+attitude-790], buffer, new_npc_text[846-790]);
-    dword(0xacd570) += tax_money; // bank gold
+    dword(BANK_GOLD) += tax_money;
 }
 
 // Print the tax status reply (called each tick).
@@ -11440,9 +11477,9 @@ static void __declspec(naked) buy_deposit_box(void)
         mov eax, dword ptr [PARTY_GOLD]
         sub eax, 2500
         jge ok
-        add eax, dword ptr [0xacd570] ; bank gold
+        add eax, dword ptr [BANK_GOLD]
         jl no_gold
-        mov dword ptr [0xacd570], eax
+        mov dword ptr [BANK_GOLD], eax
         xor eax, eax
         ok:
         mov dword ptr [PARTY_GOLD], eax
@@ -11596,6 +11633,8 @@ static inline void misc_rules(void)
     patch_bytes(0x48fda6, melee_damage_weapon_loop_chunk, 8);
     hook_call(0x4b1bd9, bank_interest, 5);
     hook_call(0x4940b1, bank_interest_2, 5);
+    hook_call(0x4b7de6, bank_withdraw, 6);
+    hook_call(0x44ae8c, evt_set_bank_gold, 5);
     hook_call(0x4180ae, stat_hint_hook, 6);
     hook_jump(0x48ea13, new_stat_thresholds);
     hook_call(0x4506a5, rest_encounters, 13);
@@ -21015,7 +21054,7 @@ static void __declspec(naked) difficult_bank_gold(void)
 {
     asm
       {
-        add dword ptr [0xacd570], eax ; replaced code
+        add dword ptr [BANK_GOLD], eax ; replaced code
         cmp dword ptr [elemdata.difficulty], 0
         jz skip
         shr eax, 1
@@ -21023,7 +21062,7 @@ static void __declspec(naked) difficult_bank_gold(void)
         jae lower
         shr eax, 1
         lower:
-        sub dword ptr [0xacd570], eax ; bank gold
+        sub dword ptr [BANK_GOLD], eax
         skip:
         ret
       }

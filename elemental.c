@@ -9342,7 +9342,7 @@ static void __declspec(naked) temple_other_spells_power(void)
         fidiv dword ptr [esp] ; temple power = cost / 5
         fistp dword ptr [esp]
         pop eax
-        lea edx, [edx+1+eax+SKILL_MASTER] ; spell pwr = temple pwr + weekday
+        lea edx, [edx+1+eax+SKILL_GM] ; spell pwr = temple pwr + weekday
         ret
       }
 }
@@ -14339,7 +14339,7 @@ static void __declspec(naked) bottle_temple_blessing(void)
         jne skip
         push ebx
         push 48
-        lea edx, [SKILL_MASTER+20+edx+1] ; we know the temple power
+        lea edx, [SKILL_GM+20+edx+1] ; we know the temple power
         push edx
         lea edx, [ecx-1]
         mov ecx, SPL_PAIN_REFLECTION

@@ -602,6 +602,7 @@ enum items
     LIVING_WOOD_KNIVES = 164,
     BOOMERANG_KNIFE = 165,
     LAST_PREFIX = 165, // last enchantable item
+    CLANKERS_JOURNAL = 184,
     LARGE_GOLD_PILE = 199,
     FIRST_REAGENT = 200,
     SULFUR = 212,
@@ -767,6 +768,7 @@ enum face_animations
     ANIM_REPAIR_FAIL = 11,
     ANIM_WONT_FIT = 15,
     ANIM_MIX_POTION = 16,
+    ANIM_LEARN = 21,
     ANIM_SMILE = 36,
     ANIM_DISMAY = 40,
     ANIM_SHAKE_HEAD = 67,
@@ -1585,7 +1587,8 @@ static char *__thiscall (*load_from_lod)(void *lod, char *filename,
 static void (*mm7_free)(void *ptr) = (funcptr_t) 0x4caefc;
 #define QBITS_ADDR 0xacd59d
 #define QBITS ((void *) QBITS_ADDR)
-#define AUTONOTES ((void *) 0xacd636)
+#define AUTONOTES_ADDR 0xacd636
+#define AUTONOTES ((void *) AUTONOTES_ADDR)
 static int __fastcall (*check_bit)(void *bits, int bit)
     = (funcptr_t) 0x449b7a;
 static void __fastcall (*add_reply)(int number, int action)
@@ -14369,6 +14372,7 @@ static void __declspec(naked) dark_bottle_temple(void)
 // to the character's portrait.  Both new arts cannot be used unidentified.
 // Golden apples are also handled here (no ID check for them),
 // and so are wine bottles (ordinary and magical both).
+// Finally, there's Clanker's Journal which does require identification.
 static void __declspec(naked) new_consumable_items(void)
 {
     asm
@@ -14415,6 +14419,8 @@ static void __declspec(naked) new_consumable_items(void)
         je oghma
         cmp eax, BAG_OF_HOLDING
         je bag
+        cmp eax, CLANKERS_JOURNAL
+        je journal
         not_it:
         sub eax, 616 ; replaced code
         ret
@@ -14430,7 +14436,7 @@ static void __declspec(naked) new_consumable_items(void)
         push SPL_FEATHER_FALL
         call dword ptr ds:spell_face_anim
         ; one unused parameter
-        push 21 ; learn spell
+        push ANIM_LEARN
         mov ecx, esi
         call dword ptr ds:show_face_animation
         jmp remove
@@ -14467,6 +14473,26 @@ static void __declspec(naked) new_consumable_items(void)
         push COND_DRUNK
         mov ecx, esi
         call inflict_condition
+        jmp remove
+        journal:
+        xor eax, eax
+        dec eax
+        mov word ptr [AUTONOTES_ADDR+6], ax ; starting from 49
+        mov dword ptr [AUTONOTES_ADDR+8], eax
+        mov word ptr [AUTONOTES_ADDR+12], ax
+        or byte ptr [AUTONOTES_ADDR+14], 0xc0 ; up to 114
+        mov byte ptr [0x5077c9], 1 ; blink notes
+        and dword ptr [0x5063e8], 0 ; potions page
+        mov ecx, dword ptr [CGAME]
+        mov ecx, dword ptr [ecx+0xe50]
+        mov eax, dword ptr [ebp+8]
+        dec eax
+        push eax
+        push SPL_INVISIBILITY
+        call dword ptr ds:spell_face_anim
+        push ANIM_LEARN
+        mov ecx, esi
+        call dword ptr ds:show_face_animation
         remove:
         mov eax, 0x468e7c ; remove the item
         jmp eax

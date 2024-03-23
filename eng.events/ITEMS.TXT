@@ -183,7 +183,7 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 181	null	_item181	0	0	0	0	0	0	0	_item181	0	0	0	0	0	Description here.
 182	null	_item182	0	0	0	0	0	0	0	_item182	0	0	0	0	0	Description here.
 183	null	_item183	0	0	0	0	0	0	0	_item183	0	0	0	0	0	Description here.
-184	null	_item184	0	0	0	0	0	0	0	_item184	0	0	0	0	0	Description here.
+184	clanjour	Clanker's Journal	4000	Gem	Misc	0	0	3	20	Journal	78	0	0	0	0	"This book contains the work notes of late Clanker.  Much of this is useless to you, but an extensive collection of alchemical recipes is worth copying.  To read, pick the journal up and left-click over the picture of your character in the inventory screen."
 185	item260	Golden Lamp	8000	Gem	Misc	0	0	5	0	Lamp	93	0	0	0	0	"This oil lamp is made of solid gold.  Gaudy, but it'll sell well."
 186	item199	Blue Quartz	250	Gem	Misc	0	0	0	0	Gemstone	79	0	0	0	0	"A gemstone.  It has no magial benefit, so you may as well sell it."
 187	item198	Topaz	500	Gem	Misc	0	0	0	0	Gemstone	79	0	0	0	0	"A gemstone.  It has no magial benefit, so you may as well sell it."

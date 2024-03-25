@@ -4,7 +4,7 @@
 1	Emerald Island	Out01.Odm	0	0	0	672	7	0	1	0	1	0	10	100	0	0	Dragonfly	Dragonfly	1	2-5	0	0	1	1-3	0	0	1	1-3	20	FOREST	0	"Training Island--Lush, tropical island"		x
 2	Harmondale	Out02.Odm	0	0	2	672	7	1	2	2	1	0	10	100	0	0	Goblin	Goblin	3	2-5	Swordsman	Swordsman	3	1-3	0	0	1	1-3	4	PLAINS	0	Home town map--hills and scattered trees.  Water ok		x
 3	Erathia	Out03.odm	0	0	4	672	7	3	3	4	2	2	10	50	50	0	Fighter Leather	Fighter Leather	2	1-3	Griffin	Griffin	1	1-3	0	0	1	1-3	17	PLAINS	0	"Human Capital--low hills, river (with fort built on top), near lake"	
-4	The Tularean Forest	Out04.odm	0	0	4	672	7	3	4	4	2	1	0	0	100	0	Treant	Treant	1	1-1	Elf Spearman	Elf Spearman	2	1-3	Fighter Chain	Fighter Chain	2	1-3	18	FOREST	0	"Elvish capital--Cliffs, waterfalls, forest"	
+4	The Tularean Forest	Out04.odm	0	0	4	672	7	3	4	4	2	1	10	0	0	100	Treant	Treant	1	1-1	Elf Spearman	Elf Spearman	2	1-3	Dragonfly	Dragonfly	4	3-5	18	FOREST	0	"Elvish capital--Cliffs, waterfalls, forest"	
 5	Deyja	Out05.odm	0	0	6	672	7	5	5	6	3	2	10	0	50	50	0	0	1	1-3	Harpy	Harpy	2	1-3	Zombie	Zombie	3	1-3	2	MOUNTAIN	0	Necromancer zone--wasteland	
 6	The Bracada Desert	Out06.odm	0	0	6	672	7	5	6	6	3	2	10	50	50	0	Golem	Golem	2	1-3	Griffin	Griffin	2	1-3	0	0	1	1-3	2	MOUNTAIN	0	"Wizard's area--desert w/ oasis, sharp mountains"	
 7	Celeste	d25.blv	0	0	20	672	7	10	6	20	7	3	15	34	33	33	Angel	Angel	3	1-3	Roc	Roc	3	1-3	Mage	Mage	3	1-3	10	CITY	0	Cloud city	

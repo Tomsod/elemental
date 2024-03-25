@@ -1199,7 +1199,10 @@ struct __attribute__((packed)) mapstats_item
 {
     SKIP(4);
     char *file_name;
-    SKIP(36);
+    SKIP(4);
+    char *monster2;
+    char *monster3;
+    SKIP(24);
     uint8_t reputation_group; // my addition
     SKIP(23);
 };
@@ -11644,6 +11647,31 @@ static void __declspec(naked) new_event_command(void)
       }
 }
 
+// Allow the trumpet-related gamescript to spawn Erathian soldiers,
+// despite them now being replaced by dragonflies in mapstats.txt.
+static void __declspec(naked) summon_soldiers(void)
+{
+    asm
+      {
+        mov eax, 0x44f5a8 ; replaced call
+        cmp edi, 4 ; our marker, normally 1-3
+        jne skip
+        dec word ptr [ebp-8] ; now it`s 3
+        mov edi, dword ptr [MAPSTATS_ADDR+SIZE_MAPSTAT*23] \
+                           .s_mapstats_item.monster2 ; riverstride soldiers
+        xchg edi, dword ptr [ecx].s_mapstats_item.monster3 ; was dragonflies
+        mov esi, ecx ; preserve
+        push 0
+        push dword ptr [ebp+8]
+        push 0
+        call eax
+        mov dword ptr [esi].s_mapstats_item.monster3, edi ; restore
+        ret 12
+        skip:
+        jmp eax
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -11828,6 +11856,7 @@ static inline void misc_rules(void)
     erase_code(0x4bd198, 10); // harmondale
     hook_jump(0x43a4e9, shield_stacking_hook);
     hook_call(0x446970, new_event_command, 5);
+    hook_call(0x448d8b, summon_soldiers, 5);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

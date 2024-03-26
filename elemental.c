@@ -1529,6 +1529,7 @@ enum struct_offsets
 
 #define TURN_BASED 0xacd6b4
 #define BANK_GOLD 0xacd570
+#define PC_POINTERS 0xa74f48
 
 #ifdef CHECK_OVERWRITE
 #define sprintf sprintf_mm7
@@ -1669,6 +1670,7 @@ static void __fastcall (*summon_monster)(int id, int x, int y, int z)
     = (funcptr_t) 0x4bbec4;
 static int __thiscall (*dir_cosine)(void *this, int dir)
     = (funcptr_t) 0x402cae;
+static int __thiscall (*find_active_player)(void *this) = (funcptr_t) 0x493707;
 #define TRIG_THIS ((void *) 0x56c680)
 static int __thiscall (*get_map_index)(struct mapstats_item *mapstats,
                                        char *filename) = (funcptr_t) 0x4547cf;
@@ -2838,7 +2840,7 @@ static void __declspec(naked) expire_new_buffs(void)
     asm
       {
         mov eax, dword ptr [esp+28] ; pc pointer
-        sub eax, 0xa74f48 ; now we got pc number x4
+        sub eax, PC_POINTERS ; now we got pc number x4
         mov ebp, NBUFF_COUNT
         mul ebp
         lea edi, [elemdata.new_pc_buffs+eax*4]
@@ -3427,7 +3429,7 @@ static void __declspec(naked) weapon_potions(void)
         mov dword ptr [esi].s_item.bonus_strength, ebx
         fmul dword ptr [0x4d8470]
         mov ecx, dword ptr [CURRENT_PLAYER]
-        mov ecx, dword ptr [0xa74f44+ecx*4] ; PC pointers
+        mov ecx, dword ptr [PC_POINTERS+ecx*4-4]
         mov bh, byte ptr [ecx].s_player.class
         push SLOT_BELT
         push GADGETEERS_BELT
@@ -4763,6 +4765,72 @@ static void __declspec(naked) apple_cure_weakness(void)
       }
 }
 
+// Just impose recovery, either realtime or turn-based.
+static void __stdcall recover_player(int id, int amount)
+{
+    struct player *player = PARTY + id - 1;
+    if (dword(TURN_BASED))
+      {
+        dword(0xae2f78 + id * 4) = amount; // tb recovery??
+        set_recovery_delay(player, amount);
+        turn_based_pass(TURN_BASED_THIS);
+      }
+    else
+        // the float is an adjustable recovery multiplier, usually 1.0
+        set_recovery_delay(player, *(float *) 0x6be224 * amount * 128 / 60);
+}
+
+// Impose recovery when repairing an item with PC skill (not hirelings).
+static void __declspec(naked) repair_recovery(void)
+{
+    asm
+      {
+        ; pre-hook: cmp can_repair vs. 1
+        jb fail
+        ja ok ; hireling repair
+        mov edx, dword ptr [CURRENT_PLAYER]
+        mov ecx, dword ptr [PC_POINTERS+edx*4-4]
+        cmp word ptr [ecx].s_player.recovery, bx ; ebx == 0
+        ja skip
+        cmp dword ptr [TURN_BASED], ebx
+        jz recover
+        mov ecx, PARTY_BIN_ADDR
+        call dword ptr ds:find_active_player
+        cmp dword ptr [CURRENT_PLAYER], eax
+        jne skip
+        cmp dword ptr [CURRENT_SCREEN], ebx
+        jz recover
+        push ebx
+        push ebx
+        push ACTION_EXIT
+        mov ecx, ACTION_THIS_ADDR
+        call dword ptr ds:add_action
+        cmp dword ptr [CURRENT_SCREEN], 15 ; backpack inside chest screen
+        jne recover
+        push 1 ; preserve
+        push ebx
+        push ACTION_EXIT
+        mov ecx, ACTION_THIS_ADDR
+        call dword ptr ds:add_action
+        recover:
+        mov ebx, dword ptr [CURRENT_PLAYER]
+        push 100
+        push ebx
+        call recover_player
+        mov dword ptr [CURRENT_PLAYER], ebx ; don`t switch the screen
+        xor ebx, ebx ; restore
+        mov eax, dword ptr [ebp-4] ; ditto
+        ok:
+        mov ecx, dword ptr [eax].s_item.flags ; replaced code
+        ret
+        skip:
+        add dword ptr [esp], 71 ; skip repair face anim code
+        fail:
+        add dword ptr [esp], 9 ; replaced jump
+        ret
+      }
+}
+
 // Misc item tweaks.
 static inline void misc_items(void)
 {
@@ -4825,6 +4893,7 @@ static inline void misc_items(void)
     hook_call(0x41ddf5, two_handed_bonus_desc_hook, 6);
     hook_call(0x4162f8, alchemy_soft_cap, 7);
     hook_call(0x468243, apple_cure_weakness, 5);
+    hook_call(0x41da41, repair_recovery, 5);
 }
 
 static uint32_t potion_damage;
@@ -4900,7 +4969,7 @@ static void __declspec(naked) throw_potions_power(void)
         jmp eax
         ordinary:
         mov ecx, dword ptr [esp+56] ; PC index
-        mov ecx, dword ptr [0xa74f48+ecx*4] ; PC pointers
+        mov ecx, dword ptr [PC_POINTERS+ecx*4]
         mov bl, byte ptr [ecx].s_player.class
         push SLOT_BELT
         push GADGETEERS_BELT
@@ -5564,7 +5633,7 @@ static void __declspec(naked) feather_fall_jump(void)
         no_ff:
         mov ecx, 4
         check_boots:
-        mov eax, dword ptr [0xa74f44+ecx*4] ; PC pointers
+        mov eax, dword ptr [PC_POINTERS+ecx*4-4]
         mov edx, dword ptr [eax+SLOT_BOOTS*4].s_player.equipment
         test edx, edx
         jz next_pc
@@ -6983,7 +7052,7 @@ static void __declspec(naked) mark_learned_guild_spells(void)
         mov ecx, dword ptr [CURRENT_PLAYER]
         test ecx, ecx
         jz skip
-        mov ecx, dword ptr [0xa74f44+ecx*4] ; PC pointers
+        mov ecx, dword ptr [PC_POINTERS+ecx*4-4]
         cmp byte ptr [ecx+esi-1].s_player.spells_known, 0
         jnz known
         cmp esi, SPL_BERSERK
@@ -8084,7 +8153,7 @@ static void __declspec(naked) zombie_face_on_tpk(void)
         mov byte ptr [eax].s_player.face, dl
         mov ecx, 4
         get_pc_id:
-        cmp eax, dword ptr [0xa74f44+ecx*4] ; PC pointers
+        cmp eax, dword ptr [PC_POINTERS+ecx*4-4]
         loopne get_pc_id
         call dword ptr ds:update_face
         skip:
@@ -11530,7 +11599,7 @@ static void __declspec(naked) buy_deposit_box(void)
         call dword ptr ds:make_sound
         mov ecx, dword ptr [CURRENT_PLAYER]
         jecxz escape
-        mov ecx, dword ptr [0xa74f44+ecx*4] ; PC pointers
+        mov ecx, dword ptr [PC_POINTERS+ecx*4-4]
         push edi
         push ANIM_SMILE
         call dword ptr ds:show_face_animation
@@ -13961,7 +14030,7 @@ static void __declspec(naked) check_lightning_image(void)
         cmp edi, 7 ; lightning bolt
         jne nope
         mov ecx, dword ptr [CURRENT_PLAYER]
-        mov ecx, dword ptr [0xa74f44+ecx*4] ; PC pointers
+        mov ecx, dword ptr [PC_POINTERS+ecx*4-4]
         push SLOT_MAIN_HAND
         push STORM_TRIDENT
         call dword ptr ds:has_item_in_slot
@@ -15007,7 +15076,7 @@ static void __declspec(naked) gadgeteer_recharge_potion_bonus(void)
       {
         fild dword ptr [MOUSE_ITEM].s_item.bonus ; replaced code
         mov ecx, dword ptr [CURRENT_PLAYER]
-        mov ecx, dword ptr [0xa74f44+ecx*4] ; PC pointers
+        mov ecx, dword ptr [PC_POINTERS+ecx*4-4]
         mov bl, byte ptr [ecx].s_player.class
         push SLOT_BELT
         push GADGETEERS_BELT
@@ -18165,7 +18234,7 @@ static void __declspec(naked) perception_bonus_gold(void)
         mov ecx, dword ptr [CURRENT_PLAYER]
         dec ecx
         jl no_player
-        mov ecx, dword ptr [0xa74f48+ecx*4] ; player pointers
+        mov ecx, dword ptr [PC_POINTERS+ecx*4]
         call dword ptr ds:get_perception_bonus
         mov edx, dword ptr [ebp-4] ; gold
         mov ecx, 50
@@ -18193,7 +18262,7 @@ static void __declspec(naked) perception_extra_item(void)
         mov ecx, dword ptr [CURRENT_PLAYER]
         dec ecx
         jl no_player
-        mov ecx, dword ptr [0xa74f48+ecx*4] ; player pointers
+        mov ecx, dword ptr [PC_POINTERS+ecx*4]
         call dword ptr ds:get_perception_bonus
         no_player:
         movzx edx, byte ptr [ebx].s_map_monster.item_chance
@@ -18553,8 +18622,11 @@ static void __declspec(naked) raise_ench_item_difficulty(void)
         mov ecx, dword ptr [CURRENT_PLAYER]
         dec ecx
         imul ecx, ecx, SKILL_COUNT
-        add edx, ecx
-        inc dword ptr [elemdata.training+edx*4] ; should also set the flags
+        add ecx, edx
+        cmp edx, SKILL_REPAIR
+        setne dl
+        lea ebp, [edx-1] ; needed for npc_repair_chunk() below
+        inc dword ptr [elemdata.training+ecx*4] ; should also set the flags
         quit:
         ret
       }
@@ -19509,7 +19581,7 @@ static void __declspec(naked) learn_gm_skill(void)
         jz quit
         not ecx
         push ecx
-        mov ecx, dword ptr [0xa74f48+eax*4-4] ; player pointers
+        mov ecx, dword ptr [PC_POINTERS+eax*4-4]
         call dword ptr ds:delete_backpack_item
         xor ecx, ecx ; no gold cost, but make a sound
         gold:
@@ -19991,6 +20063,17 @@ static void __declspec(naked) double_shield_regen(void)
       }
 }
 
+// Return 2 if item is repaired by a hireling (won't take a turn).
+// This code is also reached by skill-based repair,
+// but raise_ench_item_difficulty() sets ebp to -1.
+static void __declspec(naked) npc_repair_chunk(void)
+{
+    asm
+      {
+        add ebp, 2
+      }
+}
+
 // Tweak various skill effects.
 static inline void skill_changes(void)
 {
@@ -20097,6 +20180,7 @@ static inline void skill_changes(void)
     hook_call(0x48ee71, double_shield_bonus, 5);
     hook_call(0x493c67, double_shield_regen, 6);
     // also double aggro in weighted_monster_preference() above
+    patch_bytes(0x4911df, npc_repair_chunk, 3);
 }
 
 // The mod's new hotkey.
@@ -23978,15 +24062,7 @@ static void quick_heal(void)
         remove_mouse_item(MOUSE_THIS);
     else
         delete_backpack_item(PARTY + found_player, found_slot);
-    if (dword(TURN_BASED))
-      {
-        dword(0xae2f78 + current * 4) = 100; // tb recovery??
-        set_recovery_delay(player, 100);
-        turn_based_pass(TURN_BASED_THIS);
-      }
-    else
-        // the float is an adjustable recovery multiplier, usually 1.0
-        set_recovery_delay(player, *(float *) 0x6be224 * 100 * 128 / 60);
+    recover_player(current, 100);
 }
 
 // React to pressing the mod-specific keys.  Main screen only!

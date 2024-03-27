@@ -360,6 +360,7 @@ enum new_strings
     STR_NO_HEALING_POTIONS,
     STR_NO_INITIATE_TOKEN,
     STR_MANA_ANCHOR_TRIGGERED,
+    STR_QUICK_REPAIR,
     NEW_STRING_COUNT
 };
 
@@ -1833,6 +1834,9 @@ static void __thiscall (*set_recovery_delay)(void *player, int delay)
     = (funcptr_t) 0x48e962;
 #define TURN_BASED_THIS ((void *) 0x4f86d8)
 static void __thiscall (*turn_based_pass)(void *this) = (funcptr_t) 0x40471c;
+#define CAN_REPAIR_ADDR 0x491149
+static int __thiscall (*can_repair)(struct player *player, struct item *item)
+    = (funcptr_t) CAN_REPAIR_ADDR;
 
 //---------------------------------------------------------------------------//
 
@@ -18609,7 +18613,7 @@ static void __declspec(naked) raise_ench_item_difficulty(void)
         no_ench:
         movsx ecx, byte ptr [esi].s_items_txt_item.id_difficulty ; repl, almost
         mov edx, SKILL_IDENTIFY_ITEM
-        cmp dword ptr [esp], 0x491149 ; can repair func
+        cmp dword ptr [esp], CAN_REPAIR_ADDR
         jb id
         mov edx, SKILL_REPAIR
         test ecx, ecx ; negative difficulty means auto-id but not repair
@@ -20183,10 +20187,10 @@ static inline void skill_changes(void)
     patch_bytes(0x4911df, npc_repair_chunk, 3);
 }
 
-// The mod's new hotkey.
-static int quick_heal_key = 0;
+// The mod's new hotkeys.
+static int quick_heal_key = 0, quick_repair_key = 0;
 // Used in extra_key_config() below.
-static int *hotkey_settings[] = { [6] = &quick_heal_key };
+static int *hotkey_settings[] = { [6] = &quick_heal_key, &quick_repair_key };
 
 // Switch off some of MM7Patch's features to ensure compatibility.
 static inline void patch_compatibility(void)
@@ -23746,8 +23750,8 @@ static void print_new_config_page(void)
                                            "QUICK SAVE", "QUICK LOAD",
                                            "2X SPEED", "AUTORUN",
                                            "INVENTORY", "CHARACTER",
-                                           "QUICK HEAL", };
-    for (int line = 0; line < 9; line++)
+                                           "QUICK HEAL", "QUICK REPAIR" };
+    for (int line = 0; line < 10; line++)
       {
         int y = line % 7, x = line / 7;
         print_string(dialog, font, 23 + x * 224, 142 + y * 21,
@@ -23779,7 +23783,7 @@ static void __declspec(naked) third_page_field_press(void)
       {
         je first ; replaced jump
         ja second
-        cmp eax, 9 ; not a full page yet
+        cmp eax, 10 ; not a full page yet
         jae forbid
         add eax, 14 ; total of 28
         second:
@@ -23835,7 +23839,7 @@ static int old_step_left, old_step_right;
 // Also loads the 3rd page button gfx.
 static void init_new_keys(void)
 {
-    for (int i = 0; i < 7; i++)
+    for (int i = 0; i < 8; i++)
         config_keys[30+i] = *hotkey_settings[i];
     old_step_left = dword(KEY_THIS_ADDR + 12 + 28 * 4);
     old_step_right = dword(KEY_THIS_ADDR + 12 + 29 * 4);
@@ -23856,7 +23860,7 @@ static void __declspec(naked) init_new_keys_hook(void)
 // The names of registry entries for the new keybindings.
 static const char *const registry_keys[] = {
     "KEY_QUICKSAVE", "KEY_QUICKLOAD", "KEY_2XSPEED", "KEY_AUTORUN",
-    "KEY_INVENTORY", "KEY_CHARACTER", "KEY_QUICKHEAL",
+    "KEY_INVENTORY", "KEY_CHARACTER", "KEY_QUICKHEAL", "KEY_QUICKREPAIR",
 };
 
 // Update and save the new keybindings on exiting the menu, also unload bitmap.
@@ -23868,7 +23872,7 @@ static void save_new_keys(void)
     if (old_step_right != config_keys[29])
         write_registry("KEY_STEPRIGHT", config_keys[29] == VK_OEM_6 ? "DEFAULT"
                                               : get_key_name(config_keys[29]));
-    for (int i = 0; i < 7; i++)
+    for (int i = 0; i < 8; i++)
         if (*hotkey_settings[i] != config_keys[30+i])
           {
             write_registry(registry_keys[i], get_key_name(config_keys[30+i]));
@@ -23889,13 +23893,13 @@ static void __declspec(naked) save_new_keys_hook(void)
 }
 
 // For resetting the default values.
-static int saved_hotkey_settings[7];
+static int saved_hotkey_settings[8];
 
 // Read the values stored in registry for the new keybindings.
 static void read_registry_keys(void)
 {
     char value[32];
-    for (int i = 0; i < 7; i++)
+    for (int i = 0; i < 8; i++)
       {
         saved_hotkey_settings[i] = *hotkey_settings[i];
         read_registry(registry_keys[i], value, 32, "DEFAULT");
@@ -23925,7 +23929,7 @@ static void __declspec(naked) read_registry_keys_hook(void)
 // Unset all registry entries when pressing the "default" button.
 static void default_new_keys(void)
 {
-    for (int i = 0; i < 7; i++)
+    for (int i = 0; i < 8; i++)
       {
         write_registry(registry_keys[i], "DEFAULT");
         *hotkey_settings[i] = config_keys[30+i] = saved_hotkey_settings[i];
@@ -24065,6 +24069,55 @@ static void quick_heal(void)
     recover_player(current, 100);
 }
 
+// Another hotkey that tries to repair every broken item carried by party.
+static void quick_repair(void)
+{
+    int current = dword(CURRENT_PLAYER);
+    if (!current)
+        return;
+    int found = FALSE;
+    for (struct player *player = PARTY; player < PARTY + 4 && !found; player++)
+        for (int i = 0; i < PLAYER_MAX_ITEMS; i++)
+            if (player->items[i].flags & IFLAGS_BROKEN)
+              {
+                found = TRUE;
+                break;
+              }
+    if (!found)
+        return;
+    if (byte(STATE_BITS) & 0x30)
+      {
+        show_status_text(GLOBAL_TXT[480], 2); // "enemies near"
+        make_sound(SOUND_THIS, SOUND_BUZZ, 0, 0, -1, 0, 0, 0, 0);
+        return;
+      }
+    struct player *fixer = &PARTY[current-1];
+    if (!patch_active_player_check(fixer))
+        return;
+    int total = 0, recover = 0, repaired = 0;
+    for (struct player *player = PARTY; player < PARTY + 4; player++)
+        for (struct item *item = player->items;
+             item < player->items + PLAYER_MAX_ITEMS; item++)
+            if (item->flags & IFLAGS_BROKEN)
+              {
+                total++;
+                int result = can_repair(fixer, item);
+                if (!result)
+                    continue;
+                item->flags &= ~IFLAGS_BROKEN;
+                repaired++;
+                if (result == 1)
+                    recover++;
+              }
+    show_face_animation(fixer, repaired ? ANIM_REPAIR : ANIM_REPAIR_FAIL, 0);
+    elemdata.training[current-1][SKILL_REPAIR] += recover;
+    if (recover)
+        recover_player(current, recover * 100);
+    char buffer[100];
+    sprintf(buffer, new_strings[STR_QUICK_REPAIR], repaired, total);
+    show_status_text(buffer, 2);
+}
+
 // React to pressing the mod-specific keys.  Main screen only!
 static void __declspec(naked) new_hotkeys(void)
 {
@@ -24077,6 +24130,12 @@ static void __declspec(naked) new_hotkeys(void)
         jz not_heal
         call quick_heal
         not_heal:
+        push dword ptr [quick_repair_key]
+        call dword ptr ds:check_key_pressed
+        test al, al
+        jz not_repair
+        call quick_repair
+        not_repair:
         ret
       }
 }
@@ -24108,8 +24167,8 @@ static inline void extra_key_config(void)
         patch_pointer(keys[i], config_keys + i);
     patch_byte(0x4314a7, 42 / 4); // extend the other array into the free space
     patch_byte(0x414359, 42 / 4 + 1); // also here (reset on remap)
-    patch_byte(0x414394, 37); // loop that sets mapping conflict flags
-    patch_byte(0x41439a, 37); // ditto
+    patch_byte(0x414394, 38); // loop that sets mapping conflict flags
+    patch_byte(0x41439a, 38); // ditto
     patch_byte(0x432449, 42); // this loop checks for existing flags
     patch_byte(0x432543, 30); // add two hidden vanilla keybindings
     patch_byte(0x431633, 30); // also here (reset defaults)

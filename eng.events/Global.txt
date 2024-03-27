@@ -794,3 +794,4 @@ Global Text
 791	"You carry no healing potions!"
 792	You have to either be fully promoted, or present an initiate token, to learn this skill level.
 793	Your magic is wrested out of your body!
+794	%d / %d items repaired

@@ -767,6 +767,7 @@ enum face_animations
     ANIM_ID_FAIL = 9,
     ANIM_REPAIR = 10,
     ANIM_REPAIR_FAIL = 11,
+    ANIM_QUICK_SPELL = 12,
     ANIM_WONT_FIT = 15,
     ANIM_MIX_POTION = 16,
     ANIM_LEARN = 21,
@@ -778,6 +779,7 @@ enum face_animations
 #define SOUND_BUZZ 27
 #define SOUND_WOOD_METAL 105
 #define SOUND_GOLD 200
+#define SOUND_FIZZLE 203
 #define SOUND_TURN_PAGE_UP 204
 #define SOUND_SPELL_FAIL 209
 #define SOUND_DRINK 210
@@ -871,6 +873,8 @@ static struct elemdata
     struct spell_buff new_pc_buffs[4][NBUFF_COUNT];
     // The amount of bank money that had persisted for a full week.
     int last_bank_gold;
+    // Additional quick spells, bound to the mod's new hotkeys.
+    int quick_spells[4][4];
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -1417,6 +1421,8 @@ typedef struct patch_options s_patch_options;
 #define ACTION_PLACE_ORDER 41
 #define ACTION_VARIABLE_EVENT 42
 #define ACTION_THIRD_KEY_CONFIG_PAGE 43
+#define ACTION_QUICK_SPELL_HINT 44
+#define ACTION_QUICK_SPELL_PRESS 45
 //vanilla
 #define ACTION_EXIT 113
 #define ACTION_CHANGE_CONVERSATION 405
@@ -1531,6 +1537,8 @@ enum struct_offsets
 #define TURN_BASED 0xacd6b4
 #define BANK_GOLD 0xacd570
 #define PC_POINTERS 0xa74f48
+#define SELECTED_SPELL 0x5063cc
+#define SPELLS_TXT 0x5cbeb0
 
 #ifdef CHECK_OVERWRITE
 #define sprintf sprintf_mm7
@@ -1788,9 +1796,9 @@ static int __thiscall (*repair_price)(void *player, int item_value,
                                       float shop_multiplier)
     = (funcptr_t) 0x4b8126;
 static void __thiscall (*set_gold)(int value) = (funcptr_t) 0x492b68;
-static int __fastcall (*get_text_height)(void *font, char *string, int *bounds,
-                                         int unknown, int unknown2)
-    = (funcptr_t) 0x44c5c9;
+static int __fastcall (*get_text_height)(void *font, char *string,
+                                         const int *bounds, int unknown,
+                                         int unknown2) = (funcptr_t) 0x44c5c9;
 static void __fastcall (*change_bit)(void *bits, int bit, int set)
     = (funcptr_t) 0x449ba1;
 static void (*restock_books)(void) = (funcptr_t) 0x4bc838;
@@ -1818,10 +1826,9 @@ static void __fastcall (*set_image_mouseover)(void *buffer, void *image,
 #define GET_ASYNC_KEY_STATE 0x4d8260
 static int __thiscall (*get_config_key_color)(int id) = (funcptr_t) 0x414d2f;
 static char *__stdcall (*get_key_name)(int key) = (funcptr_t) 0x45ae65;
-static int __thiscall (*parse_key_name)(void *this, const char *name)
+static int __thiscall (*parse_key_name)(int this, const char *name)
     = (funcptr_t) 0x45ac03;
-#define KEY_THIS_ADDR 0x69ac80
-#define KEY_THIS ((void *) KEY_THIS_ADDR)
+#define KEY_THIS 0x69ac80
 static void __fastcall (*read_registry)(const char *key, char *buffer,
                                         int length, const char *default_value)
     = (funcptr_t) 0x464c2c;
@@ -1837,6 +1844,9 @@ static void __thiscall (*turn_based_pass)(void *this) = (funcptr_t) 0x40471c;
 #define CAN_REPAIR_ADDR 0x491149
 static int __thiscall (*can_repair)(struct player *player, struct item *item)
     = (funcptr_t) CAN_REPAIR_ADDR;
+static void __thiscall (*set_hint)(char *hint) = (funcptr_t) 0x41c061;
+static void __thiscall (*fetch_spell_sound)(void *this, int spell, int id)
+    = (funcptr_t) 0x49482e;
 
 //---------------------------------------------------------------------------//
 
@@ -6070,8 +6080,8 @@ static void __declspec(naked) wizard_eye_display(void)
 }
 
 // Direct calls from assembly are not relocated.
-static funcptr_t strcpy_ptr = strcpy;
-static funcptr_t strcat_ptr = strcat;
+static const funcptr_t strcpy_ptr = strcpy;
+static const funcptr_t strcat_ptr = strcat;
 
 // Display GM Wizard Eye duration as "Permanent".
 static void __declspec(naked) wizard_eye_display_duration(void)
@@ -14753,11 +14763,18 @@ static void __declspec(naked) open_regular_chest(void)
 // Defined below.
 static void place_order(void);
 
+// Remember what button to draw in the down state.
+static int pressed_quick_spell = -1;
+
+// Also defined below.
+static char *__stdcall get_quick_spell_hint(int button);
+
 // Make a new action that opens an extra chest.
 // We need an action to safely trigger it from inventory etc.
 // Also here: the action for ordering an item in a shop,
 // and the action that triggers a gamescript event.
 // Also also, an action for opening the new key config page is here too.
+// Finally, there are the two actions for the new quick spell buttons.
 static void __declspec(naked) action_open_extra_chest(void)
 {
     asm
@@ -14770,6 +14787,10 @@ static void __declspec(naked) action_open_extra_chest(void)
         je event
         cmp ecx, ACTION_THIRD_KEY_CONFIG_PAGE
         je page
+        cmp ecx, ACTION_QUICK_SPELL_HINT
+        je hint
+        cmp ecx, ACTION_QUICK_SPELL_PRESS
+        je spell
         movzx eax, byte ptr [0x4353a1+eax] ; replaced code
         ret
         chest:
@@ -14800,6 +14821,54 @@ static void __declspec(naked) action_open_extra_chest(void)
         jmp quit
         page:
         mov dword ptr [0x506d88], ebx ; set page index var to zero
+        jmp quit
+        hint:
+        push dword ptr [esp+24]
+        call get_quick_spell_hint
+        mov ecx, eax
+        call dword ptr ds:set_hint
+        jmp quit
+        spell:
+        mov eax, dword ptr [esp+24]
+        mov dword ptr [pressed_quick_spell], eax
+        mov ecx, dword ptr [CURRENT_PLAYER]
+        dec ecx
+        jl quit ; just in case
+        lea ebx, [eax+ecx*4]
+        mov edx, dword ptr [SELECTED_SPELL]
+        test edx, edx
+        jz set
+        mov eax, dword ptr [elemdata.quick_spells+ebx*4]
+        mov ecx, dword ptr [PC_POINTERS+ecx*4]
+        movzx ecx, byte ptr [ecx].s_player.spellbook_page
+        sub edx, ecx
+        lea ecx, [ecx+ecx*2]
+        lea edx, [edx+ecx*4]
+        cmp eax, edx
+        jne set
+        xor edx, edx ; remove spell
+        set:
+        mov dword ptr [elemdata.quick_spells+ebx*4], edx
+        jz unset
+        push 0
+        push ANIM_QUICK_SPELL
+        mov ecx, dword ptr [CURRENT_PLAYER]
+        mov ecx, dword ptr [PC_POINTERS+ecx*4-4]
+        call dword ptr ds:show_face_animation
+        jmp restore
+        unset:
+        push edx
+        push edx
+        push edx
+        push edx
+        push -1
+        push edx
+        push edx
+        push SOUND_FIZZLE
+        mov ecx, SOUND_THIS_ADDR
+        call dword ptr ds:make_sound
+        restore:
+        xor ebx, ebx
         quit:
         mov eax, 118 ; no action
         ret
@@ -20189,8 +20258,13 @@ static inline void skill_changes(void)
 
 // The mod's new hotkeys.
 static int quick_heal_key = 0, quick_repair_key = 0;
+static int quick_spell_keys[4] = { '7', '8', '9', '0' };
 // Used in extra_key_config() below.
-static int *hotkey_settings[] = { [6] = &quick_heal_key, &quick_repair_key };
+static int *hotkey_settings[] = {
+    [6] = &quick_heal_key, &quick_repair_key, quick_spell_keys,
+          quick_spell_keys + 1, quick_spell_keys + 2, quick_spell_keys + 3,
+};
+#define HOTKEY_COUNT (sizeof(hotkey_settings) / sizeof(int *))
 
 // Switch off some of MM7Patch's features to ensure compatibility.
 static inline void patch_compatibility(void)
@@ -23746,12 +23820,14 @@ static void print_new_config_page(void)
     draw_background(DRAW_IMAGE_THIS, 19, 324, LOADED_BITMAPS[page_3_button]);
     void *dialog = pointer(DIALOG5);
     void *font = pointer(0x5c346c);
-    static const char *const hotkeys[] = { "STEP LEFT", "STEP RIGHT",
-                                           "QUICK SAVE", "QUICK LOAD",
-                                           "2X SPEED", "AUTORUN",
-                                           "INVENTORY", "CHARACTER",
-                                           "QUICK HEAL", "QUICK REPAIR" };
-    for (int line = 0; line < 10; line++)
+    static const char *const hotkeys[14] = { "STEP LEFT", "STEP RIGHT",
+                                             "QUICK SAVE", "QUICK LOAD",
+                                             "2X SPEED", "AUTORUN",
+                                             "INVENTORY", "CHARACTER",
+                                             "QUICK HEAL", "QUICK REPAIR",
+                                             "CAST SPELL 2", "CAST SPELL 3",
+                                             "CAST SPELL 4", "CAST SPELL 5" };
+    for (int line = 0; line < 14; line++)
       {
         int y = line % 7, x = line / 7;
         print_string(dialog, font, 23 + x * 224, 142 + y * 21,
@@ -23783,15 +23859,10 @@ static void __declspec(naked) third_page_field_press(void)
       {
         je first ; replaced jump
         ja second
-        cmp eax, 10 ; not a full page yet
-        jae forbid
         add eax, 14 ; total of 28
         second:
         add eax, 14 ; replaced code
         first:
-        ret
-        forbid:
-        mov dword ptr [esp], 0x4342b5 ; angry beep code
         ret
       }
 }
@@ -23839,10 +23910,10 @@ static int old_step_left, old_step_right;
 // Also loads the 3rd page button gfx.
 static void init_new_keys(void)
 {
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < HOTKEY_COUNT; i++)
         config_keys[30+i] = *hotkey_settings[i];
-    old_step_left = dword(KEY_THIS_ADDR + 12 + 28 * 4);
-    old_step_right = dword(KEY_THIS_ADDR + 12 + 29 * 4);
+    old_step_left = dword(KEY_THIS + 12 + 28 * 4);
+    old_step_right = dword(KEY_THIS + 12 + 29 * 4);
     page_3_button = load_bitmap(ICONS_LOD, "optkb_3", 2);
 }
 
@@ -23861,6 +23932,7 @@ static void __declspec(naked) init_new_keys_hook(void)
 static const char *const registry_keys[] = {
     "KEY_QUICKSAVE", "KEY_QUICKLOAD", "KEY_2XSPEED", "KEY_AUTORUN",
     "KEY_INVENTORY", "KEY_CHARACTER", "KEY_QUICKHEAL", "KEY_QUICKREPAIR",
+    "KEY_CASTSPELL2", "KEY_CASTSPELL3", "KEY_CASTSPELL4", "KEY_CASTSPELL5",
 };
 
 // Update and save the new keybindings on exiting the menu, also unload bitmap.
@@ -23872,7 +23944,7 @@ static void save_new_keys(void)
     if (old_step_right != config_keys[29])
         write_registry("KEY_STEPRIGHT", config_keys[29] == VK_OEM_6 ? "DEFAULT"
                                               : get_key_name(config_keys[29]));
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < HOTKEY_COUNT; i++)
         if (*hotkey_settings[i] != config_keys[30+i])
           {
             write_registry(registry_keys[i], get_key_name(config_keys[30+i]));
@@ -23887,7 +23959,7 @@ static void __declspec(naked) save_new_keys_hook(void)
     asm
       {
         call save_new_keys
-        mov ecx, KEY_THIS_ADDR ; replaced code
+        mov ecx, KEY_THIS ; replaced code
         ret
       }
 }
@@ -23899,7 +23971,7 @@ static int saved_hotkey_settings[8];
 static void read_registry_keys(void)
 {
     char value[32];
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < HOTKEY_COUNT; i++)
       {
         saved_hotkey_settings[i] = *hotkey_settings[i];
         read_registry(registry_keys[i], value, 32, "DEFAULT");
@@ -23943,7 +24015,7 @@ static void __declspec(naked) default_new_keys_hook(void)
     asm
       {
         call default_new_keys
-        mov ecx, KEY_THIS_ADDR ; replaced code
+        mov ecx, KEY_THIS ; replaced code
         ret
       }
 }
@@ -24118,6 +24190,9 @@ static void quick_repair(void)
     show_status_text(buffer, 2);
 }
 
+// Used just below to remember spell index between hooks.
+static int quick_spell_type;
+
 // React to pressing the mod-specific keys.  Main screen only!
 static void __declspec(naked) new_hotkeys(void)
 {
@@ -24136,11 +24211,422 @@ static void __declspec(naked) new_hotkeys(void)
         jz not_repair
         call quick_repair
         not_repair:
+        push dword ptr [quick_spell_keys]
+        call dword ptr ds:check_key_pressed
+        test al, al
+        jnz spell2
+        push dword ptr [quick_spell_keys+4]
+        call dword ptr ds:check_key_pressed
+        test al, al
+        jnz spell3
+        push dword ptr [quick_spell_keys+8]
+        call dword ptr ds:check_key_pressed
+        test al, al
+        jnz spell4
+        push dword ptr [quick_spell_keys+12]
+        call dword ptr ds:check_key_pressed
+        test al, al
+        jz skip
+        inc edi
+        spell4:
+        inc edi
+        spell3:
+        inc edi
+        spell2:
+        inc edi
+        skip:
+        mov dword ptr [quick_spell_type], edi
+        xor edi, edi ; restore
         ret
       }
 }
 
+// The loaded button graphics.
+static void *quick_spell_loaded[8] = { NULL };
+static const char *const quick_spell_bitmaps[] = {
+    "quikspl2", "quikspl3", "quikspl4", "quikspl5",
+    "quikspd2", "quikspd3", "quikspd4", "quikspd5",
+};
+
+// Register the spellbook buttons for setting quick spells 2-5.
+static void __declspec(naked) extra_quick_spell_buttons(void)
+{
+    asm
+      {
+        mov dword ptr [0x506378], eax ; replaced code
+        add ebx, 8
+        load:
+        push 2
+        push dword ptr [quick_spell_bitmaps+ebx*4-4]
+        mov ecx, ICONS_LOD_ADDR
+        call dword ptr ds:load_bitmap
+        lea eax, [eax+eax*8]
+        lea eax, [LOADED_BITMAPS_ADDR+eax*8]
+        mov dword ptr [quick_spell_loaded+ebx*4-4], eax
+        dec ebx
+        jnz load
+        push ebx
+        push ebp
+        push ebx
+        push ebx
+        push ACTION_QUICK_SPELL_PRESS
+        push ACTION_QUICK_SPELL_HINT
+        push 1
+        push 26
+        push 23
+        push 415
+        push 517-24
+        push esi
+        call dword ptr ds:add_button
+        add dword ptr [esp+4], 30+24
+        inc dword ptr [esp+32]
+        call dword ptr ds:add_button
+        add dword ptr [esp+4], 24
+        inc dword ptr [esp+32]
+        call dword ptr ds:add_button
+        add dword ptr [esp+4], 24
+        inc dword ptr [esp+32]
+        call dword ptr ds:add_button
+        add esp, 48
+        ret
+      }
+}
+
+// Actually draw the new buttons.
+// TODO: might want to spread them around if attack spell is disabled
+static void draw_quick_spell_buttons(void)
+{
+    for (int i = 0; i < 4; i++)
+        draw_background(DRAW_IMAGE_THIS, 517 - 24 + 24 * i + 30 * !!i, 415,
+                        quick_spell_loaded[i+4*(i==pressed_quick_spell)]);
+    pressed_quick_spell = -1; // reset
+}
+
+// Hook for the above.
+static void __declspec(naked) draw_quick_spell_buttons_hook(void)
+{
+    asm
+      {
+        call draw_quick_spell_buttons
+        mov eax, dword ptr [CURRENT_PLAYER] ; replaced code
+        ret
+      }
+}
+
+// Free the new buttons from memory when closing the spellbook.
+static void __declspec(naked) unload_quick_spell_buttons(void)
+{
+    asm
+      {
+        mov esi, 8
+        unload:
+        mov ecx, dword ptr [quick_spell_loaded+esi*4-4]
+        call dword ptr ds:unload_bitmap
+        dec esi
+        jnz unload
+        mov esi, 0x5062d4 ; replaced code
+        ret
+      }
+}
+
+// Get the proper mouseover text for the new quick spell buttons.
+static char *__stdcall get_quick_spell_hint(int button)
+{
+    int current = dword(CURRENT_PLAYER);
+    if (!current--)
+        return NULL;
+    int quick = elemdata.quick_spells[current][button];
+    int spell = dword(SELECTED_SPELL);
+    if (spell)
+        spell += PARTY[current].spellbook_page * 11;
+    if (!quick && !spell)
+        return GLOBAL_TXT[484]; // "select a spell and press button"
+    if (quick == spell || !spell)
+        return GLOBAL_TXT[584]; // "click to remove"
+    static char buffer[100];
+    sprintf(buffer, GLOBAL_TXT[483], pointer(SPELLS_TXT + spell * 36)); // name
+    return buffer; // "set it as ready"
+}
+
+// Some shared code.
+static int __declspec(naked) count_quick_spells(void)
+{
+    asm
+      {
+        setnz al ; true if vanilla quick spell set
+        mov ecx, 4
+        get_pc_id:
+        cmp edx, dword ptr [PC_POINTERS+ecx*4-4]
+        loopne get_pc_id
+        shl ecx, 4
+        mov edx, 3
+        quick:
+        cmp dword ptr [elemdata.quick_spells+ecx+edx*4], ebx ; == 0
+        setnz ah
+        add al, ah
+        dec edx
+        jge quick
+        movzx eax, al
+        ret
+      }
+}
+
+// Used just below.
+static const char x_of_5_qsp_format[] = "%s: %d / 5";
+static const char x_of_5_short_format[] = "%d / 5";
+
+// Just print "X/5 quick spells" on the stats screen until a right-click.
+static void __declspec(naked) stat_screen_quick_spells(void)
+{
+    asm
+      {
+        mov edx, edi
+        call count_quick_spells
+        push eax
+        push dword ptr [GLOBAL_TXT_ADDR+172*4]
+#ifdef __clang__
+        mov eax, offset x_of_5_qsp_format
+        push eax
+#else
+        push offset x_of_5_qsp_format
+#endif
+        push esi
+        call dword ptr ds:sprintf
+        add esp, 16
+        ret
+      }
+}
+
+// Same, but for the quick reference screen.
+static void __declspec(naked) quick_ref_quick_spells(void)
+{
+    asm
+      {
+        mov edx, ebp
+        call count_quick_spells
+        push eax
+#ifdef __clang__
+        mov eax, offset x_of_5_short_format
+        push eax
+#else
+        push offset x_of_5_short_format
+#endif
+        push esi
+        call dword ptr ds:sprintf
+        add esp, 12
+        mov eax, esi
+        ret
+      }
+}
+
+// How much to shift the active spell list down, based on quick spell count.
+static int active_spell_offset;
+// Composed in advance, so that we can know its height.
+static char qspl_buffer[400];
+
+// Print all the currently set quick spells.
+static int __thiscall portrait_rmb_quick_spells(struct player *player)
+{
+    int qspell = player->quick_spell;
+    int count = 0;
+    int length = 0;
+    for (int i = 0; i <= 4; i++)
+      {
+        count += !!qspell;
+        if (qspell)
+            length += sprintf(qspl_buffer + length, "\t130%s (%s)\n",
+                              pointer(SPELLS_TXT + qspell * 36 + 4), // sh.name
+                              get_key_name(i ? quick_spell_keys[i-1]
+                                             : dword(KEY_THIS + 12 + 7 * 4)));
+        qspell = elemdata.quick_spells[player-PARTY][i];
+      }
+    active_spell_offset = 0;
+    if (!count)
+        strcpy(qspl_buffer, GLOBAL_TXT[153]); // "none"
+    else
+        qspl_buffer[length-1] = 0; // remove the last '\n'
+    static const int bounds[4] = { 0, 0, 1000, 1000 }; // whatever
+    if (count > 1)
+        active_spell_offset = get_text_height(pointer(ARRUS_FNT), qspl_buffer,
+                                              bounds, 0, 0) - 30;
+    return active_spell_offset;
+}
+
+// Hook for the above.
+static void __declspec(naked) portrait_rmb_quick_spells_hook(void)
+{
+    asm
+      {
+        imul ebx, ecx ; replaced code
+        push eax ; preserve
+        mov ecx, esi
+        call portrait_rmb_quick_spells
+        add ebx, eax
+        pop eax
+        mov ecx, dword ptr [edi] ; also replaced code
+        ret
+      }
+}
+
+// Actually print the buffer when appropriate.
+static void __declspec(naked) provide_qspl_buffer(void)
+{
+    asm
+      {
+#ifdef __clang__
+        mov eax, offset qspl_buffer
+        push eax
+#else
+        push offset qspl_buffer
+#endif
+        push ebx ; the rest of the text
+        call dword ptr ds:strcat_ptr
+        add esp, 8
+        xor esi, esi ; replaced code
+        ret 24 ; replaced stack fixup
+      }
+}
+
+// In case of multi-line quick spell display, shift everything below downwards.
+static void __declspec(naked) shift_active_spells_down(void)
+{
+    asm
+      {
+        add esi, 134 ; replaced code
+        add esi, dword ptr [active_spell_offset]
+        ret
+      }
+}
+
+// Ditto, but for the "active spells" text itself.
+static void __declspec(naked) shift_active_spell_header(void)
+{
+    asm
+      {
+        mov eax, dword ptr [active_spell_offset]
+        add dword ptr [esp+8], eax ; print y
+        jmp dword ptr ds:print_string ; replaced call
+      }
+}
+
+// Also print the list of quick spells by right-clicking in the stats screen.
+static char *__stdcall stats_rmb_quick_spells(char *description)
+{
+    static char buffer[1000];
+    int current = dword(CURRENT_PLAYER) - 1;
+    strcpy(buffer, description);
+    char *rest = buffer + strlen(buffer);
+    int qspell = PARTY[current].quick_spell;
+    int found = FALSE;
+    for (int i = 0; i <= 4; i++)
+      {
+        if (qspell)
+          {
+            found = TRUE;
+            rest += sprintf(rest, "\n%s (%s)",
+                            pointer(SPELLS_TXT + qspell * 36), // name
+                            get_key_name(i ? quick_spell_keys[i-1]
+                                           : dword(KEY_THIS + 12 + 7 * 4)));
+          }
+        qspell = elemdata.quick_spells[current][i];
+      }
+    if (!found)
+      {
+        *rest = '\n';
+        strcpy(rest + 1, GLOBAL_TXT[153]); // "none"
+      }
+    return buffer;
+}
+
+// Hook for the above.
+static void __declspec(naked) stats_rmb_quick_spells_hook(void)
+{
+    asm
+      {
+        mov dword ptr [ebp-4], eax ; replaced code
+        push dword ptr [0x5c8998] ; static quick spell description
+        call stats_rmb_quick_spells
+        mov ebx, eax
+        ret
+      }
+}
+
+// Fall through to the quick spell code if any new key is pressed.
+static void __declspec(naked) allow_extra_quick_spells(void)
+{
+    asm
+      {
+        cmp eax, 7 * 4 ; quick spell 1
+        jne skip
+        cmp dword ptr [quick_spell_type], edi ; == 0
+        jz skip
+        ret 4 ; al is nonzero
+        skip:
+        mov eax, dword ptr ds:check_key_pressed ; replaced call, almost
+        sub eax, 17 ; but we don`t use the first few opcodes
+        jmp eax
+      }
+}
+
+// Fetch an appropriate quick spell, for now just for SP check etc. purposes.
+static void __declspec(naked) provide_extra_quick_spell(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [quick_spell_type]
+        test ecx, ecx
+        jnz extra
+        mov bl, byte ptr [esi].s_player.quick_spell ; replaced code
+        ret
+        extra:
+        lea ecx, [ecx+eax*4] ; eax is pc id
+        mov ebx, dword ptr [elemdata.quick_spells+ecx*4-20]
+        ret
+      }
+}
+
+// Put the quick spell index into action param #2 (#1 is used by the patch).
+static void __declspec(naked) quick_spell_param(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [quick_spell_type]
+        mov dword ptr [0x50c868+eax*4], ecx ; replaced code, almost
+        ret
+      }
+}
+
+// Now convert action param into the quick spell ID, and load a proper sound.
+// Awkward place to hook, but MM7Patch already got the good one.
+static void __declspec(naked) provide_quick_spell_for_action(void)
+{
+    asm
+      {
+        mov ebx, dword ptr [esp+56] ; action param 2
+        test ebx, ebx
+        jz skip
+        lea ecx, [ebx+edx*4] ; pc id
+        mov ecx, dword ptr [elemdata.quick_spells+ecx*4-4]
+        skip:
+        mov ebx, ecx ; spell id
+        call dword ptr ds:aim_spell
+        cmp dword ptr [esp+20], 0 ; 1 if attack spell
+        jnz quit ; patch should load proper sound
+        mov eax, dword ptr [CURRENT_PLAYER]
+        imul ecx, eax, 0xafd8
+        add ecx, 0xaa0ed8 - 0xafd8
+        push eax
+        push ebx
+        call dword ptr ds:fetch_spell_sound
+        quit:
+        xor ebx, ebx ; restore
+        mov eax, 0x4314ca ; post-action code
+        jmp eax
+      }
+}
+
 // Allow changing patch- and mod-specific hotkeys ingame.
+// Also add the actual functionality to the mod hotkeys.
 static inline void extra_key_config(void)
 {
     hook_call(0x45afe3, more_key_names_hook, 5);
@@ -24167,8 +24653,8 @@ static inline void extra_key_config(void)
         patch_pointer(keys[i], config_keys + i);
     patch_byte(0x4314a7, 42 / 4); // extend the other array into the free space
     patch_byte(0x414359, 42 / 4 + 1); // also here (reset on remap)
-    patch_byte(0x414394, 38); // loop that sets mapping conflict flags
-    patch_byte(0x41439a, 38); // ditto
+    patch_byte(0x414394, 42); // loop that sets mapping conflict flags
+    patch_byte(0x41439a, 42); // ditto
     patch_byte(0x432449, 42); // this loop checks for existing flags
     patch_byte(0x432543, 30); // add two hidden vanilla keybindings
     patch_byte(0x431633, 30); // also here (reset defaults)
@@ -24180,6 +24666,23 @@ static inline void extra_key_config(void)
     hook_call(0x43158f, default_new_keys_hook, 5);
     hook_call(0x41434b, forbid_character_keys, 7);
     hook_call(0x42fc9d, new_hotkeys, 5);
+    hook_call(0x4118da, extra_quick_spell_buttons, 5);
+    hook_call(0x412b6f, draw_quick_spell_buttons_hook, 5);
+    hook_call(0x4114a3, unload_quick_spell_buttons, 5);
+    erase_code(0x418a5d, 22); // stats screen: don't fetch spell name
+    hook_call(0x418a80, stat_screen_quick_spells, 5);
+    erase_code(0x41aacf, 17); // same in the quick ref screen
+    hook_call(0x41aae0, quick_ref_quick_spells, 5);
+    patch_pointer(0x41d5d8, "%s: "); // don't print spell name yet
+    hook_call(0x41d3c4, portrait_rmb_quick_spells_hook, 5);
+    hook_call(0x41d5e9, provide_qspl_buffer, 5);
+    hook_call(0x41d64b, shift_active_spells_down, 6);
+    hook_call(0x41d6dc, shift_active_spell_header, 6);
+    hook_call(0x41825d, stats_rmb_quick_spells_hook, 9);
+    hook_call(0x42fcc3, allow_extra_quick_spells, 5);
+    hook_call(0x4300a4, provide_extra_quick_spell, 6);
+    hook_call(0x43014d, quick_spell_param, 7);
+    hook_jump(0x433d47, provide_quick_spell_for_action);
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

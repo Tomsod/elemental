@@ -34,3 +34,17 @@ recover													SpLeft
 STAGE DrawViewUI
 SCREEN					ScreenW	ScreenH			MainMenuLike=0						DRAW VIEW
 							+						SpLeft
+
+STAGE Read
+
+if									SmallDialog and btn>1						spellbook screen
+var h	344														it got redefined since this section
+pcx %sBtnS2					R-(btnW-btnSep)*(btn+3)-bx	h+dh-by				ui				Dialog	LTR to the left of attack spell
+pcx %sBtnS3					R-(btnW-btnSep)*(btn+2)-bx	h+dh-by				ui				Dialog	(or quick spell if not present)
+pcx %sBtnS4					R-(btnW-btnSep)*(btn+1)-bx	h+dh-by				ui				Dialog
+pcx %sBtnS5					R-(btnW-btnSep)*btn-bx	h+dh-by				ui				Dialog
+	518-24	416	1	1	R-(btnW-btnSep)*(btn+3)-bx	h+dh-by	+	-			55	17 + NoPartyDlg		Dialog	+1 to XY to ensure it's clickable
+	518+30	416	1	1	R-(btnW-btnSep)*(btn+2)-bx	h+dh-by	+	-			55	17 + NoPartyDlg		Dialog	+1 to XY to ensure it's clickable
+	518+30+24	416	1	1	R-(btnW-btnSep)*(btn+1)-bx	h+dh-by	+	-			55	17 + NoPartyDlg		Dialog	+1 to XY to ensure it's clickable
+	518+30+24*2	416	1	1	R-(btnW-btnSep)*btn-bx	h+dh-by	+	-			55	17 + NoPartyDlg		Dialog	+1 to XY to ensure it's clickable
+if

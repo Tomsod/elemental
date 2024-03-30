@@ -172,7 +172,7 @@ Global Text
 169	Three Quarter
 170	QSpell
 171	Quarter
-172	Quick Spell
+172	Quick Spells
 173	Quick Reference
 174	Current Quests
 175	%s inflicts %lu points killing %s

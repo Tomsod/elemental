@@ -24157,16 +24157,11 @@ static void quick_repair(void)
               }
     if (!found)
         return;
-    if (byte(STATE_BITS) & 0x30)
-      {
-        show_status_text(GLOBAL_TXT[480], 2); // "enemies near"
-        make_sound(SOUND_THIS, SOUND_BUZZ, 0, 0, -1, 0, 0, 0, 0);
-        return;
-      }
     struct player *fixer = &PARTY[current-1];
     if (!patch_active_player_check(fixer))
         return;
     int total = 0, recover = 0, repaired = 0;
+    int danger = byte(STATE_BITS) & 0x30; // enemies near
     for (struct player *player = PARTY; player < PARTY + 4; player++)
         for (struct item *item = player->items;
              item < player->items + PLAYER_MAX_ITEMS; item++)
@@ -24176,10 +24171,14 @@ static void quick_repair(void)
                 int result = can_repair(fixer, item);
                 if (!result)
                     continue;
+                if (result == 1)
+                  {
+                    if (danger && recover)
+                        continue;
+                    recover++;
+                  }
                 item->flags &= ~IFLAGS_BROKEN;
                 repaired++;
-                if (result == 1)
-                    recover++;
               }
     show_face_animation(fixer, repaired ? ANIM_REPAIR : ANIM_REPAIR_FAIL, 0);
     elemdata.training[current-1][SKILL_REPAIR] += recover;

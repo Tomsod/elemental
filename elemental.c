@@ -1496,6 +1496,7 @@ enum struct_offsets
     S_MM_HP = offsetof(struct map_monster, hp),
     S_SPC_PROB = offsetof(struct spcitem, probability),
     S_SPC_LEVEL = offsetof(struct spcitem, level),
+    S_SI_COST = offsetof(struct spell_info, cost),
 };
 
 #define CURRENT_CONVERSATION 0xf8b01c
@@ -6171,13 +6172,23 @@ static void __declspec(naked) wizard_eye_from_day_of_protection(void)
 
 // When ctrl-clicking Immolation or GM Wizard Eye to switch them off,
 // do not charge spell points.  Same for Storm Trident's free spell.
-// Also here: Eloquence Talisman's spell recovery bonus.
+// Also here: Eloquence Talisman's spell recovery bonus,
+// and the difficulty-dependent spell cost increase.
 static void __declspec(naked) switch_off_spells_for_free(void)
 {
     asm
       {
         mov dword ptr [ebp-180], eax ; replaced code
         jnz quit ; not casting from a spellbook
+        cmp dword ptr [elemdata.difficulty], esi ; == 0
+        jz easy
+        shr edx, 1
+        cmp dword ptr [elemdata.difficulty], 2
+        jae costly
+        shr edx, 1
+        costly:
+        add dword ptr [ebp-36], edx ; sp cost
+        easy:
         mov ecx, dword ptr [ebp-32] ; PC
         push SLOT_AMULET
         push ELOQUENCE_TALISMAN
@@ -6198,6 +6209,7 @@ static void __declspec(naked) switch_off_spells_for_free(void)
         jz not_trident
         xor byte ptr [ebx+9], 4 ; before this, flag meant 'cast normally' here
         not_trident:
+        mov ecx, dword ptr [ebp-24] ; restore
         test byte ptr [ebx+9], 4 ; turn off flag
         quit:
         ret
@@ -14198,10 +14210,21 @@ static void __declspec(naked) check_air_redraw(void)
 }
 
 // Cast Storm Trident's LB as a quick spell even with no SP.
+// Also here: increase effective SP cost at higher difficulties.
 static void __declspec(naked) free_quick_lightning(void)
 {
     asm
       {
+        cmp dword ptr [elemdata.difficulty], edi ; == 0
+        jz easy
+        mov ebx, eax
+        shr ebx, 1
+        cmp dword ptr [elemdata.difficulty], 2
+        jae raise
+        shr ebx, 1
+        raise:
+        add eax, ebx
+        easy:
         cmp eax, dword ptr [esi].s_player.sp ; replaced code
         jle quit
         cmp ecx, SPL_LIGHTNING_BOLT
@@ -19933,7 +19956,7 @@ static void __declspec(naked) train_id_monster(void)
 
 // Let temporary levels boost skills slightly.
 // NB: Learning doesn't scale bonus with mastery, so the effect is lower.
-// Also here: penalize most skills based on difficulty.
+// Also here: penalize some skills based on difficulty.
 static void __declspec(naked) level_skill_bonus(void)
 {
     asm
@@ -19958,6 +19981,8 @@ static void __declspec(naked) level_skill_bonus(void)
         mov eax, ebx
         cmp dword ptr [elemdata.difficulty], 0
         jz quit
+        cmp edi, SKILL_IDENTIFY_ITEM
+        jb quit
         cmp edi, SKILL_BODYBUILDING
         je quit
         cmp edi, SKILL_MEDITATION
@@ -21375,6 +21400,27 @@ static void __declspec(naked) faster_monster_swing(void)
       }
 }
 
+// Also increase displayed SP cost in a spellbook (actual cost is elsewhere).
+static void __declspec(naked) difficult_spell_cost(void)
+{
+    asm
+      {
+        ; replaced code next line:
+        movzx eax, word ptr [SPELL_INFO_ADDR+eax*2+SIZE_SPL_INFO+S_SI_COST]
+        cmp dword ptr [elemdata.difficulty], ebx ; == 0
+        jz easy
+        mov edx, eax
+        shr edx, 1
+        cmp dword ptr [elemdata.difficulty], 2
+        jae costly
+        shr edx, 1
+        costly:
+        add eax, edx
+        easy:
+        ret
+      }
+}
+
 // Allow optionally increasing game difficulty.
 static inline void difficulty_level(void)
 {
@@ -21400,6 +21446,9 @@ static inline void difficulty_level(void)
     // skill penalty in level_skill_bonus() above
     patch_pointer(0x417d78, "%s: %+d"); // display penalty correctly
     hook_call(0x4020ef, faster_monster_swing, 6);
+    // spell cost increase is in switch_off_spells_for_free() above
+    // and another cost check in free_quick_lightning() above
+    hook_call(0x410d5c, difficult_spell_cost, 8);
 }
 
 // Holds an unused travel reply that can be replaced with ours.

@@ -1055,6 +1055,7 @@ enum spells
     SPL_DISPEL_MAGIC = 80,
     SPL_PARALYZE = 81,
     SPL_PRISMATIC_LIGHT = 84,
+    SPL_SUNRAY = 87,
     SPL_DIVINE_INTERVENTION = 88,
     SPL_VAMPIRIC_WEAPON = 91,
     SPL_SHRINKING_RAY = 92,
@@ -7822,6 +7823,11 @@ static inline void misc_spells(void)
     patch_byte(0x428552, -4); // spike durability = old spike limit
     hook_call(0x42851a, variable_spike_count, 6);
     erase_code(0x43b00e, 2); // remove variable damage dice
+    // Reduce Sunray recovery to more reasonable values.
+    SPELL_INFO[SPL_SUNRAY].delay_normal = 110;
+    SPELL_INFO[SPL_SUNRAY].delay_expert = 110;
+    SPELL_INFO[SPL_SUNRAY].delay_master = 110;
+    SPELL_INFO[SPL_SUNRAY].delay_gm = 100;
 }
 
 // For consistency with players, monsters revived with Reanimate now have

@@ -6084,6 +6084,7 @@ static void __declspec(naked) wizard_eye_display(void)
 // Direct calls from assembly are not relocated.
 static const funcptr_t strcpy_ptr = strcpy;
 static const funcptr_t strcat_ptr = strcat;
+static const funcptr_t strcmp_ptr = strcmp;
 
 // Display GM Wizard Eye duration as "Permanent".
 static void __declspec(naked) wizard_eye_display_duration(void)
@@ -23733,6 +23734,9 @@ static int __stdcall more_key_names(char *buffer, int key)
 {
     switch (key)
       {
+        case 0:
+            strcpy(buffer, "NONE"); // for the patch/mod keys only
+            break;
         case VK_ESCAPE: // still opens the menu even if remapped
             strcpy(buffer, "ESC");
             break;
@@ -23843,6 +23847,8 @@ static int __cdecl parse_new_key_names(const char *name)
                 return -1;
           }
       }
+    if (!strcmp(name, "NONE"))
+        return 0; // new hotkeys can be unset
     if (!strcmp(name, "ESC"))
         return VK_ESCAPE;
     if (!strcmp(name, "CAPS_LOCK"))
@@ -24076,6 +24082,7 @@ static void __declspec(naked) default_new_keys_hook(void)
 }
 
 // Disallow mapping to 1-6 because it breaks the game badly until restart.
+// Also allow unsetting the new hotkeys, and forbid unrecognized keys.
 static void __declspec(naked) forbid_character_keys(void)
 {
     asm
@@ -24084,7 +24091,23 @@ static void __declspec(naked) forbid_character_keys(void)
         cmp eax, '1'
         jb ok
         cmp eax, '6'
-        ja ok
+        jbe buzz
+        ok:
+        cmp eax, VK_ESCAPE
+        jne not_escape
+        cmp dword ptr [0x506ce8], 30 ; hotkey id
+        cmovae eax, ebx ; == 0
+        ret
+        not_escape:
+        push eax
+        call dword ptr ds:get_key_name
+        push eax
+        push 0x4e91dc ; "no key"
+        call dword ptr ds:strcmp_ptr
+        add esp, 8
+        test eax, eax
+        jne quit
+        buzz:
         push ebx
         push ebx
         push ebx
@@ -24096,7 +24119,9 @@ static void __declspec(naked) forbid_character_keys(void)
         mov ecx, SOUND_THIS_ADDR
         call dword ptr ds:make_sound
         mov dword ptr [esp], 0x41439d ; past remap code
-        ok:
+        quit:
+        movzx eax, byte ptr [0x69ad80] ; restore
+        mov edx, dword ptr [DIALOG5] ; ditto
         ret
       }
 }

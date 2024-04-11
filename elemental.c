@@ -665,6 +665,7 @@ enum items
     MINDS_EYE = 532,
     ELVEN_CHAINMAIL = 533,
     FORGE_GAUNTLETS = 534,
+    HEROS_BELT = 535,
     LADYS_ESCORT = 536,
     CLANKERS_AMULET = 537,
     THE_PERFECT_BOW = 543,
@@ -15098,6 +15099,10 @@ static char gadgeteers_belt_gfx[] = "itemgadgv0";
 static const int snipers_quiver_xy[] = { 530, 185, 533, 171,
                                          532, 214, 535, 210, };
 static char snipers_quiver_gfx[] = "itemgadgv0";
+// Also for Hero's Belt (used a MM6 image here).
+static const int heros_belt_xy[] = { 540, 180, 536, 169,
+                                     540, 213, 539, 207, };
+static const char heros_belt_gfx[] = "heroblte"; // male only
 
 // Draw the new belt on the paperdoll.
 static void __declspec(naked) display_new_belt(void)
@@ -15108,6 +15113,8 @@ static void __declspec(naked) display_new_belt(void)
         je belt
         cmp ecx, SNIPERS_QUIVER
         je quiver
+        cmp ecx, HEROS_BELT
+        je hero
         sub ecx, TITANS_BELT ; replaced code
         ret
         belt:
@@ -15117,12 +15124,19 @@ static void __declspec(naked) display_new_belt(void)
         quiver:
         mov ecx, offset snipers_quiver_xy
         mov edx, offset snipers_quiver_gfx
+        jmp gfx
+        hero:
+        mov ecx, offset heros_belt_xy
+        mov edx, offset heros_belt_gfx
+        test edx, edx ; unset zf
         gfx:
         mov eax, dword ptr [esp+40] ; body type
         lea ecx, [ecx+eax*8]
+        jnz got_gfx ; fixed for hero
         and eax, 1 ; no special dwarf gfx
         add eax, '1'
         mov byte ptr [edx+9], al
+        got_gfx:
         mov eax, dword ptr [ecx]
         mov ecx, dword ptr [ecx+4]
         mov dword ptr [esp+24], eax
@@ -15531,6 +15545,7 @@ static inline void new_artifacts(void)
     hook_call(0x4397bb, double_axe_mace_chance, 5);
     hook_call(0x4397ec, provide_mace_chance, 6); // stun
     hook_call(0x439818, provide_mace_chance, 6); // paralysis
+    hook_jump(0x48f27c, (void *) 0x48f23d); // remove of prot. from hero's belt
 }
 
 // When calculating missile damage, take note of the weapon's skill.

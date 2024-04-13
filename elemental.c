@@ -654,6 +654,7 @@ enum items
     OLD_NICK = 517,
     AMUCK = 518,
     KELEBRIM = 520,
+    TALEDONS_HELM = 521,
     PHYNAXIAN_CROWN = 523,
     TITANS_BELT = 524,
     TWILIGHT = 525,
@@ -15418,6 +15419,39 @@ static void __declspec(naked) provide_mace_chance(void)
       }
 }
 
+// The new equipped Mind's Eye image (from MM6).
+static const char minds_eye_gfx[] = "mindeyee"; // no variation
+
+// Draw the new Mind's Eye graphics.
+static void __declspec(naked) display_new_helm(void)
+{
+    asm
+      {
+        cmp eax, MINDS_EYE
+        je mind
+        sub eax, TALEDONS_HELM ; replaced code
+        ret
+        mind:
+        mov cl, byte ptr [esp+40] ; body type
+        and ecx, 1
+        lea ecx, [ecx+ecx*2+530]
+        mov dword ptr [esp+24], ecx ; x
+        mov dword ptr [esp+20], 38 ; y
+        push 2
+#ifdef __clang__
+        mov eax, offset minds_eye_gfx
+        push eax
+#else
+        push offset minds_eye_gfx
+#endif
+        mov ecx, ICONS_LOD_ADDR
+        call dword ptr ds:load_bitmap
+        mov ebx, eax
+        mov dword ptr [esp], 0x43e1c0 ; code after setting coords
+        ret
+      }
+}
+
 // Add the new properties to some old artifacts,
 // and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
@@ -15546,6 +15580,7 @@ static inline void new_artifacts(void)
     hook_call(0x4397ec, provide_mace_chance, 6); // stun
     hook_call(0x439818, provide_mace_chance, 6); // paralysis
     hook_jump(0x48f27c, (void *) 0x48f23d); // remove of prot. from hero's belt
+    hook_call(0x43e12f, display_new_helm, 5);
 }
 
 // When calculating missile damage, take note of the weapon's skill.

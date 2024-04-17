@@ -1320,6 +1320,8 @@ enum monster_buffs
 #define TOPIC_COUNT 626
 // count of added NPC text entries
 #define NEW_TEXT_COUNT (897-789)
+// new award count
+#define AWARD_COUNT 106
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658
@@ -11961,6 +11963,19 @@ static inline void misc_rules(void)
     hook_jump(0x43a4e9, shield_stacking_hook);
     hook_call(0x446970, new_event_command, 5);
     hook_call(0x448d8b, summon_soldiers, 5);
+    // Extend the parsed awards.txt array.  (Addresses taken from MMExt.)
+    static struct { char *text; int32_t type; } awards[AWARD_COUNT+1];
+    patch_pointer(0x41910b, awards);
+    patch_pointer(0x41919d, &awards[0].type);
+    patch_pointer(0x4191a4, &awards[0].type);
+    patch_pointer(0x41a14a, awards);
+    patch_pointer(0x41a1f7, &awards[0].type);
+    patch_pointer(0x44a887, awards);
+    patch_pointer(0x44b222, awards);
+    patch_pointer(0x47642e, &awards[1]);
+    patch_pointer(0x4956ec, awards);
+    patch_byte(0x41913a, AWARD_COUNT + 1); // TODO: will overflow at 127+
+    patch_pointer(0x4764b7, awards + AWARD_COUNT + 1);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

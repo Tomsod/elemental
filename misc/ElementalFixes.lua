@@ -37,3 +37,6 @@ DataTables.LazyMode = true -- prevent the tables from being re-created in v2.3
 rawset(Game.MapStats, "count", 78)
 -- Same for the hireling text array.
 if Game.NPCProfNames then rawset(Game.NPCProfNames, "limit", 63) end
+-- Also the award text/category array (which is relocated by us).
+rawset(Party.PlayersArray[0].Awards, "count", 500) -- there are 512 pc bits
+rawset(Game.AwardsTxt, "?ptr", mem.u4[0x41910b]) -- must provide new address

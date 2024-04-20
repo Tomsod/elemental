@@ -361,6 +361,7 @@ enum new_strings
     STR_NO_INITIATE_TOKEN,
     STR_MANA_ANCHOR_TRIGGERED,
     STR_QUICK_REPAIR,
+    STR_ARENA_CHAMPION,
     NEW_STRING_COUNT
 };
 
@@ -787,6 +788,7 @@ enum face_animations
 #define SOUND_DRINK 210
 #define SOUND_DIE 18100
 
+#define EVT_AWARDS 12
 #define EVT_QBITS 16
 #define EVT_AUTONOTES 223
 // my additions
@@ -877,6 +879,10 @@ static struct elemdata
     int last_bank_gold;
     // Additional quick spells, bound to the mod's new hotkeys.
     int quick_spells[4][4];
+    // Total amount of arena wins multiplied by difficulty (determines prizes).
+    int arena_points;
+    // Whether the ultimate arena prize was already given.
+    int arena_champion;
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -1321,7 +1327,7 @@ enum monster_buffs
 // count of added NPC text entries
 #define NEW_TEXT_COUNT (897-789)
 // new award count
-#define AWARD_COUNT 106
+#define AWARD_COUNT 107
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658
@@ -11778,6 +11784,74 @@ static void __declspec(naked) summon_soldiers(void)
       }
 }
 
+// Remember the current prize for the NPC text code.
+static int arena_prize = 0;
+
+// Reward 10 Lord Arena wins (or more at lower tiers) with an artifact.
+static void __declspec(naked) special_arena_prize(void)
+{
+    asm
+      {
+        mov dword ptr [arena_prize], ebx ; reset (ebx == 0)
+        movzx ecx, byte ptr [0xacd5ed] ; chosen arena topic
+        sub ecx, 84 ; now it`s earned points
+        add dword ptr [elemdata.arena_points], ecx
+        cmp ecx, 4
+        jne skip
+        cmp dword ptr [elemdata.arena_points], 40
+        jb skip
+        cmp dword ptr [elemdata.arena_champion], ebx
+        jnz skip
+        sub esp, 36
+        mov ecx, esp
+        call dword ptr ds:generate_artifact
+        test eax, eax
+        jz restore
+        mov eax, dword ptr [esp] ; art id
+        mov dword ptr [arena_prize], eax
+        inc dword ptr [elemdata.arena_champion]
+        or byte ptr [esp].s_item.flags, IFLAGS_ID ; we print the name anyway
+        push esp
+        mov ecx, PARTY_BIN_ADDR
+        call dword ptr ds:add_mouse_item
+        mov ebx, SIZE_PLAYER * 4
+        award_loop:
+        lea ecx, [PARTY_ADDR+ebx-SIZE_PLAYER]
+        push 107 ; new arena award
+        push EVT_AWARDS
+        call dword ptr ds:evt_set
+        sub ebx, SIZE_PLAYER
+        jnz award_loop
+        restore:
+        add esp, 36
+        skip:
+        mov ecx, SOUND_THIS_ADDR ; replaced code
+        ret
+      }
+}
+
+// Also print the Arena NPC reply corresponding to the reward.
+static void __declspec(naked) arena_prize_text(void)
+{
+    asm
+      {
+        mov eax, dword ptr [arena_prize]
+        test eax, eax
+        jnz prize
+        jmp dword ptr ds:sprintf ; replaced call
+        prize:
+        push dword ptr [esp+12] ; gold amount
+        lea eax, [eax+eax*2]
+        shl eax, 4
+        push dword ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.name
+        push dword ptr [new_strings+STR_ARENA_CHAMPION*4]
+        push esi
+        call dword ptr ds:sprintf
+        add esp, 16
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -11976,6 +12050,8 @@ static inline void misc_rules(void)
     patch_pointer(0x4956ec, awards);
     patch_byte(0x41913a, AWARD_COUNT + 1); // TODO: will overflow at 127+
     patch_pointer(0x4764b7, awards + AWARD_COUNT + 1);
+    hook_call(0x4bbd54, special_arena_prize, 5);
+    hook_call(0x445600, arena_prize_text, 5);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

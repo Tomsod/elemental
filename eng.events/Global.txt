@@ -795,3 +795,4 @@ Global Text
 792	You have to either be fully promoted, or present an initiate token, to learn this skill level.
 793	Your magic is wrested out of your body!
 794	%d / %d items repaired
+795	Congratulations on yet another win… you're officially Champions now… your reward is %s and %u gold.

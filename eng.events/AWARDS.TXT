@@ -105,3 +105,4 @@ A Bit	Awards	Sort	Notes
 104	ArcoMage losses: %lu	1
 105	Retrieved the Medusa's Mirror	3
 106	Manticore Hunter	3
+107	Champion of the Arena	1

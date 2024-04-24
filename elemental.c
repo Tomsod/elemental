@@ -362,6 +362,13 @@ enum new_strings
     STR_MANA_ANCHOR_TRIGGERED,
     STR_QUICK_REPAIR,
     STR_ARENA_CHAMPION,
+    STR_HOURGLASS_USED,
+    STR_MAP_REFILL,
+    STR_MAP_REFILL_SOON_1,
+    STR_MAP_REFILL_SOON_2,
+    STR_MAP_REFILL_SOON_3,
+    STR_MAP_REFILL_SOON_4,
+    STR_ARENA_HOURGLASS,
     NEW_STRING_COUNT
 };
 
@@ -704,6 +711,7 @@ enum items
     GOLDEN_APPLE = 788,
     WINE_BOTTLE = 789,
     MAGIC_WINE = 790,
+    HOURGLASS_OF_IMPATIENCE = 791,
 };
 
 enum item_slot
@@ -786,10 +794,12 @@ enum face_animations
 #define SOUND_TURN_PAGE_UP 204
 #define SOUND_SPELL_FAIL 209
 #define SOUND_DRINK 210
+#define SOUND_HARM 16031
 #define SOUND_DIE 18100
 
 #define EVT_AWARDS 12
 #define EVT_QBITS 16
+#define EVT_ITEMS 17
 #define EVT_AUTONOTES 223
 // my additions
 #define EVT_REP_GROUP 400
@@ -1216,7 +1226,9 @@ struct __attribute__((packed)) mapstats_item
     SKIP(4);
     char *monster2;
     char *monster3;
-    SKIP(24);
+    SKIP(8);
+    int refill_days;
+    SKIP(12);
     uint8_t reputation_group; // my addition
     SKIP(23);
 };
@@ -8647,6 +8659,29 @@ static void load_map_rep(void)
       {
         elemdata.current_map = map_index;
         elemdata.map_enter_time = CURRENT_TIME;
+        // Provide hints about a recent or upcoming map refill.
+        if (!MAPSTATS[map_index].refill_days) // not in proving grounds
+            return;
+        int refill_addr = dword(OUTDOORS) == 2 ? 0x6a1138 : 0x6be50c;
+        static int castle, bottle; // these two never refill
+        if (!castle) castle = get_map_index(MAPSTATS, "d29.blv");
+        if (!bottle) bottle = get_map_index(MAPSTATS, "nwc.blv");
+        //  refill count, starts at 1  last visit time, 0 if just refilled
+        if (dword(refill_addr) > 1 && !*(uint64_t *) (refill_addr + 40))
+            show_status_text(new_strings[STR_MAP_REFILL], 4);
+        else if (map_index != castle - 1 && map_index != bottle - 1)
+          {
+            unsigned int day = CURRENT_TIME >> 13;
+            day /= 256 * 60 * 24 >> 13; // avoid long division dependency
+            int left = MAPSTATS[map_index].refill_days - day - 1
+                     + dword(refill_addr + 4); // last refill day
+            if (left <= 28)
+              {
+                int text = STR_MAP_REFILL_SOON_1 + (left <= 14) + (left <= 7)
+                                                 + (left <= 3);
+                show_status_text(new_strings[text], 4);
+              }
+          }
       }
 }
 
@@ -10911,12 +10946,12 @@ static void __declspec(naked) temple_heal_price(void)
       }
 }
 
-// Multiply Arena money reward by 5.
+// Multiply Arena money reward by 3.
 static void __declspec(naked) increase_arena_reward(void)
 {
     asm
       {
-        lea eax, [eax+eax*4]
+        lea eax, [eax+eax*2]
         mov dword ptr [0xf8b034], eax ; replaced code
         ret
       }
@@ -11788,6 +11823,7 @@ static void __declspec(naked) summon_soldiers(void)
 static int arena_prize = 0;
 
 // Reward 10 Lord Arena wins (or more at lower tiers) with an artifact.
+// Also award a magic hourglass (for yet more fighting!) ocassionally.
 static void __declspec(naked) special_arena_prize(void)
 {
     asm
@@ -11797,11 +11833,11 @@ static void __declspec(naked) special_arena_prize(void)
         sub ecx, 84 ; now it`s earned points
         add dword ptr [elemdata.arena_points], ecx
         cmp ecx, 4
-        jne skip
+        jne not_champion
         cmp dword ptr [elemdata.arena_points], 40
-        jb skip
+        jb not_champion
         cmp dword ptr [elemdata.arena_champion], ebx
-        jnz skip
+        jnz not_champion
         sub esp, 36
         mov ecx, esp
         call dword ptr ds:generate_artifact
@@ -11824,6 +11860,20 @@ static void __declspec(naked) special_arena_prize(void)
         jnz award_loop
         restore:
         add esp, 36
+        not_champion:
+        cmp dword ptr [arena_prize], ebx
+        jnz skip
+        mov eax, dword ptr [elemdata.arena_points]
+        xor edx, edx
+        lea ecx, [edx+5]
+        div ecx
+        add edx, 84
+        cmp dl, byte ptr [0xacd5ed] ; below if just passed a multiple of 5
+        jae skip
+        mov dword ptr [arena_prize], HOURGLASS_OF_IMPATIENCE
+        push HOURGLASS_OF_IMPATIENCE
+        push EVT_ITEMS
+        call dword ptr ds:evt_set
         skip:
         mov ecx, SOUND_THIS_ADDR ; replaced code
         ret
@@ -11841,10 +11891,13 @@ static void __declspec(naked) arena_prize_text(void)
         jmp dword ptr ds:sprintf ; replaced call
         prize:
         push dword ptr [esp+12] ; gold amount
-        lea eax, [eax+eax*2]
-        shl eax, 4
-        push dword ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.name
-        push dword ptr [new_strings+STR_ARENA_CHAMPION*4]
+        lea ecx, [eax+eax*2]
+        shl ecx, 4
+        push dword ptr [ITEMS_TXT_ADDR+ecx].s_items_txt_item.name
+        cmp eax, HOURGLASS_OF_IMPATIENCE
+        cmovne edx, dword ptr [new_strings+STR_ARENA_CHAMPION*4]
+        cmove edx, dword ptr [new_strings+STR_ARENA_HOURGLASS*4]
+        push edx
         push esi
         call dword ptr ds:sprintf
         add esp, 16
@@ -14605,8 +14658,8 @@ static void __declspec(naked) dark_bottle_temple(void)
 
 // Allow using Oghma Infinium and the bag of holding, by dragging the item
 // to the character's portrait.  Both new arts cannot be used unidentified.
-// Golden apples are also handled here (no ID check for them),
-// and so are wine bottles (ordinary and magical both).
+// Golden apples are also handled here (no ID check for them), and so are
+// wine bottles (ordinary and magical both) and the Arena hourglass reward.
 // Finally, there's Clanker's Journal which does require identification.
 static void __declspec(naked) new_consumable_items(void)
 {
@@ -14616,6 +14669,8 @@ static void __declspec(naked) new_consumable_items(void)
         je magic
         cmp eax, WINE_BOTTLE
         je wine
+        cmp eax, HOURGLASS_OF_IMPATIENCE
+        je hourglass
         cmp eax, GOLDEN_APPLE
         jne not_apple
         mov ecx, dword ptr [ebp+8] ; player id
@@ -14670,7 +14725,7 @@ static void __declspec(naked) new_consumable_items(void)
         push eax
         push SPL_FEATHER_FALL
         call dword ptr ds:spell_face_anim
-        ; one unused parameter
+        push ebx ; unused
         push ANIM_LEARN
         mov ecx, esi
         call dword ptr ds:show_face_animation
@@ -14728,9 +14783,36 @@ static void __declspec(naked) new_consumable_items(void)
         push ANIM_LEARN
         mov ecx, esi
         call dword ptr ds:show_face_animation
+        jmp remove
+        hourglass:
+        mov eax, dword ptr [0x6bdfbc] ; map index
+        dec eax ; we use element 0 now
+        imul eax, eax, SIZE_MAPSTAT
+        mov eax, dword ptr [MAPSTATS_ADDR+eax].s_mapstats_item.refill_days
+        cmp dword ptr [OUTDOORS], 2
+        jne indoors
+        shr eax, 1 ; may need to be used twice
+        sub dword ptr [0x6a113c], eax ; last refill day
+        jmp message
+        indoors:
+        sub dword ptr [0x6be510], eax ; ditto
+        message:
+        mov ecx, dword ptr [new_strings+STR_HOURGLASS_USED*4]
+        mov edx, 2
+        call dword ptr ds:show_status_text
+        push ebx
+        push ebx
+        push ebx
+        push ebx
+        push -1
+        push ebx
+        push ebx
+        push SOUND_HARM
+        mov ecx, SOUND_THIS_ADDR
+        call dword ptr ds:make_sound
         remove:
-        mov eax, 0x468e7c ; remove the item
-        jmp eax
+        mov dword ptr [esp], 0x468e7c ; remove the item
+        ret
         bag:
         cmp dword ptr [CURRENT_SCREEN], 10 ; chest
         je fail

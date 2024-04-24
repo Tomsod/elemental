@@ -780,7 +780,7 @@ Global Text
 777	Insanity
 778	Disease
 779	Paralysis
-780	Stun
+780	Knockout
 781	Death
 782	Petrifaction
 783	Eradication
@@ -796,3 +796,10 @@ Global Text
 793	Your magic is wrested out of your body!
 794	%d / %d items repaired
 795	Congratulations on yet another win… you're officially Champions now… your reward is %s and %u gold.
+796	You feel the winds of change pick up around you…
+797	This place has changed from what you remember.
+798	You hear faint whispers of the winds of change here.
+799	As you enter, the winds of change ruffle your clothes.
+800	The winds of change blow strongly in this place.
+801	The winds of change here hit you like a gale!
+802	Congratulations on yet another win… here's your stuff… %s and %u gold.

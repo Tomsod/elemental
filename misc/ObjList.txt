@@ -272,3 +272,4 @@ Blaster Eradication	12060	16	16	-	-	x	x	x	x	-	-	-	-	-	blserad	56	0	0	0	0	0
 Robe	152	64	64	-	-	-	-	-	-	-	x	-	-	-	objrobe	0	0	0	0	0	0
 Throwing Knives	153	64	64	-	-	-	-	-	-	-	x	-	-	-	objknife	0	0	0	0	0	0
 Wine	154	64	64	-	-	-	-	-	-	-	x	-	-	-	objwine	0	0	0	0	0	0
+Hourglass	155	64	64	-	-	-	-	-	-	-	x	-	-	-	objhglas	0	0	0	0	0	0

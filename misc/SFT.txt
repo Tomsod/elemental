@@ -9268,3 +9268,4 @@
 9266	objknife	objknife	65536	-	x	x	-	-	-	-	-	-	-	-	-	-	-	-	-	-	0	3	2
 9267	petelem	petelem	78643	-	x	-	-	-	-	-	-	-	-	-	x	x	x	-	-	-	0	998	2
 9268	objwine	objwine	65536	-	x	x	-	-	-	-	-	-	-	-	-	-	-	-	-	-	0	1	2
+9269	objhglas	objhglas	65536	-	x	x	-	-	-	-	-	-	-	-	-	-	-	-	-	-	0	1	2

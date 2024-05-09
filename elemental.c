@@ -15625,6 +15625,38 @@ static void __declspec(naked) display_new_helm(void)
       }
 }
 
+// Used just below.
+static const char elven_chain_gfx[] = "elchv2a0";
+
+// Provide new equipped sprite names for the Elven Chainmail.
+static void __declspec(naked) elven_chainmail_gfx(void)
+{
+    asm
+      {
+        cmp edx, ELVEN_CHAINMAIL
+        je elven
+        lea eax, [edx-GOVERNORS_ARMOR] ; replaced code
+        cmp eax, 46 ; ditto
+        ret
+        elven:
+#ifdef __clang__
+        mov eax, offset elven_chain_gfx
+        push eax
+#else
+        push offset elven_chain_gfx
+#endif
+        push ecx ; buffer
+        call dword ptr ds:strcpy_ptr
+        add esp, 8
+        mov ecx, dword ptr [ebp+8] ; body type
+        mov edx, dword ptr [ebp+12] ; sprite type
+        and ecx, 1 ; no dwarves
+        sub byte ptr [eax+5], cl
+        add byte ptr [eax+7], dl
+        ret ; ja should trigger now
+      }
+}
+
 // Add the new properties to some old artifacts,
 // and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
@@ -15754,6 +15786,18 @@ static inline void new_artifacts(void)
     hook_call(0x439818, provide_mace_chance, 6); // paralysis
     hook_jump(0x48f27c, (void *) 0x48f23d); // remove of prot. from hero's belt
     hook_call(0x43e12f, display_new_helm, 5);
+    hook_call(0x43c952, elven_chainmail_gfx, 9);
+    // Set equip coords.
+    dword(0x4e4e00 + 16 * 8) = 29; // male body x
+    dword(0x4e5020 + 16 * 8) = 94; // male arm 1 x
+    dword(0x4e5240 + 16 * 8) = 92; // male arm 2 x
+    dword(0x4e5240 + 16 * 8 + 4) = 106; // male arm 2 y
+    dword(0x4e4e00 + 17 * 8 + 16 * 8) = 27; // female body x
+    dword(0x4e4e00 + 17 * 8 + 16 * 8 + 4) = 103; // female body y
+    dword(0x4e5020 + 17 * 8 + 16 * 8) = 92; // female arm 1 x
+    dword(0x4e5020 + 17 * 8 + 16 * 8 + 4) = 108; // female arm 1 y
+    dword(0x4e5240 + 17 * 8 + 16 * 8) = 88; // female arm 2 x
+    dword(0x4e5240 + 17 * 8 + 16 * 8 + 4) = 108; // female arm 2 y
 }
 
 // When calculating missile damage, take note of the weapon's skill.

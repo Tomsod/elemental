@@ -600,6 +600,8 @@ enum items
     BLASTER_RIFLE = 65,
     FIRST_SHIELD = 79,
     LAST_SHIELD = 88, // not counting relics etc.
+    HORNED_HELM = 89,
+    LEATHER_CLOAK = 105,
     LAST_OLD_PREFIX = 134, // before robes and knives were added
     FIRST_WAND = 135,
     LAST_WAND = 159,
@@ -633,6 +635,7 @@ enum items
     SHOCKING_POTION = 249,
     SWIFT_POTION = 250,
     POTION_DIVINE_CURE = 253,
+    POTION_DIVINE_MAGIC = 254,
     FIRST_BLACK_POTION = 262,
     SLAYING_POTION = 263,
     PURE_LUCK = 264,
@@ -945,7 +948,7 @@ enum item_types
     ITEM_TYPE_POTION = 15,
     ITEM_TYPE_SCROLL = 16,
     ITEM_TYPE_BOOK = 17,
-    ITEM_TYPE_GEM = 20,
+    ITEM_TYPE_GEM = 20, // sometimes it's "1h weapon" instead
     ITEM_TYPE_SWORD = 23,
     ITEM_TYPE_DAGGER = 24,
     ITEM_TYPE_AXE = 25,
@@ -953,6 +956,7 @@ enum item_types
     ITEM_TYPE_BOW = 27,
     ITEM_TYPE_MACE = 28,
     ITEM_TYPE_STAFF = 30,
+    ITEM_TYPE_GEMS = 46, // use instead of GEM in randomize_item()
     // my additions
     ITEM_TYPE_ROBE = 47,
     ITEM_TYPE_SPECIAL = 48,
@@ -1608,6 +1612,9 @@ static void __thiscall (*add_mouse_item)(void *this, struct item *item)
 #define PARTY_BIN ((void *) PARTY_BIN_ADDR)
 static int __thiscall (*put_in_backpack)(void *player, int slot, int item_id)
     = (funcptr_t) 0x4927a0;
+static int __thiscall (*put_item_in_backpack)(struct player *player, int slot,
+                                              struct item *item)
+    = (funcptr_t) 0x49281e;
 static void __thiscall (*make_sound)(void *this, int sound, int object,
                                      int loops, int x, int y, int angle,
                                      int volume, int playback_rate)
@@ -4414,18 +4421,7 @@ static void __declspec(naked) rnd_robe_type(void)
       }
 }
 
-// Let Monks (and whoever else gets Dodging) start with a robe.
-static void __declspec(naked) starting_robe(void)
-{
-    asm
-      {
-        push PILGRIMS_ROBE
-        mov eax, 0x49785c ; to the give-item code
-        jmp eax
-      }
-}
-
-// In additional to vanilla Arms, Dodging, and Fist,
+// In addition to vanilla Arms, Dodging, and Fist,
 // also halve HP, SP, Thievery, and Disarm enchantments.
 static void __declspec(naked) halve_more_ench(void)
 {
@@ -4869,6 +4865,93 @@ static void __declspec(naked) repair_recovery(void)
       }
 }
 
+// Give more varied items for starting with misc skills.
+static void __declspec(naked) new_game_items(void)
+{
+    asm
+      {
+        cmp eax, 21
+        jbe vanilla
+        sub eax, 22
+        jz id_item
+        dec eax
+        jz merchant
+        dec eax
+        jz repair
+        dec eax
+        jz bodybuilding
+        dec eax
+        jz meditation
+        dec eax
+        jz perception
+        dec eax
+        jz dodging
+        dec eax
+        jz id_monster
+        dec eax
+        jz thievery
+        dec eax
+        jnz skip
+        ; otherwise learning
+        push HORNED_HELM
+        jmp item
+        thievery:
+        push LEATHER_CLOAK
+        jmp item
+        dodging:
+        push PILGRIMS_ROBE
+        jmp item
+        repair:
+        push MAGIC_EMBER
+        item:
+        push edi ; == -1
+        mov ecx, esi ; pc
+        call dword ptr ds:put_in_backpack
+        jmp skip
+        id_item:
+        mov eax, ITEM_TYPE_WAND
+        jmp random_item
+        merchant:
+        mov eax, ITEM_TYPE_BELT
+        jmp random_item
+        perception:
+        mov eax, ITEM_TYPE_GEMS
+        jmp random_item
+        id_monster:
+        mov eax, ITEM_TYPE_AMULET
+        random_item:
+        sub esp, SIZE_ITEM
+        push esp
+        push eax
+        push 2
+        mov ecx, ITEMS_TXT_ADDR - 4
+        call dword ptr ds:randomize_item
+        jmp put_in
+        meditation:
+        inc edi
+        bodybuilding:
+        sub esp, SIZE_ITEM
+        push esp
+        push ITEM_TYPE_POTION
+        push 4
+        mov ecx, ITEMS_TXT_ADDR - 4
+        call dword ptr ds:randomize_item
+        add edi, POTION_DIVINE_MAGIC ; cure for bb
+        mov dword ptr [esp], edi
+        or edi, -1 ; restore
+        put_in:
+        push esp
+        push edi
+        mov ecx, esi
+        call dword ptr ds:put_item_in_backpack
+        add esp, SIZE_ITEM
+        skip:
+        mov eax, 21 ; skip vanilla code
+        vanilla:
+        jmp dword ptr [0x4978dd+eax*4] ; replaced code
+      }
+}
+
 // Misc item tweaks.
 static inline void misc_items(void)
 {
@@ -4909,7 +4992,6 @@ static inline void misc_items(void)
     ARMOR_SHOP_SPC[6][1][4] = ITEM_TYPE_ROBE;
     ARMOR_SHOP_STD[10][1][3] = ITEM_TYPE_ROBE; // castle
     ARMOR_SHOP_SPC[10][1][3] = ITEM_TYPE_ROBE;
-    patch_pointer(0x497929, starting_robe);
     hook_call(0x456b57, halve_more_ench, 5);
     patch_dword(0x48f3da, 0x48f532 - 0x48f3de); // of earth: 10 -> 5 HP
     patch_byte(0x48f42e, 39); // of life: 10 -> 5 HP
@@ -4932,6 +5014,21 @@ static inline void misc_items(void)
     hook_call(0x4162f8, alchemy_soft_cap, 7);
     hook_call(0x468243, apple_cure_weakness, 5);
     hook_call(0x41da41, repair_recovery, 5);
+    hook_jump(0x49773e, new_game_items);
+    // Add the new entries to the vanilla jumptable.
+    patch_byte(0x497935 + SKILL_IDENTIFY_ITEM, 22);
+    patch_byte(0x497935 + SKILL_MERCHANT, 23);
+    patch_byte(0x497935 + SKILL_REPAIR, 24);
+    patch_byte(0x497935 + SKILL_BODYBUILDING, 25);
+    patch_byte(0x497935 + SKILL_MEDITATION, 26);
+    patch_byte(0x497935 + SKILL_PERCEPTION, 27);
+    patch_byte(0x497935 + SKILL_DISARM_TRAPS, 19); // old dodging (boots)
+    patch_byte(0x497935 + SKILL_DODGING, 28);
+    patch_byte(0x497935 + SKILL_IDENTIFY_MONSTER, 29);
+    patch_byte(0x497935 + SKILL_ARMSMASTER, 20); // same as unarmed for now
+    patch_byte(0x497935 + SKILL_THIEVERY, 30);
+    patch_byte(0x497935 + SKILL_ALCHEMY, 18); // vanilla bottle + reagent
+    patch_byte(0x497935 + SKILL_LEARNING, 31);
 }
 
 static uint32_t potion_damage;

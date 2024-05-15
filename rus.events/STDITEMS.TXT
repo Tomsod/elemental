@@ -11,7 +11,7 @@ Bonus Stat	Of Name	Arm	Shld	Helm	Belt	Cape	Gaunt	Boot	Ring	Amul	Robe	Crown	Craft
 Удача	Удачи	5	0	10	10	10	10	10	10	10	5	5	255	Luck Boost potion
 Единицы здоровья	Здоровья	10	5	5	0	10	5	10	10	10	20	20	253	Divine Cure potion
 Очки магии	Магии	10	5	10	0	10	10	10	10	10	20	20	254	Divine Power potion
-Класс брони	Защиты	20	20	10	0	10	10	5	10	10	40	0	236	Harden Item potion
+Класс брони	Защиты	20	20	10	0	10	10	5	0	0	40	0	236	Harden Item potion
 Защита от огня	Защиты от огня	10	10	5	0	10	15	5	10	10	5	5	256	Fire Resistance potion
 Защита от грома	Защиты от грома	10	10	5	0	10	15	5	10	10	5	5	257	Shock Resistance potion
 Защита от холода	Защиты от холода	10	10	5	0	10	15	5	10	10	5	5	258	Cold Resistance potion

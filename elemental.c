@@ -1135,7 +1135,9 @@ struct __attribute__((packed)) map_monster
     uint8_t physical_resistance;
     SKIP(6);
     uint16_t id;
-    SKIP(10);
+    SKIP(2);
+    uint16_t spell1_skill;
+    SKIP(6);
     uint32_t max_hp;
     SKIP(4);
     uint32_t experience;
@@ -7656,6 +7658,40 @@ static void __declspec(naked) variable_spike_count(void)
       }
 }
 
+// For completeness, let monsters instakill other monsters with Incinerate.
+static void __declspec(naked) mvm_incinerate(void)
+{
+    asm
+      {
+        cmp ecx, SPL_INCINERATE * 9
+        movzx ecx, byte ptr [0x5cbecc+ecx*4] ; replaced code (spell element)
+        jne skip
+        push eax ; preserve
+        push ecx ; ditto
+        push ecx
+        push esi
+        call dword ptr ds:monster_resists_condition
+        test eax, eax
+        jz ok
+        call dword ptr ds:random
+        xor edx, edx
+        mov ecx, 100
+        div ecx
+        mov ecx, dword ptr [ebp+12] ; attack type
+        mov ax, word ptr [edi+ecx*2-2*2].s_map_monster.spell1_skill ; 1 or 2
+        and eax, SKILL_MASK
+        lea eax, [eax+eax*2] ; 3% per level
+        cmp eax, edx
+        jbe ok
+        and word ptr [esi].s_map_monster.hp, 0
+        ok:
+        pop ecx
+        pop eax
+        skip:
+        ret
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -7948,6 +7984,8 @@ static inline void misc_spells(void)
     SPELL_INFO[SPL_SUNRAY].delay_expert = 110;
     SPELL_INFO[SPL_SUNRAY].delay_master = 110;
     SPELL_INFO[SPL_SUNRAY].delay_gm = 100;
+    // PvM Incinerate in blaster_eradicate(), MvP in absorb_monster_spell()
+    hook_call(0x43b2d6, mvm_incinerate, 8);
 }
 
 // For consistency with players, monsters revived with Reanimate now have
@@ -8585,6 +8623,24 @@ static void __declspec(naked) poison_blast_id(void)
       }
 }
 
+// Vanilla bug fix: MvM spells could miss like regular attacks.
+// TODO: make an exception for Blades?
+static void __declspec(naked) never_miss_monster_spells(void)
+{
+    asm
+      {
+        xor eax, eax
+        inc eax
+        cmp dword ptr [ebp+12], eax ; attack type
+        jbe ok ; attack 1 or attack 2
+        ret 16 ; otherwise force hit
+        ok:
+        mov eax, 0x427372 ; replaced call
+        jmp eax
+
+      }
+}
+
 // Make Turn Undead and Destroy Undead castable by monsters.
 // Also enable Poison Spray for Manticores.
 static inline void new_monster_spells(void)
@@ -8600,6 +8656,7 @@ static inline void new_monster_spells(void)
     hook_call(0x40562e, poison_blast_projectile, 7);
     hook_call(0x40566f, poison_blast_id, 7);
     hook_jump(0x405756, (void *) 0x40586c); // get the correct sound
+    hook_call(0x43b25e, never_miss_monster_spells, 5);
 }
 
 // Calling atoi directly from assembly doesn't seem to work,
@@ -12861,8 +12918,6 @@ static void __declspec(naked) display_cursed_debuff(void)
 }
 
 // Cursed monsters also miss 50% of attacks against other monsters.
-// Because spells in MvM combat also have a to-hit roll for some reason,
-// only 25% of such spells will succeed if attacker is cursed!  Oh well.
 static void __declspec(naked) cursed_monster_hits_monster(void)
 {
     asm

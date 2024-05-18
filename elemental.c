@@ -846,6 +846,7 @@ typedef struct map_chest s_map_chest;
 #define MAP_CHESTS_ADDR 0x5e4fd0
 #define MAP_CHESTS ((struct map_chest *) MAP_CHESTS_ADDR)
 #define EXTRA_CHEST_COUNT 8
+#define BOH_CHEST_ID 7 // must be last, for looping through all items
 
 // All the stuff I need to preserve across save/loads (except WoM barrels).
 static struct elemdata
@@ -8705,10 +8706,9 @@ static void new_game_data(void)
     elemdata.version = 400; // v4.0.0
     for (int i = 0; i < EXTRA_CHEST_COUNT; i++)
       {
-        elemdata.extra_chests[i].picture = 6;
+        elemdata.extra_chests[i].picture = i ? 6 : 3; // [0] is bank safe
         elemdata.extra_chests[i].bits = 2;
       }
-    elemdata.extra_chests[7].picture = 3; // bank safe
     reputation_group[0] = 0; // will be set on map load
     reputation_index = 0;
     replaced_chest = -1;
@@ -11780,7 +11780,7 @@ static void __declspec(naked) open_deposit_box(void)
         mov ecx, ACTION_THIS_ADDR
         call dword ptr ds:add_action
         push 1 ; preserve action
-        push 7
+        push edi
         push ACTION_EXTRA_CHEST
         mov ecx, ACTION_THIS_ADDR
         call dword ptr ds:add_action
@@ -14981,7 +14981,7 @@ static void __declspec(naked) new_consumable_items(void)
         call dword ptr ds:add_action
         exited:
         push 1 ; so it`ll be preserved on exit
-        push 0
+        push BOH_CHEST_ID
         push ACTION_EXTRA_CHEST
         mov ecx, ACTION_THIS_ADDR
         call dword ptr ds:add_action
@@ -15241,7 +15241,7 @@ static void __declspec(naked) no_boh_recursion(void)
         jne quit
         cmp dword ptr [ebp+8], 0
         jnz quit
-        cmp dword ptr [replaced_chest], 0
+        cmp dword ptr [replaced_chest], BOH_CHEST_ID
         jz fail
         quit:
         mov edx, dword ptr [0x4e2bec+eax] ; replaced code
@@ -24573,8 +24573,55 @@ static int __declspec(naked) __thiscall patch_active_player_check(void *player)
       }
 }
 
+// Get a bitfield of every active extra chest (except BoH).
+static int get_active_chests(void)
+{
+    int result = 0;
+    if (have_npc_hired(NPC_PORTER))
+        result = 1 << 1;
+    if (have_npc_hired(NPC_QUARTER_MASTER))
+        result |= 1 << 2 | 1 << 3;
+    if (have_npc_hired(NPC_GYPSY))
+        result |= 1 << 4;
+    if (byte(NPC_ADDR + HORSE_HARMONDALE * 76 + 8) & NPC_HIRED
+        || byte(NPC_ADDR + HORSE_DEYJA * 76 + 8) & NPC_HIRED)
+        result |= 1 << 5 | 1 << 6;
+    else if (byte(NPC_ADDR + HORSE_ERATHIA * 76 + 8) & NPC_HIRED
+             || byte(NPC_ADDR + HORSE_TULAREAN * 76 + 8) & NPC_HIRED)
+        result |= 1 << 5;
+    return result;
+}
+
+// Repurpose the vanilla delete-from-chest function for our new chests.
+// NB: this bypasses a MM7Patch hook that fixes glitches from mid-game item
+// size change; the bug shouldn't be applicable to my mod, unless misused.
+static void __fastcall __declspec(naked) delete_extra_chest_item(int chest,
+                                                                 int slot)
+{
+    asm
+      {
+        push ebp
+        mov ebp, esp
+        sub esp, 20
+        push ebx
+        push esi
+        push edi
+        mov dword ptr [ebp-8], ecx
+        imul ecx, ecx, SIZE_CHEST
+        movsx eax, word ptr [elemdata.extra_chests+ecx+edx*2].s_map_chest.slots
+        lea ebx, [eax+eax*8]
+        lea ebx, [elemdata.extra_chests+ecx+ebx*4-SIZE_ITEM].s_map_chest.items
+        mov eax, offset elemdata.extra_chests - MAP_CHESTS_ADDR
+        shr eax, 1
+        add edx, eax
+        mov dword ptr [ebp-12], edx
+        mov edx, 9 ; chest width
+        mov eax, 0x420af1 ; (part of) the vanilla func
+        jmp eax
+      }
+}
+
 // A new hotkey for chugging a healing potion.  Idea from MAW.
-// TODO: should we look into porter etc. inventories?
 static void quick_heal(void)
 {
     int current = dword(CURRENT_PLAYER);
@@ -24585,21 +24632,37 @@ static void quick_heal(void)
     if (wounded <= 0 || !patch_active_player_check(player))
         return;
     int found_player = -2, found_slot, top_heal = -wounded;
-    for (int p = -1; p < 4; p++)
-        for (int i = 14 * 9 - 1; i >= 0; i--)
+    int chests = get_active_chests();
+    replace_chest(-1);
+    for (int p = -1; p < 4 + EXTRA_CHEST_COUNT; p++)
+      {
+        int limit = 14 * 9;
+        if (p < 0)
+            limit = 1; // no inner loop
+        else if (p >= 4)
+          {
+            if (~chests & 1 << (p - 4))
+                continue;
+            limit = 9 * 9;
+          }
+        for (int i = limit - 1; i >= 0; i--)
           {
             struct item *check;
             if (p < 0)
-              {
                 check = (void *) MOUSE_ITEM;
-                i = 0; // no inner loop
-              }
-            else
+            else if (p < 4)
               {
                 int slot = PARTY[p].inventory[i];
                 if (slot <= 0)
                     continue;
                 check = &PARTY[p].items[slot-1];
+              }
+            else
+              {
+                int slot = elemdata.extra_chests[p-4].slots[i];
+                if (slot <= 0)
+                    continue;
+                check = &elemdata.extra_chests[p-4].items[slot-1];
               }
             int heal;
             switch (check->id)
@@ -24613,6 +24676,10 @@ static void quick_heal(void)
                 case POTION_ULTIMATE_CURE:
                     heal = check->bonus;
                     break;
+                case BAG_OF_HOLDING:
+                    if (check->flags & IFLAGS_ID)
+                        chests |= 1 << BOH_CHEST_ID;
+                    // fallthrough
                 default:
                     continue;
               }
@@ -24624,6 +24691,7 @@ static void quick_heal(void)
                 found_slot = i;
               }
           }
+      }
     if (found_player == -2)
       {
         show_status_text(new_strings[STR_NO_HEALING_POTIONS], 2);
@@ -24635,8 +24703,10 @@ static void quick_heal(void)
     make_sound(SOUND_THIS, SOUND_DRINK, 0, 0, -1, 0, 0, 0, 0);
     if (found_player < 0)
         remove_mouse_item(MOUSE_THIS);
-    else
+    else if (found_player < 4)
         delete_backpack_item(PARTY + found_player, found_slot);
+    else
+        delete_extra_chest_item(found_player - 4, found_slot);
     recover_player(current, 100);
 }
 
@@ -24646,26 +24716,37 @@ static void quick_repair(void)
     int current = dword(CURRENT_PLAYER);
     if (!current)
         return;
-    int found = FALSE;
-    for (struct player *player = PARTY; player < PARTY + 4 && !found; player++)
-        for (int i = 0; i < PLAYER_MAX_ITEMS; i++)
-            if (player->items[i].flags & IFLAGS_BROKEN)
-              {
-                found = TRUE;
-                break;
-              }
-    if (!found)
-        return;
     struct player *fixer = &PARTY[current-1];
-    if (!patch_active_player_check(fixer))
-        return;
     int total = 0, recover = 0, repaired = 0;
     int danger = byte(STATE_BITS) & 0x30; // enemies near
-    for (struct player *player = PARTY; player < PARTY + 4; player++)
-        for (struct item *item = player->items;
-             item < player->items + PLAYER_MAX_ITEMS; item++)
+    int chests = get_active_chests();
+    replace_chest(-1);
+    for (int p = -1; p < 4 + EXTRA_CHEST_COUNT; p++)
+      {
+        int limit = PLAYER_MAX_ITEMS;
+        if (p < 0)
+            limit = 1; // no inner loop
+        else if (p >= 4)
+          {
+            if (~chests & 1 << (p - 4))
+                continue;
+            limit = sizeof(elemdata.extra_chests[p-4].items) / SIZE_ITEM;
+          }
+        for (int i = 0; i < limit; i++)
+          {
+            struct item *item;
+            if (p < 0)
+                item = (void *) MOUSE_ITEM;
+            else if (p < 4)
+                item = &PARTY[p].items[i];
+            else
+                item = &elemdata.extra_chests[p-4].items[i];
+            if (item->id == BAG_OF_HOLDING && item->flags & IFLAGS_ID)
+                    chests |= 1 << BOH_CHEST_ID;
             if (item->flags & IFLAGS_BROKEN)
               {
+                if (!total && !patch_active_player_check(fixer))
+                    return;
                 total++;
                 int result = can_repair(fixer, item);
                 if (!result)
@@ -24679,6 +24760,10 @@ static void quick_repair(void)
                 item->flags &= ~IFLAGS_BROKEN;
                 repaired++;
               }
+          }
+      }
+    if (!total)
+        return;
     show_face_animation(fixer, repaired ? ANIM_REPAIR : ANIM_REPAIR_FAIL, 0);
     elemdata.training[current-1][SKILL_REPAIR] += recover;
     if (recover)

@@ -1346,7 +1346,7 @@ enum monster_buffs
 // count of added NPC text entries
 #define NEW_TEXT_COUNT (897-789)
 // new award count
-#define AWARD_COUNT 107
+#define AWARD_COUNT 108
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658

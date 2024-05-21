@@ -1228,7 +1228,7 @@ struct __attribute__((packed)) spell_queue_item
 
 struct __attribute__((packed)) mapstats_item
 {
-    SKIP(4);
+    char *name;
     char *file_name;
     SKIP(4);
     char *monster2;
@@ -1342,9 +1342,9 @@ enum monster_buffs
 // new NPC greeting count (starting from 1)
 #define GREET_COUNT 230
 // new NPC topic count
-#define TOPIC_COUNT 626
+#define TOPIC_COUNT 627
 // count of added NPC text entries
-#define NEW_TEXT_COUNT (897-789)
+#define NEW_TEXT_COUNT (898-789)
 // new award count
 #define AWARD_COUNT 108
 
@@ -1486,7 +1486,9 @@ struct __attribute__((packed)) stditem
 struct __attribute__((packed)) event2d
 {
     uint16_t type;
-    SKIP(30);
+    SKIP(2);
+    char *name;
+    SKIP(24);
     float multiplier;
     SKIP(16);
 };
@@ -23890,6 +23892,38 @@ static void __declspec(naked) always_restock_bottles(void)
       }
 }
 
+// Provide a hint about taverns wherein the player is yet to win at Arcomage.
+static char *arcomage_hint(void)
+{
+    static char buffer[200];
+    int chance = 1, tavern;
+    for (int i = 108; i <= 120; i++)
+        if (!byte(0xacd571+i) && !(random() % chance++))
+            tavern = i;
+    static const int regions[13] = { 1, 2, 3, 4, 5, 6, 7,
+                                     8, 9, 10, 12, 13, 38 };
+    sprintf(buffer, new_npc_text[898-790], EVENTS2D[tavern].name,
+            MAPSTATS[regions[tavern-108]].name);
+    return buffer;
+}
+
+// Hook for the above.
+static void __declspec(naked) arcomage_hint_hook(void)
+{
+    asm
+      {
+        cmp ecx, 627 ; the new topic
+        je arcomage
+        cmp ecx, 200 ; replaced code
+        ret
+        arcomage:
+        call arcomage_hint
+        mov dword ptr [CURRENT_TEXT], eax
+        add dword ptr [esp], 16 ; jump over vanilla code
+        ret
+      }
+}
+
 // Various changes to stores, guilds and other buildings.
 static inline void shop_changes(void)
 {
@@ -24006,6 +24040,7 @@ static inline void shop_changes(void)
     hook_call(0x4bb126, clip_boots_to_screen, 5); // standard
     hook_call(0x4bb1e7, clip_boots_to_screen, 5); // special
     hook_call(0x4bd5a3, always_restock_bottles, 5);
+    hook_call(0x4b242f, arcomage_hint_hook, 6);
 }
 
 // Allow non-bouncing projectiles to trigger facets in Altar of Wishes.

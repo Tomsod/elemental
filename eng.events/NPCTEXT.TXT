@@ -969,3 +969,4 @@ For example, these are all correct item descriptions:
 895	"This ember looks like the real deal.  Here's your payment!"	Ember sold	Robert Belknap
 896	"My lords, I collect antiques as a hobby.  The other day, I ordered a set of ancient copper oil lamps, but instead of copper I got gold, and instead of old, new!  What a rip-off!  So if you find any antique oil lamps in your travels, I would be very glad to exchange them for these very expensive gold ones.  I know it's a loss for me monetarily, but I trust your integrity, my lords, and my collection is what's really important to me anyway."	Explanation	Evan Nasir
 897	"Why, this is a true antique, exactly my wish! [heh]  Please take this solid gold oil lamp as a compensation."	Lamps exchanged	Evan Nasir
+898	"You're yet to win at Arcomage in %s, in the %s region."	Arcomage quest hint	Gina Barnes

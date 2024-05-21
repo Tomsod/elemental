@@ -625,3 +625,4 @@
 624	Horseshoes	Rare item buyer
 625	Magic Embers	Rare item buyer
 626	New Lamps for Old!	Rare item buyer
+627	Remaining Taverns	Arcomage quest hint

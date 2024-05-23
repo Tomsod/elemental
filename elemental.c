@@ -735,14 +735,6 @@ enum item_slot
 
 #define TEMP_ENCH_MARKER 0xff
 
-enum monster_group
-{
-    MG_UNDEAD = 1,
-    MG_DEMON = 2,
-    MG_DRAGON = 3,
-    MG_TITAN = 7,
-};
-
 // Maximum number of alternative recipe chains for a potion that is itself
 // present in some recipe (i.e. white or simpler).  Currently that's
 // Divine Restoration with 3 recipes.
@@ -4957,6 +4949,26 @@ static void __declspec(naked) new_game_items(void)
       }
 }
 
+// Fix Expert blaster perk being applied on Normal rank,
+// and Master perk discounting skill bonus from Squire etc.
+static void __declspec(naked) blaster_fixes(void)
+{
+    asm
+      {
+        xor eax, eax ; no bonus below m
+        cmp ecx, SKILL_EXPERT
+        jb skip
+        mov dword ptr [ebp-20], 1 ; replaced code (no range penalty)
+        cmp ecx, SKILL_MASTER
+        jb skip
+        push SKILL_BLASTER
+        mov ecx, edi
+        call dword ptr ds:get_skill
+        skip:
+        ret
+      }
+}
+
 // Misc item tweaks.
 static inline void misc_items(void)
 {
@@ -5034,6 +5046,7 @@ static inline void misc_items(void)
     patch_byte(0x497935 + SKILL_THIEVERY, 30);
     patch_byte(0x497935 + SKILL_ALCHEMY, 18); // vanilla bottle + reagent
     patch_byte(0x497935 + SKILL_LEARNING, 31);
+    hook_call(0x439614, blaster_fixes, 23);
 }
 
 static uint32_t potion_damage;

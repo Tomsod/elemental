@@ -770,6 +770,7 @@ typedef struct items_txt_item s_items_txt_item;
 
 enum face_animations
 {
+    ANIM_DODGE = 6,
     ANIM_ID_FAIL = 9,
     ANIM_REPAIR = 10,
     ANIM_REPAIR_FAIL = 11,
@@ -4969,6 +4970,45 @@ static void __declspec(naked) blaster_fixes(void)
       }
 }
 
+// Instead of Carnage missiles bypassing the attack roll entirely,
+// let them have +10 to AC penetration (and be unaffected by Shield).
+static void __declspec(naked) carnage_hit_bonus(void)
+{
+    asm
+      {
+        add dword ptr [ebp-40], 10 ; penetration
+        add dword ptr [esp], 25 ; skip shield code
+        ret
+      }
+}
+
+// For (some) symmetry, allow avoiding Carnage friendly fire like chest traps.
+static void __declspec(naked) carnage_dodge(void)
+{
+    asm
+      {
+        mov esi, ecx ; preserve
+        mov ecx, eax ; target pc
+        call dword ptr ds:get_perception_bonus
+        lea ebx, [eax+20]
+        call dword ptr ds:random
+        xor edx, edx
+        div ebx
+        cmp edx, 20 ; same logic as traps
+        ja dodge
+        mov ecx, esi
+        mov eax, 0x48d1e4 ; replaced call
+        jmp eax
+        dodge:
+        push 0
+        push ANIM_DODGE
+        mov ecx, dword ptr [ebp+12]
+        call dword ptr ds:show_face_animation
+        xor eax, eax ; no damage but still oops
+        ret 4
+      }
+}
+
 // Misc item tweaks.
 static inline void misc_items(void)
 {
@@ -5047,6 +5087,8 @@ static inline void misc_items(void)
     patch_byte(0x497935 + SKILL_ALCHEMY, 18); // vanilla bottle + reagent
     patch_byte(0x497935 + SKILL_LEARNING, 31);
     hook_call(0x439614, blaster_fixes, 23);
+    hook_call(0x43967b, carnage_hit_bonus, 7);
+    hook_call(0x43a92c, carnage_dodge, 5);
 }
 
 static uint32_t potion_damage;

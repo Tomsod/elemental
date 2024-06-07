@@ -992,6 +992,7 @@ enum party_buffs
     BUFF_INVISIBILITY = 11,
     BUFF_IMMUTABILITY = 13,
     BUFF_SHIELD = 14,
+    BUFF_TORCH_LIGHT = 16,
     BUFF_WATER_WALK = 18,
     BUFF_WIZARD_EYE = 19,
 };
@@ -1147,7 +1148,9 @@ struct __attribute__((packed)) map_monster
     SKIP(4);
     int16_t speed_z;
     uint16_t direction;
-    SKIP(20);
+    SKIP(2);
+    uint16_t room;
+    SKIP(16);
     uint16_t ai_state;
     SKIP(4);
     uint8_t id_level; // was padding
@@ -1247,6 +1250,7 @@ typedef struct mapstats_item s_mapstats_item;
 #define MAP_MOUNT_NIGHON "out10.odm"
 #define MAP_SHOALS ((const char *) 0x4e4648) // out15.odm
 static const char map_altar_of_wishes[] = "genie.blv";
+#define UNDERWATER 0x6be244
 
 // Indoor or outdoor reputation for the loaded map.
 #define OUTDOORS 0x6be1e0
@@ -1497,6 +1501,14 @@ static struct npcprof
 } npcprof[NPC_COUNT];
 typedef struct npcprof s_npcprof;
 
+struct __attribute__((packed)) map_room
+{
+    SKIP(98);
+    uint16_t darkness;
+    SKIP(16);
+};
+#define MAP_ROOMS ((struct map_room *) pointer(0x6be4d4))
+
 enum sizes
 {
     SIZE_ITEM = sizeof(struct item),
@@ -1633,6 +1645,14 @@ static void (*mm7_free)(void *ptr) = (funcptr_t) 0x4caefc;
 #define AUTONOTES ((void *) AUTONOTES_ADDR)
 static int __fastcall (*check_bit)(void *bits, int bit)
     = (funcptr_t) 0x449b7a;
+static int __fastcall (*get_darkness)(int base, int room, float x, float y,
+                                      float z) = (funcptr_t) 0x43f5eb;
+static char __thiscall (*add_light_source)(int this, int x, int y, int z,
+                                           int unknown_1, int power,
+                                           int unknown_2, int unknown_3,
+                                           int unknown_4, int unknown_5)
+    = (funcptr_t) 0x467d8c;
+#define LIGHT_SOURCE_THIS 0x519938
 static void __fastcall (*add_reply)(int number, int action)
     = (funcptr_t) 0x4b362f;
 static void __fastcall (*spend_gold)(int amount) = (funcptr_t) 0x492bae;
@@ -5009,6 +5029,47 @@ static void __declspec(naked) carnage_dodge(void)
       }
 }
 
+// Decrease the chance to hit monsters standing in dark areas.
+static int __thiscall darkness_penalty(struct map_monster *monster)
+{
+    int base;
+    int room = monster->room;
+    int lights = dword(0x51b55c); // current light count
+    if (dword(OUTDOORS) == 2)
+      {
+        if (byte(UNDERWATER))
+            base = 0; // shoals seem to be lit at night
+        else
+            base = *(float *) 0x6bcef4 * 27; // outdoor darkness level
+        // outdoor torch light is not added to light sources for some reason
+        int power = 1;
+        if (PARTY_BUFFS[BUFF_TORCH_LIGHT].expire_time)
+            power = PARTY_BUFFS[BUFF_TORCH_LIGHT].power;
+        // TODO: these XYZ are a bit wrong (light goes from behind and above)
+        add_light_source(LIGHT_SOURCE_THIS, dword(PARTY_X), dword(PARTY_Y),
+                         dword(PARTY_Z), 0, power * 800, -1, -1, -1, 5);
+      }
+    else
+        base = MAP_ROOMS[room].darkness;
+    int dark = get_darkness(base, room, monster->x, monster->y, monster->z);
+    dword(0x51b55c) = lights; // undo added light
+    return dark > 20; // semi-arbitrary
+}
+
+// Hook for the above.
+static void __declspec(naked) darkness_penalty_hook(void)
+{
+    asm
+      {
+        mov ecx, esi
+        call darkness_penalty
+        add dword ptr [ebp-20], eax ; range penalty
+        mov eax, dword ptr [ebx].s_map_object.spell_type ; replaced code
+        cmp eax, SPL_BLASTER ; ditto
+        ret
+      }
+}
+
 // Misc item tweaks.
 static inline void misc_items(void)
 {
@@ -5089,6 +5150,7 @@ static inline void misc_items(void)
     hook_call(0x439614, blaster_fixes, 23);
     hook_call(0x43967b, carnage_hit_bonus, 7);
     hook_call(0x43a92c, carnage_dodge, 5);
+    hook_call(0x439605, darkness_penalty_hook, 6);
 }
 
 static uint32_t potion_damage;
@@ -16235,7 +16297,7 @@ static void __declspec(naked) missile_wetsuit_blaster(void)
         je quit
         cmp edi, 3 ; replaced code
         jne quit ; replaced jump
-        cmp byte ptr [0x6be244], 0 ; replaced code
+        cmp byte ptr [UNDERWATER], 0 ; replaced code
         quit:
         ret
       }
@@ -18516,12 +18578,12 @@ static void __declspec(naked) sniper_accuracy(void)
         cmp byte ptr [edi].s_player.class, CLASS_SNIPER
         jne not_it
         mov eax, 1
-        ret
+        ret 16
         not_it:
         test edx, edx ; < 0 if critical miss
         jz quit
         xor eax, eax
-        ret
+        ret 16
         quit:
         push 0x4272ac ; replaced call
         ret

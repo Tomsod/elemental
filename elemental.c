@@ -1259,6 +1259,8 @@ static const char map_altar_of_wishes[] = "genie.blv";
 enum profession
 {
     NPC_SMITH = 1,
+    NPC_ARMORER = 2,
+    NPC_ALCHEMIST = 3,
     NPC_SCHOLAR = 4,
     NPC_MERCHANT = 21,
     NPC_PORTER = 29,
@@ -1452,6 +1454,7 @@ typedef struct patch_options s_patch_options;
 #define ACTION_QUICK_SPELL_PRESS 45
 //vanilla
 #define ACTION_EXIT 113
+#define ACTION_SCROLL 146
 #define ACTION_CHANGE_CONVERSATION 405
 
 // Cavalier horse NPCs.
@@ -5209,14 +5212,21 @@ static void __declspec(naked) throw_potions_jump(void)
       }
 }
 
+// A hack for Alchemist hirelings pretending to be recharge scrolls.
+// TODO: redo this when scroll power is variable
+static int hireling_recharge = FALSE;
+
 // Provide the proper spell power for the potion throw event.
 // We hijacked the scroll cast event for this,
 // which uses a fixed power, so we store the power in a static var.
-// Also here: let Gadgeteer's Belt enhance (actual) scroll power.
+// Also here: let Gadgeteer's Belt enhance (actual) scroll power,
+// and allow Alchemist hirelings to cast Recharge Item with no PC recovery.
 static void __declspec(naked) throw_potions_power(void)
 {
     asm
       {
+        cmp dword ptr [hireling_recharge], ebx
+        jne alchemist
         cmp dword ptr [esp+32], SPL_FLAMING_POTION ; param 1 = spell
         jb ordinary
         cmp dword ptr [esp+32], SPL_HOLY_WATER
@@ -5243,6 +5253,13 @@ static void __declspec(naked) throw_potions_power(void)
         xor ebx, ebx ; restore
         pop eax
         push ecx
+        jmp eax
+        alchemist:
+        mov dword ptr [hireling_recharge], ebx ; reset
+        pop eax
+        mov dword ptr [esp], 32 ; no recovery
+        push SKILL_MASTER + 10 ; 80%
+        dec dword ptr [esp+56] ; casting pc (was 1-based)
         jmp eax
       }
 }
@@ -10572,6 +10589,19 @@ static int __thiscall new_hireling_action(int id)
               }
             aim_spell(SPL_INVISIBILITY, 0, SKILL_GM + 4, 32, 0); // one hour
             return FALSE;
+        case NPC_ALCHEMIST:
+              {
+                // must cast from an active pc, otherwise glitches
+                int player = dword(CURRENT_PLAYER);
+                if (!player)
+                    for (player = 1; player <= 4; player++)
+                        if (player_active(&PARTY[player-1]))
+                            break;
+            hireling_recharge = TRUE; // increased power and no pc recovery
+            add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
+            add_action(ACTION_THIS, ACTION_SCROLL, SPL_RECHARGE_ITEM, player);
+              }
+            return FALSE;
         default:
             return hireling_action(id);
       }
@@ -10590,6 +10620,8 @@ static void __declspec(naked) enable_new_hireling_action(void)
         cmp eax, NPC_GYPSY
         je enable
         cmp eax, NPC_NINJA
+        je enable
+        cmp eax, NPC_ALCHEMIST
         je enable
         cmp eax, 10 ; replaced code
         ret
@@ -10614,6 +10646,8 @@ static void __declspec(naked) new_hireling_action_text(void)
         cmp ecx, NPC_GYPSY
         jz quit
         cmp ecx, NPC_NINJA
+        jz quit
+        cmp ecx, NPC_ALCHEMIST
         quit:
         ret
       }
@@ -13704,10 +13738,9 @@ static void __declspec(naked) blessed_missile_weapon(void)
 }
 
 // Implement a weapon enchantment that gives +5 to the weapon's skill.
+// Called from champion_leadership() below.
 static int __thiscall masterful_weapon(struct player *player, int skill)
 {
-    if (skill > SKILL_BLASTER)
-        return 0;
     int bonus = 0;
     for (int slot = SLOT_OFFHAND; slot <= SLOT_MISSILE; slot++)
       {
@@ -13721,24 +13754,6 @@ static int __thiscall masterful_weapon(struct player *player, int skill)
             bonus += 5;
       }
     return bonus;
-}
-
-// Hook for the above.
-// TODO: could combine this with champion_leadership()
-static void __declspec(naked) masterful_weapon_hook(void)
-{
-    asm
-      {
-        mov ecx, dword ptr [ebp-4]
-        push edi
-        call masterful_weapon
-        add esi, eax
-        cmp edi, 20 ; replaced code
-        jle quit
-        add dword ptr [esp], 95 ; replaced jump
-        quit:
-        ret
-      }
 }
 
 // Make "of Doom" slightly more useful.
@@ -13808,8 +13823,8 @@ static inline void new_enchants(void)
     hook_call(0x48eca3, blessed_rightnand_weapon, 7);
     hook_call(0x48ecf1, blessed_offhand_weapon, 7);
     hook_call(0x48f5f6, blessed_missile_weapon, 7);
-    hook_call(0x48fb1e, masterful_weapon_hook, 5);
     // masterful clubs are in blessed_rightnand_weapon()
+    // other masterful weapons are in champion_leadership() below
     hook_call(0x48f3f6, of_doom_bonus, 7);
     // Remove the old 2x slaying weapon damage.
     erase_code(0x48d25c, 70); // missile
@@ -18498,11 +18513,12 @@ static inline void racial_traits(void)
 
 // Implement Champion special ability, Leadership: for each Champion
 // in the party, everyone's weapon and armor skills get a +2 bonus.
+// Also here: Masterful weapon bonus, and smith and armorer hireling perks.
 static void __declspec(naked) champion_leadership(void)
 {
     asm
       {
-        mov esi, eax
+        mov esi, eax ; squire bonus (replaced)
         cmp byte ptr [PARTY_ADDR].s_player.class, CLASS_CHAMPION
         setz al
         add esi, eax
@@ -18516,6 +18532,17 @@ static void __declspec(naked) champion_leadership(void)
         setz al
         add esi, eax
         shl esi, 1
+        cmp edi, SKILL_SHIELD
+        mov ecx, NPC_ARMORER
+        jae npc
+        push edi ; skill
+        mov ecx, dword ptr [ebp-4] ; checked pc
+        call masterful_weapon
+        add esi, eax
+        mov ecx, NPC_SMITH
+        npc:
+        call dword ptr ds:have_npc_hired
+        add esi, eax
         ret
       }
 }

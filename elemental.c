@@ -6197,7 +6197,6 @@ static void __declspec(naked) sacrifice_conditions(void)
         call dword ptr ds:memset_ptr
         add esp, 12
         and word ptr [edi].s_player.age_bonus, 0
-        add edi, SIZE_PLAYER ; replaced code
         ret
       }
 }
@@ -7894,7 +7893,8 @@ static inline void misc_spells(void)
     patch_dword(0x429190, 2); // expert
     // master is already 3
     patch_dword(0x429182, 4); // GM
-    hook_call(0x42e362, sacrifice_conditions, 6);
+    // The below hook also erases SP restoration code.
+    hook_call(0x42e357, sacrifice_conditions, 11);
     erase_code(0x428b0d, 19); // enable sun ray in (some) dungeons
     // Make GM Wizard Eye permanent and not dispellable.
     hook_call(0x441dc3, wizard_eye_functionality, 7);
@@ -8123,6 +8123,8 @@ static inline void misc_spells(void)
     SPELL_INFO[SPL_SUNRAY].delay_gm = 100;
     // PvM Incinerate in blaster_eradicate(), MvP in absorb_monster_spell()
     hook_call(0x43b2d6, mvm_incinerate, 8);
+    // Remove SP restoration from Divine Intervention.
+    erase_code(0x42dad9, 6);
 }
 
 // For consistency with players, monsters revived with Reanimate now have
@@ -9586,19 +9588,6 @@ static void __declspec(naked) divine_intervention_hp(void)
       }
 }
 
-// Do not lower SP to maximum during a Divine Intervention.
-static void __declspec(naked) divine_intervention_sp(void)
-{
-    asm
-      {
-        cmp dword ptr [ecx].s_player.sp, eax ; current vs max
-        jge quit
-        mov dword ptr [ecx].s_player.sp, eax ; replaced code
-        quit:
-        ret
-      }
-}
-
 // Do not lower HP to maximum after a Sacrifice.
 static void __declspec(naked) sacrifice_hp(void)
 {
@@ -9607,19 +9596,6 @@ static void __declspec(naked) sacrifice_hp(void)
         cmp dword ptr [edi].s_player.hp, eax ; current vs max
         jge quit
         mov dword ptr [edi].s_player.hp, eax ; replaced code
-        quit:
-        ret
-      }
-}
-
-// Do not lower SP to maximum after a Sacrifice.
-static void __declspec(naked) sacrifice_sp(void)
-{
-    asm
-      {
-        cmp dword ptr [edi].s_player.sp, eax ; current vs max
-        jge quit
-        mov dword ptr [edi].s_player.sp, eax ; replaced code
         quit:
         ret
       }
@@ -9709,12 +9685,8 @@ static inline void hp_sp_burnout(void)
     erase_code(0x468d88, 9); // old shred-sp-above-max code
     erase_code(0x42bf80, 36); // allow Shared Life to heal above maximum
     hook_call(0x42dac4, divine_intervention_hp, 6);
-    hook_call(0x42dad9, divine_intervention_sp, 6);
     hook_call(0x42e351, sacrifice_hp, 6);
-    hook_call(0x42e35c, sacrifice_sp, 6);
     erase_code(0x42e6c4, 36); // allow Souldrinker to heal above maximum
-    // BTW, Souldrinker cures flat (7*skill+25) per visible monster,
-    // irrespective of the actual damage.  Should this be documented?
     erase_code(0x4399e2, 26); // allow vampiric melee weapons to overheal
     erase_code(0x439951, 26); // allow vampiric bows to overheal
     hook_call(0x4bb83f, healer_or_temple_hp, 6); // healer

@@ -5634,6 +5634,7 @@ static void __declspec(naked) holy_water_jump(void)
 }
 
 // Supply the Undead Slaying enchantment when applying holy water.
+// Also reduce enchantment time from 30 minutes/power to 10.
 static void __declspec(naked) holy_water_enchant(void)
 {
     asm
@@ -5643,6 +5644,11 @@ static void __declspec(naked) holy_water_enchant(void)
         mov eax, dword ptr [0x4e28fc+eax*4-FLAMING_POTION*4] ; replaced code
         ret
         holy:
+        mov eax, edi
+        xor edx, edx
+        mov edi, 3
+        div edi
+        mov edi, eax
         mov eax, SPC_UNDEAD_SLAYING
         ret
       }

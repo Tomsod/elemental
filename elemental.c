@@ -841,6 +841,12 @@ typedef struct map_chest s_map_chest;
 #define EXTRA_CHEST_COUNT 8
 #define BOH_CHEST_ID 7 // must be last, for looping through all items
 
+// For the temple in a bottle and beacon master hirelings.
+struct beacon
+{
+    int x, y, z, direction, look_angle, map_index;
+};
+
 // All the stuff I need to preserve across save/loads (except WoM barrels).
 static struct elemdata
 {
@@ -853,7 +859,7 @@ static struct elemdata
     // Skill training for all 4 PCs.  Not all values are used.
     int training[4][SKILL_COUNT];
     // Location where the temple in a bottle was last used.
-    int x, y, z, direction, look_angle, map_index;
+    struct beacon bottle;
     // For the bag of holding and porter-like NPCs.
     struct map_chest extra_chests[EXTRA_CHEST_COUNT];
     // Difficulty level!  Yes, it's stored in the savegame.
@@ -890,6 +896,8 @@ static struct elemdata
     int arena_points;
     // Whether the ultimate arena prize was already given.
     int arena_champion;
+    // For Beacon Master NPCs.
+    struct beacon beacon_masters[2];
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -1044,6 +1052,7 @@ enum spells
     SPL_RECHARGE_ITEM = 28,
     SPL_ENCHANT_ITEM = 30,
     SPL_ICE_BLAST = 32,
+    SPL_LLOYDS_BEACON = 33,
     SPL_STUN = 34,
     SPL_SLOW = 35,
     SPL_ROCK_BLAST = 41,
@@ -1093,6 +1102,8 @@ enum spells
     SPL_HOLY_WATER = 108,
     SPL_TELEPATHY = 109, // was 59
 };
+
+#define SPELL_SOUNDS 0x4edf30
 
 struct __attribute__((packed)) map_monster
 {
@@ -1251,6 +1262,7 @@ typedef struct mapstats_item s_mapstats_item;
 #define MAP_SHOALS ((const char *) 0x4e4648) // out15.odm
 static const char map_altar_of_wishes[] = "genie.blv";
 #define UNDERWATER 0x6be244
+#define CURRENT_MAP_ID 0x6bdfbc
 
 // Indoor or outdoor reputation for the loaded map.
 #define OUTDOORS 0x6be1e0
@@ -1270,6 +1282,7 @@ enum profession
     NPC_WIND_MASTER = 39,
     NPC_PIRATE = 45,
     NPC_GYPSY = 48,
+    NPC_BEACON_MASTER = 49,
     NPC_DUPER = 50,
     NPC_BURGLAR = 51,
     NPC_FALLEN_WIZARD = 52,
@@ -1471,6 +1484,10 @@ enum horses
 
 #define NPC_ADDR 0x72d50c
 #define NPC_HIRED 0x80
+#define HIRED_NPC_1 0xad44f4
+#define HIRED_NPC_2 0xad4540
+#define DIALOG_NPC 0x590f10
+#define CURRENT_HIRELING (!dword(HIRED_NPC_1) || ~dword(DIALOG_NPC))
 
 // Data from parsing stditems.txt.
 struct __attribute__((packed)) stditem
@@ -1580,6 +1597,7 @@ enum struct_offsets
 #define PC_POINTERS 0xa74f48
 #define SELECTED_SPELL 0x5063cc
 #define SPELLS_TXT 0x5cbeb0
+#define MOVEMAP_STYLE 0x576cbc
 
 #ifdef CHECK_OVERWRITE
 #define sprintf sprintf_mm7
@@ -1765,6 +1783,9 @@ static int __cdecl (*add_button)(void *dialog, int left, int top, int width,
                                  int action, int action_param, int key,
                                  char *text, ...) // varpart is sprite(s)
     = (funcptr_t) 0x41d0d8;
+static void (*on_map_leave)(void) = (funcptr_t) 0x443fb8;
+static void __fastcall (*change_map)(char *map, int unknown)
+    = (funcptr_t) 0x44989e;
 static void __thiscall (*click_on_portrait)(int player_id)
     = (funcptr_t) 0x421ca9;
 static int __fastcall (*add_chest_item)(int unused, void *item, int chest_id)
@@ -5458,7 +5479,7 @@ static void __declspec(naked) cast_potions_sound(void)
         mov eax, 108 ; wood weapon vs leather01l
         ret
         ordinary:
-        movsx eax, word ptr [0x4edf30+eax*2] ; spell sound
+        movsx eax, word ptr [SPELL_SOUNDS+eax*2]
         ret
       }
 }
@@ -5532,7 +5553,7 @@ static void __declspec(naked) explode_potions_sound(void)
         je noxious
         cmp eax, SPL_HOLY_WATER
         je holy
-        movsx eax, word ptr [0x4edf30+eax*2] ; spell sound
+        movsx eax, word ptr [SPELL_SOUNDS+eax*2]
         ret
         flaming:
         mov eax, 10011 - 1 ; 04firebolt03
@@ -7053,7 +7074,8 @@ static void __declspec(naked) town_portal_without_dialog(void)
 // and activate any mana anchors present on party members.
 static void __thiscall beacon_recall_effects(struct player *caster)
 {
-    caster->beacon_casts++;
+    if (caster)
+        caster->beacon_casts++;
     for (int p = 0; p < 4; p++)
       {
         struct spell_buff *anchor
@@ -8662,7 +8684,7 @@ static void __fastcall cast_new_spells(int monster, void *vector, int spell,
         return;
       }
 
-    int spell_sound = word(0x4edf30 + spell * 2);
+    int spell_sound = word(SPELL_SOUNDS + spell * 2);
     if (spell == SPL_TURN_UNDEAD)
       {
         // we must be targeting the party
@@ -9301,8 +9323,18 @@ static void __declspec(naked) bounty_hook(void)
       }
 }
 
+// (Re)set the map and XYZ a beacon master will teleport to.
+static void set_npc_beacon(int id)
+{
+    elemdata.beacon_masters[id] = (struct beacon) {
+        dword(PARTY_X), dword(PARTY_Y), dword(PARTY_Z), dword(PARTY_DIR),
+        dword(PARTY_LOOK_ANGLE), get_map_index(MAPSTATS, CUR_MAP_FILENAME) - 1,
+    };
+}
+
 // Change "evil" hireable NPC penalty: instead of temporary -5 rep
 // in all regions, give a permanent -5 in their home region.
+// Also here: init beacon master recall coords to hire location.
 static void __stdcall hire_npc_rep(int profession)
 {
     if (profession == NPC_PIRATE || profession == NPC_GYPSY
@@ -9314,6 +9346,8 @@ static void __stdcall hire_npc_rep(int profession)
         if (CURRENT_REP > 10000) // vanilla rep code often has this limit
             CURRENT_REP = 10000;
       }
+    else if (profession == NPC_BEACON_MASTER)
+        set_npc_beacon(!!dword(HIRED_NPC_1));
 }
 
 // Hook for the above.
@@ -9323,7 +9357,7 @@ static void __declspec(naked) hire_npc_hook(void)
       {
         push dword ptr [ebp+24] ; npc profession
         call hire_npc_rep
-        cmp dword ptr [0xad44f4], esi ; replaced code
+        cmp dword ptr [HIRED_NPC_1], esi ; replaced code
         ret
       }
 }
@@ -10568,18 +10602,25 @@ static int __thiscall new_hireling_action(int id)
             aim_spell(SPL_INVISIBILITY, 0, SKILL_GM + 4, 32, 0); // one hour
             return FALSE;
         case NPC_ALCHEMIST:
-              {
-                // must cast from an active pc, otherwise glitches
-                int player = dword(CURRENT_PLAYER);
-                if (!player)
-                    for (player = 1; player <= 4; player++)
-                        if (player_active(&PARTY[player-1]))
-                            break;
+          {
+            // must cast from an active pc, otherwise glitches
+            int player = dword(CURRENT_PLAYER);
+            if (!player)
+                for (player = 1; player <= 4; player++)
+                    if (player_active(&PARTY[player-1]))
+                        break;
             hireling_recharge = TRUE; // increased power and no pc recovery
             add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
             add_action(ACTION_THIS, ACTION_SCROLL, SPL_RECHARGE_ITEM, player);
-              }
             return FALSE;
+          }
+        case NPC_BEACON_MASTER:
+            set_npc_beacon(CURRENT_HIRELING);
+            make_sound(SOUND_THIS, word(SPELL_SOUNDS + SPL_LLOYDS_BEACON * 2),
+                       0, 0, -1, 0, 0, 0, 0);
+            add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
+            return TRUE;
+
         default:
             return hireling_action(id);
       }
@@ -10600,6 +10641,8 @@ static void __declspec(naked) enable_new_hireling_action(void)
         cmp eax, NPC_NINJA
         je enable
         cmp eax, NPC_ALCHEMIST
+        je enable
+        cmp eax, NPC_BEACON_MASTER
         je enable
         cmp eax, 10 ; replaced code
         ret
@@ -10626,6 +10669,8 @@ static void __declspec(naked) new_hireling_action_text(void)
         cmp ecx, NPC_NINJA
         jz quit
         cmp ecx, NPC_ALCHEMIST
+        jz quit
+        cmp ecx, NPC_BEACON_MASTER
         quit:
         ret
       }
@@ -10664,8 +10709,8 @@ static void __declspec(naked) empty_extra_chest_hook(void)
         mov dword ptr [esp], 0x4bc6f0 ; show statusline text
         ret
         ok:
-        mov eax, dword ptr [0xad44f4+24] ; left npc prof
-        cmp eax, dword ptr [0xad4540+24] ; right npc prof
+        mov eax, dword ptr [HIRED_NPC_1+24]
+        cmp eax, dword ptr [HIRED_NPC_2+24]
         je skip ; if another porter etc. remains, do not empty
         cmp dword ptr [ebp+24], NPC_PORTER
         jne not_porter
@@ -10690,19 +10735,27 @@ static void __declspec(naked) empty_extra_chest_hook(void)
 }
 
 // Add a second action dialog option for quartermasters.
+// Also for beacon masters, but only if they can still cast.
 static void __declspec(naked) quartermaster_extra_dialog(void)
 {
     asm
       {
+        mov edx, 10 ; right bag subaction
         cmp dword ptr [ebp+24], NPC_QUARTER_MASTER
+        je ok
+        cmp dword ptr [ebp+24], NPC_BEACON_MASTER
         jne skip
+        cmp dword ptr [ebp+68], ebx ; used ability flag
+        jnz skip
+        inc edx ; recall beacon subaction
+        ok:
         mov eax, dword ptr [ARRUS_FNT]
         movzx eax, byte ptr [eax+5]
         add eax, 140 - 3
         push ebx
         push esi
         push ebx
-        push 10 ; our new subaction
+        push edx ; our new subactions
         push 136 ; interact with npc action
         push ebx
         push 1
@@ -10721,30 +10774,60 @@ static void __declspec(naked) quartermaster_extra_dialog(void)
       }
 }
 
-// Supply actual text to the new dialog option.
+// Supply actual text to the new dialog options.
 static void __declspec(naked) quartermaster_extra_dialog_text(void)
 {
     asm
       {
         mov eax, dword ptr [edi+36] ; replaced text
-        cmp eax, 10 ; our new subaction
+        cmp eax, 10 ; right bag subaction
         je qm
+        cmp eax, 11 ; recall beacon subaction
+        je beacon
         cmp eax, 24 ; replaced text
         ret
         qm:
         mov eax, dword ptr [new_strings+STR_OPEN_RIGHT_BAG*4]
-        push 0x44581d ; code after fetching a string
-        ret 4
+        jmp quit
+        beacon:
+        mov eax, dword ptr [GLOBAL_TXT_ADDR+523*4] ; "recall beacon"
+        quit:
+        mov dword ptr [esp], 0x44581d ; code after fetching a string
+        ret
       }
 }
 
-// Actually open the second bag.
+// Code for moving between maps using the beacon master NPC ability.
+static void recall_npc_beacon(void)
+{
+    struct beacon *beacon = elemdata.beacon_masters + CURRENT_HIRELING;
+    if (beacon->map_index + 1 == dword(CURRENT_MAP_ID))
+      {
+        memcpy((void *) PARTY_X, beacon, 4 * 5);
+        dword(0xacd538) = beacon->z; // smth flight-related
+      }
+    else
+      {
+        memcpy((void *) 0x5b6428, beacon, 4 * 5); // movemap coords
+        dword(0x5b6440) = TRUE; // respect the coords
+        dword(MOVEMAP_STYLE) = 0; // small progress box to avoid glitches
+        on_map_leave();
+        change_map(MAPSTATS[beacon->map_index].file_name, 0);
+      }
+    make_sound(SOUND_THIS, word(SPELL_SOUNDS + SPL_LLOYDS_BEACON * 2),
+               0, 0, -1, 0, 0, 0, 0);
+    beacon_recall_effects(NULL);
+}
+
+// Actually open the second bag (or recall a beacon).
 static void __declspec(naked) quartermaster_extra_action(void)
 {
     asm
       {
-        cmp eax, 10 ; our new subaction
+        cmp eax, 10 ; right bag subaction
         je right_bag
+        cmp eax, 11 ; recall beacon subaction
+        je beacon
         mov ecx, eax ; replaced code
         sub ecx, 9 ; replaced code
         ret
@@ -10762,6 +10845,9 @@ static void __declspec(naked) quartermaster_extra_action(void)
         xor ecx, ecx
         inc ecx ; this will skip the vanilla code
         ret
+        beacon:
+        mov dword ptr [esp], 0x4bc4e2 ; to used npc ability code
+        jmp recall_npc_beacon
       }
 }
 
@@ -11025,19 +11111,19 @@ static void __declspec(naked) tavern_rest_buff(void)
         inc edx
         add edx, ecx
         dish:
-        cmp dword ptr [0xad44f4+24], NPC_COOK ; left npc
+        cmp dword ptr [HIRED_NPC_1+24], NPC_COOK
         je left
-        cmp dword ptr [0xad44f4+24], NPC_CHEF
+        cmp dword ptr [HIRED_NPC_1+24], NPC_CHEF
         jne not_left
         left:
-        mov dword ptr [0xad44f4+68], edx
+        mov dword ptr [HIRED_NPC_1+68], edx
         not_left:
-        cmp dword ptr [0xad4540+24], NPC_COOK ; right npc
+        cmp dword ptr [HIRED_NPC_2+24], NPC_COOK
         je right
-        cmp dword ptr [0xad4540+24], NPC_CHEF
+        cmp dword ptr [HIRED_NPC_2+24], NPC_CHEF
         jne restore
         right:
-        mov dword ptr [0xad4540+68], edx
+        mov dword ptr [HIRED_NPC_2+68], edx
         restore:
         mov ecx, PARTY_BIN_ADDR
         skip:
@@ -11099,21 +11185,21 @@ static void __declspec(naked) dont_reset_cooks(void)
       {
         cmp byte ptr [0xacd59c], 3 ; days awake
         jae left
-        cmp dword ptr [0xad44f4+24], NPC_COOK ; left npc
+        cmp dword ptr [HIRED_NPC_1+24], NPC_COOK
         je skip_left
-        cmp dword ptr [0xad44f4+24], NPC_CHEF
+        cmp dword ptr [HIRED_NPC_1+24], NPC_CHEF
         je skip_left
         left:
-        mov dword ptr [0xad44f4+68], edx ; replaced code
+        mov dword ptr [HIRED_NPC_1+68], edx ; replaced code
         cmp byte ptr [0xacd59c], 3
         jae right
         skip_left:
-        cmp dword ptr [0xad4540+24], NPC_COOK ; right npc
+        cmp dword ptr [HIRED_NPC_2+24], NPC_COOK
         je skip_right
-        cmp dword ptr [0xad4540+24], NPC_CHEF
+        cmp dword ptr [HIRED_NPC_2+24], NPC_CHEF
         je skip_right
         right:
-        mov dword ptr [0xad4540+68], edx ; replaced code
+        mov dword ptr [HIRED_NPC_2+68], edx ; replaced code
         skip_right:
         cmp dword ptr [0x73c014], edx ; replaced code
         ret
@@ -11121,11 +11207,14 @@ static void __declspec(naked) dont_reset_cooks(void)
 }
 
 // For cooks and chefs, show the ability line only if the used field is NOT 0.
+// For beacon masters, just always show the first (unlimited) ability.
 static void __declspec(naked) invert_cook_check(void)
 {
     asm
       {
         jz skip ; replaced jump
+        cmp dword ptr [ebp+24], NPC_BEACON_MASTER
+        je ok
         cmp dword ptr [ebp+24], NPC_COOK
         je invert
         cmp dword ptr [ebp+24], NPC_CHEF
@@ -11135,6 +11224,7 @@ static void __declspec(naked) invert_cook_check(void)
         invert:
         cmp dword ptr [ebp+68], ebx ; used ability flag
         jz skip
+        ok:
         xor eax, eax ; set zf
         ret
         skip:
@@ -11616,7 +11706,7 @@ static void __declspec(naked) reset_hireling_reply(void)
 {
     asm
       {
-        and dword ptr [0x590f10], 0 ; replaced code
+        and dword ptr [DIALOG_NPC], 0 ; replaced code
         mov byte ptr [HIRELING_REPLY], 0
         and dword ptr [confirm_hireling_dismiss], 0
         ret
@@ -14456,7 +14546,7 @@ static void __stdcall headache_berserk(struct player *player,
                                monster->x, monster->y,
                                monster->z + monster->height };
     launch_object(&anim, 0, 0, 0, 0);
-    make_sound(SOUND_THIS, word(0x4edf30 + SPL_BERSERK * 2),
+    make_sound(SOUND_THIS, word(SPELL_SOUNDS + SPL_BERSERK * 2),
                0, 0, -1, 0, 0, 0, 0);
 }
 
@@ -14739,19 +14829,17 @@ static void __stdcall viper_slow(struct player *player,
              CURRENT_TIME + (mastery <= 1 ? 5 : 20) * MINUTE, mastery,
              (mastery <= 2 ? 2 : mastery == 3 ? 4 : 8), 0, 0);
     magic_sparkles(monster, 0);
-    make_sound(SOUND_THIS, word(0x4edf30 + SPL_SLOW * 2),
+    make_sound(SOUND_THIS, word(SPELL_SOUNDS + SPL_SLOW * 2),
                0, 0, -1, 0, 0, 0, 0);
 }
 
 // Save the party position when using Temple in a Bottle.
 static void save_temple_beacon(void)
 {
-    elemdata.x = dword(PARTY_X);
-    elemdata.y = dword(PARTY_Y);
-    elemdata.z = dword(PARTY_Z);
-    elemdata.direction = dword(PARTY_DIR);
-    elemdata.look_angle = dword(PARTY_LOOK_ANGLE);
-    elemdata.map_index = get_map_index(MAPSTATS, CUR_MAP_FILENAME) - 1;
+    elemdata.bottle = (struct beacon) {
+        dword(PARTY_X), dword(PARTY_Y), dword(PARTY_Z), dword(PARTY_DIR),
+        dword(PARTY_LOOK_ANGLE), get_map_index(MAPSTATS, CUR_MAP_FILENAME) - 1,
+    };
     change_bit(QBITS, QBIT_TEMPLE_UNDERWATER,
                !uncased_strcmp(CUR_MAP_FILENAME, MAP_SHOALS));
 }
@@ -14825,15 +14913,15 @@ static void __declspec(naked) movemap_leavetiab(void)
         mov dword ptr [tiab_strcmp], eax ; for later
         test eax, eax
         jnz quit
-        mov eax, dword ptr [elemdata.x]
+        mov eax, dword ptr [elemdata.bottle.x]
         mov dword ptr [esp+64], eax
-        mov eax, dword ptr [elemdata.y]
+        mov eax, dword ptr [elemdata.bottle.y]
         mov dword ptr [esp+52], eax
-        mov eax, dword ptr [elemdata.z]
+        mov eax, dword ptr [elemdata.bottle.z]
         mov dword ptr [esp+32], eax
-        movsx eax, word ptr [elemdata.direction]
+        movsx eax, word ptr [elemdata.bottle.direction]
         mov dword ptr [esp+40], eax
-        movsx ebp, word ptr [elemdata.look_angle]
+        movsx ebp, word ptr [elemdata.bottle.look_angle]
         quit:
         mov eax, dword ptr [esp+60] ; restore
         mov ecx, dword ptr [esp+64] ; same
@@ -14851,7 +14939,7 @@ static void __declspec(naked) movemap_immediate(void)
         cmp dword ptr [tiab_strcmp], ebx
         jnz quit
         mov eax, SIZE_MAPSTAT
-        mul dword ptr [elemdata.map_index]
+        mul dword ptr [elemdata.bottle.map_index]
         mov ecx, dword ptr [MAPSTATS_ADDR+eax].s_mapstats_item.file_name
         quit:
         ret
@@ -14870,7 +14958,7 @@ static void __declspec(naked) movemap_dialog(void)
         ret
         tiab:
         mov eax, SIZE_MAPSTAT
-        mul dword ptr [elemdata.map_index]
+        mul dword ptr [elemdata.bottle.map_index]
         mov eax, dword ptr [MAPSTATS_ADDR+eax].s_mapstats_item.file_name
         ret
       }
@@ -15049,7 +15137,7 @@ static void __declspec(naked) new_consumable_items(void)
         call dword ptr ds:show_face_animation
         jmp remove
         hourglass:
-        mov eax, dword ptr [0x6bdfbc] ; map index
+        mov eax, dword ptr [CURRENT_MAP_ID]
         dec eax ; we use element 0 now
         imul eax, eax, SIZE_MAPSTAT
         mov eax, dword ptr [MAPSTATS_ADDR+eax].s_mapstats_item.refill_days

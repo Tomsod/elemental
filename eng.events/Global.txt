@@ -597,7 +597,7 @@ Global Text
 594	Feebleminded
 595	Wand
 596	Chaplain
-597	Diplomat
+597	Beacon Master
 598	Fallen Wizard
 599	Prelate of the Sun
 600	Sage

@@ -898,6 +898,8 @@ static struct elemdata
     int arena_champion;
     // For Beacon Master NPCs.
     struct beacon beacon_masters[2];
+    // Per-map random seeds for street NPCs and their expire time.
+    int street_npc_seed[77], street_npc_time[77];
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -1740,6 +1742,8 @@ static void __fastcall (*attack_monster)(int attacker, int defender,
     = (funcptr_t) 0x43b1d3;
 static int __fastcall (*skill_mastery)(int skill) = (funcptr_t) 0x45827d;
 static int (*random)(void) = (funcptr_t) 0x4caac2;
+static void __cdecl (*srandom)(unsigned int seed) = (funcptr_t) 0x4caab5;
+static int (*get_thread_context)(void) = (funcptr_t) 0x4cecd2;
 static int __thiscall (*save_file_to_lod)(void *lod, const void *header,
                                           void *file, int unknown)
     = (funcptr_t) 0x461b85;
@@ -12280,6 +12284,54 @@ static void __declspec(naked) arena_prize_text(void)
       }
 }
 
+// Make sure not to break randomness.
+static int saved_random_seed;
+// A division constant used just below.  Determines how often hirelings change.
+static const int two_weeks = ONE_DAY * 14;
+
+// Let random hireling professions persist on reload, at least for a while.
+static void __declspec(naked) fixed_street_npcs(void)
+{
+    asm
+      {
+        call dword ptr ds:get_thread_context
+        mov ecx, dword ptr [eax+20] ; random seed
+        mov dword ptr [saved_random_seed], ecx
+        mov eax, dword ptr [CURRENT_TIME_ADDR]
+        mov edx, dword ptr [CURRENT_TIME_ADDR+4]
+        div dword ptr [two_weeks]
+        mov edx, dword ptr [CURRENT_MAP_ID]
+        inc eax ; let starting 0 be overwritten
+        cmp eax, dword ptr [elemdata.street_npc_time+edx*4-4]
+        je ok
+        mov dword ptr [elemdata.street_npc_time+edx*4-4], eax
+        mov dword ptr [elemdata.street_npc_seed+edx*4-4], ecx
+        ok:
+        mov eax, dword ptr [elemdata.street_npc_seed+edx*4-4]
+        mov edx, dword ptr [esp+36] ; peasant monster num
+        inc edx ; avoid multiplying by 0
+        mul edx
+        push eax
+        call dword ptr ds:srandom
+        mov ecx, 0x724050 ; restore
+        mov dword ptr [esp], 0x477330 ; replaced call
+        ret
+      }
+}
+
+// Make sure we don't destroy randomness of the game with the above hook.
+static void __declspec(naked) restore_random_seed(void)
+{
+    asm
+      {
+        push dword ptr [saved_random_seed]
+        call dword ptr ds:srandom
+        pop ecx
+        mov eax, dword ptr [MOUSE_ITEM] ; replaced code
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -12480,6 +12532,8 @@ static inline void misc_rules(void)
     patch_pointer(0x4764b7, awards + AWARD_COUNT + 1);
     hook_call(0x4bbd54, special_arena_prize, 5);
     hook_call(0x445600, arena_prize_text, 5);
+    hook_call(0x4613b7, fixed_street_npcs, 5);
+    hook_call(0x461353, restore_random_seed, 5);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

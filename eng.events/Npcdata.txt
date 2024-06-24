@@ -181,9 +181,9 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 179	Gregory Weider	57	0	0	0	487	0	0	0	278	361	0	0	0	0	Expert Perception (2)	2
 180	Garret Dotes	416	0	0	0	314	0	0	0	279	362	0	0	0	0	Master Perception (4)	4
 181	Petra Cleareye	594	0	0	0	332	0	0	0	280	489	0	0	0	0	Grand Master Perception (5)	5
-182	Qillain Laraselle	400	0	0	0	276	0	191	0	501	0	0	0	0	0	Ore for weapon	
-183	Robert Sourbrow	320	0	0	0	277	0	192	0	502	0	0	0	0	0	Ore for armor	
-184	Cloud Agraynel	169	0	0	0	279	0	193	0	503	0	0	0	0	0	Ore for misc	
+182	Qillain Laraselle	400	0	0	0	276	1	189	y	628	0	0	0	0	0	Hireling, was ore for weapon
+183	Robert Sourbrow	320	0	0	0	277	2	189	y	628	0	0	0	0	0	Hireling, was ore for armor
+184	Cloud Agraynel	169	0	0	0	279	3	189	y	628	0	0	0	0	0	Hireling, was ore for misc
 185	Expert Thievery	1	0	0	0	0	0	0	0	284	0	0	0	0	0	Expert Thievery	
 186	Master Thievery	1	0	0	0	0	0	0	0	285	0	0	0	0	0	Master Thievery	
 187	Grand Master Thievery	1	0	0	0	0	0	0	0	286	0	0	0	0	0	Grand Master Thievery	

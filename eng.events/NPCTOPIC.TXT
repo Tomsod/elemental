@@ -626,3 +626,4 @@
 625	Magic Embers	Rare item buyer
 626	New Lamps for Old!	Rare item buyer
 627	Remaining Taverns	Arcomage quest hint
+628	Special Orders	Shop order hint

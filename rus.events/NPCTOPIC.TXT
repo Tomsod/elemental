@@ -626,3 +626,4 @@
 625	Волшебные угольки	Rare item buyer
 626	Меняю старые лампы на новые!	Rare item buyer
 627	Оставшиеся таверны	Arcomage quest hint
+628	Особые заказы	Shop order hint

@@ -11710,9 +11710,9 @@ static void __declspec(naked) reset_hireling_reply(void)
 {
     asm
       {
-        and dword ptr [DIALOG_NPC], 0 ; replaced code
-        mov byte ptr [HIRELING_REPLY], 0
-        and dword ptr [confirm_hireling_dismiss], 0
+        mov dword ptr [DIALOG_NPC], ecx ; replaced code
+        mov byte ptr [HIRELING_REPLY], bl ; ebx == 0
+        mov dword ptr [confirm_hireling_dismiss], ebx
         ret
       }
 }
@@ -12285,7 +12285,7 @@ static void __declspec(naked) arena_prize_text(void)
 }
 
 // Make sure not to break randomness.
-static int saved_random_seed;
+static int saved_random_seed = 0;
 // A division constant used just below.  Determines how often hirelings change.
 static const int two_weeks = ONE_DAY * 14;
 
@@ -12294,6 +12294,8 @@ static void __declspec(naked) fixed_street_npcs(void)
 {
     asm
       {
+        cmp dword ptr [saved_random_seed], ebp ; == 0
+        jnz ok ; second+ npc for the map
         call dword ptr ds:get_thread_context
         mov ecx, dword ptr [eax+20] ; random seed
         mov dword ptr [saved_random_seed], ecx
@@ -12307,6 +12309,7 @@ static void __declspec(naked) fixed_street_npcs(void)
         mov dword ptr [elemdata.street_npc_time+edx*4-4], eax
         mov dword ptr [elemdata.street_npc_seed+edx*4-4], ecx
         ok:
+        mov edx, dword ptr [CURRENT_MAP_ID]
         mov eax, dword ptr [elemdata.street_npc_seed+edx*4-4]
         mov edx, dword ptr [esp+36] ; peasant monster num
         inc edx ; avoid multiplying by 0
@@ -12327,6 +12330,7 @@ static void __declspec(naked) restore_random_seed(void)
         push dword ptr [saved_random_seed]
         call dword ptr ds:srandom
         pop ecx
+        mov dword ptr [saved_random_seed], ebp ; == 0
         mov eax, dword ptr [MOUSE_ITEM] ; replaced code
         ret
       }
@@ -12459,7 +12463,7 @@ static inline void misc_rules(void)
     patch_byte(0x41f584, 5);
     // Fix some buffs not disappearing on rest.
     patch_byte(0x490d25, 24);
-    hook_call(0x446066, reset_hireling_reply, 7);
+    hook_call(0x445db5, reset_hireling_reply, 6);
     hook_call(0x4b1ed6, fix_infinite_di_books, 10);
     hook_call(0x49672a, short_id_skill_names, 5);
     // Fix floor gold piles not being nerfed by map treasure level.

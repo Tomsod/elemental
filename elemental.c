@@ -9361,7 +9361,7 @@ static void __declspec(naked) hire_npc_hook(void)
       {
         push dword ptr [ebp+24] ; npc profession
         call hire_npc_rep
-        cmp dword ptr [HIRED_NPC_1], esi ; replaced code
+        cmp dword ptr [HIRED_NPC_1], 0 ; replaced code, almost
         ret
       }
 }
@@ -9389,7 +9389,8 @@ static inline void reputation(void)
     // Do not decrease rep on successful shoplift.
     patch_byte(0x4b13bf, 0);
     hook_call(0x4bd223, bounty_hook, 7);
-    hook_call(0x4bc695, hire_npc_hook, 6);
+    hook_call(0x4bc695, hire_npc_hook, 6); // from street
+    hook_call(0x4b230e, hire_npc_hook, 6); // from house
     // Remove an ongoing NPC rep penalty.
     erase_code(0x477549, 72);
 }

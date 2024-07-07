@@ -11,9 +11,9 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 9	Кэролин Витерс	158	0	0	0	239	0	11	0	0	402	404	0	0	0	Elemental Guild Membership
 10	Роджер Теллмар	10	0	0	0	240	0	12	0	0	406	408	0	0	0	Self Guild Membership
 11	Вильям Дарвис	77	0	0	0	238	0	13	0	32	0	0	0	0	0	Boatman to take party to area 2
-12	Донна Вирит	219	0	0	0	224	0	14	0	36	37	0	0	0	0	Sally's mom in dragon house
-13	Грант Валандир	32	0	0	0	226	0	15	0	40	41	0	0	0	0	Back of the weapon shop
-14	Миа Люсиль	216	0	0	0	225	0	16	0	38	39	0	0	0	0	Favor for Mark near entrance to town
+12	Донна Вирит	219	0	0	0	224	59	14	y	36	37	0	0	0	0	Sally's mom in dragon house
+13	Грант Валандир	32	0	0	0	226	1	15	y	40	41	0	0	0	0	Back of the weapon shop
+14	Миа Люсиль	216	0	0	0	225	38	16	y	38	39	0	0	0	0	Favor for Mark near entrance to town
 15	Вильям Ласкер	925	0	0	0	185	0	37	0	44	287	302	208	0	0	Good Thief promoter	23
 16	Секнит Андершадоу	17	0	0	0	345	0	40	0	48	49	0	0	0	0	Evil Thief promoter	5
 17	Сэр Чарльз Кихот	36	0	0	0	303	0	43	0	51	0	0	0	0	0	Good Paladin promoter	3
@@ -169,7 +169,7 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 167	Матрик Везерсон	30	0	0	0	329	0	0	0	266	353	0	0	0	0	Expert Merchant (4)	4
 168	Бетольд Каверхилл	85	0	0	0	348	0	0	0	267	354	0	0	0	0	Master Merchant (9)	9
 169	Бригхэм Скромный	18	0	0	0	480	0	0	0	268	434	0	0	0	0	Grand Master Merchant (6)	6
-170	Шейн Томас	2	0	0	0	471	0	0	0	269	355	0	0	0	0	Expert Repair_Item (2)	2
+170	Шейн Томас	2	0	0	0	471	0	0	0	269	355	574	0	0	0	Expert Repair_Item (2)	2
 171	Томас Мор	98	0	0	0	411	0	0	0	270	356	0	0	0	0	Master Reapir_Item (13)	13
 172	Гарет Умелец	15	0	0	0	288	0	0	0	271	418	0	0	0	0	Grand Master Repair_Item (3)	3
 173	Келли Холифилд	368	0	0	0	502	0	0	0	272	357	0	0	0	0	Expert Body_building (6)	6
@@ -298,7 +298,7 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 296	Полера Скулк	170	0	0	0	0	0	181	0	454	432	0	0	0	0	Hint NPC In The Pit (8)	
 297	Агата Нобл	386	0	0	0	0	0	182	0	460	461	0	0	0	0	Hint NPC in Nighon (10)	
 298	Винсент Альберс	234	0	0	0	0	0	182	0	496	461	0	0	0	0	Hint NPC in Nighon (10)	
-299	Даллия Спаркс	379	0	0	0	515	0	183	0	459	437	0	0	0	0	Hint NPC in Barrow Downs (11)	
+299	Даллия Спаркс	379	0	0	0	515	29	183	y	459	437	0	0	0	0	Hint NPC in Barrow Downs (11)	
 300	Магистр Арены	330	0	0	0	0	0	0	0	0	0	399	0	0	0		
 301	Адам МакКарти	236	0	0	0	0	0	0	0	0	0	0	0	0	0		
 302	Алекс Шерман	87	0	0	0	0	0	0	0	0	0	0	0	0	0		
@@ -378,32 +378,32 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 376	Прос_О_Мозг	68	0	0	0	0	0	0	0	0	0	0	0	0	0	
 377	"Мефисто, Древний Волхв"	52	0	0	0	0	0	0	0	0	0	0	0	0	0	
 378	Победитель состязания 7	3	0	0	0	0	0	0	0	0	0	0	0	0	0	
-379	Король Луис	918	0	0	0	0	0	0	0	0	0	0	0	0	0	
+379	Эмбер Пеббл	546	0	0	0	498	0	221	0	603	427	0	0	0	0	Goblin Dagger Quest
 380	Эван Насир	64	0	0	0	491	0	230	0	626	436	0	0	0	0	Buyer NPC Lamps
-381	Гулвульф	77	0	0	0	269	0	189	0	420	429	0	0	0	0	Hint NPC in Steadwick/Pete (3)
-382	Арон Кастро	97	0	0	0	274	0	189	0	418	420	0	0	0	0	Hint NPC in Steadwick/Pete (3)
+381	Гулвульф	77	0	0	0	269	27	189	y	420	429	0	0	0	0	Hint NPC in Steadwick/Pete (3)
+382	Арон Кастро	97	0	0	0	274	42	189	y	418	420	0	0	0	0	Hint NPC in Steadwick/Pete (3)
 383	Пип Хиллер	24	0	0	0	302	0	228	0	624	436	0	0	0	0	Buyer NPC Horseshoes
 384	Роберт Белкнап	408	0	0	0	322	0	229	0	625	498	0	0	0	0	Buyer NPC Embers
 385	Инфернон	401	0	0	0	383	0	226	0	622	435	0	0	0	0	Buyer NPC Wine
-386	Вако	31	0	0	0	401	0	184	0	527	529	0	0	0	0	Hint NPC in Tatalia (13) wharf area
-387	Ваша Совесть	37	0	0	0	388	0	184	0	529	527	0	0	0	0	Hint NPC in Tatalia (13) wharf area
-388	Аметист Драгоценный	374	0	0	0	516	0	183	0	459	499	0	0	0	0	Hint NPC in Barrow Downs/Pete (11)
-389	Матиас Медвежье Сердце	43	0	0	0	302	0	189	0	572	420	0	0	0	0	Hint NPC in Steadwick/Pete (3)
-390	Таня Кирклин	171	0	0	0	485	0	187	0	495	478	0	0	0	0	Hint NPC in Harmondale (2)
-391	Брахейн Кадарр	32	0	0	0	489	0	187	0	472	477	574	0	0	0	Hint NPC in Harmondale (2) + dragonscale crafter
-392	Карлин Талион	213	0	0	0	284	0	189	0	499	426	0	0	0	0	Hint NPC in Steadwick (3)
-393	Пегги Тиш	180	0	0	0	283	0	189	0	425	420	0	0	0	0	Hint NPC in Steadwick (3)
-394	Кира Кардрин	191	0	0	0	286	0	189	0	421	418	0	0	0	0	Hint NPC in Steadwick (3)
-395	Иня Ю	469	0	0	0	308	0	184	0	447	500	0	0	0	0	Hint NPC in Tularean Forest (4)
-396	Алик Уайтмун	420	0	0	0	323	0	184	0	448	444	0	0	0	0	Hint NPC in Tularean Forest (4)
-397	Эмбер Пеббл	546	0	0	0	498	0	221	0	603	499	422	0	0	0	Hint NPC in Deyja (5) + Goblin Dagger Quest
-398	Клэс Могрен	562	0	0	0	338	0	190	0	423	444	0	0	0	0	Hint NPC in Deyja (5)
-399	Лисия Ривенрок	376	0	0	0	520	0	183	0	457	609	0	0	0	0	Hint NPC in Barrow Downs (11)
-400	Фельдспар Тулмен	324	0	0	0	517	0	183	0	429	439	0	0	0	0	Hint NPC in Barrow Downs (11)
-401	Яспер Фиссур	318	0	0	0	518	0	183	0	528	429	0	0	0	0	Hint NPC in Barrow Downs (11)
-402	Келли Гарнет	384	0	0	0	519	0	183	0	529	444	0	0	0	0	Hint NPC in Barrow Downs (11)
-403	Регина Ферн	187	0	0	0	0	0	184	0	447	500	0	0	0	0	Hint NPC in Tatalia (13) wharf area
-404	Тед Робинсон	98	0	0	0	0	0	184	0	448	500	0	0	0	0	Hint NPC in Tatalia (13) wharf area
+386	Вако	31	0	0	0	0	0	184	0	527	529	0	0	0	0	Hint NPC in Tatalia (13) wharf area
+387	Ваша Совесть	37	0	0	0	0	0	184	0	529	527	0	0	0	0	Hint NPC in Tatalia (13) wharf area
+388	Аметист Драгоценная	374	0	0	0	516	10	183	y	459	499	0	0	0	0	Hint NPC in Barrow Downs/Pete (11)
+389	Матиас Медвежье Сердце	43	0	0	0	302	58	189	y	572	420	0	0	0	0	Hint NPC in Steadwick/Pete (3)
+390	Таня Кирклин	171	0	0	0	485	43	187	y	495	478	0	0	0	0	Hint NPC in Harmondale (2)
+391	Брахейн Кадарр	32	0	0	0	489	13	187	y	472	477	0	0	0	0	Hint NPC in Harmondale (2)
+392	Карлин Талион	213	0	0	0	284	24	189	y	499	426	0	0	0	0	Hint NPC in Steadwick (3)
+393	Пегги Тиш	180	0	0	0	283	5	189	y	425	420	0	0	0	0	Hint NPC in Steadwick (3)
+394	Кира Кардрин	191	0	0	0	286	20	189	y	421	418	0	0	0	0	Hint NPC in Steadwick (3)
+395	Иня Ю	469	0	0	0	308	23	184	y	447	500	0	0	0	0	Hint NPC in Tularean Forest (4)
+396	Алик Уайтмун	420	0	0	0	323	38	184	y	448	444	0	0	0	0	Hint NPC in Tularean Forest (4)
+397	Дэмон Хокер	37	0	0	0	498	14	190	y	422	499	0	0	0	0	Hint NPC in Deyja (5)
+398	Клэс Могрен	562	0	0	0	338	31	190	y	423	444	0	0	0	0	Hint NPC in Deyja (5)
+399	Лисия Ривенрок	376	0	0	0	520	13	183	y	457	609	0	0	0	0	Hint NPC in Barrow Downs (11)
+400	Фельдспар Тулмен	324	0	0	0	517	57	183	y	429	439	0	0	0	0	Hint NPC in Barrow Downs (11)
+401	Яспер Фиссур	318	0	0	0	518	28	183	y	528	429	0	0	0	0	Hint NPC in Barrow Downs (11)
+402	Келли Гарнет	384	0	0	0	519	50	183	y	529	444	0	0	0	0	Hint NPC in Barrow Downs (11)
+403	Регина Ферн	187	0	0	0	388	59	184	y	447	500	0	0	0	0	Hint NPC in Tatalia (13) wharf area
+404	Тед Робинсон	98	0	0	0	401	25	184	y	448	500	0	0	0	0	Hint NPC in Tatalia (13) wharf area
 405	Таша Вейл	461	0	0	0	0	0	185	0	498	441	0	0	0	0	Hint NPC in Avlee (14)
 406	Релбурн Дитч	300	0	0	0	0	0	186	0	458	473	0	0	0	0	Hint NPC in Stone City (39)
 407	Орик Голдсмит	318	0	0	0	0	0	186	0	498	476	0	0	0	0	Hint NPC in Stone City (39)
@@ -419,19 +419,19 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 417	Саманта Килверс	568	0	0	0	0	0	189	0	421	444	0	0	0	0	Hint NPC in Steadwick (3)
 418	Табита Йерин	199	0	0	0	0	0	190	0	422	499	0	0	0	0	Hint NPC in Deyja (5)
 419	Жасмин Живерс	540	0	0	0	0	0	190	0	423	572	0	0	0	0	Hint NPC in Deyja (5)
-420	Маттрик Боувс	563	0	0	0	484	0	179	0	433	452	0	0	0	0	Hint NPC In Bracada (6)
-421	Алашандра Риз	591	0	0	0	478	0	179	0	452	453	0	0	0	0	Hint NPC In Bracada (6)
+420	Маттрик Боувс	563	0	0	0	484	54	179	y	433	452	0	0	0	0	Hint NPC In Bracada (6)
+421	Алашандра Риз	591	0	0	0	478	4	179	y	452	453	0	0	0	0	Hint NPC In Bracada (6)
 422	Калиндра Голденсайт	169	0	0	0	396	0	225	0	621	491	0	0	0	0	Buyer NPC Apples
 423	Арвин Бенеклауд	324	0	0	0	520	0	227	0	623	469	0	0	0	0	Buyer NPC Ore
-424	Нивек Арлонд	32	0	0	0	295	0	189	0	444	425	0	0	0	0	Hint NPC in Steadwick (3)
-425	Мирей Варлен	467	0	0	0	313	0	188	0	440	443	0	0	0	0	Hint NPC in Tularean Forest (4)
+424	Нивек Арлонд	32	0	0	0	295	8	189	y	444	425	0	0	0	0	Hint NPC in Steadwick (3)
+425	Мирей Варлен	467	0	0	0	313	7	188	y	440	443	0	0	0	0	Hint NPC in Tularean Forest (4)
 426	Шиара Огненный Опал	217	0	0	0	453	0	190	0	444	499	0	0	0	0	Hint NPC in Deyja (5)
-427	Линда Дракен	209	0	0	0	339	0	190	0	423	422	0	0	0	0	Hint NPC in Deyja (5)
-428	Феррис Оксид	308	0	0	0	334	0	190	0	444	506	0	0	0	0	Hint NPC in Deyja (5)
-429	Джейс Кедрин	319	0	0	0	336	0	190	0	499	506	0	0	0	0	Hint NPC in Stone City (39)
-430	Джиллиан Редферн	471	0	0	0	309	0	188	0	444	442	0	0	0	0	Hint NPC in Tularean Forest/Pete (4)
-431	Карсон Скайфайр	418	0	0	0	321	0	188	0	440	443	0	0	0	0	Hint NPC in Tularean Forest (4)
-432	Рейнин Ривенкрест	480	0	0	0	313	0	188	0	506	572	0	0	0	0	Hint NPC in Tularean Forest (4)
+427	Линда Дракен	209	0	0	0	339	60	190	y	423	422	0	0	0	0	Hint NPC in Deyja (5)
+428	Феррис Оксид	308	0	0	0	334	51	190	y	444	506	0	0	0	0	Hint NPC in Deyja (5)
+429	Джейс Кедрин	319	0	0	0	336	44	190	y	499	506	0	0	0	0	Hint NPC in Stone City (39)
+430	Джиллиан Редферн	471	0	0	0	309	33	188	y	444	442	0	0	0	0	Hint NPC in Tularean Forest/Pete (4)
+431	Карсон Скайфайр	418	0	0	0	321	17	188	y	440	443	0	0	0	0	Hint NPC in Tularean Forest (4)
+432	Рейнин Ривенкрест	480	0	0	0	313	9	188	y	506	572	0	0	0	0	Hint NPC in Tularean Forest (4)
 433	Том Оно	949	0	0	0	0	0	0	0	0	0	0	0	0	0	
 434	Карл Драун	951	0	0	0	0	0	0	0	0	0	0	0	0	0	
 435	Тони Эванс	18	0	0	0	0	0	0	0	0	0	0	0	0	0	
@@ -439,13 +439,13 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 437	Карл Пиндор	412	0	0	0	0	0	0	0	0	0	0	0	0	0	
 438	Эрик Хеффрон	408	0	0	0	0	0	0	0	0	0	0	0	0	0	
 439	Хейрбау	30	0	0	0	0	0	204	0	512	570	0	0	0	0	Goblin Spy in Harmondale
-440	Рон Талрейш	622	0	0	0	305	0	189	0	529	499	0	0	0	0	Hint NPC in Steadwick (3)
+440	Рон Талрейш	622	0	0	0	305	35	189	y	529	499	0	0	0	0	Hint NPC in Steadwick (3)
 441	Страж	326	0	0	0	0	0	203	0	0	0	0	0	0	0	Guard in Stone City
-442	Пени Прити	176	0	0	0	290	0	189	0	509	572	0	0	0	0	Hint NPC in Erathia (3)
-443	Таллия Равенсвуд	165	0	0	0	492	0	189	0	529	572	0	0	0	0	Hint NPC in Erathia (3)
-444	Харли Квинн	536	0	0	0	340	0	190	0	572	529	0	0	0	0	Hint NPC in Deyja (5)
-445	Мадиган Тарент	166	0	0	0	429	0	180	0	571	529	0	0	0	0	Hint NPC in Celeste (7)
-446	Гарион Рамирез	17	0	0	0	430	0	180	0	572	444	0	0	0	0	Hint NPC in Celeste (7)
+442	Пени Прити	176	0	0	0	290	46	189	y	509	572	0	0	0	0	Hint NPC in Erathia (3)
+443	Таллия Равенсвуд	165	0	0	0	492	54	189	y	529	572	0	0	0	0	Hint NPC in Erathia (3)
+444	Харли Квинн	536	0	0	0	340	48	190	y	572	529	0	0	0	0	Hint NPC in Deyja (5)
+445	Мадиган Тарент	166	0	0	0	429	39	180	y	571	529	0	0	0	0	Hint NPC in Celeste (7)
+446	Гарион Рамирез	17	0	0	0	430	41	180	y	572	444	0	0	0	0	Hint NPC in Celeste (7)
 447	Маргарита проводница	162	0	0	0	0	0	18	0	0	0	0	0	0	0	Docent for the tour 1	
 448	Маргарита проводница	162	0	0	0	0	0	19	0	0	0	0	0	0	0	Docent for the tour 2	
 449	Маргарита проводница	162	0	0	0	0	0	20	0	0	0	0	0	0	0	Docent for the tour 3	

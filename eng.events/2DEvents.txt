@@ -387,7 +387,7 @@
 385		E_House R8	14	88	Swiftfoot's House			0	0	0	0	1.5				88
 386								0	0	0	0	1.5				88
 387		H_Human P37	13	73	Steele Residence			0	0	0	0	1.5				73
-388		H_Human P38	13	74	Conscience Home			0	0	0	0	1.5				73
+388		H_Human P38	13	74	Fern's Home			0	0	0	0	1.5				73
 389		H_Human P39	13	75	Everil's House			0	0	0	0	1.5				73
 390								0	0	0	0	1.5				73
 391								0	0	0	0	1.5				73
@@ -400,7 +400,7 @@
 398		H_Human P48	13	75	Redding Residence			0	0	0	0	1.5				73
 399								0	0	0	0	1.5				73
 400		H_Human P50	13	73	Fist's House			0	0	0	0	1.5				73
-401		H_Human P51	13	74	Wacko's			0	0	0	0	1.5				73
+401		H_Human P51	13	74	Robynson's			0	0	0	0	1.5				73
 402		H_Human M28	13	75	Weldric's Home			0	0	0	0	1.5				76
 403								0	0	0	0	1.5				76
 404		H_Human M30	13	76	Visconti Residence			0	0	0	0	1.5				76

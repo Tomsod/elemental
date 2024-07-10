@@ -16068,6 +16068,82 @@ static void __declspec(naked) elven_chainmail_gfx(void)
       }
 }
 
+
+// Let Ghoulbane act as GM Torch Light while equipped.
+// This code is reused for four slightly different hooks.
+static void __declspec(naked) ghoulbane_torch_common(void)
+{
+    asm
+      {
+        push ecx
+        push edx
+        push 4
+        loop:
+        mov ecx, dword ptr [esp]
+        push SLOT_MAIN_HAND
+        push GHOULSBANE
+        mov ecx, dword ptr [PC_POINTERS+ecx*4-4]
+        call dword ptr ds:has_item_in_slot
+        test eax, eax
+        jnz light
+        dec dword ptr [esp]
+        jnz loop
+        light:
+        pop eax
+        pop edx
+        pop ecx
+        pop eax
+        jz skip
+        add dword ptr [esp], eax ; jump to torch power code
+        mov al, 5 ; as gm torch
+        skip:
+        cmp dword ptr [PARTY_BUFF_ADDR+BUFF_TORCH_LIGHT*SIZE_BUFF+4], 0 ; repl.
+        ret
+      }
+}
+
+// First hook for the above.
+static void __declspec(naked) ghoulbane_torch_1(void)
+{
+    asm
+      {
+        push 20
+        jmp ghoulbane_torch_common
+      }
+}
+
+// Second hook.
+static void __declspec(naked) ghoulbane_torch_2(void)
+{
+    asm
+      {
+        push 25
+        jmp ghoulbane_torch_common
+      }
+}
+
+// Another hook; the code here is a bit different.
+static void __declspec(naked) ghoulbane_torch_3(void)
+{
+    asm
+      {
+        ; replaced code below:
+        mov esi, dword ptr [PARTY_BUFF_ADDR+BUFF_TORCH_LIGHT*SIZE_BUFF+4]
+        push 34
+        jmp ghoulbane_torch_common
+      }
+}
+
+// The last hook.
+static void __declspec(naked) ghoulbane_torch_4(void)
+{
+    asm
+      {
+        push 27
+        jmp ghoulbane_torch_common
+      }
+}
+
 // Add the new properties to some old artifacts,
 // and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
@@ -16190,7 +16266,7 @@ static inline void new_artifacts(void)
     hook_call(0x450657, mark_guaranteed_artifacts, 5);
     hook_call(0x45028f, fix_static_chest_items, 6);
     hook_call(0x45052f, mark_chest_checked, 6);
-    patch_byte(0x456935, 12); // reduce max randomly generated artifacts
+    patch_byte(0x456935, 11); // reduce max randomly generated artifacts
     // lady escort and sniper quiver shielding are in shield_stacking() above
     hook_call(0x4397bb, double_axe_mace_chance, 5);
     hook_call(0x4397ec, provide_mace_chance, 6); // stun
@@ -16209,6 +16285,10 @@ static inline void new_artifacts(void)
     dword(0x4e5020 + 17 * 8 + 16 * 8 + 4) = 108; // female arm 1 y
     dword(0x4e5240 + 17 * 8 + 16 * 8) = 88; // female arm 2 x
     dword(0x4e5240 + 17 * 8 + 16 * 8 + 4) = 108; // female arm 2 y
+    hook_call(0x43f45c, ghoulbane_torch_1, 6);
+    hook_call(0x47bcb2, ghoulbane_torch_2, 6);
+    hook_call(0x47bf31, ghoulbane_torch_3, 8);
+    hook_call(0x47c564, ghoulbane_torch_4, 6);
 }
 
 // When calculating missile damage, take note of the weapon's skill.

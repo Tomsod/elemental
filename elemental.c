@@ -4222,6 +4222,7 @@ static void __declspec(naked) pure_potions_power(void)
 // Defined below.
 static void wand_price(void);
 static void knife_price(void);
+static void scroll_price(void);
 
 // Make the price of most potions variable.
 // Potion price is arranged so that at the typical potion powers
@@ -4241,9 +4242,11 @@ static void __declspec(naked) potion_price(void)
     asm
       {
         mov edi, dword ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.value
-        cmp byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.equip_stat, \
-            ITEM_TYPE_POTION - 1
+        mov dl, byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.equip_stat
+        cmp dl, ITEM_TYPE_POTION - 1
         je potion
+        cmp dl, ITEM_TYPE_SCROLL - 1
+        je scroll_price
         cmp dword ptr [esi], FIRST_WAND
         jb not_wand
         cmp dword ptr [esi], LAST_WAND
@@ -5098,6 +5101,168 @@ static void __declspec(naked) darkness_penalty_hook(void)
       }
 }
 
+// Used just below.
+static const char scroll_power_format[] = "%s: %s %d";
+
+// Show the variable scroll power on a right-click (or M5 if none set).
+static void __declspec(naked) display_scroll_power(void)
+{
+    asm
+      {
+        mov al, byte ptr [edi].s_items_txt_item.equip_stat ; replaced code
+        cmp al, ITEM_TYPE_POTION - 1 ; ditto
+        je skip
+        cmp al, ITEM_TYPE_SCROLL - 1
+        jne skip
+        movzx eax, byte ptr [edi].s_items_txt_item.mod1_dice_count ; spell id
+        xor edx, edx
+        cmp eax, LAST_REAL_SPELL
+        ja mastery ; fake ones are telepathy and fate, both normal mastery
+        cmp eax, SPL_PSYCHIC_SHOCK
+        sete dl
+        je mastery ; this spell is now expert (berserk can still be expert too)
+        dec eax
+        mov ecx, 11
+        div ecx
+        level:
+        lea edx, [edx+edx*4]
+        shr edx, 4 ; 0-10 to 0-3
+        mastery:
+        cmp edx, 3
+        sbb edx, -1
+        shl edx, 6
+        mov eax, dword ptr [ebp-4] ; the item
+        mov eax, dword ptr [eax].s_item.charges
+        test eax, eax
+        jnz ok
+        mov eax, SKILL_MASTER + 5 ; default
+        ok:
+        or eax, edx ; max of masteries
+        cmp eax, SKILL_EXPERT
+        jae skilled
+        add dword ptr [esp], 16 ; skip to (potion) power code
+        skip:
+        ret
+        skilled:
+        cmp eax, SKILL_MASTER
+        cmovb ecx, dword ptr [GLOBAL_TXT_ADDR+433*4] ; "expert"
+        cmovae ecx, dword ptr [GLOBAL_TXT_ADDR+432*4] ; "master"
+        cmp eax, SKILL_GM
+        cmovae ecx, dword ptr [GLOBAL_TXT_ADDR+96*4] ; "grand"
+        and eax, SKILL_MASK
+        push eax
+        push ecx
+        push dword ptr [GLOBAL_TXT_ADDR+449*4] ; "power"
+#ifdef __clang__
+        mov eax, offset scroll_power_format
+        push eax
+#else
+        push offset scroll_power_format
+#endif
+        lea ecx, [ebp-424] ; buffer
+        push ecx
+        call dword ptr ds:sprintf
+        add esp, 20
+        add dword ptr [esp], 10 ; to after print code
+        xor eax, eax ; set zf
+        ret
+      }
+}
+
+// Defined below.
+static void init_knife_charges(void);
+
+// Give randomly-generated spell scrolls variable power.
+// Rolls 1d4 power per tlvl, and tlvl - 4 + 1d4 mastery.
+static void __declspec(naked) random_scroll_power(void)
+{
+    asm
+      {
+        cmp byte ptr [edi+4+eax].s_items_txt_item.equip_stat, \
+            ITEM_TYPE_SCROLL - 1
+        jne skip
+        call dword ptr ds:random
+        xor edx, edx
+        lea ecx, [edx+3]
+        and eax, ecx
+        neg eax
+        add eax, dword ptr [ebp+8] ; treasure level (0-5)
+        cmp eax, ecx
+        cmovl ecx, edx
+        cmova eax, ecx
+        sbb eax, -1
+        shl eax, 6
+        mov dword ptr [esi].s_item.charges, eax
+        mov ebx, dword ptr [ebp+8]
+        loop:
+        call dword ptr ds:random
+        and eax, 3
+        inc eax
+        add dword ptr [esi].s_item.charges, eax
+        dec ebx
+        jge loop
+        skip:
+        jmp init_knife_charges ; old hook at this address
+      }
+}
+
+// Adjust scroll price slightly based on its power.
+// Called from potion_price() above.
+static void __declspec(naked) scroll_price(void)
+{
+    asm
+      {
+        movzx eax, byte ptr [ITEMS_TXT_ADDR+eax] \
+                            .s_items_txt_item.mod1_dice_count ; spell id
+        xor ecx, ecx
+        xor edx, edx
+        cmp eax, LAST_REAL_SPELL
+        ja fake ; fake ones are telepathy and fate, both normal mastery
+        cmp eax, SPL_BERSERK
+        je berserk ; can be expert on scrolls, but has master rarity
+        cmp eax, SPL_PSYCHIC_SHOCK
+        je shock ; this spell is now expert
+        dec eax
+        mov cl, 11
+        div ecx
+        cmp eax, 7 ; bonus for light/dark
+        setae cl
+        lea edx, [edx+edx*4]
+        shr edx, 4 ; 0-10 to 0-3
+        lea ecx, [edx+ecx*2+1]
+        jmp power
+        berserk:
+        inc ecx
+        shock:
+        inc edx
+        inc ecx
+        fake:
+        inc ecx
+        power:
+        shl ecx, 2 ; this is base power, roughly the average for random scrolls
+        mov eax, dword ptr [esi].s_item.charges
+        test eax, eax
+        jnz ok
+        mov eax, SKILL_MASTER + 5 ; default
+        ok:
+        mov esi, eax
+        and esi, SKILL_MASK
+        shr eax, 6
+        cmp edx, 3
+        sbb edx, -1
+        cmp eax, edx
+        cmovb eax, edx ; can`t be below base mastery
+        lea eax, [esi+eax*2] ;  expert and master = 2 skill points each, gm = 4
+        add eax, ecx ; 50% of price is variable
+        shl ecx, 1
+        mul edi
+        div ecx
+        mov edi, eax
+        test ecx, ecx ; clear zf
+        ret
+      }
+}
+
 // Misc item tweaks.
 static inline void misc_items(void)
 {
@@ -5179,9 +5344,12 @@ static inline void misc_items(void)
     hook_call(0x43967b, carnage_hit_bonus, 7);
     hook_call(0x43a92c, carnage_dodge, 5);
     hook_call(0x439605, darkness_penalty_hook, 6);
+    hook_call(0x41dd77, display_scroll_power, 5);
+    hook_call(0x456a2c, random_scroll_power, 5);
 }
 
-static uint32_t potion_damage;
+// Used to store variable scroll power for the scroll cast event.
+static uint32_t scroll_power;
 
 // Allow using Flaming, Freezing, Shocking and Noxious potions
 // to deal splash elemental damage at a short range.
@@ -5207,7 +5375,7 @@ static void __declspec(naked) throw_potions_jump(void)
         ret
         active:
         mov eax, dword ptr [MOUSE_ITEM].s_item.bonus
-        mov dword ptr [potion_damage], eax
+        mov dword ptr [scroll_power], eax
         mov eax, dword ptr [MOUSE_ITEM] ; item type
         ; both the four potions and their four spells are contiguous,
         ; but the order is different.  thus, we shuffle them a bit
@@ -5238,46 +5406,21 @@ static void __declspec(naked) throw_potions_jump(void)
 }
 
 // A hack for Alchemist hirelings pretending to be recharge scrolls.
-// TODO: redo this when scroll power is variable
 static int hireling_recharge = FALSE;
 
 // Provide the proper spell power for the potion throw event.
 // We hijacked the scroll cast event for this,
 // which uses a fixed power, so we store the power in a static var.
-// Also here: let Gadgeteer's Belt enhance (actual) scroll power,
-// and allow Alchemist hirelings to cast Recharge Item with no PC recovery.
+// Update: as scroll power is now variable, all scrolls use this.
+// Also here: allow Alchemist NPCs to cast Recharge Item with no PC recovery.
 static void __declspec(naked) throw_potions_power(void)
 {
     asm
       {
         cmp dword ptr [hireling_recharge], ebx
         jne alchemist
-        cmp dword ptr [esp+32], SPL_FLAMING_POTION ; param 1 = spell
-        jb ordinary
-        cmp dword ptr [esp+32], SPL_HOLY_WATER
-        ja ordinary
         pop eax
-        push dword ptr [potion_damage]
-        jmp eax
-        ordinary:
-        mov ecx, dword ptr [esp+56] ; PC index
-        mov ecx, dword ptr [PC_POINTERS+ecx*4]
-        mov bl, byte ptr [ecx].s_player.class
-        push SLOT_BELT
-        push GADGETEERS_BELT
-        call dword ptr ds:has_item_in_slot
-        mov ecx, SKILL_MASTER + 5 ; vanilla scroll power
-        test eax, eax
-        jz no_belt
-        add ecx, SKILL_GM - SKILL_MASTER + 5
-        and bl, -4
-        cmp bl, CLASS_THIEF
-        jne no_belt
-        add ecx, 5
-        no_belt:
-        xor ebx, ebx ; restore
-        pop eax
-        push ecx
+        push dword ptr [scroll_power]
         jmp eax
         alchemist:
         mov dword ptr [hireling_recharge], ebx ; reset
@@ -6612,6 +6755,7 @@ static void __declspec(naked) monster_fate(void)
 
 // Let the scrolls cast a spell according to mod1 in items.txt,
 // as opposed to their item ID.  Allows retaining Fate scrolls.
+// Also here: calculate variable scroll power (with the belt bonus).
 static void __declspec(naked) scroll_spell_id(void)
 {
     asm
@@ -6620,6 +6764,57 @@ static void __declspec(naked) scroll_spell_id(void)
         shl ecx, 4
         movzx esi, byte ptr [ITEMS_TXT_ADDR+ecx] \
                             .s_items_txt_item.mod1_dice_count
+        mov ecx, dword ptr [ebp+8] ; PC 1-4
+        mov ecx, dword ptr [PC_POINTERS+ecx*4-4]
+        mov bl, byte ptr [ecx].s_player.class
+        push SLOT_BELT
+        push GADGETEERS_BELT
+        call dword ptr ds:has_item_in_slot
+        mov ecx, dword ptr [MOUSE_ITEM].s_item.charges
+        test ecx, ecx
+        jnz ok
+        mov ecx, SKILL_MASTER + 5 ; default power just in case
+        ok:
+        test eax, eax
+        jz no_belt
+        mov edx, ecx
+        and edx, SKILL_MASK
+        shr edx, 1
+        and bl, -4
+        cmp bl, CLASS_THIEF
+        je thief
+        shr edx, 1
+        thief:
+        add ecx, edx
+        xor edx, edx
+        cmp esi, LAST_REAL_SPELL
+        ja mastery ; fake ones are telepathy and fate, both normal mastery
+        cmp esi, SPL_PSYCHIC_SHOCK
+        sete dl
+        je mastery ; this spell is now expert (berserk can still be expert too)
+        lea eax, [esi-1]
+        mov ebx, 11
+        div ebx
+        level:
+        lea edx, [edx+edx*4]
+        shr edx, 4 ; 0-10 to 0-3
+        mastery:
+        cmp edx, 3
+        sbb edx, -1
+        shl edx, 6
+        cmp ecx, edx
+        cmovae edx, ecx
+        cmp edx, SKILL_GM
+        jae no_belt
+        and edx, ~SKILL_MASK
+        jnz skilled
+        add edx, SKILL_EXPERT / 2
+        skilled:
+        and ecx, SKILL_MASK
+        lea ecx, [edx*2+ecx] ; normal -> expert -> master -> gm
+        no_belt:
+        mov dword ptr [scroll_power], ecx
+        mov eax, dword ptr [MOUSE_ITEM] ; restore
         ret
       }
 }
@@ -10491,9 +10686,6 @@ static void __declspec(naked) check_skill_hook(void)
         ret
       }
 }
-
-// Defined below.
-static void init_knife_charges(void);
 
 // Initialise specitems spawned through Add gamescript command.
 // Necessary for the new Barrow Knife.
@@ -15736,6 +15928,18 @@ static void __declspec(naked) display_new_belt(void)
       }
 }
 
+// Scrolls that act on inventory don't use the scroll cast action code,
+// so we must provide the variable (possibly boosted) power separately.
+static void __declspec(naked) gadgeteer_special_scroll_bonus(void)
+{
+    asm
+      {
+        pop eax
+        push dword ptr [scroll_power]
+        jmp eax
+      }
+}
+
 // Let Gadgeteer's Belt enhance drunk potion power.
 // This hook is for HP and SP potions.
 // Also here: nerf Divine Power to restore 3x potion power in SP.
@@ -16249,6 +16453,7 @@ static inline void new_artifacts(void)
     hook_call(0x43d8d5, display_new_belt, 6);
     // wand bonus is in variable_wand_power() above
     // scroll bonus is in throw_potions_power() above
+    hook_call(0x468762, gadgeteer_special_scroll_bonus, 5);
     hook_call(0x468798, gadgeteer_cure_potions_bonus, 5); // red
     hook_call(0x4687b7, gadgeteer_cure_potions_bonus, 5); // blue
     hook_call(0x468afc, gadgeteer_cure_potions_bonus, 8); // divine cure
@@ -19506,7 +19711,7 @@ static void __declspec(naked) raise_ench_item_difficulty(void)
 }
 
 // Don't count enchantment cost when trying to sell an un-ID'd item.
-// For wands, cap the cost at base item cost.
+// For wands and scrolls, cap the cost at base item cost.
 // This will also ignore variable potion cost, but those are always ID'd.
 static void __declspec(naked) unid_item_sell_price(void)
 {
@@ -19520,11 +19725,15 @@ static void __declspec(naked) unid_item_sell_price(void)
         mov edx, dword ptr [ecx]
         lea eax, [edx+edx*2]
         shl eax, 4
+        cmp byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.equip_stat, \
+            ITEM_TYPE_SCROLL - 1
         mov eax, dword ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.value
+        je cap
         cmp edx, FIRST_WAND
         jb quit
         cmp edx, LAST_WAND
         ja quit
+        cap:
         push eax
         call dword ptr ds:item_value
         pop edx
@@ -21614,7 +21823,8 @@ static void __declspec(naked) knife_velocity(void)
 // The +0 and +3 knives start with 50-100 and 40-80 max charges
 // respectively; like wands, +0 knives will be pre-used.
 // For the +3 knives we instead set knife regeneration time.
-// Also called from evt_add_specitem() and pickpocket_specitem() above.
+// Called from evt_add_specitem(), pickpocket_specitem()
+// and random_scroll_power() above, plus from just below.
 static void __declspec(naked) init_knife_charges(void)
 {
     asm
@@ -21895,7 +22105,6 @@ static inline void throwing_knives(void)
     // knives treated as arrows in explode_potions_jump() above
     hook_jump(0x4396aa, (void *) 0x439652); // treat knives as arrows when hit
     // knife count in temp_enchant_height() and display_temp_enchant() above
-    hook_call(0x456a2c, init_knife_charges, 5);
     hook_call(0x415cce, also_init_knife_charges, 5);
     hook_call(0x426b72, init_looted_knife_charges, 5);
     // full charge in shops in charge_shop_wands_common() above
@@ -22758,7 +22967,9 @@ static void __thiscall restock_scrolls(int guild)
         init_item(scroll);
         scroll->id = id;
         scroll->flags = IFLAGS_ID;
-        // TODO: add appropriate scroll power when implemented
+        scroll->charges = (max_level + 1) / 2 + random() % max_level;
+        scroll->charges += max_level > 10 ? SKILL_GM : max_level > 7 ?
+                               SKILL_MASTER : max_level > 4 ? SKILL_EXPERT : 0;
         if (image)
           {
             int bitmap = load_bitmap(ICONS_LOD, ITEMS_TXT[id].bitmap, 2);

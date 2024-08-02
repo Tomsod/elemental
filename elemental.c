@@ -1570,6 +1570,7 @@ enum struct_offsets
 #define PARTY_Z 0xacd4f4
 #define PARTY_DIR 0xacd4f8
 #define PARTY_LOOK_ANGLE 0xacd4fc
+#define FLYING 0xacd53c
 #define PARTY_GOLD 0xacd56c
 // Pointers for images in the shop window: [0] = background, [1+] = wares.
 #define SHOP_IMAGES 0xf8afe4
@@ -11671,7 +11672,7 @@ static void __declspec(naked) restrict_flying_up(void)
         disable:
         cmp dword ptr [ebp-76], ecx ; replaced code
         jnz fail
-        mov dword ptr [0xacd53c], ecx ; disable flight
+        mov dword ptr [FLYING], ecx
         fail:
         test ecx, ecx ; set zf
         ret
@@ -11685,10 +11686,10 @@ static void __declspec(naked) restrict_flying_down(void)
       {
         cmp dword ptr [PARTY_Z], 4000
         jl low
-        cmp dword ptr [0xacd53c], ecx ; if already flying
+        cmp dword ptr [FLYING], ecx ; == 0
         jz fail
         low:
-        cmp dword ptr [TURN_BASED], ecx ; == 0
+        cmp dword ptr [TURN_BASED], ecx
         jz ok
         cmp dword ptr [0x4f86dc], 3 ; TB phase
         jne fail
@@ -11710,7 +11711,7 @@ static void __declspec(naked) restrict_free_fall(void)
 {
     asm
       {
-        cmp dword ptr [0xacd53c], eax ; replaced code
+        cmp dword ptr [FLYING], eax ; replaced code
         jz quit
         cmp dword ptr [TURN_BASED], eax ; == 0
         jz ok
@@ -11736,7 +11737,7 @@ static void __declspec(naked) disable_flight(void)
       {
         cmp dword ptr [PARTY_ADDR+eax-SIZE_PLAYER].s_player.sp, ecx ; replaced
         jg skip
-        mov dword ptr [0xacd53c], ecx ; disable flight
+        mov dword ptr [FLYING], ecx ; == 0
         skip:
         ret
       }
@@ -12529,6 +12530,29 @@ static void __declspec(naked) restore_random_seed(void)
       }
 }
 
+// Used just below, to check if the party moved last tick.
+static struct { int x, y; } running_old;
+
+// Only apply recovery penalty for running when the party actually moves.
+// NB: this will be a false positive for one tick after reload etc., but w/e.
+static void __declspec(naked) running_recovery(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [PARTY_X]
+        mov edx, dword ptr [PARTY_Y]
+        test byte ptr [0xacd6bc], 2 ; replaced code (running bit)
+        jz skip
+        cmp ecx, dword ptr [running_old.x]
+        jne skip
+        cmp edx, dword ptr [running_old.y]
+        skip:
+        mov dword ptr [running_old.x], ecx
+        mov dword ptr [running_old.y], edx
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -12731,6 +12755,7 @@ static inline void misc_rules(void)
     hook_call(0x445600, arena_prize_text, 5);
     hook_call(0x4613b7, fixed_street_npcs, 5);
     hook_call(0x461353, restore_random_seed, 5);
+    hook_call(0x49440b, running_recovery, 7);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

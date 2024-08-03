@@ -21267,6 +21267,7 @@ static inline void skill_changes(void)
     hook_call(0x41eb30, train_id_monster, 6);
     patch_byte(0x4912a1, 0xc6); // multiply perception bonus by mastery
     patch_byte(0x491307, 0xc6); // same with disarm
+    patch_byte(0x491247, 0xce); // also merchant
     hook_call(0x48fbd5, level_skill_bonus, 8);
     hook_call(0x48ffdc, store_weapon_quality_bonus, 7);
     hook_call(0x49005b, add_weapon_quality_bonus_to_ac, 5);

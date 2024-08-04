@@ -1484,7 +1484,23 @@ enum horses
     HORSE_AVLEE,
 };
 
+struct __attribute__((packed)) npc
+{
+    char *name;
+    SKIP(4);
+    int bits;
+    SKIP(8);
+    int house;
+    int profession;
+    SKIP(40);
+    int used_ability;
+    SKIP(4);
+};
+typedef struct npc s_npc;
+
 #define NPC_ADDR 0x72d50c
+#define NPCS ((struct npc *) NPC_ADDR)
+#define NPCS_LENGTH 0x73c014
 #define NPC_HIRED 0x80
 #define HIRED_NPC_1 0xad44f4
 #define HIRED_NPC_2 0xad4540
@@ -1542,6 +1558,7 @@ enum sizes
     SIZE_MAPSTAT = sizeof(struct mapstats_item),
     SIZE_SPCITEM = sizeof(struct spcitem),
     SIZE_EVENT2D = sizeof(struct event2d),
+    SIZE_NPC = sizeof(struct npc),
 };
 
 // Some inline assembly limitations prevent directly addressing these.
@@ -2295,7 +2312,7 @@ static int __thiscall is_immune(struct player *player, unsigned int element)
     case MAGIC:
         if (has_item_in_slot(player, WITCHBANE, SLOT_AMULET)
             || (player->class & -4) == CLASS_KNIGHT
-                && byte(NPC_ADDR + HORSE_AVLEE * 76 + 8) & NPC_HIRED)
+                && NPCS[HORSE_AVLEE].bits & NPC_HIRED)
             result |= 1;
         break;
       }
@@ -10907,8 +10924,8 @@ static void __declspec(naked) empty_extra_chest_hook(void)
         mov dword ptr [esp], 0x4bc6f0 ; show statusline text
         ret
         ok:
-        mov eax, dword ptr [HIRED_NPC_1+24]
-        cmp eax, dword ptr [HIRED_NPC_2+24]
+        mov eax, dword ptr [HIRED_NPC_1].s_npc.profession
+        cmp eax, dword ptr [HIRED_NPC_2].s_npc.profession
         je skip ; if another porter etc. remains, do not empty
         cmp dword ptr [ebp+24], NPC_PORTER
         jne not_porter
@@ -10927,7 +10944,7 @@ static void __declspec(naked) empty_extra_chest_hook(void)
         mov ecx, 4
         call empty_extra_chest
         skip:
-        cmp dword ptr [0x73c014], edi ; replaced code
+        cmp dword ptr [NPCS_LENGTH], edi ; replaced code
         ret
       }
 }
@@ -11309,19 +11326,19 @@ static void __declspec(naked) tavern_rest_buff(void)
         inc edx
         add edx, ecx
         dish:
-        cmp dword ptr [HIRED_NPC_1+24], NPC_COOK
+        cmp dword ptr [HIRED_NPC_1].s_npc.profession, NPC_COOK
         je left
-        cmp dword ptr [HIRED_NPC_1+24], NPC_CHEF
+        cmp dword ptr [HIRED_NPC_1].s_npc.profession, NPC_CHEF
         jne not_left
         left:
-        mov dword ptr [HIRED_NPC_1+68], edx
+        mov dword ptr [HIRED_NPC_1].s_npc.used_ability, edx
         not_left:
-        cmp dword ptr [HIRED_NPC_2+24], NPC_COOK
+        cmp dword ptr [HIRED_NPC_2].s_npc.profession, NPC_COOK
         je right
-        cmp dword ptr [HIRED_NPC_2+24], NPC_CHEF
+        cmp dword ptr [HIRED_NPC_2].s_npc.profession, NPC_CHEF
         jne restore
         right:
-        mov dword ptr [HIRED_NPC_2+68], edx
+        mov dword ptr [HIRED_NPC_2].s_npc.used_ability, edx
         restore:
         mov ecx, PARTY_BIN_ADDR
         skip:
@@ -11383,23 +11400,23 @@ static void __declspec(naked) dont_reset_cooks(void)
       {
         cmp byte ptr [0xacd59c], 3 ; days awake
         jae left
-        cmp dword ptr [HIRED_NPC_1+24], NPC_COOK
+        cmp dword ptr [HIRED_NPC_1].s_npc.profession, NPC_COOK
         je skip_left
-        cmp dword ptr [HIRED_NPC_1+24], NPC_CHEF
+        cmp dword ptr [HIRED_NPC_1].s_npc.profession, NPC_CHEF
         je skip_left
         left:
-        mov dword ptr [HIRED_NPC_1+68], edx ; replaced code
+        mov dword ptr [HIRED_NPC_1].s_npc.used_ability, edx ; replaced code
         cmp byte ptr [0xacd59c], 3
         jae right
         skip_left:
-        cmp dword ptr [HIRED_NPC_2+24], NPC_COOK
+        cmp dword ptr [HIRED_NPC_2].s_npc.profession, NPC_COOK
         je skip_right
-        cmp dword ptr [HIRED_NPC_2+24], NPC_CHEF
+        cmp dword ptr [HIRED_NPC_2].s_npc.profession, NPC_CHEF
         je skip_right
         right:
-        mov dword ptr [HIRED_NPC_2+68], edx ; replaced code
+        mov dword ptr [HIRED_NPC_2].s_npc.used_ability, edx ; replaced code
         skip_right:
-        cmp dword ptr [0x73c014], edx ; replaced code
+        cmp dword ptr [NPCS_LENGTH], edx ; replaced code
         ret
       }
 }
@@ -13561,7 +13578,7 @@ static void __declspec(naked) cursed_weapon(void)
         jnz fear
         cmp byte ptr [edi].s_player.class, CLASS_BLACK_KNIGHT
         ja no_zombie
-        test byte ptr [NPC_ADDR+HORSE_DEYJA*76+8], NPC_HIRED
+        test byte ptr [NPC_ADDR+HORSE_DEYJA*SIZE_NPC].s_npc.bits, NPC_HIRED
         jnz fear
         no_zombie:
         push SLOT_MAIN_HAND
@@ -22591,7 +22608,8 @@ static void __declspec(naked) horse_buy_action(void)
         buy:
         call dword ptr ds:spend_gold
         imul edi, edi, 76
-        or byte ptr [NPC_ADDR+edi-54*76+HORSE_HARMONDALE*76+8], NPC_HIRED
+        or byte ptr [NPC_ADDR+edi-54*SIZE_NPC+HORSE_HARMONDALE*SIZE_NPC] \
+                    .s_npc.bits, NPC_HIRED
         inc byte ptr [0xacd542] ; quest hireling count
         push QBIT_CAVALIER_HORSE
         push EVT_QBITS
@@ -22705,16 +22723,16 @@ static void __declspec(naked) horse_foot_travel(void)
       {
         mov esi, dword ptr [0x6bcefc] ; replaced code
         dec esi
-        test byte ptr [NPC_ADDR+HORSE_TULAREAN*76+8], NPC_HIRED
+        test byte ptr [NPC_ADDR+HORSE_TULAREAN*SIZE_NPC].s_npc.bits, NPC_HIRED
         jnz reduce
-        test byte ptr [NPC_ADDR+HORSE_BRACADA*76+8], NPC_HIRED
+        test byte ptr [NPC_ADDR+HORSE_BRACADA*SIZE_NPC].s_npc.bits, NPC_HIRED
         jnz reduce
         inc esi
-        test byte ptr [NPC_ADDR+HORSE_ERATHIA*76+8], NPC_HIRED
+        test byte ptr [NPC_ADDR+HORSE_ERATHIA*SIZE_NPC].s_npc.bits, NPC_HIRED
         jnz reduce
-        test byte ptr [NPC_ADDR+HORSE_TATALIA*76+8], NPC_HIRED
+        test byte ptr [NPC_ADDR+HORSE_TATALIA*SIZE_NPC].s_npc.bits, NPC_HIRED
         jnz reduce
-        test byte ptr [NPC_ADDR+HORSE_AVLEE*76+8], NPC_HIRED
+        test byte ptr [NPC_ADDR+HORSE_AVLEE*SIZE_NPC].s_npc.bits, NPC_HIRED
         jz skip
         reduce:
         dec esi
@@ -22730,14 +22748,14 @@ static void __declspec(naked) horse_stable_travel(void)
     asm
       {
         dec esi
-        test byte ptr [NPC_ADDR+HORSE_TULAREAN*76+8], NPC_HIRED
+        test byte ptr [NPC_ADDR+HORSE_TULAREAN*SIZE_NPC].s_npc.bits, NPC_HIRED
         jnz reduce
         inc esi
-        test byte ptr [NPC_ADDR+HORSE_ERATHIA*76+8], NPC_HIRED
+        test byte ptr [NPC_ADDR+HORSE_ERATHIA*SIZE_NPC].s_npc.bits, NPC_HIRED
         jnz reduce
-        test byte ptr [NPC_ADDR+HORSE_TATALIA*76+8], NPC_HIRED
+        test byte ptr [NPC_ADDR+HORSE_TATALIA*SIZE_NPC].s_npc.bits, NPC_HIRED
         jnz reduce
-        test byte ptr [NPC_ADDR+HORSE_AVLEE*76+8], NPC_HIRED
+        test byte ptr [NPC_ADDR+HORSE_AVLEE*SIZE_NPC].s_npc.bits, NPC_HIRED
         jz skip
         reduce:
         dec esi
@@ -22755,16 +22773,16 @@ static void __declspec(naked) horse_stable_dialog(void)
       {
         cmp dword ptr [eax+28], 63 ; replaced code
         jge quit
-        test byte ptr [NPC_ADDR+HORSE_TULAREAN*76+8], NPC_HIRED
+        test byte ptr [NPC_ADDR+HORSE_TULAREAN*SIZE_NPC].s_npc.bits, NPC_HIRED
         jz no_three
         sub dword ptr [ebp-4], 3
         jmp skip
         no_three:
-        test byte ptr [NPC_ADDR+HORSE_ERATHIA*76+8], NPC_HIRED
+        test byte ptr [NPC_ADDR+HORSE_ERATHIA*SIZE_NPC].s_npc.bits, NPC_HIRED
         jnz reduce
-        test byte ptr [NPC_ADDR+HORSE_TATALIA*76+8], NPC_HIRED
+        test byte ptr [NPC_ADDR+HORSE_TATALIA*SIZE_NPC].s_npc.bits, NPC_HIRED
         jnz reduce
-        test byte ptr [NPC_ADDR+HORSE_AVLEE*76+8], NPC_HIRED
+        test byte ptr [NPC_ADDR+HORSE_AVLEE*SIZE_NPC].s_npc.bits, NPC_HIRED
         jz skip
         reduce:
         sub dword ptr [ebp-4], 2
@@ -22783,7 +22801,7 @@ static void __declspec(naked) warhorse_armsmaster_bonus(void)
         jz skip ; replaced jump
         add esi, 3 ; replaced code
         skip:
-        test byte ptr [NPC_ADDR+HORSE_TATALIA*76+8], NPC_HIRED
+        test byte ptr [NPC_ADDR+HORSE_TATALIA*SIZE_NPC].s_npc.bits, NPC_HIRED
         jz quit
         mov ecx, dword ptr [ebp-4] ; PC
         cmp byte ptr [ecx].s_player.class, CLASS_BLACK_KNIGHT
@@ -24720,6 +24738,21 @@ static void __declspec(naked) truncate_npcdist_totals(void)
       }
 }
 
+// Make sure to remove sacrificed house NPCs from the game forever.
+// Overwrites a memset call, hence the three arguments.
+static void *__cdecl sacrifice_hireling(struct npc *hireling, int c, int n)
+{
+    if (hireling->house)
+        for (int i = dword(NPCS_LENGTH) - 1; i >= 0; i--)
+            if (!strcmp(hireling->name, NPCS[i].name))
+              {
+                NPCS[i].house = 0;
+                NPCS[i].bits &= ~NPC_HIRED;
+                break;
+              }
+    return memset(hireling, c, n);
+}
+
 // Add a few more NPC professions and extend the relevant game arrays.
 static inline void new_hireling_types(void)
 {
@@ -24766,6 +24799,7 @@ static inline void new_hireling_types(void)
     hook_call(0x4774f5, truncate_npcdist_totals, 5);
     patch_dword(0x47750a, dword(0x47750a) - 2); // reading npcdist
     erase_code(0x477515, 1); // off by one
+    hook_call(0x490c80, sacrifice_hireling, 5);
 }
 
 // The game could not properly display keys like F5 or ~ in the config menu.
@@ -25204,11 +25238,11 @@ static int get_active_chests(void)
         result |= 1 << 2 | 1 << 3;
     if (have_npc_hired(NPC_GYPSY))
         result |= 1 << 4;
-    if (byte(NPC_ADDR + HORSE_HARMONDALE * 76 + 8) & NPC_HIRED
-        || byte(NPC_ADDR + HORSE_DEYJA * 76 + 8) & NPC_HIRED)
+    if (NPCS[HORSE_HARMONDALE].bits & NPC_HIRED
+        || NPCS[HORSE_DEYJA].bits & NPC_HIRED)
         result |= 1 << 5 | 1 << 6;
-    else if (byte(NPC_ADDR + HORSE_ERATHIA * 76 + 8) & NPC_HIRED
-             || byte(NPC_ADDR + HORSE_TULAREAN * 76 + 8) & NPC_HIRED)
+    else if (NPCS[HORSE_ERATHIA].bits & NPC_HIRED
+             || NPCS[HORSE_TULAREAN].bits & NPC_HIRED)
         result |= 1 << 5;
     return result;
 }

@@ -1865,6 +1865,7 @@ static int __thiscall (*get_merchant_bonus)(void *player)
     = (funcptr_t) 0x4911eb;
 static int __thiscall (*get_learning_bonus)(void *player)
     = (funcptr_t) 0x49130f;
+static int __thiscall (*get_disarm_bonus)(void *player) = (funcptr_t) 0x4912a8;
 static int __thiscall (*find_objlist_item)(void *this, int id)
     = (funcptr_t) 0x42eb1e;
 #define OBJLIST_THIS_ADDR 0x680630
@@ -21200,6 +21201,22 @@ static void __declspec(naked) npc_repair_chunk(void)
       }
 }
 
+// Make odd Disarm skill values meaningful by imposing a 50% failure
+// chance when the skill level and lock difficulty are exactly equal.
+static void __declspec(naked) randomized_chest_disarm(void)
+{
+    asm
+      {
+        call dword ptr ds:get_disarm_bonus ; replaced call
+        push eax
+        call dword ptr ds:random
+        shr eax, 1
+        pop eax
+        sbb eax, esi ; == 0
+        ret
+      }
+}
+
 // Tweak various skill effects.
 static inline void skill_changes(void)
 {
@@ -21308,6 +21325,7 @@ static inline void skill_changes(void)
     hook_call(0x493c67, double_shield_regen, 6);
     // also double aggro in weighted_monster_preference() above
     patch_bytes(0x4911df, npc_repair_chunk, 3);
+    hook_call(0x420451, randomized_chest_disarm, 5);
 }
 
 // The mod's new hotkeys.

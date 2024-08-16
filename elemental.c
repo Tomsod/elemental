@@ -900,6 +900,8 @@ static struct elemdata
     struct beacon beacon_masters[2];
     // Per-map random seeds for street NPCs and their expire time.
     int street_npc_seed[77], street_npc_time[77];
+    // Counters for Bard NPC bonus reputation ([0] is unused).
+    int bard_xp[12], bard_bonus[12];
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -1281,6 +1283,7 @@ enum profession
     NPC_QUARTER_MASTER = 30,
     NPC_COOK = 33,
     NPC_CHEF = 34,
+    NPC_BARD = 36,
     NPC_WIND_MASTER = 39,
     NPC_PIRATE = 45,
     NPC_GYPSY = 48,
@@ -22277,20 +22280,53 @@ static void __declspec(naked) difficult_monster_recovery_after(void)
       }
 }
 
+// Amount of XP to get the first point of reputation via bard NPC bonus.
+// After that it rises triangularly.  The numbers are chosen such that
+// clearing the entire region will grant roughly 10 reputation in total.
+static const int bard_rep_cost[12] = {    -1,  300,  1000, 2000, 2000, 6000,
+                                       10000, 1000, 15000, 4000, 3500, 7000, };
+
 // Add bonus experience for killing monsters on higher difficulties.
+// Also here: handle bard NPC reputation bonus (unaffected by difficulty).
+// TODO: the code will grant at most 1 rep per monster -- is this ok?
 static void __declspec(naked) difficult_monster_experience(void)
 {
     asm
       {
+        mov ebx, eax
+        add ecx, NPC_BARD
+        call dword ptr ds:have_npc_hired
+        test eax, eax
+        jz no_bard
+        mov ecx, dword ptr [reputation_index]
+        mov ecx, dword ptr [reputation_group+ecx*4]
+        test ecx, ecx
+        jz no_bard
+        mov eax, dword ptr [elemdata.bard_bonus+ecx*4]
+        add dword ptr [elemdata.bard_xp+ecx*4], ebx
+        inc eax
+        mul dword ptr [bard_rep_cost+ecx*4]
+        cmp eax, dword ptr [elemdata.bard_xp+ecx*4]
+        ja no_bard
+        sub dword ptr [elemdata.bard_xp+ecx*4], eax
+        inc dword ptr [elemdata.bard_bonus+ecx*4]
+        cmp dword ptr [OUTDOORS], 2
+        je outdoors
+        dec dword ptr [0x6be514] ; indoor rep
+        jmp no_bard
+        outdoors:
+        dec dword ptr [0x6a1140] ; outdoor rep
+        no_bard:
+        mov eax, ebx
+        xor ecx, ecx ; restore
         cmp dword ptr [elemdata.difficulty], ecx
         jz skip
-        mov edx, eax
-        shr edx, 1
+        shr ebx, 1
         cmp dword ptr [elemdata.difficulty], 2
         jae raise
-        shr edx, 1
+        shr ebx, 1
         raise:
-        add eax, edx
+        add eax, ebx
         skip:
         mov edx, PARTY_ADDR + 112 ; replaced code
         ret

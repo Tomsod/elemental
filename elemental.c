@@ -1125,7 +1125,8 @@ struct __attribute__((packed)) map_monster
     uint8_t ai_type;
     SKIP(2);
     uint8_t attack_special;
-    SKIP(2);
+    uint8_t attack_special_chance;
+    SKIP(1);
     uint8_t attack1_damage_dice_count;
     uint8_t attack1_damage_dice_sides;
     uint8_t attack1_damage_add;
@@ -2208,26 +2209,83 @@ static inline void fire_poison(void)
     hook_call(0x48d4dd, fire_poison_player, 5);
 }
 
-static void __declspec(naked) eff_stat_chunk(void)
+// Increase primary stat effect on resisting conditions 4x.
+static void __declspec(naked) quadruple_stat_effect(void)
 {
     asm
       {
-        shl ebx, 2
-        _emit 0xe9 ; jmp
+        pop ebx
+        call dword ptr ds:get_effective_stat
+        shl eax, 2
+        jmp ebx
+      }
+}
+
+// Only skip SP drain if the PC has none left.
+static void __declspec(naked) check_sp_to_drain(void)
+{
+    asm
+      {
+        cmp edi, dword ptr [esi].s_player.sp ; edi == 0
+        mov eax, 0x48df06 ; past resistance checks
+        jmp eax ; will skip drain if >=
+      }
+}
+
+// Instead of vampires etc. occasionally draining all SP, which usually
+// warranted a reload, let them sip smaller amounts with every attack.
+static void __thiscall partial_sp_drain(struct player *player,
+                                        struct map_monster *monster)
+{
+    // since chance is now 100%, use the old chance as sp fraction to drain
+    double fraction = monster->level * monster->attack_special_chance / 100.0;
+    int resistance = get_effective_stat(get_intellect(player))
+                   + get_effective_stat(get_luck(player));
+    resistance *= 4; // stat-based!
+    // the usual (damage) resistance rolls
+    if (resistance > 0) for (int i = 0; i < 4; i++)
+      {
+        if (random() % (resistance + 30) < 30)
+            break;
+        fraction /= 2;
+      }
+    if (fraction >= 1)
+        player->sp = 0;
+    else
+        player->sp *= 1 - fraction;
+}
+
+// Hook for the above.
+static void __declspec(naked) partial_sp_drain_hook(void)
+{
+    asm
+      {
+        mov ecx, esi ; player
+        push dword ptr [ebp+12] ; monster
+        call partial_sp_drain
+        ret
+      }
+}
+
+// Skip the usual level*multiplier check for the sp drain ability.
+static void __declspec(naked) unconditional_sp_drain(void)
+{
+    asm
+      {
+        imul eax, ecx ; replaced code
+        cmp byte ptr [esi].s_map_monster.attack_special, 22 ; drain sp
+        cmove eax, esi ; set less
+        cmp edx, eax ; also replaced
+        ret
       }
 }
 
 // Tweak which stats protect against which conditions.  Most importantly,
 // for conditions that are governed by a base stat's effective value,
-// this value is now multiplied x4.
+// this value is now multiplied x4.  Also here: drain SP redesign.
 static inline void condition_resistances(void)
 {
-    patch_dword(0x48dd3b, 0x48c9a8 - 0x48dd3a - 5); // call get intellect
-    patch_bytes(0x48dd4b, eff_stat_chunk, 4); // multiply eff. stat by 4
-    patch_dword(0x48dd4f, 0x48deea - 0x48dd4e - 5); // address for the 0xe9
-    patch_dword(0x48dd13, 0x48dd3f - 0x48dd12 - 5); // personality jump
-    patch_dword(0x48dd1f, 0x48dd3f - 0x48dd1e - 5); // endurance jump
-
+    hook_call(0x48dedd, quadruple_stat_effect, 5);
     // Reorder the jumptable:
     uint32_t poison_res = dword(0x48e109);
     patch_dword(0x48e0e5, poison_res); // poisoned 1
@@ -2236,6 +2294,11 @@ static inline void condition_resistances(void)
     uint32_t magic_res = dword(0x48e105);
     patch_dword(0x48e109, magic_res); // stoned
     patch_dword(0x48e121, magic_res); // aged
+    // Let's make SP drain a bit more deterministic.
+    patch_pointer(0x48e125, check_sp_to_drain); // jumptable
+    hook_call(0x48e081, partial_sp_drain_hook, 6);
+    hook_call(0x43a33f, unconditional_sp_drain, 5);
+    hook_call(0x43a861, unconditional_sp_drain, 5); // two entry points
 }
 
 // Undead players are either liches (returns 1) or zombies (returns 2).

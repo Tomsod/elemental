@@ -12637,6 +12637,12 @@ static void __declspec(naked) running_recovery(void)
       }
 }
 
+// Prevent "of Power" items in stat screen from overwriting the base level.
+static int __thiscall get_raw_level(struct player *player)
+{
+    return player->level_base;
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -12840,6 +12846,9 @@ static inline void misc_rules(void)
     hook_call(0x4613b7, fixed_street_npcs, 5);
     hook_call(0x461353, restore_random_seed, 5);
     hook_call(0x49440b, running_recovery, 7);
+    hook_call(0x418b16, get_raw_level, 5); // width calc
+    hook_call(0x418b2a, get_raw_level, 5); // display
+    hook_call(0x4bfaa5, get_raw_level, 5); // also the final certificate
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

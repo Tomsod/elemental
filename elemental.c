@@ -1210,6 +1210,7 @@ enum condition
     COND_AFRAID = 3,
     COND_DRUNK = 4,
     COND_INSANE = 5,
+    COND_POISONED_GREEN = 6,
     COND_DISEASED_GREEN = 7,
     COND_POISONED_RED = 10,
     COND_DISEASED_RED = 11,
@@ -22576,6 +22577,81 @@ static void __declspec(naked) difficult_spell_cost(void)
       }
 }
 
+// Break some chest items when triggering a trap on Medium/Hard difficulty.
+static void __thiscall break_chest(struct map_chest *chest)
+{
+    if (!elemdata.difficulty) return; // not on easy
+    for (int i = 0; i < 140; i++)
+      {
+        struct item *item = &chest->items[i];
+        if ((signed) item->id <= 0 || item->id > LAST_PREFIX
+            || item->id >= FIRST_WAND && item->id <= LAST_WAND)
+            continue;
+        if (random() % 4 < elemdata.difficulty)
+            item->flags |= IFLAGS_BROKEN;
+      }
+}
+
+// Hook for the above.
+static void __declspec(naked) break_chest_hook(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [ebp-44] ; chest bits address
+        sub ecx, 2 ; point to struct start
+        call break_chest
+        lea ecx, [ebp-176] ; replaced code
+        ret
+      }
+}
+
+// Add nasty effects to chest traps on higher difficulties.
+static int __thiscall chest_damage(struct player *player, int damage,
+                                   int element)
+{
+    if (elemdata.difficulty) switch (element)
+      {
+        case FIRE:
+        case COLD:
+            for (int i = random() % (elemdata.difficulty + 1); i > 0; i--)
+              {
+                int count = 0, slot;
+                for (int j = 0; j < 14*9; j++)
+                  {
+                    int num = player->inventory[j];
+                    if (num > 0)
+                      {
+                        int type = ITEMS_TXT[player->items[num-1].id]
+                                   .equip_stat + 1;
+                        if (element == FIRE ? type == ITEM_TYPE_SCROLL
+                                              || type == ITEM_TYPE_BOOK
+                                            : type == ITEM_TYPE_REAGENT
+                                              || type == ITEM_TYPE_POTION)
+                            if (random() % ++count == 0)
+                                slot = j;
+                      }
+                  }
+                if (!count) break;
+                delete_backpack_item(player, slot);
+                show_face_animation(player, ANIM_DISMAY, 0);
+                spell_face_anim(SPELL_ANIM_THIS, 153, player - PARTY);
+              }
+            break;
+        case SHOCK:
+            if (!is_immune(player, SHOCK)
+                && random() % 8 < elemdata.difficulty)
+                inflict_condition(player, COND_PARALYZED, TRUE);
+            break;
+        case POISON:
+            if (random() % 4 < elemdata.difficulty)
+                inflict_condition(player,
+                                  COND_POISONED_GREEN + random() % 3 * 2,
+                                  TRUE);
+            break;
+      }
+    return damage_player(player, damage, element);
+}
+
 // Allow optionally increasing game difficulty.
 static inline void difficulty_level(void)
 {
@@ -22604,6 +22680,8 @@ static inline void difficulty_level(void)
     // spell cost increase is in switch_off_spells_for_free() above
     // and another cost check in free_quick_lightning() above
     hook_call(0x410d5c, difficult_spell_cost, 8);
+    hook_call(0x420867, break_chest_hook, 6);
+    hook_call(0x438f69, chest_damage, 5);
 }
 
 // Holds an unused travel reply that can be replaced with ours.

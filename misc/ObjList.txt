@@ -252,7 +252,7 @@ explosive death	600	16	16	-	-	x	-	x	x	x	-	-	-	-	null	0	0	0	0	0	0
 explosion	601	16	16	-	-	x	x	x	x	-	-	-	-	-	spell01	96	0	0	0	0	0
 FireTrap	811	16	16	-	-	x	x	x	x	-	-	-	-	-	spell01	96	0	0	0	0	0
 ElecTrap	812	16	16	-	-	x	x	x	x	-	-	-	-	-	spell02	96	0	0	0	0	0
-ColdTrap	813	16	16	-	-	x	x	x	x	-	-	-	-	-	spell97c	64	0	0	0	0	0
+ColdTrap	813	16	16	-	-	x	x	x	x	-	-	-	-	-	sp104b	64	0	0	0	0	0
 PoisonTrap	814	16	16	-	-	x	x	x	x	-	-	-	-	-	spell29	64	0	0	0	0	0
 Flaming Potion	12000	64	64	-	-	x	-	x	-	x	-	-	-	-	OBJ163	768	1500	0	0	0	0
 Flaming Explosion	12001	16	16	-	-	x	x	x	x	-	-	-	-	-	sp103b	64	0	0	0	0	0

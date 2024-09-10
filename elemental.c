@@ -817,6 +817,7 @@ enum gender
 #define SAVEGAME_LOD ((void *) 0x6a06a0)
 
 #define MAP_VARS ((uint8_t *) 0x5e4b10)
+#define MAP_COUNT 77
 
 #define CURRENT_SCREEN 0x4e28d8
 
@@ -899,9 +900,11 @@ static struct elemdata
     // For Beacon Master NPCs.
     struct beacon beacon_masters[2];
     // Per-map random seeds for street NPCs and their expire time.
-    int street_npc_seed[77], street_npc_time[77];
+    int street_npc_seed[MAP_COUNT], street_npc_time[MAP_COUNT];
     // Counters for Bard NPC bonus reputation ([0] is unused).
     int bard_xp[12], bard_bonus[12];
+    // Per-map random seeds for corpse loot (does not apply on Easy).
+    int monster_loot_seed[MAP_COUNT];
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -1270,6 +1273,8 @@ static const char map_altar_of_wishes[] = "genie.blv";
 #define UNDERWATER 0x6be244
 #define CURRENT_MAP_ID 0x6bdfbc
 
+#define OUTDOOR_LAST_VISIT_TIME 0x6a1160
+#define INDOOR_LAST_VISIT_TIME 0x6be534
 // Indoor or outdoor reputation for the loaded map.
 #define OUTDOORS 0x6be1e0
 #define CURRENT_REP (*(int32_t *) (dword(OUTDOORS) == 2 ? 0x6a1140 : 0x6be514))
@@ -9267,19 +9272,20 @@ static void load_map_rep(void)
         // Provide hints about a recent or upcoming map refill.
         if (!MAPSTATS[map_index].refill_days) // not in proving grounds
             return;
-        int refill_addr = dword(OUTDOORS) == 2 ? 0x6a1138 : 0x6be50c;
+        int visit_addr = dword(OUTDOORS) == 2 ? OUTDOOR_LAST_VISIT_TIME
+                                              : INDOOR_LAST_VISIT_TIME;
         static int castle, bottle; // these two never refill
         if (!castle) castle = get_map_index(MAPSTATS, "d29.blv");
         if (!bottle) bottle = get_map_index(MAPSTATS, "nwc.blv");
-        //  refill count, starts at 1  last visit time, 0 if just refilled
-        if (dword(refill_addr) > 1 && !*(uint64_t *) (refill_addr + 40))
+        // refill count, starts at 1
+        if (dword(visit_addr - 40) > 1 && !*(uint64_t *) visit_addr)
             show_status_text(new_strings[STR_MAP_REFILL], 4);
         else if (map_index != castle - 1 && map_index != bottle - 1)
           {
             unsigned int day = CURRENT_TIME >> 13;
             day /= 256 * 60 * 24 >> 13; // avoid long division dependency
             int left = MAPSTATS[map_index].refill_days - day - 1
-                     + dword(refill_addr + 4); // last refill day
+                     + dword(visit_addr - 36); // last refill day
             if (left <= 28)
               {
                 int text = STR_MAP_REFILL_SOON_1 + (left <= 14) + (left <= 7)
@@ -9308,13 +9314,13 @@ static void __declspec(naked) load_map_hook(void)
         call load_map_rep
         call load_wom_barrels
         call reset_disabled_spells
-        mov dword ptr [bow_kill_player], esi
+        mov dword ptr [bow_kill_player], esi ; == 0
         mov dword ptr [bow_kill_time], esi
         cmp dword ptr [OUTDOORS], 2
         jne quit
-        cmp dword ptr [0x6a1160], esi ; last visit time, 0 if just refilled
+        cmp dword ptr [OUTDOOR_LAST_VISIT_TIME], esi ; 0 if just refilled
         jnz quit
-        cmp dword ptr [0x6a1164], esi ; second half (esi == 0, btw)
+        cmp dword ptr [OUTDOOR_LAST_VISIT_TIME+4], esi ; second half
         jnz quit
         call dword ptr ds:change_weather
         quit:
@@ -12602,14 +12608,35 @@ static void __declspec(naked) fixed_street_npcs(void)
 }
 
 // Make sure we don't destroy randomness of the game with the above hook.
+// Also here: initialize the corpse loot seed on the first visit.
 static void __declspec(naked) restore_random_seed(void)
 {
     asm
       {
-        push dword ptr [saved_random_seed]
+        mov edi, dword ptr [saved_random_seed]
+        test edi, edi ; zero if the above hook never ran
+        jz clear
+        push edi
         call dword ptr ds:srandom
-        pop ecx
+        pop eax
         mov dword ptr [saved_random_seed], ebp ; == 0
+        clear:
+        mov edx, OUTDOOR_LAST_VISIT_TIME
+        mov ecx, INDOOR_LAST_VISIT_TIME
+        cmp dword ptr [OUTDOORS], 2
+        cmove ecx, edx
+        cmp dword ptr [ecx], ebp ; 0 if just refilled
+        jnz quit
+        cmp dword ptr [ecx+4], ebp ; second half
+        jnz quit
+        test edi, edi
+        jnz seed
+        call dword ptr ds:get_thread_context
+        mov eax, dword ptr [eax+20] ; random seed
+        seed:
+        mov ecx, dword ptr [CURRENT_MAP_ID]
+        mov dword ptr [elemdata.monster_loot_seed+ecx*4-4], eax
+        quit:
         mov eax, dword ptr [MOUSE_ITEM] ; replaced code
         ret
       }
@@ -22652,6 +22679,43 @@ static int __thiscall chest_damage(struct player *player, int damage,
     return damage_player(player, damage, element);
 }
 
+// Use a semi-fixed random seed to restrict mob loot to just several
+// options on higher difficulties.  Overwrites a randomize_item() call.
+static void __declspec(naked) fixed_corpse_loot(void)
+{
+    asm
+      {
+        xor eax, eax
+        cmp dword ptr [elemdata.difficulty], 1
+        jae ok
+        jmp dword ptr ds:randomize_item
+        ok:
+        sete al
+        lea esi, [eax*8+7]
+        shl esi, 3
+        call dword ptr ds:random
+        and esi, eax
+        add esi, ebx ; monster pointer
+        sub esi, MAP_MONSTERS_ADDR ; just the offset
+        mov ecx, dword ptr [CURRENT_MAP_ID]
+        add esi, dword ptr [elemdata.monster_loot_seed+ecx*4-4]
+        call dword ptr ds:get_thread_context
+        push esi
+        mov esi, dword ptr [eax+20] ; random seed
+        call dword ptr ds:srandom
+        pop ecx
+        push dword ptr [esp+12]
+        push dword ptr [esp+12]
+        push dword ptr [esp+12]
+        mov ecx, ITEMS_TXT_ADDR - 4
+        call dword ptr ds:randomize_item
+        push esi
+        call dword ptr ds:srandom ; restore
+        pop ecx
+        ret 12
+      }
+}
+
 // Allow optionally increasing game difficulty.
 static inline void difficulty_level(void)
 {
@@ -22682,6 +22746,7 @@ static inline void difficulty_level(void)
     hook_call(0x410d5c, difficult_spell_cost, 8);
     hook_call(0x420867, break_chest_hook, 6);
     hook_call(0x438f69, chest_damage, 5);
+    hook_call(0x426c36, fixed_corpse_loot, 5);
 }
 
 // Holds an unused travel reply that can be replaced with ours.

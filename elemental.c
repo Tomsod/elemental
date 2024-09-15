@@ -369,6 +369,9 @@ enum new_strings
     STR_MAP_REFILL_SOON_3,
     STR_MAP_REFILL_SOON_4,
     STR_ARENA_HOURGLASS,
+    STR_INVISIBILITY_EASY,
+    STR_INVISIBILITY_MEDIUM,
+    STR_INVISIBILITY_HARD,
     NEW_STRING_COUNT
 };
 
@@ -8935,7 +8938,9 @@ static int __thiscall consider_new_spells(void *this,
         else // shouldn't happen
             return FALSE;
       }
-    else if (spell == SPL_DISPEL_MAGIC && target != TGT_PARTY)
+    else if (spell == SPL_DISPEL_MAGIC && (target != TGT_PARTY
+                                // avoid making WoM on Hard impossible
+                                || PARTY_BUFFS[BUFF_INVISIBILITY].expire_time))
         return FALSE; // would target the party even if not hostile
     else
         return monster_considers_spell(this, monster, spell);
@@ -11277,7 +11282,9 @@ static int __stdcall weighted_monster_preference(struct map_monster *monster)
               }
           }
         weights[i] += elemdata.new_pc_buffs[i][NBUFF_AURA_OF_CONFLICT].power;
-        if (has_item_in_slot(player, SHADOWS_MASK, SLOT_HELM))
+        if (has_item_in_slot(player, SHADOWS_MASK, SLOT_HELM)
+            || PARTY_BUFFS[BUFF_INVISIBILITY].expire_time
+               && (!elemdata.difficulty || monster->magic_resistance < IMMUNE))
             continue; // race/class/gender hidden
         static const int class_pref[9] = { 0x1, 0x80, 0x100, 0x2, 0x4,
                                            0x40, 0x10, 0x8, 0x20 };
@@ -21023,11 +21030,15 @@ static void __declspec(naked) alchemy_quest_hook(void)
 }
 
 // A wrapper for monster hit roll, registers armor/shield training
-// on a successfull block.  Also here: handle cursed monster attacks.
+// on a successfull block.  Also here: handle cursed monster attacks,
+// and impose a high miss chance for attacking invisible players.
 static int __stdcall train_armor(struct map_monster *monster,
                                  struct player *player)
 {
-    if (monster->spell_buffs[MBUFF_CURSED].expire_time && random() & 1)
+    if (monster->spell_buffs[MBUFF_CURSED].expire_time && random() & 1
+        || PARTY_BUFFS[BUFF_INVISIBILITY].expire_time
+           && (!elemdata.difficulty || monster->magic_resistance < IMMUNE)
+           && random() & 3)
         return FALSE; // missed but technically not blocked
     int result = monster_hits_player(monster, player);
     if (!result)
@@ -22716,6 +22727,76 @@ static void __declspec(naked) fixed_corpse_loot(void)
       }
 }
 
+// Allow some/all monsters to ignore Invisibility on Medium/Hard.
+// For Hard, most monsters still get lowered to-hit in train_armor() above.
+static void __declspec(naked) see_through_invisibility(void)
+{
+    asm
+      {
+        cmp dword ptr [elemdata.difficulty], 1
+        jl ok
+        jg skip
+        cmp byte ptr [esi].s_map_monster.magic_resistance, IMMUNE
+        jb ok
+        skip:
+        cmp ebx, esi ; set less (ebx == 0)
+        ret
+        ok:
+        ; replaced code below:
+        cmp dword ptr [PARTY_BUFF_ADDR+BUFF_INVISIBILITY*SIZE_BUFF+4], ebx
+        ret
+      }
+}
+
+// Used just below.
+static char invis_buffer[500];
+
+// Shared code used by the two below hooks.
+static void __declspec(naked) invisibility_description_shared(void)
+{
+    asm
+      {
+        jne skip
+        mov eax, dword ptr [elemdata.difficulty]
+        push dword ptr [new_strings+STR_INVISIBILITY_EASY*4+eax*4]
+        push dword ptr [esp+16] ; pushed description
+#ifdef __clang__
+        mov eax, offset invis_buffer
+        push eax
+#else
+        push offset invis_buffer
+#endif
+        call dword ptr ds:sprintf
+        add esp, 12
+        mov dword ptr [esp+12], offset invis_buffer
+        skip:
+        jmp dword ptr ds:sprintf ; replaced call
+      }
+}
+
+// Adjust Invisibility guild description according to its current function.
+static void __declspec(naked) invisibility_description_guild(void)
+{
+    asm
+      {
+        cmp esi, SPL_INVISIBILITY
+        jmp invisibility_description_shared
+      }
+}
+
+// Same, but for PC spellbooks.
+static void __declspec(naked) invisibility_description_spellbook(void)
+{
+    asm
+      {
+        cmp byte ptr [edi].s_player.spellbook_page, 1 ; air
+        jne skip
+        cmp dword ptr [ebp-20], 7 ; invis
+        skip:
+        jmp invisibility_description_shared
+      }
+}
+
 // Allow optionally increasing game difficulty.
 static inline void difficulty_level(void)
 {
@@ -22747,6 +22828,9 @@ static inline void difficulty_level(void)
     hook_call(0x420867, break_chest_hook, 6);
     hook_call(0x438f69, chest_damage, 5);
     hook_call(0x426c36, fixed_corpse_loot, 5);
+    hook_call(0x4013c8, see_through_invisibility, 6);
+    hook_call(0x4b15cb, invisibility_description_guild, 5);
+    hook_call(0x410c63, invisibility_description_spellbook, 5);
 }
 
 // Holds an unused travel reply that can be replaced with ours.
@@ -22780,7 +22864,7 @@ static void __declspec(naked) remember_empty_reply(void)
 }
 
 // Used to hold the buy horse reply w/o formatting.
-static char *horse_buffer[100];
+static char horse_buffer[100];
 // Used below.
 static const int horses_cost[9] = { 1000, 2000, 3000, 3000, 4000, 4000, 5000 };
 

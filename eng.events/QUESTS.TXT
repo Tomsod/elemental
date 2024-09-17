@@ -378,7 +378,7 @@ Q Bit	Quest Note Text	Notes	Owner
 377		Completed Alchemy GM mini-quest       0	0
 378		Looted Clanker's artifact chest	0	0
 379		Looted Colony Zod artifact chest	0	0
-380		Looted Shoals artifact chest	0	0
+380		Looted Arcomage reward chest	0	0
 381		Got Elven Chainmail	0	0
 382	"Obtain a magical talisman from the Empress Medusa in Red Dwarf Mines and return it to Amber Pebble in the Deyja Moors."	Goblin dagger quest	0	0
 383	"Purchase a steed from a stables of your choosing."	Cavalier horse perk	0	0

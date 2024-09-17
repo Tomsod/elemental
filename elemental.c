@@ -12678,6 +12678,40 @@ static int __thiscall get_raw_level(struct player *player)
     return player->level_base;
 }
 
+// Allow some random chest items to ignore the map-wide treasure level.
+static void __declspec(naked) fixed_chest_tlvl(void)
+{
+    asm
+      {
+        mov eax, dword ptr [esp+4] ; we replaced an abs call
+        neg eax ; always negative here
+        cmp eax, 7
+        ja fixed
+        ret
+        fixed:
+        lea edx, [eax-7]
+        add dword ptr [esp], 56 ; skip over map tlvl code
+        ret 4
+      }
+}
+
+// Same, but for random ground items.
+static void __declspec(naked) fixed_ground_tlvl(void)
+{
+    asm
+      {
+        cmp eax, 7
+        jg fixed
+        imul eax, eax, 7 ; replaced code
+        add eax, ecx ; ditto
+        ret
+        fixed:
+        lea ebx, [eax-7]
+        add dword ptr [esp], 41 ; skip random tlvl code
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -12884,6 +12918,8 @@ static inline void misc_rules(void)
     hook_call(0x418b16, get_raw_level, 5); // width calc
     hook_call(0x418b2a, get_raw_level, 5); // display
     hook_call(0x4bfaa5, get_raw_level, 5); // also the final certificate
+    hook_call(0x4502a5, fixed_chest_tlvl, 5);
+    hook_call(0x450039, fixed_ground_tlvl, 5);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

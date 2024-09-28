@@ -430,19 +430,19 @@
 428		Wz_House M5	7	103	Hostel			0	0	0	0	1.5				103
 429		Wz_House M6	7	104	Tarent Residence			0	0	0	0	1.5				103
 430		Wz_House R1	7	106	Ramiez Residence			0	0	0	0	1.5				106
-431		Wz_House R2	7	107	Hostel			0	0	0	0	1.5				106																																																	
+431		Wz_House R2	7	107	Forosmini Residence			0	0	0	0	1.5				106
 432		Wz_House R3	7	106	Hostel			0	0	0	0	1.5				106																																																	
 433		N_House P7	8	109	Hostel			0	0	0	0	1.5				109																																																	
 434		N_House P8	8	110	Hostel			0	0	0	0	1.5				109																																																	
 435		N_House P9	8	109	House Umberpool			0	0	0	0	1.5				109																																																	
 436		N_House P10	8	110	Darkenmore Residence			0	0	0	0	1.5				109																																																	
 437		N_House M11	8	109	Sand Residence			0	0	0	0	1.5				109																																																	
-438		N_House M12	8	110	Hostel			0	0	0	0	1.5				109																																																	
-439		N_House R6	8	109	Hostel			0	0	0	0	1.5				109																																																	
+438		N_House M12	8	110	Sotherland Residence			0	0	0	0	1.5				109
+439		N_House R6	8	109	Amwen Residence			0	0	0	0	1.5				109
 440								0	0	0	0	1.5				109																																																	
 441		N_House M9	8	112	Hostel			0	0	0	0	1.5				112																																																	
 442		N_House M10	8	113	Hostel			0	0	0	0	1.5				112																																																	
-443		N_House R4	8	115	Hostel			0	0	0	0	1.5				115																																																	
+443		N_House R4	8	115	Grant Residence			0	0	0	0	1.5				115
 444		N_House R5	8	116	Hostel			0	0	0	0	1.5				115																																																	
 445	1	Dungeon Ent	11	155	Barrow			0	0	0	0	1.5																																																					
 446								0	0	0	0	1.5																																																					

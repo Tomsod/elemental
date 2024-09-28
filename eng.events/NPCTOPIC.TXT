@@ -627,3 +627,4 @@
 626	New Lamps for Old!	Rare item buyer
 627	Remaining Taverns	Arcomage quest hint
 628	Special Orders	Shop order hint
+629	Barrows		Unused vanilla quest hint

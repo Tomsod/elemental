@@ -627,3 +627,4 @@
 626	ћен€ю старые лампы на новые!	Rare item buyer
 627	ќставшиес€ таверны	Arcomage quest hint
 628	ќсобые заказы	Shop order hint
+629	 урганы		Unused vanilla quest hint

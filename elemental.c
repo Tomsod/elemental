@@ -1369,7 +1369,7 @@ enum monster_buffs
 // new NPC greeting count (starting from 1)
 #define GREET_COUNT 230
 // new NPC topic count
-#define TOPIC_COUNT 628
+#define TOPIC_COUNT 629
 // count of added NPC text entries
 #define NEW_TEXT_COUNT (899-789)
 // new award count

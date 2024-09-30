@@ -806,6 +806,10 @@ enum face_animations
 #define EVT_MOUSE_ITEM_CONDITION 402
 #define EVT_VARIABLE 403
 
+#define MAP_EVT_DATA 0x5b33a0
+#define MAP_EVT_LINES 0x5b6458
+#define MAP_EVT_LINE_COUNT 0x5b0f90
+#define PROC_EVENT_LABEL_ID 0x597d98
 #define GLOBAL_EVENT_FLAG 0x5c32a0
 
 enum gender
@@ -908,6 +912,8 @@ static struct elemdata
     int bard_xp[12], bard_bonus[12];
     // Per-map random seeds for corpse loot (does not apply on Easy).
     int monster_loot_seed[MAP_COUNT];
+    // For fountain_timers(), to reset them only after rest.
+    uint64_t last_rest_time;
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -9256,6 +9262,9 @@ static void __declspec(naked) save_game_hook(void)
       }
 }
 
+// Used by fountain_timers() below.
+static int loading_different_map;
+
 // Set the map's default reputation group and update current reputation.
 // Also here: update the Master Town Portal destination, and track map changes.
 static void load_map_rep(void)
@@ -9270,7 +9279,8 @@ static void load_map_rep(void)
     int qbit = tp_qbits[group];
     if (qbit && check_bit(QBITS, qbit))
         elemdata.last_region = tp_order[group];
-    if (map_index != elemdata.current_map)
+    loading_different_map = map_index != elemdata.current_map;
+    if (loading_different_map)
       {
         elemdata.current_map = map_index;
         elemdata.map_enter_time = CURRENT_TIME;
@@ -12712,6 +12722,67 @@ static void __declspec(naked) fixed_ground_tlvl(void)
       }
 }
 
+// Hack buff fountain reset timers to trigger on rest instead of daily.
+static void __declspec(naked) fountain_timers(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ebp-52] ; replaced code
+        mov edx, dword ptr [ebp-48] ; same, but in spirit only
+        movsx ecx, word ptr [ebx+8] ; current evt command
+        cmp dword ptr [MAP_EVT_DATA+ecx+4], 38 ; check for no periodic bits
+        jne skip
+        cmp dword ptr [MAP_EVT_DATA+ecx+8], 1 ; fountain iff starts at 01:00:00
+        je fountain
+        skip:
+        or eax, edx ; we replaced an or
+        ret
+        fountain:
+        xor esi, esi ; it must be 0 after we jump
+        cmp dword ptr [loading_different_map], esi
+        jz early
+        cmp edx, dword ptr [elemdata.last_rest_time+4]
+        jb trigger
+        ja early
+        cmp eax, dword ptr [elemdata.last_rest_time]
+        ja early
+        trigger:
+        add dword ptr [esp], 28 ; to onloadmap code
+        ret
+        early:
+        mov dword ptr [esp], 0x444366 ; skip setting the timer
+        ret
+      }
+}
+
+// Trigger said timers for the current map when actually resting.
+static void fountain_timers_rest(void)
+{
+    for (int line = 0; line < dword(MAP_EVT_LINE_COUNT); line++)
+      {
+        int cmd = MAP_EVT_DATA + word(MAP_EVT_LINES + line * 12 + 8);
+        // checks as in the hook above, plus for no half-minute period field
+        if (dword(cmd + 4) == 38 && dword(cmd + 8) == 1 && !byte(cmd + 12))
+          {
+            dword(PROC_EVENT_LABEL_ID) = dword(MAP_EVT_LINES + line * 12 + 4);
+            process_event(dword(MAP_EVT_LINES + line * 12), 0, FALSE);
+            dword(PROC_EVENT_LABEL_ID) = 0; // reset
+          }
+      }
+    elemdata.last_rest_time = CURRENT_TIME;
+}
+
+// Hook for the above.
+static void __declspec(naked) fountain_timers_rest_hook(void)
+{
+    asm
+      {
+        mov esi, PARTY_BUFF_ADDR ; replaced code
+        call fountain_timers_rest
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -12920,6 +12991,8 @@ static inline void misc_rules(void)
     hook_call(0x4bfaa5, get_raw_level, 5); // also the final certificate
     hook_call(0x4502a5, fixed_chest_tlvl, 5);
     hook_call(0x450039, fixed_ground_tlvl, 5);
+    hook_call(0x44412b, fountain_timers, 6);
+    hook_call(0x490d06, fountain_timers_rest_hook, 5);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

@@ -1,6 +1,6 @@
 										
 #	Lvl	Fire Spells	Res	Short Name	Spell Description	Normal	Expert	Master	Grand Master	Stats
-1	1	Torch Light	none	Torch Light	Torch light increases the radius of light surrounding your party in the dark.  	Duration 1 hour per point of  skill	Brighter light	Even brighter light	Brightest light	P
+1	1	Torch Light	none	Torch Light	Torch light increases the radius of light surrounding your party in the dark, reducing the darkness penalty to missile hit chance.	Duration 1 hour per point of  skill	Brighter light	Even brighter light	Brightest light	P
 2	2	Fire Bolt	Fire	Fire Bolt	"Launches a burst of fire at a single target.  Damage is 1-3 points of damage per point of skill in Fire Magic, but casting cost is low.  Firebolt is safe and effective—the “Old Reliable” of the Sorcerer’s arsenal."	Slow rate of recovery	Faster recovery rate	Faster recovery rate	Fastest recovery rate	PMEC
 3	3	Fire Resistance	none	Prot Fire	Increases all your characters’ resistance to fire by an amount equal to your skill in Fire and lasts one hour per point of skill.	1 point resistance per point of skill	2 points resistance per point of skill	3 points resistance per point of skill	4 points resistance per point of skill	P
 4	4	Fire Aura	none	Fire Aura	"Causes a single weapon to burn with a magical fire, giving the weapon the 'of fire' ability.  This spell lasts for one hour per point of skill in Fire Magic."	Of Fire	Of Flame	Of Infernoes	Can enchant permanently	P

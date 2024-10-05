@@ -2429,6 +2429,7 @@ static int __thiscall inflict_condition(struct player *player, int condition,
     int robe = has_item_in_slot(player, ELLINGERS_ROBE, SLOT_BODY_ARMOR);
     if (condition == COND_WEAK && robe) // even if can_resist == 0!
         return FALSE; // because most sources of weak are coded as such
+    uint64_t immutability = 0;
     if (can_resist)
       {
         int bit = 1 << condition;
@@ -2451,10 +2452,17 @@ static int __thiscall inflict_condition(struct player *player, int condition,
         if (condition == COND_CURSED
             && has_enchanted_item(player, SPC_BLESSED))
             return FALSE;
+        if (random() % 4 < elemdata.difficulty)
+          {
+            immutability = PARTY_BUFFS[BUFF_IMMUTABILITY].expire_time;
+            PARTY_BUFFS[BUFF_IMMUTABILITY].expire_time = 0; // disable
+          }
       }
     if (condition == COND_INCINERATED) // fake condition
         condition = COND_DEAD; // is actually death
     int result = old_inflict_condition(player, condition, can_resist);
+    if (immutability)
+        PARTY_BUFFS[BUFF_IMMUTABILITY].expire_time = immutability; // restore
     if (condition == COND_ERADICATED && result
         && (check_bit(QBITS, QBIT_BLASTER_GM_QUEST_ACTIVE_LIGHT)
             || check_bit(QBITS, QBIT_BLASTER_GM_QUEST_ACTIVE_DARK))

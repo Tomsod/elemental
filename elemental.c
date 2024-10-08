@@ -1294,13 +1294,20 @@ enum profession
     NPC_ARMORER = 2,
     NPC_ALCHEMIST = 3,
     NPC_SCHOLAR = 4,
+    NPC_GUIDE = 5,
+    NPC_TRACKER = 6,
+    NPC_PATHFINDER = 7,
+    NPC_SAILOR = 8,
+    NPC_NAVIGATOR = 9,
     NPC_MERCHANT = 21,
     NPC_PORTER = 29,
     NPC_QUARTER_MASTER = 30,
     NPC_COOK = 33,
     NPC_CHEF = 34,
+    NPC_HORSEMAN = 35,
     NPC_BARD = 36,
     NPC_WIND_MASTER = 39,
+    NPC_EXPLORER = 44,
     NPC_PIRATE = 45,
     NPC_GYPSY = 48,
     NPC_BEACON_MASTER = 49,
@@ -9322,10 +9329,14 @@ static void load_map_rep(void)
 // Used below to track the bow GM mini-quest.
 static int bow_kill_player, bow_kill_time;
 
+// Defined below.
+static void set_walking_speed(void);
+
 // Hook for the above.  It's somewhat awkward, but Grayface has
 // already claimed all good places to fit a call into.
 // Also handles WoM barrels, resetting disabled spells, and weather,
 // which was not initialized properly on visiting a new map.
+// Movement hirelings are also re-checked here (as they disappear in Shoals).
 // Finally, it resets the double-kill-tracking bow quest vars.
 static void __declspec(naked) load_map_hook(void)
 {
@@ -9337,6 +9348,7 @@ static void __declspec(naked) load_map_hook(void)
         call load_map_rep
         call load_wom_barrels
         call reset_disabled_spells
+        call set_walking_speed
         mov dword ptr [bow_kill_player], esi ; == 0
         mov dword ptr [bow_kill_time], esi
         cmp dword ptr [OUTDOORS], 2
@@ -12791,6 +12803,74 @@ static void __declspec(naked) fountain_timers_rest_hook(void)
       }
 }
 
+// Movement speed multipliers.  Set just below.
+static const float flying_speed = 1.0;
+static float walking_speed, water_speed;
+
+// (Re)calculate current (water-)walking speed based on hired NPCs and horses.
+// Called on map load (above) and on a hireling update.
+static void set_walking_speed(void)
+{
+    int walking = 0, water = 0;
+    if (have_npc_hired(NPC_GUIDE))
+        walking += 1;
+    if (have_npc_hired(NPC_TRACKER))
+        walking += 2;
+    if (have_npc_hired(NPC_PATHFINDER))
+        walking += 3;
+    if (have_npc_hired(NPC_SAILOR))
+        water += 2;
+    if (have_npc_hired(NPC_NAVIGATOR))
+        water += 3;
+    if (have_npc_hired(NPC_PIRATE))
+        water += 2;
+    int has_horse = FALSE;
+    // Corresponds to the travel reduction time, as for hirelings.
+    static const int horse_speed[] = { 0, 2, 3, 0, 3, 2, 2 };
+    for (int horse = HORSE_HARMONDALE; horse <= HORSE_AVLEE; horse++)
+        if (NPCS[horse].bits & NPC_HIRED)
+          {
+            has_horse = TRUE;
+            walking += horse_speed[horse-HORSE_HARMONDALE];
+          }
+    if (has_horse && have_npc_hired(NPC_HORSEMAN))
+        walking += 2;
+    if (have_npc_hired(NPC_EXPLORER))
+      {
+        walking += has_horse ? 2 : 1;
+        water += 1;
+      }
+    walking_speed = 1 + walking / 10.0;
+    water_speed = 1 + water / 10.0;
+}
+
+// (One of the) hooks for the above.
+static void __declspec(naked) set_walking_speed_hook(void)
+{
+    asm
+      {
+        call set_walking_speed
+        cmp dword ptr [NPCS_LENGTH], edi ; replaced code
+        ret
+      }
+}
+
+// On every tick, use one of the speeds calculated above.
+static void __declspec(naked) apply_walking_speed(void)
+{
+    asm
+      {
+        test word ptr [STATE_BITS], 0x284 ; in liquid
+        cmovz eax, dword ptr [walking_speed]
+        cmovnz eax, dword ptr [water_speed]
+        cmp dword ptr [FLYING], 0
+        cmovnz eax, dword ptr [flying_speed]
+        mov dword ptr [0x6bdfc4], eax ; vanilla movement speed multiplier
+        mov eax, dword ptr [0xacd520] ; replaced code
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -13001,6 +13081,9 @@ static inline void misc_rules(void)
     hook_call(0x450039, fixed_ground_tlvl, 5);
     hook_call(0x44412b, fountain_timers, 6);
     hook_call(0x490d06, fountain_timers_rest_hook, 5);
+    hook_call(0x44a597, set_walking_speed_hook, 6);
+    hook_call(0x472870, apply_walking_speed, 5); // indoors
+    hook_call(0x4738a0, apply_walking_speed, 5); // outdoors
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -23081,6 +23164,7 @@ static void __declspec(naked) horse_buy_action(void)
         or byte ptr [NPC_ADDR+edi-54*SIZE_NPC+HORSE_HARMONDALE*SIZE_NPC] \
                     .s_npc.bits, NPC_HIRED
         inc byte ptr [0xacd542] ; quest hireling count
+        call set_walking_speed
         push QBIT_CAVALIER_HORSE
         push EVT_QBITS
         mov ecx, esi

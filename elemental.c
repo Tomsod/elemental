@@ -13084,6 +13084,16 @@ static inline void misc_rules(void)
     hook_call(0x44a597, set_walking_speed_hook, 6);
     hook_call(0x472870, apply_walking_speed, 5); // indoors
     hook_call(0x4738a0, apply_walking_speed, 5); // outdoors
+    // Increase hireling boni to Luck.
+    patch_dword(0x48cc35, 20); // fool
+    patch_byte(0x48cc49, 40); // chimney sweep
+    patch_byte(0x48cc5a, 30); // psychic
+    // Also boost some other professions.
+    patch_byte(0x48fad7, 3); // arms masters
+    // weapons masters are in warhorse_armsmaster_bonus() below
+    // squires are in champion_leadership() below
+    patch_byte(0x48fa18, 4); // monks
+    patch_byte(0x48fb1c, 4); // also monks
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -19282,6 +19292,7 @@ static void __declspec(naked) champion_leadership(void)
     asm
       {
         mov esi, eax ; squire bonus (replaced)
+        mov ecx, eax ; increase to +3
         cmp byte ptr [PARTY_ADDR].s_player.class, CLASS_CHAMPION
         setz al
         add esi, eax
@@ -19294,7 +19305,7 @@ static void __declspec(naked) champion_leadership(void)
         cmp byte ptr [PARTY_ADDR+SIZE_PLAYER*3].s_player.class, CLASS_CHAMPION
         setz al
         add esi, eax
-        shl esi, 1
+        lea esi, [esi*2+ecx]
         cmp edi, SKILL_SHIELD
         mov ecx, NPC_ARMORER
         jae npc
@@ -19305,7 +19316,7 @@ static void __declspec(naked) champion_leadership(void)
         mov ecx, NPC_SMITH
         npc:
         call dword ptr ds:have_npc_hired
-        add esi, eax
+        lea esi, [esi+eax*2]
         ret
       }
 }
@@ -23348,12 +23359,13 @@ static void __declspec(naked) horse_stable_dialog(void)
 }
 
 // Tatalia warhorse improves Armsmaster for all Knights.
+// Also boost the regular Weapons Master hireling.
 static void __declspec(naked) warhorse_armsmaster_bonus(void)
 {
     asm
       {
         jz skip ; replaced jump
-        add esi, 3 ; replaced code
+        add esi, 5 ; the new npc skill bonus
         skip:
         test byte ptr [NPC_ADDR+HORSE_TATALIA*SIZE_NPC].s_npc.bits, NPC_HIRED
         jz quit

@@ -7,31 +7,31 @@ Value	Bonus	Rating
 11	-1	Low
 13	0	Average
 15	+1	Above Average
-17	+2	Fair
-19	+3	Good
-21	+4	Quite Good
-25	+5	Very Good
-30	+6	High
-35	+7	Quite High
-40	+8	Very High
-46	+9	Great
-53	+10	Superb
-61	+11	Superb
-70	+12	Amazing
-80	+13	Amazing
-91	+14	Incredible
-103	+15	Incredible
-116	+16	Gigantic
-130	+17	Gigantic
-145	+18	Fantastic
-161	+19	Fantastic
-178	+20	Astounding
-196	+21	Astonishing
-215	+22	Monumental
-236	+23	Monumental
-259	+24	Tremendous
-285	+25	Tremendous
-315	+26	Colossal
+17	+2	Adequate
+19	+3	Fair
+21	+4	Decent
+25	+5	Quite Decent
+30	+6	Very Decent
+35	+7	Good
+40	+8	Quite Good
+46	+9	Very Good
+53	+10	Ample
+61	+11	Quite Ample
+70	+12	Very Ample
+80	+13	Promising
+91	+14	High
+103	+15	Quite High
+116	+16	Very High
+130	+17	Great
+145	+18	Superb
+161	+19	Amazing
+178	+20	Incredible
+196	+21	Gigantic
+215	+22	Fantastic
+236	+23	Astounding
+259	+24	Astonishing
+285	+25	Monumental
+315	+26	Tremendous
 350	+27	Colossal
 390	+28	Awesome
 440	+29	Awe Inspiring

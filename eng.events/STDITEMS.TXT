@@ -6,7 +6,7 @@ Might	of Might	5	0	10	10	10	10	5	10	10	5	5	240	Might Boost potion
 Intellect	of Thought	5	0	10	10	10	10	5	10	10	5	5	241	Intellect Boost potion
 Personality	of Charm	5	0	10	10	10	10	10	10	10	5	5	242	Personality Boost potion
 Endurance	of Vigor	5	0	10	10	10	10	5	10	10	5	5	243	Endurance Boost potion
-Accuracy	of Precision	5	0	10	10	10	10	5	10	10	5	5	245	Accuracy Boost potion
+Agility	of Precision	5	0	10	10	10	10	5	10	10	5	5	245	Agility Boost potion
 Speed	of Speed	5	0	10	10	10	10	25	10	10	5	5	244	Speed Boost potion
 Luck	of Luck	5	0	10	10	10	10	10	10	10	5	5	255	Luck Boost potion
 Hit Points	of Health	10	5	5	0	10	5	10	10	10	20	20	253	Divine Cure potion

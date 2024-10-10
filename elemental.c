@@ -672,6 +672,7 @@ enum items
     PHYNAXIAN_CROWN = 523,
     TITANS_BELT = 524,
     TWILIGHT = 525,
+    ANIA_SELVING = 526,
     JUSTICE = 527,
     MEKORIGS_HAMMER = 528,
     LAST_OLD_ARTIFACT = 528,
@@ -13094,6 +13095,9 @@ static inline void misc_rules(void)
     // squires are in champion_leadership() below
     patch_byte(0x48fa18, 4); // monks
     patch_byte(0x48fb1c, 4); // also monks
+    // Let Accuracy (now Agility) increase AC instead of Speed.
+    hook_call(0x48e652, get_accuracy, 5); // base ac
+    hook_call(0x48e68b, get_accuracy, 5); // total ac
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -16711,6 +16715,20 @@ static void __declspec(naked) ghoulbane_torch_4(void)
       }
 }
 
+// Instead of the now self-contradictory Agility bonus, give Ania AC reduction.
+static void __declspec(naked) ania_selving_ac_penetration(void)
+{
+    asm
+      {
+        cmp dword ptr [ebx].s_map_object.item, ANIA_SELVING
+        jne skip
+        add dword ptr [ebp-40], 25 ; ac penetration
+        skip:
+        mov eax, 0x48d1e4 ; replaced call
+        jmp eax
+      }
+}
+
 // Add the new properties to some old artifacts,
 // and code some brand new artifacts and relics.
 static inline void new_artifacts(void)
@@ -16857,6 +16875,8 @@ static inline void new_artifacts(void)
     hook_call(0x47bcb2, ghoulbane_torch_2, 6);
     hook_call(0x47bf31, ghoulbane_torch_3, 8);
     hook_call(0x47c564, ghoulbane_torch_4, 6);
+    patch_dword(0x48f6b0, 0x48f19b); // remove 150 accuracy from ania selving
+    hook_call(0x439663, ania_selving_ac_penetration, 5);
 }
 
 // When calculating missile damage, take note of the weapon's skill.

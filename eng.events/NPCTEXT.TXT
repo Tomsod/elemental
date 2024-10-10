@@ -635,7 +635,7 @@ Elron hasn't been back in almost a week.  I'm certain something horrible has hap
 581	"The Grand Master of Dark Magic can be found in the necromancer castle, Castle Gloaming.  At times Archibald has been know to take the journey to Clankers Lab."	Grandmaster Dark Magic hint	James Teacher Hints
 582	Empty Barrel		
 583	Might increased permanently		
-584	Accuracy increased permanently		
+584	Agility increased permanently
 585	Personality increased permanently		
 586	Intellect increased permanently		
 587	Endurance increased permanently		

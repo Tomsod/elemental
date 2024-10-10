@@ -1,7 +1,7 @@
 Global Text	
 
 0	AC
-1	Accuracy
+1	Agility
 2	Black Knight
 3	Spy
 4	Afraid
@@ -235,7 +235,7 @@ Global Text
 232	Not Identified
 233	Preservation
 234	Regeneration
-235	Temp Accuracy
+235	Temp Agility
 236	Wait without healing
 237	Wait until Dawn
 238	Wait 5 Minutes

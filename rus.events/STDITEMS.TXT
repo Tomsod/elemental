@@ -6,7 +6,7 @@ Bonus Stat	Of Name	Arm	Shld	Helm	Belt	Cape	Gaunt	Boot	Ring	Amul	Robe	Crown	Craft
 Интеллект	Мысли	5	0	10	10	10	10	5	10	10	5	5	241	Intellect Boost potion
 Сила духа	Обаяния	5	0	10	10	10	10	10	10	10	5	5	242	Personality Boost potion
 Выносливость	Бодрости	5	0	10	10	10	10	5	10	10	5	5	243	Endurance Boost potion
-Меткость	Точности	5	0	10	10	10	10	5	10	10	5	5	245	Accuracy Boost potion
+Ловкость	Точности	5	0	10	10	10	10	5	10	10	5	5	245	Accuracy Boost potion
 Скорость	Скорости	5	0	10	10	10	10	25	10	10	5	5	244	Speed Boost potion
 Удача	Удачи	5	0	10	10	10	10	10	10	10	5	5	255	Luck Boost potion
 Единицы здоровья	Здоровья	10	5	5	0	10	5	10	10	10	20	20	253	Divine Cure potion
@@ -24,7 +24,7 @@ Bonus Stat	Of Name	Arm	Shld	Helm	Belt	Cape	Gaunt	Boot	Ring	Amul	Robe	Crown	Craft
 Навык опознания предметов	Предметов	0	0	0	5	5	0	5	10	15	0	10	311	Wizard Eye scroll
 Навык опознания монстров	Монстров	0	0	0	5	5	0	5	10	15	0	10	499	Telepathy scroll
 Навык Оружейника	Оружейника	10	10	10	0	0	10	0	0	0	0	0	229	Heroism potion
-Навык Ловкости	Ловкости	0	0	0	15	10	5	10	5	5	20	0	234	Stone Skin potion
+Навык Уклонения	Уклонения	0	0	0	15	10	5	10	5	5	20	0	234	Stone Skin potion
 Навык рукопашного боя	Кулака	0	0	0	5	5	20	10	5	5	20	0	372	Hammerhands scroll
 
 		145	100	135	115	200	260	165	230	225	185	135

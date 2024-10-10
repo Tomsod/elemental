@@ -5,7 +5,7 @@ Note bit	Autonote Text	Category
 4	5 Spell Points regained from the well west of the Temple on Emerald Island.	Stat	1	Arbiter
 5	2 points of permanent Luck from the well on the western edge of Emerald Island.	Stat	1	Teacher
 6	10 points of temporary Might from the well in the village south of Harmondale.	Stat	2	Potion
-7	10 points of temporary Accuracy from the well in the village northeast of Steadwick.	Stat	3	Obelisk
+7	10 points of temporary Agility from the well in the village northeast of Steadwick.	Stat	3	Obelisk
 8	2 points of permanent Might from the well in the northwest section of Steadwick.	Stat	3	
 9	Disease cured at the eastern well in Steadwick.	Stat	3	
 10	20 points of temporary Magic Resistance from the well south of the Steadwick Town Hall.	Stat	3	
@@ -17,7 +17,7 @@ Note bit	Autonote Text	Category
 16	10 points of temporary Personality from the well near the Temple of the Dark in Moulder in Deyja.	Stat	5
 17	10 points of temporary Fire resistance from the well in the south side of Moulder in Deyja.	Stat	5
 18	25 points of temporary Intellect and Personality from the fountain outside the School of Sorcery in the Bracada Desert.	Stat	6
-19	"25 points of temporary Might, Intellect, Personality, Endurance, Speed, Accuracy, and Luck from the central fountain in Celeste."	Stat	7
+19	"25 points of temporary Might, Intellect, Personality, Endurance, Speed, Agility, and Luck from the central fountain in Celeste."	Stat	7
 20	50 points of temporary Intellect and Personality from the central fountain in Damocles in Mount Nighon.	Stat	10
 21	2 Skill Points from the well near Offerings and Blessings in Damocles in Mount Nighon. 	Stat	10
 22	2 points of permanent Personality from the well near Fortune's Folly in Damocles in Mount Nighon.	Stat	10
@@ -35,7 +35,7 @@ Note bit	Autonote Text	Category
 34	Orange liquid grants Intellect.	Misc	
 35	Blue liquid grants Personality.	Misc	
 36	Green liquid grants Endurance.	Misc	
-37	Yellow liquid grants Accuracy.	Misc	
+37	Yellow liquid grants Agility.	Misc
 38	Purple liquid grants Speed.	Misc	
 39	White liquid grants Luck.	Misc	
 40	Steaming liquid grants Fire Resistance.	Misc	
@@ -67,7 +67,7 @@ Note bit	Autonote Text	Category
 66	Personality Boost (White) = Green + Blue and Green Layered	potion
 67	Endurance Boost (White) = Purple + Blue and Purple Layered	potion
 68	Speed Boost (White) = Orange + Red and Orange Layered	potion
-69	Accuracy Boost (White) = Orange + Yellow and Orange Layered	potion
+69	Agility Boost (White) = Orange + Yellow and Orange Layered	potion
 70	Flaming Potion (White) = Green + Red and Orange Layered	potion
 71	Flaming Potion (White) = Purple + Yellow and Orange Layered	potion
 72	Freezing Potion (White) = Green + Red and Purple Layered	potion
@@ -99,7 +99,7 @@ Note bit	Autonote Text	Category
 98	Pure Intellect (Black) = Orange Potion + Intellect Boost (White)	potion
 99	Pure Endurance (Black) = Green Potion + Endurance Boost (White)	potion
 100	Pure Personality (Black) = Purple Potion + Personality Boost (White)	potion
-101	Pure Accuracy (Black) = Green Potion + Accuracy Boost (White)	potion
+101	Pure Agility (Black) = Green Potion + Agility Boost (White)	potion
 102	Pure Might (Black) = Orange Potion + Might Boost (White)	potion
 103	Rejuvenation (Black) = Red and Green Layered + Divine Restoration (White)	potion
 104	Rejuvenation (Black) = Blue and Orange Layered + Divine Restoration (White)	potion	

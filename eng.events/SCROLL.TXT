@@ -206,7 +206,7 @@ A Black Potion of Rejuvenation can be valuable in correcting the effects of agin
 741	"
 A Black Potion of Pure Might is any adventurers dream.  The addition to permanent might can turn ANYONE into a fighting machine.  To mix this potion, add an Orange Potion to the White Potion of Might Boost."	Pure Might	
 742	"
-A Black Potion of Pure Accuracy is any archers dream.  The addition to permanent accuracy can turn ANYONE into a fighting machine.  To mix this potion, add a Green Potion to the White Potion of Accuracy Boost."	Pure Accuracy	
+A Black Potion of Pure Agility is any archers dream.  The addition to permanent agility can turn ANYONE into a fighting machine.  To mix this potion, add a Green Potion to the White Potion of Agility Boost."	Pure Agility
 743	"
 The Black Potion of Pure Personality will add to permanent personality increasing the total spell points of Ego spell-casters.  To mix this potion, add a Purple Potion to the White Potion of Personality Boost."	Pure Personality	
 744	"
@@ -232,7 +232,7 @@ The White Potion of Endurance Boost temporarily boosts your endurance just when 
 754	"
 The White Potion of Speed Boost temporarily boosts your speed just when you need it.  To mix this potion, add an Orange Potion to the Compound Potion of Haste."	Speed Boost
 755	"
-The White Potion of Accuracy Boost temporarily boosts your accuracy just when you need it.  To mix this potion, add an Orange Potion to the Compound Potion of Stoneskin."	Accuracy Boost
+The White Potion of Agility Boost temporarily boosts your agility just when you need it.  To mix this potion, add an Orange Potion to the Compound Potion of Stoneskin."	Agility Boost
 756	"
 The White Flaming Potion turns any weapon into a weapon of Infernos and can also be thrown.  To mix this potion, either combine Haste and a Green Potion, or Stoneskin and a Purple Potion."	Flaming Potion
 757	"

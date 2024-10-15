@@ -1072,6 +1072,7 @@ enum spells
     SPL_LLOYDS_BEACON = 33,
     SPL_STUN = 34,
     SPL_SLOW = 35,
+    SPL_DEADLY_SWARM = 37,
     SPL_ROCK_BLAST = 41,
     SPL_DEATH_BLOSSOM = 43,
     SPL_MASS_DISTORTION = 44,
@@ -1148,7 +1149,8 @@ struct __attribute__((packed)) map_monster
     uint8_t attack2_element;
     SKIP(5);
     uint8_t spell1;
-    SKIP(2);
+    SKIP(1);
+    uint8_t spell2;
     uint8_t fire_resistance;
     SKIP(2);
     uint8_t poison_resistance;
@@ -1161,13 +1163,17 @@ struct __attribute__((packed)) map_monster
     uint16_t id;
     SKIP(2);
     uint16_t spell1_skill;
-    SKIP(6);
+    SKIP(4);
+    uint8_t alter_spell1; // was padding
+    uint8_t alter_spell2; // ditto
     uint32_t max_hp;
     SKIP(4);
     uint32_t experience;
     SKIP(4);
     uint32_t recovery;
-    uint32_t preference;
+    uint16_t preference; // was 32 bit, but top 16 unused
+    uint8_t alter_flag1; // so I repurposed them
+    uint8_t alter_flag2; // and this one
     SKIP(6);
     uint16_t height;
     SKIP(2);
@@ -1810,6 +1816,8 @@ static int (*get_eff_reputation)(void) = (funcptr_t) 0x47752f;
 static int __thiscall (*get_full_sp)(void *player) = (funcptr_t) 0x48e55d;
 static void __thiscall (*kill_civilian)(int id) = (funcptr_t) 0x438ce2;
 static int __thiscall (*monster_active)(void *monster) = (funcptr_t) 0x40894b;
+static int __fastcall (*parse_spell)(char **words, int *extra_words)
+    = (funcptr_t) 0x45490e;
 static int __thiscall (*equipped_item_type)(void *player, int slot)
     = (funcptr_t) 0x48d612;
 static int __thiscall (*equipped_item_skill)(void *player, int slot)
@@ -6632,6 +6640,7 @@ static void __declspec(naked) wizard_eye_display(void)
 static const funcptr_t strcpy_ptr = strcpy;
 static const funcptr_t strcat_ptr = strcat;
 static const funcptr_t strcmp_ptr = strcmp;
+static const funcptr_t strchr_ptr = strchr;
 
 // Display GM Wizard Eye duration as "Permanent".
 static void __declspec(naked) wizard_eye_display_duration(void)
@@ -8138,10 +8147,18 @@ static void __declspec(naked) variable_spike_count(void)
 }
 
 // For completeness, let monsters instakill other monsters with Incinerate.
+// Also here: fetch an alternative spell if necessary.
 static void __declspec(naked) mvm_incinerate(void)
 {
     asm
       {
+        add edi, dword ptr [ebp+12] ; attack type (2 or 3)
+        mov edx, dword ptr [elemdata.difficulty]
+        cmp dl, byte ptr [edi-2].s_map_monster.alter_flag1
+        jno got_spell
+        movzx ecx, byte ptr [edi-2].s_map_monster.alter_spell1
+        lea ecx, [ecx+ecx*8]
+        got_spell:
         cmp ecx, SPL_INCINERATE * 9
         movzx ecx, byte ptr [0x5cbecc+ecx*4] ; replaced code (spell element)
         jne skip
@@ -8156,8 +8173,8 @@ static void __declspec(naked) mvm_incinerate(void)
         xor edx, edx
         mov ecx, 100
         div ecx
-        mov ecx, dword ptr [ebp+12] ; attack type
-        mov ax, word ptr [edi+ecx*2-2*2].s_map_monster.spell1_skill ; 1 or 2
+        mov ecx, dword ptr [ebp+12] ; note it`s already added once
+        mov ax, word ptr [edi+ecx-4].s_map_monster.spell1_skill
         and eax, SKILL_MASK
         lea eax, [eax+eax*2] ; 3% per level
         cmp eax, edx
@@ -8855,49 +8872,59 @@ static inline void zombie_stuff(void)
     hook_call(0x463603, zombie_face_on_tpk, 5);
 }
 
-// Calls the original function.
-static int __fastcall __declspec(naked) parse_spell(char **words,
-                                                    int *extra_words)
-{
-    asm
-      {
-        push ebp
-        mov ebp, esp
-        push ecx
-        push ecx
-        push 0x454913
-        ret
-      }
-}
+// Extra parameters for the below call.
+static uint8_t *alter_spell = NULL;
+static int only_alter_spell = FALSE;
 
-// Parse "turn undead" and "destory undead" in monsters.txt.
-// Also here: recognize "flying fist" and "poison spray".
+// Parse a bunch of new monster spells in monsters.txt.
+// Also here: recursively parse an alternative spell if present.
 static int __fastcall parse_new_spells(char **words, int *extra_words)
 {
     char *first_word = words[1];
     if (!first_word)
         return 0;
-    if (!uncased_strcmp(first_word, "turn"))
+    int result;
+    if (only_alter_spell)
       {
-        ++*extra_words;
-        return SPL_TURN_UNDEAD;
+        --*extra_words; // will be 0 now
+        result = 0;
       }
-    if (!uncased_strcmp(first_word, "destroy"))
+    else
       {
-        ++*extra_words;
-        return SPL_DESTROY_UNDEAD;
+        static const struct { char *word; int spell; } new_spells[] = {
+              { "turn", SPL_TURN_UNDEAD },
+              { "destroy", SPL_DESTROY_UNDEAD },
+              { "flying", SPL_FLYING_FIST },
+              { "poison", SPL_POISON_SPRAY },
+              { "deadly", SPL_DEADLY_SWARM },
+              { NULL, 0 },
+        };
+        for (int i = 0;; i++)
+            if (!new_spells[i].word)
+              {
+                result = parse_spell(words, extra_words);
+                break;
+              }
+            else if (!uncased_strcmp(first_word, new_spells[i].word))
+              {
+                ++*extra_words;
+                result = new_spells[i].spell;
+                break;
+              }
       }
-    if (!uncased_strcmp(first_word, "flying"))
+    if (result && alter_spell || only_alter_spell)
       {
+        int offset = *extra_words;
+        char *backup = words[offset];
+        words[offset] = words[0] - offset;
+        uint8_t *alter = alter_spell;
+        alter_spell = NULL; // avoid infinite loop
+        only_alter_spell = FALSE; // ditto
         ++*extra_words;
-        return SPL_FLYING_FIST;
+        *alter = parse_new_spells(words + offset, extra_words);
+        words[offset] = backup;
       }
-    if (!uncased_strcmp(first_word, "poison"))
-      {
-        ++*extra_words;
-        return SPL_POISON_SPRAY;
-      }
-    return parse_spell(words, extra_words);
+    return result;
 }
 
 // Calls the original function.
@@ -8926,6 +8953,14 @@ static int __thiscall consider_new_spells(void *this,
         return FALSE; // too angry to cast
     int monster_id = monster - MAP_MONSTERS;
     unsigned int target = MON_TARGETS[monster_id];
+
+    // maybe substitute an alternative spell
+    int first = spell == monster->spell1;
+    int marker = first ? monster->alter_flag1 : monster->alter_flag2;
+    if (marker & 0x80 && elemdata.difficulty >= (marker & 0x7f))
+        spell = first ? monster->alter_spell1 : monster->alter_spell2;
+
+    if (!spell) return FALSE; // in case only alter spell exists
     if (spell == SPL_TURN_UNDEAD)
       {
         // Make sure we're targeting the party (no effect on monsters so far).
@@ -8991,15 +9026,21 @@ static int __thiscall absorb_spell(struct player *player, int spell, int rank);
 // Turn undead damages and scares all undead PCs.
 // Destroy undead damages one undead PC or monster with Holy.
 // We also handle the Cursed monster debuff here.
-static void __fastcall cast_new_spells(int monster, void *vector, int spell,
+static void __fastcall cast_new_spells(int monster_id, void *vector, int spell,
                                        int action, int skill)
 {
-    if (MAP_MONSTERS[monster].spell_buffs[MBUFF_CURSED].expire_time
-        && random() & 1) // 50% chance
+    struct map_monster *monster = &MAP_MONSTERS[monster_id];
+    if (monster->spell_buffs[MBUFF_CURSED].expire_time && random() & 1) // 50%
       {
         make_sound(SOUND_THIS, SOUND_SPELL_FAIL, 0, 0, -1, 0, 0, 0, 0);
         return;
       }
+
+    // maybe substitute an alternative spell
+    int first = spell == monster->spell1;
+    int marker = first ? monster->alter_flag1 : monster->alter_flag2;
+    if (marker & 0x80 && elemdata.difficulty >= (marker & 0x7f))
+        spell = first ? monster->alter_spell1 : monster->alter_spell2;
 
     int spell_sound = word(SPELL_SOUNDS + spell * 2);
     if (spell == SPL_TURN_UNDEAD)
@@ -9020,7 +9061,7 @@ static void __fastcall cast_new_spells(int monster, void *vector, int spell,
       }
     else if (spell == SPL_DESTROY_UNDEAD)
       {
-        unsigned int target = MON_TARGETS[monster];
+        unsigned int target = MON_TARGETS[monster_id];
         if (target == TGT_PARTY)
           {
             struct player *target_player;
@@ -9039,32 +9080,31 @@ static void __fastcall cast_new_spells(int monster, void *vector, int spell,
           }
         else if ((target & 7) == TGT_MONSTER)
           {
-            int attack_type;
-            // hack to determine which spell (first or second) we're casting
-            if (MAP_MONSTERS[monster].spell1 == spell)
-                attack_type = 2;
-            else
-                attack_type = 3;
             uint32_t force[3];
             memset(force, 0, 12); // no knockback so far
-            attack_monster(monster * 8 + TGT_MONSTER, target >> 3, force,
-                           attack_type);
+            attack_monster(monster_id * 8 + TGT_MONSTER, target >> 3,
+                           force, first ? 2 : 3);
           }
         make_sound(SOUND_THIS, spell_sound, 0, 0, -1, 0, 0, 0, 0);
       }
     else
-        monster_casts_spell(monster, vector, spell, action, skill);
+        monster_casts_spell(monster_id, vector, spell, action, skill);
 }
 
 // Pretend Poison Spray is Shrapmetal when a monster casts it.
+// Also here: treat Deadly Swarm as a generic projectile spell.
 static void __declspec(naked) cast_poison_blast(void)
 {
     asm
       {
         mov edx, 3 ; replaced code, basically
         cmp ecx, SPL_POISON_SPRAY
-        jne skip
+        jne not_spray
         mov ecx, SPL_SHRAPMETAL
+        not_spray:
+        cmp ecx, SPL_DEADLY_SWARM
+        jne skip
+        mov ecx, SPL_LIGHTNING_BOLT ; earliest jump to projectile code
         skip:
         cmp ecx, SPL_SPECTRAL_WEAPON ; replaced (actually fate)
         ret
@@ -9121,15 +9161,118 @@ static void __declspec(naked) never_miss_monster_spells(void)
         ok:
         mov eax, 0x427372 ; replaced call
         jmp eax
+      }
+}
 
+// Setup an alternative spell to be parsed if pipe sign(s) is present.
+static void __declspec(naked) detect_alter_spell(void)
+{
+    asm
+      {
+        xor ecx, ecx
+        inc eax ; first symbol is always space
+        cmp byte ptr [eax], '|'
+        sete cl
+        mov dword ptr [only_alter_spell], ecx
+        je only
+        push '|'
+        push eax ; spell spec
+        call dword ptr ds:strchr_ptr
+        add esp, 8
+        test eax, eax
+        jz skip
+        only:
+        mov byte ptr [eax], ','
+        mov cl, 0x81
+        cmp byte ptr [eax+1], '|'
+        jne one
+        mov byte ptr [eax+1], ','
+        inc cl
+        one:
+        mov edx, dword ptr [ebp-4] ; line id
+        imul edx, edx, 88 ; sizeof monsters.txt item
+        add edx, dword ptr [ebp-8] ; this
+        xor eax, eax
+        cmp dword ptr [esp], 0x455e07 ; second spell code
+        setae al
+        mov byte ptr [edx-44+eax].s_map_monster.alter_flag1, cl
+        lea eax, [edx-44+eax].s_map_monster.alter_spell1
+        mov dword ptr [alter_spell], eax
+        skip:
+        mov eax, 0x4caff0 ; replaced call
+        jmp eax
+      }
+}
+
+// Show difficulty-appropriate spells when examining a monster.
+// Also here: display the second spell properly when it's the only one.
+static void __declspec(naked) show_alter_spells(void)
+{
+    asm
+      {
+        mov dl, byte ptr [ecx].s_map_monster.spell1 ; replaced code
+        mov eax, dword ptr [elemdata.difficulty]
+        cmp al, byte ptr [ecx].s_map_monster.alter_flag1
+        jno one
+        mov dl, byte ptr [ecx].s_map_monster.alter_spell1
+        one:
+        cmp al, byte ptr [ecx].s_map_monster.alter_flag2
+        mov al, byte ptr [ecx].s_map_monster.spell2
+        jno two
+        mov al, byte ptr [ecx].s_map_monster.alter_spell2
+        two:
+        cmp dl, bl ; == 0
+        jnz ok
+        mov dl, al
+        mov al, bl
+        ok:
+        mov byte ptr [ebp-46], al ; hopefully unused
+        ret
+      }
+}
+
+// Substitute an alternative spell when calculating monster damage.
+static void __declspec(naked) alter_spell_damage(void)
+{
+    asm
+      {
+        mov eax, dword ptr [elemdata.difficulty]
+        cmp al, byte ptr [ecx+edx-2].s_map_monster.alter_flag1
+        jno ok
+        movzx edi, byte ptr [ecx+edx-2].s_map_monster.alter_spell1
+        ok:
+        mov ecx, esi ; replaced code
+        jmp dword ptr ds:skill_mastery ; replaced call
+      }
+}
+
+// Also get the right spell element (this hook is used twice).
+static void __declspec(naked) alter_spell_element(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [ebp-16] ; attack type (2 or 3)
+        mov edx, dword ptr [elemdata.difficulty]
+        cmp dl, byte ptr [esi+ecx-2].s_map_monster.alter_flag1
+        jno ok
+        movzx eax, byte ptr [esi+ecx-2].s_map_monster.alter_spell1
+        lea eax, [eax+eax*8]
+        ok:
+        movzx eax, byte ptr [SPELLS_TXT+eax*4+28] ; replaced code, almost
+        cmp dword ptr [esp], 0x43a402 ; tell the two hooks apart
+        cmovb edi, eax ; different output registers
+        cmovae ebx, eax
+        ret
       }
 }
 
 // Make Turn Undead and Destroy Undead castable by monsters.
 // Also enable Poison Spray for Manticores.
+// Also here: implement difficulty-dependent alternative monster spells.
 static inline void new_monster_spells(void)
 {
-    hook_jump(0x45490e, parse_new_spells);
+    hook_call(0x455d70, parse_new_spells, 5); // first spell
+    hook_call(0x455e86, parse_new_spells, 5); // second spell
     hook_jump(0x4270b9, consider_new_spells);
     hook_jump(0x404ac7, cast_new_spells);
     hook_call(0x404b02, cast_poison_blast, 6);
@@ -9141,6 +9284,20 @@ static inline void new_monster_spells(void)
     hook_call(0x40566f, poison_blast_id, 7);
     hook_jump(0x405756, (void *) 0x40586c); // get the correct sound
     hook_call(0x43b25e, never_miss_monster_spells, 5);
+    hook_call(0x455d0c, detect_alter_spell, 5); // first spell
+    hook_call(0x455e22, detect_alter_spell, 5); // second spell
+    hook_call(0x41f0c8, show_alter_spells, 5);
+    // Use the stored spells in the code below:
+    erase_code(0x41f0d2, 5); // we already check the second spell
+    patch_word(0x41f130, 0xd255); // (mov dl,) byte ptr [ebp-46]
+    patch_word(0x41f17d, 0xd35d); // (cmp) byte ptr [ebp-45], (bl)
+    erase_code(0x41f181, 5); // again, no need to check second spell
+    hook_call(0x43b4d8, alter_spell_damage, 7);
+    hook_call(0x43a154, alter_spell_element, 8); // no projectile
+    hook_call(0x43a672, alter_spell_element, 8); // projectile
+    // also alter element in mvm_incinerate() above
+    erase_code(0x402394, 4); // erase spell existence checks
+    erase_code(0x4069bc, 4); // (we check the CURRENT spell ourselves)
 }
 
 // Calling atoi directly from assembly doesn't seem to work,

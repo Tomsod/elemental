@@ -1651,6 +1651,7 @@ enum struct_offsets
 #define SELECTED_SPELL 0x5063cc
 #define SPELLS_TXT 0x5cbeb0
 #define MOVEMAP_STYLE 0x576cbc
+#define HOUR_OF_DAY 0xacd554
 
 #ifdef CHECK_OVERWRITE
 #define sprintf sprintf_mm7
@@ -6269,9 +6270,9 @@ static void __declspec(naked) enchant_item_noon_check(void)
     asm
       {
         mov dword ptr [enchant_item_gm_noon], esi ; esi == 0
-        cmp dword ptr [0xacd554], 11 ; hour of day
+        cmp dword ptr [HOUR_OF_DAY], 11
         jb not_noon
-        cmp dword ptr [0xacd554], 13
+        cmp dword ptr [HOUR_OF_DAY], 13
         jb bonus
         not_noon:
         push SLOT_AMULET
@@ -8159,6 +8160,15 @@ static void __declspec(naked) mvm_incinerate(void)
         movzx ecx, byte ptr [edi-2].s_map_monster.alter_spell1
         lea ecx, [ecx+ecx*8]
         got_spell:
+        cmp ecx, SPL_SUNRAY * 9
+        jne no_sun
+        cmp dword ptr [HOUR_OF_DAY], 5
+        jb night
+        cmp dword ptr [HOUR_OF_DAY], 21
+        jb no_sun
+        night:
+        mov ecx, SPL_LIGHT_BOLT * 9
+        no_sun:
         cmp ecx, SPL_INCINERATE * 9
         movzx ecx, byte ptr [0x5cbecc+ecx*4] ; replaced code (spell element)
         jne skip
@@ -8891,12 +8901,13 @@ static int __fastcall parse_new_spells(char **words, int *extra_words)
       }
     else
       {
-        static const struct { char *word; int spell; } new_spells[] = {
-              { "turn", SPL_TURN_UNDEAD },
-              { "destroy", SPL_DESTROY_UNDEAD },
-              { "flying", SPL_FLYING_FIST },
-              { "poison", SPL_POISON_SPRAY },
-              { "deadly", SPL_DEADLY_SWARM },
+        static const struct { char *word; int spell, extra; } new_spells[] = {
+              { "turn", SPL_TURN_UNDEAD, 1 },
+              { "destroy", SPL_DESTROY_UNDEAD, 1 },
+              { "flying", SPL_FLYING_FIST, 1 },
+              { "poison", SPL_POISON_SPRAY, 1 },
+              { "deadly", SPL_DEADLY_SWARM, 1 },
+              { "sunray", SPL_SUNRAY, 0 },
               { NULL, 0 },
         };
         for (int i = 0;; i++)
@@ -8907,8 +8918,8 @@ static int __fastcall parse_new_spells(char **words, int *extra_words)
               }
             else if (!uncased_strcmp(first_word, new_spells[i].word))
               {
-                ++*extra_words;
                 result = new_spells[i].spell;
+                *extra_words += new_spells[i].extra;
                 break;
               }
       }
@@ -9042,6 +9053,10 @@ static void __fastcall cast_new_spells(int monster_id, void *vector, int spell,
     if (marker & 0x80 && elemdata.difficulty >= (marker & 0x7f))
         spell = first ? monster->alter_spell1 : monster->alter_spell2;
 
+    if (spell == SPL_SUNRAY // like for pcs, no casting it at night
+        && (dword(HOUR_OF_DAY) < 5 || dword(HOUR_OF_DAY) >= 21))
+        spell = SPL_LIGHT_BOLT; // instead of forbidding, cast a weaker spell
+
     int spell_sound = word(SPELL_SOUNDS + spell * 2);
     if (spell == SPL_TURN_UNDEAD)
       {
@@ -9092,7 +9107,7 @@ static void __fastcall cast_new_spells(int monster_id, void *vector, int spell,
 }
 
 // Pretend Poison Spray is Shrapmetal when a monster casts it.
-// Also here: treat Deadly Swarm as a generic projectile spell.
+// Also here: treat Deadly Swarm and Sunray as generic projectile spells.
 static void __declspec(naked) cast_poison_blast(void)
 {
     asm
@@ -9103,7 +9118,10 @@ static void __declspec(naked) cast_poison_blast(void)
         mov ecx, SPL_SHRAPMETAL
         not_spray:
         cmp ecx, SPL_DEADLY_SWARM
+        je projectile
+        cmp ecx, SPL_SUNRAY
         jne skip
+        projectile:
         mov ecx, SPL_LIGHTNING_BOLT ; earliest jump to projectile code
         skip:
         cmp ecx, SPL_SPECTRAL_WEAPON ; replaced (actually fate)
@@ -9226,6 +9244,19 @@ static void __declspec(naked) show_alter_spells(void)
         mov dl, al
         mov al, bl
         ok:
+        cmp dword ptr [HOUR_OF_DAY], 5
+        jb night
+        cmp dword ptr [HOUR_OF_DAY], 21
+        jb day
+        night:
+        cmp dl, SPL_SUNRAY
+        jne no_sun
+        mov dl, SPL_LIGHT_BOLT
+        no_sun:
+        cmp al, SPL_SUNRAY
+        jne day
+        mov al, SPL_LIGHT_BOLT
+        day:
         mov byte ptr [ebp-46], al ; hopefully unused
         ret
       }
@@ -9241,6 +9272,15 @@ static void __declspec(naked) alter_spell_damage(void)
         jno ok
         movzx edi, byte ptr [ecx+edx-2].s_map_monster.alter_spell1
         ok:
+        cmp edi, SPL_SUNRAY
+        jne no_sun
+        cmp dword ptr [HOUR_OF_DAY], 5
+        jb night
+        cmp dword ptr [HOUR_OF_DAY], 21
+        jb no_sun
+        night:
+        mov edi, SPL_LIGHT_BOLT
+        no_sun:
         mov ecx, esi ; replaced code
         jmp dword ptr ds:skill_mastery ; replaced call
       }
@@ -9258,6 +9298,15 @@ static void __declspec(naked) alter_spell_element(void)
         movzx eax, byte ptr [esi+ecx-2].s_map_monster.alter_spell1
         lea eax, [eax+eax*8]
         ok:
+        cmp eax, SPL_SUNRAY * 9
+        jne no_sun
+        cmp dword ptr [HOUR_OF_DAY], 5
+        jb night
+        cmp dword ptr [HOUR_OF_DAY], 21
+        jb no_sun
+        night:
+        mov eax, SPL_LIGHT_BOLT * 9
+        no_sun:
         movzx eax, byte ptr [SPELLS_TXT+eax*4+28] ; replaced code, almost
         cmp dword ptr [esp], 0x43a402 ; tell the two hooks apart
         cmovb edi, eax ; different output registers

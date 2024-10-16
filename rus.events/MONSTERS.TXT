@@ -4,7 +4,7 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 	A		0																																			
 1	Ангел	Angel A	30	180	25	1200	5%50D20+L4Sword	1	Y	Free	Aggress	3	250	60	0	0	Phys	2D8+10	0	0	0	0	0	30	"Light Bolt,M,8"	20	"Dispel Magic,M,8"	20	20	20	20	30	Imm	40	20	20	0
 2	Ангел-владыка	Angel B	50	400	35	3000	10%75D20+L5Sword	1	Y	Free	Aggress	3	275	50	0	0	Phys	2D8+15	0	0	0	0	0	30	"Destroy Undead,M,12"	50	"Day of Protection,M,12"	30	30	30	30	40	Imm	50	20	20	0
-3	Архангел	Angel C	70	700	45	5600	15%100D20+L6Sword	1	Y	Free	Suicidal	3	300	40	2	0	Phys	2D8+20	0	0	0	0	0	30	"Light Bolt,G,16"	50	"Hour of Power,G,16"	40	40	40	40	50	Imm	60	20	20	0
+3	Архангел	Angel C	70	700	45	5600	15%100D20+L6Sword	1	Y	Free	Suicidal	3	300	40	2	0	Phys	2D8+20	0	0	0	0	0	30	"Light Bolt|Sunray,G,16"	50	"Hour of Power,G,16"	40	40	40	40	50	Imm	60	20	20	0
 4	Стрелок	Archer A	9	35	14	171	5%3D20+L1Bow	1	N	Short	Normal	4	140	90	AR	0	Phys	2D6+2	Arrow	10	Fire	3D6+2	ArrowF	20	"||Sparks,N,4"	50	"Shield,N,4"	5	5	5	0	10	Imm	0	5	5	0
 5	Лучник	Archer B	19	93	16	551	5%6D20+L2Bow	1	N	Short	Aggress	4	150	90	AR	0	Phys	3D6+3	Arrow	10	Fire	4D6+3	ArrowF	20	"Lightning Bolt,E,4"	50	"Shield,E,8"	10	10	10	5	15	Imm	5	10	10	0
 6	Элитный стрелок	Archer C	29	171	22	1131	10%10D20+L3Bow	1	N	Short	Aggress	4	160	80	AR	0	Phys	3D7+3	Arrow	15	Fire	4D7+3	ArrowF	20	"Lightning Bolt,M,8"	50	"Shield,M,12"	15	15	15	5	20	Imm	5	15	15	0
@@ -22,7 +22,7 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 18	Священник Луны	Cleric Moon C	30	180	25	1200	10%20D10+L4Mace	1	N	Med	Aggress	2	200	80	CP	0	Phys	2D4+8	Dark	0	0	0	0	30	"Shrapmetal||Dragon Breath,M,10"	33	"Power Cure,G,10"	15	15	15	5	15	Imm	40	20	20	0
 19	Послушник Солнца	Cleric Sun A	10	40	10	200	5%5D10+L2Cape	1	N	Med	Normal	2	160	90	CP	0	Phys	2D4	Fire	0	0	0	0	30	"Light Bolt,N,4"	20	"Turn Undead,N,4"	5	5	5	0	5	Imm	20	10	10	0
 20	Клирик Солнца	Cleric Sun B	20	100	15	600	5%10D10+L3Cape	1	N	Med	Normal	2	180	90	CP	0	Phys	2D4+4	Fire	0	0	0	0	30	"Mind Blast|Psychic Shock,E,7"	30	"Destroy Undead,E,7"	10	10	10	5	10	Imm	30	15	15	0
-21	Священник Солнца	Cleric Sun C	30	180	25	1200	10%20D10+L4Cape	1	N	Med	Aggress	2	200	80	CP	0	Phys	2D4+8	Light	0	0	0	0	30	"Light Bolt,N,10"	33	"Power Cure,G,10"	15	15	15	5	15	Imm	40	20	20	0
+21	Священник Солнца	Cleric Sun C	30	180	25	1200	10%20D10+L4Cape	1	N	Med	Aggress	2	200	80	CP	0	Phys	2D4+8	Light	0	0	0	0	30	"Light Bolt||Sunray,G,10"	33	"Power Cure,G,10"	15	15	15	5	15	Imm	40	20	20	0
 22	Дьявол-работник	Devil A	30	180	25	1200	20%L3	1	N	Med	Suicidal	2	200	60	0	Disease2	Phys	2D6+8	Fire	0	0	0	0	20	"Fireball,E,6"	0	0	Imm	20	10	20	Imm	Imm	20	20	20	0
 23	Дьявол-воин	Devil B	50	400	35	3000	30%L4	1	N	Med	Aggress	2	250	50	0	Disease3	Phys	2D6+14	Fire	0	0	0	0	20	"Fireball,E,8"	15	"Meteor Shower,M,8"	Imm	30	15	30	Imm	Imm	30	30	30	0
 24	Капитан дьяволов	Devil C	70	700	45	5600	50%L5	1	N	Short	Aggress	2	300	40	0	DrainSP	Phys	2D6+20	Fire	0	0	0	0	20	"Incinerate,M,12"	15	"Meteor Shower,M,12"	Imm	40	20	40	Imm	Imm	40	40	40	0

@@ -8908,6 +8908,7 @@ static int __fastcall parse_new_spells(char **words, int *extra_words)
               { "poison", SPL_POISON_SPRAY, 1 },
               { "deadly", SPL_DEADLY_SWARM, 1 },
               { "sunray", SPL_SUNRAY, 0 },
+              { "starburst", SPL_STARBURST, 0 },
               { NULL, 0 },
         };
         for (int i = 0;; i++)
@@ -9010,6 +9011,8 @@ static int __thiscall consider_new_spells(void *this,
                                 // avoid making WoM on Hard impossible
                                 || PARTY_BUFFS[BUFF_INVISIBILITY].expire_time))
         return FALSE; // would target the party even if not hostile
+    else if (spell == SPL_INFERNO)
+        return target == TGT_PARTY; // mvm not implemented for now
     else
         return monster_considers_spell(this, monster, spell);
 }
@@ -9058,19 +9061,21 @@ static void __fastcall cast_new_spells(int monster_id, void *vector, int spell,
         spell = SPL_LIGHT_BOLT; // instead of forbidding, cast a weaker spell
 
     int spell_sound = word(SPELL_SOUNDS + spell * 2);
-    if (spell == SPL_TURN_UNDEAD)
+    if (spell == SPL_TURN_UNDEAD || spell == SPL_INFERNO)
       {
         // we must be targeting the party
-        for (int i = 0; i < 4; i++)
-            if (is_undead(&PARTY[i]) && player_active(&PARTY[i])
-                && !absorb_spell(&PARTY[i], spell, NORMAL))
+        int mastery = skill_mastery(skill);
+        skill &= SKILL_MASK;
+        int turn = spell == SPL_TURN_UNDEAD;
+        for (struct player *p = PARTY; p < PARTY + 4; p++)
+            if ((!turn || is_undead(p)) && !p->conditions[COND_ERADICATED]
+                && !p->conditions[COND_DEAD] && !p->conditions[COND_STONED]
+                && !absorb_spell(p, spell, mastery))
               {
-                int mastery = skill_mastery(skill);
-                skill &= SKILL_MASK;
                 int damage = spell_damage(spell, skill, mastery, 0);
-                if (damage_player(&PARTY[i], damage, ELEMENT(spell))
-                    && !PARTY[i].conditions[COND_AFRAID])
-                    inflict_condition(&PARTY[i], COND_AFRAID, 0);
+                if (damage_player(p, damage, ELEMENT(spell)) && turn
+                    && player_active(p) && !p->conditions[COND_AFRAID])
+                    inflict_condition(p, COND_AFRAID, 0);
               }
         make_sound(SOUND_THIS, spell_sound, 0, 0, -1, 0, 0, 0, 0);
       }
@@ -9107,7 +9112,8 @@ static void __fastcall cast_new_spells(int monster_id, void *vector, int spell,
 }
 
 // Pretend Poison Spray is Shrapmetal when a monster casts it.
-// Also here: treat Deadly Swarm and Sunray as generic projectile spells.
+// Also here: treat Deadly Swarm and Sunray as generic projectile spells,
+// and use Meteor Shower code for Starburst.
 static void __declspec(naked) cast_poison_blast(void)
 {
     asm
@@ -9120,9 +9126,13 @@ static void __declspec(naked) cast_poison_blast(void)
         cmp ecx, SPL_DEADLY_SWARM
         je projectile
         cmp ecx, SPL_SUNRAY
-        jne skip
+        jne not_proj
         projectile:
         mov ecx, SPL_LIGHTNING_BOLT ; earliest jump to projectile code
+        not_proj:
+        cmp ecx, SPL_STARBURST
+        jne skip
+        mov ecx, SPL_METEOR_SHOWER
         skip:
         cmp ecx, SPL_SPECTRAL_WEAPON ; replaced (actually fate)
         ret
@@ -9315,8 +9325,59 @@ static void __declspec(naked) alter_spell_element(void)
       }
 }
 
+// Distinguish between Meteor Shower and Starburst rocks.
+static void __declspec(naked) starburst_projectile(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ebp+8] ; spell id
+        mov ax, word ptr [SPELL_OBJ_IDS+eax*4-4] ; was fixed [8]
+        ret
+      }
+}
+
+// Also get the correct sound.
+static void __declspec(naked) starburst_sound(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ebp+8] ; spell id
+        movsx eax, word ptr [SPELL_SOUNDS+eax*2] ; was fixed [9]
+        ret
+      }
+}
+
+// Replace some outdoor-only monster spells when indoors.
+static void __declspec(naked) indoor_monster_spells(void)
+{
+    asm
+      {
+        push dword ptr [esp+12]
+        push dword ptr [esp+12]
+        push dword ptr [esp+12]
+        mov eax, 0x4ca780 ; replaced memmove call
+        call eax
+        add esp, 12
+        cmp dword ptr [OUTDOORS], 2
+        je skip
+        mov eax, dword ptr [esp+4] ; copied monster data
+        cmp byte ptr [eax-44].s_map_monster.alter_spell2, SPL_STARBURST
+        jne not_starburst
+        mov byte ptr [eax-44].s_map_monster.alter_spell2, 0
+        mov byte ptr [eax-44].s_map_monster.alter_flag2, 0
+        not_starburst:
+        cmp byte ptr [eax-44].s_map_monster.spell2, SPL_METEOR_SHOWER
+        jne skip
+        mov byte ptr [eax-44].s_map_monster.spell2, 0
+        mov byte ptr [eax-44].s_map_monster.alter_spell2, SPL_INFERNO
+        mov byte ptr [eax-44].s_map_monster.alter_flag2, 0x81 ; normal+
+        skip:
+        ret
+      }
+}
+
 // Make Turn Undead and Destroy Undead castable by monsters.
-// Also enable Poison Spray for Manticores.
+// Also enable Poison Spray, Starburst, and some others.
 // Also here: implement difficulty-dependent alternative monster spells.
 static inline void new_monster_spells(void)
 {
@@ -9347,6 +9408,18 @@ static inline void new_monster_spells(void)
     // also alter element in mvm_incinerate() above
     erase_code(0x402394, 4); // erase spell existence checks
     erase_code(0x4069bc, 4); // (we check the CURRENT spell ourselves)
+    // Use (modified) Meteor Shower code for Starburst.
+    patch_byte(0x404d59, 10); // bugfix: 10 rocks on M
+    patch_byte(0x404d6d, 20); // and 20 on GM
+    patch_byte(0x404d6b, 20); // and skip N/E code
+    static const int addr[] = { 0xd89, 0xdbc, 0xdeb, 0xe00, 0xe03, 0xe66,
+                                0xeae, 0xecb, 0xed1, 0xf5b, 0xff1 };
+    for (int i = 0; i < sizeof(addr) / sizeof(int); i++)
+        patch_byte(0x404000 + addr[i], 12); // don't overwrite spell id (again)
+    hook_call(0x404e9d, starburst_projectile, 6);
+    hook_call(0x404fc9, starburst_sound, 7);
+    hook_call(0x44f850, indoor_monster_spells, 5); // random monster
+    hook_call(0x4bbf74, indoor_monster_spells, 5); // summoned monster
 }
 
 // Calling atoi directly from assembly doesn't seem to work,
@@ -22712,7 +22785,7 @@ static inline void throwing_knives(void)
     hook_call(0x42f017, knife_spell, 5);
     hook_call(0x42eecf, knife_sound, 7);
     hook_call(0x4280de, no_knife_double_shot, 7);
-    dword(0x4e3aac + SPL_KNIFE * 4) = OBJ_KNIFE; // projectile for knives
+    dword(SPELL_OBJ_IDS + SPL_KNIFE * 4 - 4) = OBJ_KNIFE; // projectile id
     hook_call(0x428264, knife_velocity, 5);
     // knives treated as arrows in explode_potions_jump() above
     hook_jump(0x4396aa, (void *) 0x439652); // treat knives as arrows when hit

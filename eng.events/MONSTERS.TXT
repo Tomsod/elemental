@@ -24,7 +24,7 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 20	Cleric of the Sun	Cleric Sun B	20	100	15	600	5%10D10+L3Cape	1	N	Med	Normal	2	180	90	CP	0	Phys	2D4+4	Fire	0	0	0	0	30	"Mind Blast|Psychic Shock,E,7"	30	"Destroy Undead,E,7"	10	10	10	5	10	Imm	30	15	15	0
 21	Priest of the Sun	Cleric Sun C	30	180	25	1200	10%20D10+L4Cape	1	N	Med	Aggress	2	200	80	CP	0	Phys	2D4+8	Light	0	0	0	0	30	"Light Bolt||Sunray,G,10"	33	"Power Cure,G,10"	15	15	15	5	15	Imm	40	20	20	0
 22	Devil Worker	Devil A	30	180	25	1200	20%L3	1	N	Med	Suicidal	2	200	60	0	Disease2	Phys	2D6+8	Fire	0	0	0	0	20	"Fireball,E,6"	0	0	Imm	20	10	20	Imm	Imm	20	20	20	0
-23	Devil Warrior	Devil B	50	400	35	3000	30%L4	1	N	Med	Aggress	2	250	50	0	Disease3	Phys	2D6+14	Fire	0	0	0	0	20	"Fireball,E,8"	15	"Meteor Shower,M,8"	Imm	30	15	30	Imm	Imm	30	30	30	0
+23	Devil Warrior	Devil B	50	400	35	3000	30%L4	1	N	Med	Aggress	2	250	50	0	Disease3	Phys	2D6+14	Fire	0	0	0	0	20	"Fireball,M,8"	15	"Meteor Shower,M,8"	Imm	30	15	30	Imm	Imm	30	30	30	0
 24	Devil Captain	Devil C	70	700	45	5600	50%L5	1	N	Short	Aggress	2	300	40	0	DrainSP	Phys	2D6+20	Fire	0	0	0	0	20	"Incinerate,M,12"	15	"Meteor Shower,M,12"	Imm	40	20	40	Imm	Imm	40	40	40	0
 25	Green Dragon	Dragon A	80	880	60	7200	80%125D20+L6	1	Y	Long	Aggress	4	240	70	2	0	Elec	12D8	Air	0	0	0	0	0	0	0	0	50	Imm	50	Imm	50	Imm	30	50	50	0
 26	Blue Dragon	Dragon B	90	1080	80	9000	80%150D20+L6	1	Y	Med	Aggress	4	260	65	3	0	Cold	14D8	Water	0	0	0	0	0	0	0	0	30	50	Imm	Imm	50	Imm	30	50	50	0
@@ -214,7 +214,7 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 210	Master Thief	Thief C	18	86	20	504	20%5D10+L2	1	N	Med	Aggress	2	270	60	P	Stealx2	Phys	3D4+12	0	0	0	0	0	0	0	0	0	0	0	0	0	0	Imm	0	0	0	0
 211	Titan	Titan A	65	617	60	4875	40%100D20+L5	1	N	Short	Aggress	4	200	70	O	BrkArmor	Elec	2D20+60	Air	0	0	0	0	20	"Psychic Shock,M,8"	10	"Sparks,M,8"	30	Imm	30	30	Imm	Imm	20	30	30	0
 212	Storm Titan	Titan B	75	787	70	6375	80%150D20L5	1	N	Short	Aggress	4	200	70	O	Brkweapon	Elec	2D20+80	Air	0	0	0	0	20	"Psychic Shock,M,12"	10	"Sparks,M,12"	50	Imm	50	50	Imm	Imm	30	50	50	0
-213	Blood Titan	Titan C	95	1187	80	9975	80%200D20+L6	1	N	Short	Aggress	4	200	70	O	Dead	Elec	2D20+120	Air	0	0	0	0	20	"Psychic Shock,G,16"	10	"Sparks,G,16"	80	Imm	80	80	Imm	Imm	50	80	80	0
+213	Blood Titan	Titan C	95	1187	80	9975	80%200D20+L6	1	N	Short	Aggress	4	200	70	O	Dead	Elec	2D20+120	Air	0	0	0	0	20	"Psychic Shock,G,16"	10	"Sparks|Starburst,G,16"	80	Imm	80	80	Imm	Imm	50	80	80	0
 214	Troglodyte Drone	Troglodyte A	9	35	5	171	10%5D5+L1	1	N	Long	Normal	2	220	100	0	0	Phys	2D4	0	0	0	0	0	0	0	0	0	5	10	10	10	0	Imm	0	5	5	0
 215	Troglodyte Soldier	Troglodyte B	14	61	9	336	10%8D5+L2	1	N	Med	Normal	2	240	90	0	0	Phys	2D4+2	0	0	0	0	0	0	0	0	0	10	20	20	20	0	Imm	5	10	10	0
 216	Troglodyte Queen	Troglodyte C	19	93	14	551	25%14D5+L3	1	N	Med	Aggress	2	260	80	0	Poison1	Phys	2D4+6	0	0	0	0	0	0	0	0	0	15	30	30	30	0	Imm	10	15	15	0

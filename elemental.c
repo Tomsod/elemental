@@ -1858,7 +1858,7 @@ static void __stdcall (*start_new_music)(int track) = (funcptr_t) 0x4aa0cf;
 static int __stdcall (*monster_resists_condition)(void *monster, int element)
     = (funcptr_t) 0x427619;
 // Same.
-static void __stdcall (*magic_sparkles)(void *monster, int unknown)
+static void __stdcall (*magic_sparkles)(void *monster, int color)
     = (funcptr_t) 0x4a7e19;
 static int __thiscall (*has_enchanted_item)(void *player, int enchantment)
     = (funcptr_t) 0x48d6b6;
@@ -8909,6 +8909,7 @@ static int __fastcall parse_new_spells(char **words, int *extra_words)
               { "deadly", SPL_DEADLY_SWARM, 1 },
               { "sunray", SPL_SUNRAY, 0 },
               { "starburst", SPL_STARBURST, 0 },
+              { "regeneration", SPL_REGENERATION, 0 },
               { NULL, 0 },
         };
         for (int i = 0;; i++)
@@ -9011,8 +9012,10 @@ static int __thiscall consider_new_spells(void *this,
                                 // avoid making WoM on Hard impossible
                                 || PARTY_BUFFS[BUFF_INVISIBILITY].expire_time))
         return FALSE; // would target the party even if not hostile
-    else if (spell == SPL_INFERNO)
-        return target == TGT_PARTY; // mvm not implemented for now
+    else if (spell == SPL_INFERNO) // mvm not implemented for now
+        return target == TGT_PARTY && monster->bits & 0x200000; // los bit
+    else if (spell == SPL_REGENERATION) // less often if not too wounded
+        return monster->hp * 2 <= monster->max_hp + random() % monster->max_hp;
     else
         return monster_considers_spell(this, monster, spell);
 }
@@ -9060,7 +9063,6 @@ static void __fastcall cast_new_spells(int monster_id, void *vector, int spell,
         && (dword(HOUR_OF_DAY) < 5 || dword(HOUR_OF_DAY) >= 21))
         spell = SPL_LIGHT_BOLT; // instead of forbidding, cast a weaker spell
 
-    int spell_sound = word(SPELL_SOUNDS + spell * 2);
     if (spell == SPL_TURN_UNDEAD || spell == SPL_INFERNO)
       {
         // we must be targeting the party
@@ -9077,7 +9079,6 @@ static void __fastcall cast_new_spells(int monster_id, void *vector, int spell,
                     && player_active(p) && !p->conditions[COND_AFRAID])
                     inflict_condition(p, COND_AFRAID, 0);
               }
-        make_sound(SOUND_THIS, spell_sound, 0, 0, -1, 0, 0, 0, 0);
       }
     else if (spell == SPL_DESTROY_UNDEAD)
       {
@@ -9105,10 +9106,22 @@ static void __fastcall cast_new_spells(int monster_id, void *vector, int spell,
             attack_monster(monster_id * 8 + TGT_MONSTER, target >> 3,
                            force, first ? 2 : 3);
           }
-        make_sound(SOUND_THIS, spell_sound, 0, 0, -1, 0, 0, 0, 0);
+      }
+    else if (spell == SPL_REGENERATION)
+      {
+        // it's really just heal self, but stronger than heal/power cure
+        monster->hp += (skill & SKILL_MASK) * 10;
+        if (monster->hp > monster->max_hp)
+            monster->hp = monster->max_hp;
+        magic_sparkles(monster, 0xff8000); // body magic orange color
       }
     else
+      {
         monster_casts_spell(monster_id, vector, spell, action, skill);
+        return; // sound handled in vanilla
+      }
+    make_sound(SOUND_THIS, word(SPELL_SOUNDS + spell * 2),
+               monster_id * 8 + TGT_MONSTER, 0, -1, 0, 0, 0, 0);
 }
 
 // Pretend Poison Spray is Shrapmetal when a monster casts it.

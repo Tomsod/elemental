@@ -1053,6 +1053,7 @@ enum spells
     SPL_TORCH_LIGHT = 1,
     SPL_FIRE_BOLT = 2,
     SPL_FIRE_AURA = 4,
+    SPL_HASTE = 5,
     SPL_FIREBALL = 6,
     SPL_IMMOLATION = 8,
     SPL_METEOR_SHOWER = 9,
@@ -1061,6 +1062,7 @@ enum spells
     SPL_WIZARD_EYE = 12,
     SPL_FEATHER_FALL = 13,
     SPL_SPARKS = 15,
+    SPL_SHIELD = 17,
     SPL_LIGHTNING_BOLT = 18,
     SPL_INVISIBILITY = 19,
     SPL_IMPLOSION = 20,
@@ -1073,6 +1075,7 @@ enum spells
     SPL_STUN = 34,
     SPL_SLOW = 35,
     SPL_DEADLY_SWARM = 37,
+    SPL_STONE_SKIN = 38,
     SPL_ROCK_BLAST = 41,
     SPL_DEATH_BLOSSOM = 43,
     SPL_MASS_DISTORTION = 44,
@@ -1080,6 +1083,7 @@ enum spells
     SPL_SPECTRAL_WEAPON = 47,
     SPL_TURN_UNDEAD = 48,
     SPL_PRESERVATION = 50,
+    SPL_HEROISM = 51,
     SPL_SPIRIT_LASH = 52,
     SPL_REMOVE_FEAR = 56,
     SPL_MIND_BLAST = 57,
@@ -1094,11 +1098,14 @@ enum spells
     SPL_HAMMERHANDS = 73,
     SPL_ELIXIR_OF_LIFE = 74,
     SPL_FLYING_FIST = 76,
+    SPL_POWER_CURE = 77,
     SPL_LIGHT_BOLT = 78,
     SPL_DESTROY_UNDEAD = 79,
     SPL_DISPEL_MAGIC = 80,
     SPL_PARALYZE = 81,
     SPL_PRISMATIC_LIGHT = 84,
+    SPL_DAY_OF_PROTECTION = 85,
+    SPL_HOUR_OF_POWER = 86,
     SPL_SUNRAY = 87,
     SPL_DIVINE_INTERVENTION = 88,
     SPL_VAMPIRIC_WEAPON = 91,
@@ -1163,7 +1170,8 @@ struct __attribute__((packed)) map_monster
     uint16_t id;
     SKIP(2);
     uint16_t spell1_skill;
-    SKIP(4);
+    uint16_t spell2_skill;
+    SKIP(2);
     uint8_t alter_spell1; // was padding
     uint8_t alter_spell2; // ditto
     uint32_t max_hp;
@@ -9017,7 +9025,52 @@ static int __thiscall consider_new_spells(void *this,
     else if (spell == SPL_REGENERATION) // less often if not too wounded
         return monster->hp * 2 <= monster->max_hp + random() % monster->max_hp;
     else
-        return monster_considers_spell(this, monster, spell);
+      {
+        // for aoe spells, chance to cast if an ally can be affected
+        int result = monster_considers_spell(this, monster, spell);
+        if (result || !elemdata.difficulty) return result;
+        int reach = 1000 * 1000 * elemdata.difficulty * elemdata.difficulty;
+        int mastery = skill_mastery(first ? monster->spell1_skill
+                                          : monster->spell2_skill);
+        switch (spell)
+          {
+            case SPL_HAMMERHANDS: // should be gm, but let's buff enemy monks
+            case SPL_PAIN_REFLECTION:
+                if (mastery < MASTER) return FALSE;
+                // else fallthrough
+            case SPL_HASTE:
+            case SPL_SHIELD:
+            case SPL_STONE_SKIN:
+            case SPL_BLESS:
+            case SPL_HEROISM:
+                // restrict some monsters to self-buff only
+                if (mastery < EXPERT) return FALSE;
+                // else fallthrough
+            case SPL_POWER_CURE:
+            case SPL_DAY_OF_PROTECTION:
+            case SPL_HOUR_OF_POWER:
+                // about 1/2 chance to hit a given monster
+                for (int i = dword(MONSTER_COUNT) * 2 / 3; i > 0; i--)
+                  {
+                    int id = random() % dword(MONSTER_COUNT);
+                    struct map_monster *target = &MAP_MONSTERS[id];
+                    int dx = monster->x - target->x;
+                    int dy = monster->y - target->y;
+                    int dz = monster->z - target->z;
+                    if (dx * dx + dy * dy + dz * dz > reach
+                        || !monster_active(target)
+                        || is_hostile_to(monster, target))
+                        continue;
+                    if (spell == SPL_HAMMERHANDS // monks only
+                        && (monster->id - 1) / 3 != (target->id - 1) / 3)
+                        continue;
+                    return monster_considers_spell(this, target, spell);
+                  }
+                // else fallthrough
+            default:
+                return FALSE;
+          }
+      }
 }
 
 // Calls the original function.
@@ -9118,6 +9171,43 @@ static void __fastcall cast_new_spells(int monster_id, void *vector, int spell,
     else
       {
         monster_casts_spell(monster_id, vector, spell, action, skill);
+        // make most buffs aoe on normal+
+        if (!elemdata.difficulty) return;
+        int reach = 1000 * 1000 * elemdata.difficulty * elemdata.difficulty;
+        int mastery = skill_mastery(skill);
+        switch (spell)
+          {
+            case SPL_HAMMERHANDS: // should be gm, but let's buff enemy monks
+            case SPL_PAIN_REFLECTION:
+                if (mastery < MASTER) return;
+                // else fallthrough
+            case SPL_HASTE:
+            case SPL_SHIELD:
+            case SPL_STONE_SKIN:
+            case SPL_BLESS:
+            case SPL_HEROISM:
+                // restrict some monsters to self-buff only
+                if (mastery < EXPERT) return;
+                // else fallthrough
+            case SPL_POWER_CURE:
+            case SPL_DAY_OF_PROTECTION:
+            case SPL_HOUR_OF_POWER:
+                for (int id = 0; id < dword(MONSTER_COUNT); id++)
+                  {
+                    struct map_monster *target = &MAP_MONSTERS[id];
+                    int dx = monster->x - target->x;
+                    int dy = monster->y - target->y;
+                    int dz = monster->z - target->z;
+                    if (dx * dx + dy * dy + dz * dz > reach
+                        || !monster_active(target)
+                        || is_hostile_to(monster, target))
+                        continue;
+                    if (spell == SPL_HAMMERHANDS // monks only
+                        && (monster->id - 1) / 3 != (target->id - 1) / 3)
+                        continue;
+                    monster_casts_spell(id, vector, spell, action, skill);
+                  }
+          }
         return; // sound handled in vanilla
       }
     make_sound(SOUND_THIS, word(SPELL_SOUNDS + spell * 2),

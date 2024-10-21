@@ -595,6 +595,7 @@ enum skill_mastery
 #define MINUTE (60 * 128 / 30)
 #define ONE_HOUR (60 * MINUTE)
 #define ONE_DAY (24 * ONE_HOUR)
+#define ANIM_TIMER 0x50ba5c
 
 enum items
 {
@@ -987,6 +988,7 @@ enum objlist
     OBJ_FIREARROW = 550,
     OBJ_LASER = 555,
     OBJ_FIRE_SPIKE = 1060,
+    OBJ_IMPLOSION = 2080,
     OBJ_ACID_BURST = 3060,
     OBJ_BERSERK = 6060,
     OBJ_FLAMING_POTION = 12000,
@@ -7652,7 +7654,7 @@ static void __declspec(naked) blink_mass_buffs(void)
         ja ok
         cmp ecx, 10 * MINUTE
         jae ok
-        test byte ptr [0x50ba5c], 0x40
+        test byte ptr [ANIM_TIMER], 0x40
         jnz ok
         mov dword ptr [0x576eac], 1 ; refresh screen
         skip:
@@ -7678,7 +7680,7 @@ static void __declspec(naked) blink_pc_buffs(void)
         cmp ecx, 10 * MINUTE
         jae ok
         mov dword ptr [0x576eac], 1 ; refresh screen
-        test byte ptr [0x50ba5c], 0x40
+        test byte ptr [ANIM_TIMER], 0x40
         jnz ok
         skip:
         xor ecx, ecx ; set zf
@@ -9092,6 +9094,8 @@ static void __fastcall __declspec(naked) monster_casts_spell(int monster,
 
 //Defined below.
 static int __thiscall absorb_spell(struct player *player, int spell, int rank);
+// Used to properly calculate MvM Mass Distortion damage.
+static int mass_distortion_target_hp = 0;
 
 // Turn undead damages and scares all undead PCs.
 // Destroy undead damages one undead PC or monster with Holy.
@@ -9133,7 +9137,8 @@ static void __fastcall cast_new_spells(int monster_id, void *vector, int spell,
                     inflict_condition(p, COND_AFRAID, 0);
               }
       }
-    else if (spell == SPL_DESTROY_UNDEAD)
+    else if (spell == SPL_DESTROY_UNDEAD || spell == SPL_IMPLOSION
+             || spell == SPL_MASS_DISTORTION)
       {
         unsigned int target = MON_TARGETS[monster_id];
         if (target == TGT_PARTY)
@@ -9141,24 +9146,44 @@ static void __fastcall cast_new_spells(int monster_id, void *vector, int spell,
             struct player *target_player;
             int count = 0;
             for (int i = 0; i < 4; i++)
-                if (is_undead(&PARTY[i]) && player_active(&PARTY[i])
-                    && !(random() % ++count)) // randomly choose one player
-                    target_player = &PARTY[i];
+                if ((spell != SPL_DESTROY_UNDEAD || is_undead(&PARTY[i]))
+                    && player_active(&PARTY[i]) && !(random() % ++count))
+                    target_player = &PARTY[i]; // randomly choose one player
             if (count && !absorb_spell(target_player, spell, NORMAL))
               {
                 int mastery = skill_mastery(skill);
                 skill &= SKILL_MASK;
-                int damage = spell_damage(spell, skill, mastery, 0);
+                int damage = spell_damage(spell, skill, mastery,
+                                          target_player->hp);
                 damage_player(target_player, damage, ELEMENT(spell));
               }
           }
         else if ((target & 7) == TGT_MONSTER)
           {
+            struct map_monster *tarmon = &MAP_MONSTERS[target >> 3];
             uint32_t force[3];
             memset(force, 0, 12); // no knockback so far
+            if (spell == SPL_IMPLOSION)
+              {
+                struct map_object anim = { OBJ_IMPLOSION,
+                                           find_objlist_item(OBJLIST_THIS,
+                                                             OBJ_IMPLOSION),
+                                           tarmon->x, tarmon->y, tarmon->z };
+                launch_object(&anim, 0, 0, 0, 0);
+              }
+            else if (spell == SPL_MASS_DISTORTION)
+              {
+                add_buff(tarmon->spell_buffs + MBUFF_MASS_DISTORTION,
+                         dword(ANIM_TIMER) + 128, 0, 0, 0, 0);
+                mass_distortion_target_hp = tarmon->hp;
+              }
             attack_monster(monster_id * 8 + TGT_MONSTER, target >> 3,
                            force, first ? 2 : 3);
+            mass_distortion_target_hp = 0; // reset just in case
           }
+        make_sound(SOUND_THIS, word(SPELL_SOUNDS + spell * 2),
+                   target, 0, -1, 0, 0, 0, 0);
+        return;
       }
     else if (spell == SPL_REGENERATION)
       {
@@ -9479,6 +9504,17 @@ static void __declspec(naked) indoor_monster_spells(void)
       }
 }
 
+// Supply target monster HP for Mass Distortion.
+static void __declspec(naked) mvm_mass_distortion_damage(void)
+{
+    asm
+      {
+        mov eax, dword ptr [mass_distortion_target_hp]
+        mov dword ptr [esp+8], eax ; hp param
+        jmp dword ptr ds:spell_damage ; replaced call
+      }
+}
+
 // Make Turn Undead and Destroy Undead castable by monsters.
 // Also enable Poison Spray, Starburst, and some others.
 // Also here: implement difficulty-dependent alternative monster spells.
@@ -9523,6 +9559,7 @@ static inline void new_monster_spells(void)
     hook_call(0x404fc9, starburst_sound, 7);
     hook_call(0x44f850, indoor_monster_spells, 5); // random monster
     hook_call(0x4bbf74, indoor_monster_spells, 5); // summoned monster
+    hook_call(0x43b4e7, mvm_mass_distortion_damage, 5);
 }
 
 // Calling atoi directly from assembly doesn't seem to work,
@@ -16581,7 +16618,7 @@ static int __stdcall flattener(struct player *player,
                                  monster->hp * (25 + skill * 2) / 100);
     if (damage)
         add_buff(monster->spell_buffs + MBUFF_MASS_DISTORTION,
-                 dword(0x50ba5c) + 128, 0, 0, 0, 0);
+                 dword(ANIM_TIMER) + 128, 0, 0, 0, 0);
     return damage;
 }
 
@@ -20264,8 +20301,7 @@ static void __stdcall blaster_eradicate(struct player *player,
         || projectile->item.bonus2 == SPC_CARNAGE)
       {
         monster->spell_buffs[MBUFF_MASS_DISTORTION].expire_time
-        // same var as for actual mdist, seems to be some anim timer
-            = dword(0x50ba5c) + ERAD_TIME;
+            = dword(ANIM_TIMER) + ERAD_TIME;
         monster->mod_flags |= MMF_ERADICATED;
         monster->hp = 0;
         struct map_object anim = { OBJ_BLASTER_ERADICATION,
@@ -20298,7 +20334,7 @@ static void __thiscall draw_eradication(struct map_monster *monster,
                                         uint32_t *sprite_params)
 {
     double scale = (monster->spell_buffs[MBUFF_MASS_DISTORTION].expire_time
-                    - dword(0x50ba5c) /* anim timer */) / (double) ERAD_TIME;
+                    - dword(ANIM_TIMER)) / (double) ERAD_TIME;
     sprite_params[0] = sprite_params[0] * scale; // sprite width
     sprite_params[1] = sprite_params[1] * scale; // sprite height
 }
@@ -20351,7 +20387,7 @@ static int __thiscall get_erad_mon_z(struct map_monster *monster)
         || !(monster->mod_flags & MMF_ERADICATED))
         return 0;
     int time = monster->spell_buffs[MBUFF_MASS_DISTORTION].expire_time
-             - dword(0x50ba5c); // anim timer
+             - dword(ANIM_TIMER);
     if (time <= 0)
         monster->ai_state = AI_REMOVED; // no corpse
     return (1.0 - time / (double) ERAD_TIME) * 0.8 * monster->height;
@@ -21514,7 +21550,7 @@ static void __stdcall kill_checks(struct player *player,
           {
             int new_player = player - PARTY + 1;
             // these are the animtime counters for turn-based/normal mode
-            int new_time = dword(dword(TURN_BASED) ? 0x50ba5c : 0x50ba84)
+            int new_time = dword(dword(TURN_BASED) ? ANIM_TIMER : 0x50ba84)
                          - proj->age;
             if (new_player == bow_kill_player && new_time == bow_kill_time
                 && check_bit(QBITS, QBIT_BOW_GM_QUEST_ACTIVE)

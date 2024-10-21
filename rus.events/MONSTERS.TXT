@@ -7,7 +7,7 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 3	Архангел	Angel C	70	700	45	5600	15%100D20+L6Sword	1	Y	Free	Suicidal	3	300	40	2	0	Phys	2D8+20	0	0	0	0	0	30	"Light Bolt|Sunray,G,16"	50	"Hour of Power,G,16"	40	40	40	40	50	Imm	60	20	20	0
 4	Стрелок	Archer A	9	35	14	171	5%3D20+L1Bow	1	N	Short	Normal	4	140	90	AR	0	Phys	2D6+2	Arrow	10	Fire	3D6+2	ArrowF	20	"||Sparks,N,4"	50	"Shield,N,4"	5	5	5	0	10	Imm	0	5	5	0
 5	Лучник	Archer B	19	93	16	551	5%6D20+L2Bow	1	N	Short	Aggress	4	150	90	AR	0	Phys	3D6+3	Arrow	10	Fire	4D6+3	ArrowF	20	"Lightning Bolt,E,4"	50	"Shield,E,8"	10	10	10	5	15	Imm	5	10	10	0
-6	Элитный стрелок	Archer C	29	171	22	1131	10%10D20+L3Bow	1	N	Short	Aggress	4	160	80	AR	0	Phys	3D7+3	Arrow	15	Fire	4D7+3	ArrowF	20	"Lightning Bolt,M,8"	50	"Shield,M,12"	15	15	15	5	20	Imm	5	15	15	0
+6	Элитный стрелок	Archer C	29	171	22	1131	10%10D20+L3Bow	1	N	Short	Aggress	4	160	80	AR	0	Phys	3D7+3	Arrow	15	Fire	4D7+3	ArrowF	20	"Lightning Bolt|Implosion,M,8"	50	"Shield,M,12"	15	15	15	5	20	Imm	5	15	15	0
 7	Летучая мышь	Bat A	3	9	5	39	2%L1Ring	1	Y	Free	Normal	3	280	50	0	Disease1	Phys	1D3	0	0	0	0	0	0	0	0	0	0	0	0	0	0	Imm	0	0	0	0
 8	Летучая мышь-вампир	Bat B	6	21	8	96	5%L1Ring	1	Y	Free	Normal	3	300	50	0	Disease1	Phys	1D3+2	0	0	0	0	0	0	0	0	0	0	0	0	0	0	Imm	0	0	0	0
 9	Адская летучая мышь	Bat C	9	35	10	171	5%L2Ring	1	Y	Free	Aggress	3	320	50	0	Disease2	Phys	2D3+2	0	15	Fire	3D2	Fire	0	0	0	0	10	0	0	0	0	Imm	0	0	0	0
@@ -37,10 +37,10 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 33	Гном-командир	Dwarf C	30	180	20	1200	25%20D10+L3Axe	1	N	Short	Suicidal	2	200	80	G	BrkArmor	Phys	4D2+16	0	0	0	0	0	0	0	0	0	30	40	40	50	15	Imm	15	50	50	0
 34	Вихрь	Elemental Air A	16	73	10	416	0	0	Y	Free	Suicidal	3	220	90	0	0	Elec	3D6	Air	0	0	0	0	20	"Sparks,E,4"	30	"||Shield,E,4"	10	Imm	10	Imm	Imm	Imm	5	10	10	0
 35	Циклон	Elemental Air B	22	114	12	704	0	0	Y	Free	Suicidal	3	240	90	0	0	Elec	5D6	Air	0	0	0	0	20	"Sparks,M,8"	20	"Lightning Bolt,M,8"	15	Imm	15	Imm	Imm	Imm	10	15	15	0
-36	Воздушный элементал	Elemental Air C	33	207	14	1419	0	0	Y	Free	Suicidal	3	260	80	0	0	Elec	8D6	Air	0	0	0	0	20	"Sparks,G,12"	20	"Lightning Bolt,G,12"	20	Imm	20	Imm	Imm	Imm	15	20	20	0
+36	Воздушный элементал	Elemental Air C	33	207	14	1419	0	0	Y	Free	Suicidal	3	260	80	0	0	Elec	8D6	Air	0	0	0	0	20	"Sparks,G,12"	20	"Lightning Bolt|Implosion,G,12"	20	Imm	20	Imm	Imm	Imm	15	20	20	0
 37	Глиняный элементал	Elemental Earth A	25	137	20	875	30%L3Gem	0	N	Free	Suicidal	2	220	90	0	0	Phys	10D3	Earth	0	0	0	0	25	"Blades,E,6"	50	"Stone Skin,E,6"	10	10	10	Imm	Imm	Imm	5	20	20	0
 38	Каменный элементал	Elemental Earth B	30	180	25	1200	35%L4Gem	0	N	Free	Suicidal	2	240	90	0	BrkArmor	Phys	15D3	Earth	0	0	0	0	25	"Rock Blast,M,8"	50	"Stone Skin,M,8"	15	15	15	Imm	Imm	Imm	10	30	30	0
-39	Земной элементал	Elemental Earth C	40	280	30	2000	40%L5Gem	0	N	Free	Suicidal	2	260	80	0	Uncon	Phys	25D3	Earth	0	0	0	0	25	"Blades,G,12"	50	"Stone Skin,G,12"	20	20	20	Imm	Imm	Imm	15	40	40	0
+39	Земной элементал	Elemental Earth C	40	280	30	2000	40%L5Gem	0	N	Free	Suicidal	2	260	80	0	Uncon	Phys	25D3	Earth	0	0	0	0	25	"Blades||Mass Distortion,G,12"	50	"Stone Skin,G,12"	20	20	20	Imm	Imm	Imm	15	40	40	0
 40	Часовой Огня	Elemental Fire A	13	55	12	299	4%L1Special	0	Y	Free	Suicidal	3	220	90	0	0	Fire	2D8	Fire	0	0	0	0	20	"Fire Bolt,E,6"	50	"Haste,E,4"	Imm	10	0	Imm	Imm	Imm	5	10	10	0
 41	Страж Огня	Elemental Fire B	26	145	15	936	8%L1Special	0	Y	Free	Suicidal	3	240	90	0	0	Fire	5D8	Fire	0	0	0	0	20	"Fireball,M,8"	50	"Haste,M,8"	Imm	15	5	Imm	Imm	Imm	10	15	15	0
 42	Огненный элементал	Elemental Fire C	39	269	18	1911	12%L1Special	0	Y	Free	Suicidal	3	260	80	0	0	Fire	8D8	Fire	0	0	0	0	20	"Incinerate,G,12"	50	"Haste,G,12"	Imm	20	10	Imm	Imm	Imm	15	20	20	0
@@ -48,11 +48,11 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 44	Элементал Света	Elemental Light B	23	121	14	759	0	0	Y	Free	Suicidal	3	260	80	0	0	Ener	9D4	Light	0	0	0	0	0	0	0	0	15	15	15	Imm	Imm	Imm	Imm	15	15	"explode,5D8,ener"
 45	Великий элементал Света	Elemental Light C	38	258	19	1824	0	0	Y	Free	Suicidal	3	280	80	0	0	Ener	14D4	Light	0	0	0	0	0	0	0	0	20	20	20	Imm	Imm	Imm	Imm	20	20	"explode,5D8,ener"
 46	Ундина	Elemental Water A	14	61	10	336	20%L2Potion	0	N	Free	Suicidal	2	220	90	0	0	Cold	3D12	Water	0	0	0	0	30	"Ice Bolt,E,4"	0	0	0	10	Imm	Imm	Imm	Imm	5	10	10	0
-47	Сильфида	Elemental Water B	24	129	13	816	25%L3Potion	0	N	Free	Suicidal	2	240	90	0	0	Cold	4D12	Water	0	0	0	0	30	"Ice Bolt,M,10"	0	0	5	15	Imm	Imm	Imm	Imm	10	15	15	0
+47	Сильфида	Elemental Water B	24	129	13	816	25%L3Potion	0	N	Free	Suicidal	2	240	90	0	0	Cold	4D12	Water	0	0	0	0	30	"Acid Burst,M,8"	0	0	5	15	Imm	Imm	Imm	Imm	10	15	15	0
 48	Водный элементал	Elemental Water C	36	237	16	1656	30%L4Potion	0	N	Free	Suicidal	2	260	80	0	0	Cold	6D12	Water	0	0	0	0	30	"Ice Blast,G,12"	0	0	10	20	Imm	Imm	Imm	Imm	15	20	20	0
 49	Эльф - стрелок	Elf Archer A	11	45	12	231	5%6D10+L2Bow	1	N	Short	Normal	4	160	70	H	0	Phys	4D2+2	Arrow	0	0	0	0	20	"|Deadly Swarm,N,3"	0	0	10	10	10	0	5	Imm	0	5	5	0
 50	Эльф - разведчик	Elf Archer B	23	121	14	759	5%12D10+L3Bow	1	N	Short	Aggress	4	170	70	H	0	Phys	6D2+4	Arrow	0	0	0	0	20	"|Blades,E,6"	50	"||Stone Skin,E,6"	15	15	15	5	10	Imm	5	10	10	0
-51	Эльф - рейнджер	Elf Archer C	35	227	20	1575	10%20D10+L4Bow	1	N	Short	Aggress	4	180	60	H	0	Phys	8D2+6	Arrow	0	0	0	0	20	"|Blades,M,9"	50	"||Stone Skin,M,9"	20	20	20	10	15	Imm	10	15	15	"shot,x2"
+51	Эльф - рейнджер	Elf Archer C	35	227	20	1575	10%20D10+L4Bow	1	N	Short	Aggress	4	180	60	H	0	Phys	8D2+6	Arrow	0	0	0	0	15	"|Rock Blast,M,9"	50	"||Stone Skin,M,9"	20	20	20	10	15	Imm	10	15	15	"shot,x2"
 52	Эльф - воин	Elf Spearman A	14	61	15	336	10%8D10+L2Spear	1	N	Long	Normal	2	240	80	H	0	Phys	2D4+4	0	0	0	0	0	0	0	0	0	10	10	10	0	5	Imm	0	5	5	0
 53	Эльф - защитник	Elf Spearman B	22	114	20	704	15%16D10+L3Spear	1	N	Long	Aggress	2	260	70	H	0	Phys	3D4+6	0	0	0	0	0	0	0	0	0	15	15	15	5	10	Imm	5	10	10	0
 54	Эльф - улан	Elf Spearman C	30	180	28	1200	25%25D10+L4Spear	1	N	Med	Aggress	2	280	60	H	0	Phys	4D4+8	0	0	0	0	0	0	0	0	0	20	20	20	10	15	Imm	10	15	15	0

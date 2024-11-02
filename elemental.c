@@ -1064,6 +1064,7 @@ enum spells
     SPL_WIZARD_EYE = 12,
     SPL_FEATHER_FALL = 13,
     SPL_SPARKS = 15,
+    SPL_JUMP = 16,
     SPL_SHIELD = 17,
     SPL_LIGHTNING_BOLT = 18,
     SPL_INVISIBILITY = 19,
@@ -1184,9 +1185,10 @@ struct __attribute__((packed)) map_monster
     uint16_t preference; // was 32 bit, but top 16 unused
     uint8_t alter_flag1; // so I repurposed them
     uint8_t alter_flag2; // and this one
-    SKIP(6);
+    SKIP(4);
+    uint16_t radius;
     uint16_t height;
-    SKIP(2);
+    uint16_t velocity;
     int16_t x;
     int16_t y;
     int16_t z;
@@ -1195,9 +1197,11 @@ struct __attribute__((packed)) map_monster
     uint16_t direction;
     SKIP(2);
     uint16_t room;
-    SKIP(16);
+    uint16_t action_length;
+    SKIP(14);
     uint16_t ai_state;
-    SKIP(4);
+    uint16_t gfx_state;
+    SKIP(2);
     uint8_t id_level; // was padding
     uint8_t mod_flags; // same
 #define MMF_ERADICATED 1
@@ -1205,6 +1209,7 @@ struct __attribute__((packed)) map_monster
 #define MMF_ZOMBIE 4
 #define MMF_EXTRA_REAGENT 8
 #define MMF_REAGENT_MORE_LIKELY 16
+#define MMF_JUMPING 32
     uint32_t action_time;
     SKIP(24);
     struct spell_buff spell_buffs[22];
@@ -1447,6 +1452,7 @@ struct __attribute__((packed)) map_object
 };
 typedef struct map_object s_map_object;
 
+#define AI_PURSUE 6
 #define AI_REMOVED 11
 #define AI_INVISIBLE 19
 
@@ -1829,6 +1835,9 @@ static void __thiscall (*kill_civilian)(int id) = (funcptr_t) 0x438ce2;
 static int __thiscall (*monster_active)(void *monster) = (funcptr_t) 0x40894b;
 static int __fastcall (*parse_spell)(char **words, int *extra_words)
     = (funcptr_t) 0x45490e;
+static void __fastcall (*monster_casts_spell)(int monster_id, void *vector,
+                                              int spell, int action, int skill)
+    = (funcptr_t) 0x404ac7;
 static int __thiscall (*equipped_item_type)(void *player, int slot)
     = (funcptr_t) 0x48d612;
 static int __thiscall (*equipped_item_skill)(void *player, int slot)
@@ -8920,6 +8929,7 @@ static int __fastcall parse_new_spells(char **words, int *extra_words)
               { "sunray", SPL_SUNRAY, 0 },
               { "starburst", SPL_STARBURST, 0 },
               { "regeneration", SPL_REGENERATION, 0 },
+              { "jump", SPL_JUMP, 0 },
               { NULL, 0 },
         };
         for (int i = 0;; i++)
@@ -9026,6 +9036,39 @@ static int __thiscall consider_new_spells(void *this,
         return target == TGT_PARTY && monster->bits & 0x200000; // los bit
     else if (spell == SPL_REGENERATION) // less often if not too wounded
         return monster->hp * 2 <= monster->max_hp + random() % monster->max_hp;
+    else if (spell == SPL_JUMP)
+      {
+        if (elemdata.difficulty < 2 && random() & 1)
+            return FALSE; // less sprinting on medium
+        int ai = monster->ai_type;
+        if (ai == 1 /* wimp */ || monster->spell_buffs[MBUFF_FEAR].expire_time
+            || ai && !monster->spell_buffs[MBUFF_BERSERK].expire_time
+                  && !(monster->bits & 0x20000) // no flee bit
+                  && monster->hp * (ai == 2 ? 5 : 10) <= monster->max_hp)
+            return FALSE; // no speed boost for fleeing!
+        int tx, ty, tz;
+        int melee = 300;
+        if (target == TGT_PARTY)
+          {
+            tx = dword(PARTY_X);
+            ty = dword(PARTY_Y);
+            tz = dword(PARTY_Z);
+            melee >>= 1; // for some reason mvp vs. mvm melee radius differs
+          }
+        else if ((target & 7) == TGT_MONSTER)
+          {
+            struct map_monster *tarmon = &MAP_MONSTERS[target>>3];
+            tx = tarmon->x;
+            ty = tarmon->y;
+            tz = tarmon->z;
+          }
+        else return FALSE; // just in case
+        int dx = tx - monster->x;
+        int dy = ty - monster->y;
+        int dz = monster->flight ? tz - monster->z : 0;
+        return sqrt(dx * dx + dy * dy + dz * dz) > monster->radius + melee
+                                                 + 200 + random() % 600;
+      }
     else
       {
         // for aoe spells, chance to cast if an ally can be affected
@@ -9075,23 +9118,6 @@ static int __thiscall consider_new_spells(void *this,
       }
 }
 
-// Calls the original function.
-static void __fastcall __declspec(naked) monster_casts_spell(int monster,
-                                                             void *vector,
-                                                             int spell,
-                                                             int action,
-                                                             int skill)
-{
-    asm
-      {
-        push ebp
-        mov ebp, esp
-        sub esp, 0xbc
-        push 0x404ad0
-        ret
-      }
-}
-
 //Defined below.
 static int __thiscall absorb_spell(struct player *player, int spell, int rank);
 // Used to properly calculate MvM Mass Distortion damage.
@@ -9100,14 +9126,14 @@ static int mass_distortion_target_hp = 0;
 // Turn undead damages and scares all undead PCs.
 // Destroy undead damages one undead PC or monster with Holy.
 // We also handle the Cursed monster debuff here.
-static void __fastcall cast_new_spells(int monster_id, void *vector, int spell,
-                                       int action, int skill)
+static int __fastcall cast_new_spells(int monster_id, void *vector, int spell,
+                                      int action, int skill)
 {
     struct map_monster *monster = &MAP_MONSTERS[monster_id];
     if (monster->spell_buffs[MBUFF_CURSED].expire_time && random() & 1) // 50%
       {
         make_sound(SOUND_THIS, SOUND_SPELL_FAIL, 0, 0, -1, 0, 0, 0, 0);
-        return;
+        return FALSE;
       }
 
     // maybe substitute an alternative spell
@@ -9120,6 +9146,7 @@ static void __fastcall cast_new_spells(int monster_id, void *vector, int spell,
         && (dword(HOUR_OF_DAY) < 5 || dword(HOUR_OF_DAY) >= 21))
         spell = SPL_LIGHT_BOLT; // instead of forbidding, cast a weaker spell
 
+    int result = FALSE;
     if (spell == SPL_TURN_UNDEAD || spell == SPL_INFERNO)
       {
         // we must be targeting the party
@@ -9160,7 +9187,7 @@ static void __fastcall cast_new_spells(int monster_id, void *vector, int spell,
           }
         else if ((target & 7) == TGT_MONSTER)
           {
-            struct map_monster *tarmon = &MAP_MONSTERS[target >> 3];
+            struct map_monster *tarmon = &MAP_MONSTERS[target>>3];
             uint32_t force[3];
             memset(force, 0, 12); // no knockback so far
             if (spell == SPL_IMPLOSION)
@@ -9183,7 +9210,7 @@ static void __fastcall cast_new_spells(int monster_id, void *vector, int spell,
           }
         make_sound(SOUND_THIS, word(SPELL_SOUNDS + spell * 2),
                    target, 0, -1, 0, 0, 0, 0);
-        return;
+        return FALSE;
       }
     else if (spell == SPL_REGENERATION)
       {
@@ -9193,18 +9220,57 @@ static void __fastcall cast_new_spells(int monster_id, void *vector, int spell,
             monster->hp = monster->max_hp;
         magic_sparkles(monster, 0xff8000); // body magic orange color
       }
+    else if (spell == SPL_JUMP)
+      {
+        unsigned int target = MON_TARGETS[monster_id];
+        int tx, ty, tz;
+        int melee = 300;
+        if (target == TGT_PARTY)
+          {
+            tx = dword(PARTY_X);
+            ty = dword(PARTY_Y);
+            tz = dword(PARTY_Z);
+            melee >>= 1; // for some reason mvp vs. mvm melee radius differs
+          }
+        else if ((target & 7) == TGT_MONSTER)
+          {
+            struct map_monster *tarmon = &MAP_MONSTERS[target>>3];
+            tx = tarmon->x;
+            ty = tarmon->y;
+            tz = tarmon->z;
+          }
+        else return FALSE; // just in case
+        int dx = tx - monster->x;
+        int dy = ty - monster->y;
+        int dz = monster->flight ? tz - monster->z : 0;
+        int slow = 1;
+        if (monster->spell_buffs[MBUFF_SLOW].expire_time)
+          {
+            slow = monster->spell_buffs[MBUFF_SLOW].power;
+            if (!slow) slow = 2; // vanilla has this check too
+          }
+        int length = (sqrt(dx * dx + dy * dy + dz * dz) - monster->radius
+                      - melee) * 16 * slow / monster->velocity;
+        int limit = 128 + (skill & SKILL_MASK) * 16;
+        monster->ai_state = AI_PURSUE;
+        monster->gfx_state = 1; // moving
+        monster->mod_flags |= MMF_JUMPING;
+        monster->action_time = 0;
+        monster->action_length = length < limit ? length : limit;
+        result = TRUE; // skip ai code
+      }
     else
       {
         monster_casts_spell(monster_id, vector, spell, action, skill);
         // make most buffs aoe on normal+
-        if (!elemdata.difficulty) return;
+        if (!elemdata.difficulty) return FALSE;
         int reach = 1000 * 1000 * elemdata.difficulty * elemdata.difficulty;
         int mastery = skill_mastery(skill);
         switch (spell)
           {
             case SPL_HAMMERHANDS: // should be gm, but let's buff enemy monks
             case SPL_PAIN_REFLECTION:
-                if (mastery < MASTER) return;
+                if (mastery < MASTER) return FALSE;
                 // else fallthrough
             case SPL_HASTE:
             case SPL_SHIELD:
@@ -9212,7 +9278,7 @@ static void __fastcall cast_new_spells(int monster_id, void *vector, int spell,
             case SPL_BLESS:
             case SPL_HEROISM:
                 // restrict some monsters to self-buff only
-                if (mastery < EXPERT) return;
+                if (mastery < EXPERT) return FALSE;
                 // else fallthrough
             case SPL_POWER_CURE:
             case SPL_DAY_OF_PROTECTION:
@@ -9233,10 +9299,33 @@ static void __fastcall cast_new_spells(int monster_id, void *vector, int spell,
                     monster_casts_spell(id, vector, spell, action, skill);
                   }
           }
-        return; // sound handled in vanilla
+        return FALSE; // sound handled in vanilla
       }
     make_sound(SOUND_THIS, word(SPELL_SOUNDS + spell * 2),
                monster_id * 8 + TGT_MONSTER, 0, -1, 0, 0, 0, 0);
+    return result;
+}
+
+// Hook for the above.  Skips over AI/gfx state if Jump was cast.
+static void __declspec(naked) cast_new_spells_hook(void)
+{
+    asm
+      {
+        push dword ptr [esp+12]
+        push dword ptr [esp+12]
+        push dword ptr [esp+12]
+        call cast_new_spells
+        test eax, eax
+        jz quit
+        mov eax, 0x402606
+        cmp dword ptr [esp], 0x406648 ; the hook is reused in two places
+        jb skip
+        mov eax, 0x406808
+        skip:
+        mov dword ptr [esp], eax
+        quit:
+        ret 12
+      }
 }
 
 // Pretend Poison Spray is Shrapmetal when a monster casts it.
@@ -9515,6 +9604,35 @@ static void __declspec(naked) mvm_mass_distortion_damage(void)
       }
 }
 
+// Increase monster speed after casting Jump.
+static void __declspec(naked) monster_jump_speed(void)
+{
+    asm
+      {
+        test byte ptr [esi].s_map_monster.mod_flags, MMF_JUMPING
+        jz skip
+        shl ebx, 2
+        ret
+        skip:
+        cmp ebx, eax ; replaced code
+        jle quit ; ditto
+        mov ebx, eax ; and this
+        quit:
+        ret
+      }
+}
+
+// Remove the extra speed after the walk animation ends.
+static void __declspec(naked) reset_jump_flag(void)
+{
+    asm
+      {
+        movsx edx, word ptr [ecx].s_map_monster.ai_state ; replaced code
+        and byte ptr [ecx].s_map_monster.mod_flags, ~MMF_JUMPING
+        ret
+      }
+}
+
 // Make Turn Undead and Destroy Undead castable by monsters.
 // Also enable Poison Spray, Starburst, and some others.
 // Also here: implement difficulty-dependent alternative monster spells.
@@ -9523,7 +9641,8 @@ static inline void new_monster_spells(void)
     hook_call(0x455d70, parse_new_spells, 5); // first spell
     hook_call(0x455e86, parse_new_spells, 5); // second spell
     hook_jump(0x4270b9, consider_new_spells);
-    hook_jump(0x404ac7, cast_new_spells);
+    hook_call(0x40213b, cast_new_spells_hook, 5); // realtime
+    hook_call(0x40676e, cast_new_spells_hook, 5); // turn-based
     hook_call(0x404b02, cast_poison_blast, 6);
     hook_call(0x504614, poison_blast_count, 5);
     patch_byte(0x405624, 12); // don't overwrite spell id
@@ -9560,6 +9679,9 @@ static inline void new_monster_spells(void)
     hook_call(0x44f850, indoor_monster_spells, 5); // random monster
     hook_call(0x4bbf74, indoor_monster_spells, 5); // summoned monster
     hook_call(0x43b4e7, mvm_mass_distortion_damage, 5);
+    hook_call(0x46facf, monster_jump_speed, 6); // first hook
+    hook_call(0x470876, monster_jump_speed, 6); // second hook
+    hook_call(0x4597a6, reset_jump_flag, 7);
 }
 
 // Calling atoi directly from assembly doesn't seem to work,

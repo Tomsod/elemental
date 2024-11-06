@@ -532,7 +532,7 @@ Global Text
 529	"Sorry, but we are unable to train you."
 530	Moon
 531	Location
-532	Please try back in 
+532	New stock in 
 533	"I cannot join you, you're party is full"
 534	Become %s in %s for %lu gold
 535	Learn

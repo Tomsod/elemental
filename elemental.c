@@ -1572,7 +1572,9 @@ struct __attribute__((packed)) event2d
     uint16_t type;
     SKIP(2);
     char *name;
-    SKIP(24);
+    SKIP(20);
+    uint16_t restock;
+    SKIP(2);
     float multiplier;
     SKIP(16);
 };
@@ -25654,6 +25656,69 @@ static void __declspec(naked) arcomage_hint_hook(void)
       }
 }
 
+// Let shops and guilds restock faster if some items are bought.
+static void __declspec(naked) faster_shop_restock(void)
+{
+    asm
+      {
+        mov eax, dword ptr [ebp-4] ; the item
+        cmp dword ptr [eax], POTION_BOTTLE
+        je skip ; these restock immediately
+        mov edi, dword ptr [DIALOG2]
+        mov edi, dword ptr [edi+28] ; shop id
+        imul esi, edi, SIZE_EVENT2D
+        movzx eax, word ptr [EVENTS2D_ADDR+esi].s_event2d.restock
+        mov bx, word ptr [EVENTS2D_ADDR+esi].s_event2d.type
+        mov esi, 24 ; magic shop, guild
+        dec ebx
+        jz weapon
+        dec ebx
+        jz armor
+        sub ebx, 2
+        jnz restock
+        add esi, 6 ; potion = 18
+        weapon:
+        sub esi, 4 ; weapon = 12
+        armor:
+        sub esi, 8 ; armor = 16
+        restock:
+        mov ebx, ONE_DAY
+        mul ebx
+        div esi
+        cmp edi, FIRST_GUILD
+        jb shop
+        sub edi, FIRST_GUILD - 53 ; after last shop
+        shop:
+        lea edi, [0xaccec4+edi*8] ; refill time
+        mov esi, dword ptr [edi]
+        mov edx, dword ptr [edi+4]
+        sub esi, dword ptr [CURRENT_TIME_ADDR]
+        sbb edx, dword ptr [CURRENT_TIME_ADDR+4]
+        jl ok
+        jg reduce
+        cmp esi, ebx
+        jbe ok
+        sub esi, eax
+        cmp esi, ebx
+        ja reduce
+        mov esi, dword ptr [CURRENT_TIME_ADDR]
+        mov edx, dword ptr [CURRENT_TIME_ADDR+4]
+        add esi, ebx
+        adc edx, 0
+        mov dword ptr [edi], esi
+        mov dword ptr [edi+4], edx
+        jmp ok
+        reduce:
+        sub dword ptr [edi], eax
+        sbb dword ptr [edi+4], 0
+        ok:
+        xor ebx, ebx
+        inc ebx ; restore
+        skip:
+        jmp dword ptr ds:spend_gold ; replaced call
+      }
+}
+
 // Various changes to stores, guilds and other buildings.
 static inline void shop_changes(void)
 {
@@ -25771,6 +25836,16 @@ static inline void shop_changes(void)
     hook_call(0x4bb1e7, clip_boots_to_screen, 5); // special
     hook_call(0x4bd5a3, always_restock_bottles, 5);
     hook_call(0x4b242f, arcomage_hint_hook, 6);
+    // Always show the restock timer.
+    patch_dword(0x4b9a7e, 0x4b9a0a - 0x4b9a82); // weapon
+    patch_dword(0x4bb31a, 0x4bb2a6 - 0x4bb31e); // armor
+    patch_dword(0x4b5b2c, 0x4b5ab8 - 0x4b5b30); // magic
+    patch_dword(0x4ba6d8, 0x4ba664 - 0x4ba6dc); // potion
+    patch_dword(0x4b6084, 0x4b6013 - 0x4b6088); // guild
+    // Fix armor shops treated as empty even with with some items remaining.
+    patch_byte(0x4bb237, 8); // std
+    patch_byte(0x4bb25c, 8); // spc
+    hook_call(0x4bdf26, faster_shop_restock, 5);
 }
 
 // Allow non-bouncing projectiles to trigger facets in Altar of Wishes.

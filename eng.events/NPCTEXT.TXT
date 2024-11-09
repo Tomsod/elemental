@@ -971,3 +971,5 @@ For example, these are all correct item descriptions:
 897	"Why, this is a true antique, exactly my wish! [heh]  Please take this solid gold oil lamp as a compensation."	Lamps exchanged	Evan Nasir
 898	"You're yet to win at Arcomage in %s, in the %s region."	Arcomage quest hint	Gina Barnes
 899	"If nothing sold in a shop suits you, you can always order a specific piece of equipment.  It takes time and money, and you'll have to provide the ore and other materials, but you're guaranteed to get exactly what you wanted."	Shop order hint	Various
+900	"And who ye be?  If ye wish to set sail with me mates, I gotta trust ye like me mates, savvy?  Were a proper Thief to speak for ye, mayhap enough yellow would buy ye a passage.  Now scram smartly 'fore me cutlass gets thirsty…"	No permission yet	Pirate boat captain
+901	"You want me to vouch for you with Tatalian pirates?  I do keep in touch with their leader, and as members of Thieves' Guild I can affirm your reliability.  Consider it done; I'll message them shortly."	Get permission to sail	Bill Lasker

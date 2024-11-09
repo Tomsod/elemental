@@ -628,3 +628,5 @@
 627	Оставшиеся таверны	Arcomage quest hint
 628	Особые заказы	Shop order hint
 629	Курганы		Unused vanilla quest hint
+630	Корабль до Эвенморна	Tatalia pirate boat
+631	Таталийские пираты	Lasker vouches for you

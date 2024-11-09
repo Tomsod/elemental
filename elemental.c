@@ -923,6 +923,7 @@ static struct elemdata
 
 enum qbits
 {
+    QBIT_EVENMORN_MAP = 64,
     QBIT_LIGHT_PATH = 99,
     QBIT_DARK_PATH = 100,
     QBIT_FIRST_OBELISK = 164,
@@ -947,6 +948,7 @@ enum qbits
     QBIT_CAVALIER_HORSE = 383,
     QBIT_USED_PEGASUS = 384,
     QBIT_TEMPLE_UNDERWATER = 386,
+    QBIT_PIRATE_SHIP = 410,
 };
 
 enum item_types
@@ -1404,9 +1406,9 @@ enum monster_buffs
 // new NPC greeting count (starting from 1)
 #define GREET_COUNT 230
 // new NPC topic count
-#define TOPIC_COUNT 629
+#define TOPIC_COUNT 631
 // count of added NPC text entries
-#define NEW_TEXT_COUNT (899-789)
+#define NEW_TEXT_COUNT (901-789)
 // new award count
 #define AWARD_COUNT 108
 
@@ -1597,6 +1599,30 @@ struct __attribute__((packed)) map_room
     SKIP(16);
 };
 #define MAP_ROOMS ((struct map_room *) pointer(0x6be4d4))
+
+struct __attribute__((packed)) travel_route
+{
+    uint8_t map_index;
+    uint8_t weekdays[7];
+    uint8_t time;
+    SKIP(3);
+    int32_t x, y, z;
+    int32_t direction;
+    uint32_t qbit;
+};
+#define TRAVEL_ROUTES ((struct travel_route *) 0x4f0830)
+#define TRANSPORT ((int8_t (*)[4]) 0x4f0c90)
+
+struct __attribute__((packed)) house_movie
+{
+    char *name;
+    SKIP(4);
+    uint32_t portrait;
+    SKIP(1);
+    uint8_t voice;
+    SKIP(2);
+};
+#define HOUSE_MOVIES ((struct house_movie *) 0x4e5f40)
 
 enum sizes
 {
@@ -25846,6 +25872,46 @@ static inline void shop_changes(void)
     patch_byte(0x4bb237, 8); // std
     patch_byte(0x4bb25c, 8); // spc
     hook_call(0x4bdf26, faster_shop_restock, 5);
+    // Add another ship route between Tatalia and Evenmorn.
+    // make space by removing some duplicate routes
+    TRANSPORT[56-54][2] = TRANSPORT[56-54][3] = 3; // same as 8
+    TRANSPORT[57-54][1] = TRANSPORT[57-54][2] = TRANSPORT[57-54][3] = 1; // 10
+    // pirate ship
+    TRANSPORT[71-54][0] = TRANSPORT[71-54][1] = TRANSPORT[71-54][2]
+                        = TRANSPORT[71-54][3] = 26; // was unused
+    // the trip back
+    TRANSPORT[67-54][0] = 8; // like vanilla tatalia, but disabled w/o map
+    TRANSPORT[67-54][1] = 10; // to the pirate island, also starts disabled
+    // the routes themselves
+    TRAVEL_ROUTES[26] = (struct travel_route) {
+        .map_index = TRAVEL_ROUTES[18].map_index, // evenmorn
+        .weekdays = { 1, 0, 1, 0, 1, 0, 0 }, // MWF
+        .time = 3,
+        .x = TRAVEL_ROUTES[18].x,
+        .y = TRAVEL_ROUTES[18].y,
+        .z = TRAVEL_ROUTES[18].z,
+        .direction = TRAVEL_ROUTES[18].direction,
+        .qbit = QBIT_PIRATE_SHIP,
+    };
+    memcpy(TRAVEL_ROUTES + 8, TRAVEL_ROUTES + 22, sizeof(struct travel_route));
+    TRAVEL_ROUTES[8].qbit = QBIT_EVENMORN_MAP;
+    TRAVEL_ROUTES[10] = (struct travel_route) {
+        .map_index = TRAVEL_ROUTES[22].map_index, // tatalia
+        .weekdays = { 0, 1, 0, 1, 0, 0, 1 }, // when it doesn't sail elsewhere
+        .time = 3, .x = -19000, .y = 5900, .z = 209, .direction = 0,
+        .qbit = QBIT_PIRATE_SHIP,
+    };
+    // Bug fix: the direction of 0 isn't respected.
+    for (int i = 0; i <= 34; i++)
+        if (TRAVEL_ROUTES[i].direction == 0)
+            TRAVEL_ROUTES[i].direction = 1; // close enough
+    // Set up the new ship house.
+    HOUSE_MOVIES[20].name = HOUSE_MOVIES[19].name; // boat video
+    HOUSE_MOVIES[20].portrait = 803; // some guy with eyepatch
+    HOUSE_MOVIES[20].voice = 37; // unused warlock boat sounds
+    // Same, but for the fake boat before getting permission.
+    HOUSE_MOVIES[185].name = HOUSE_MOVIES[19].name;
+    HOUSE_MOVIES[185].voice = 37;
 }
 
 // Allow non-bouncing projectiles to trigger facets in Altar of Wishes.

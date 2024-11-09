@@ -628,3 +628,5 @@
 627	Remaining Taverns	Arcomage quest hint
 628	Special Orders	Shop order hint
 629	Barrows		Unused vanilla quest hint
+630	Travel to Evenmorn	Tatalia pirate boat
+631	Tatalian Pirates	Lasker vouches for you

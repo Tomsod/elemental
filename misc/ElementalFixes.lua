@@ -40,3 +40,13 @@ if Game.NPCProfNames then rawset(Game.NPCProfNames, "limit", 63) end
 -- Also the award text/category array (which is relocated by us).
 rawset(Party.PlayersArray[0].Awards, "count", 500) -- there are 512 pc bits
 rawset(Game.AwardsTxt, "?ptr", mem.u4[0x41910b]) -- must provide new address
+
+-- Fix travel table generation (it breaks now that mapstats start from 0).
+function events.ScriptsLoaded()
+    local old_UpdateDataTables = UpdateDataTables
+    function UpdateDataTables()
+        rawset(Game.MapStats, "?ptr", Game.MapStats["?ptr"] - Game.MapStats[0]["?size"])
+        old_UpdateDataTables()
+        rawset(Game.MapStats, "?ptr", Game.MapStats["?ptr"] + Game.MapStats[0]["?size"])
+    end
+end

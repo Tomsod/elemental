@@ -806,3 +806,6 @@ Global Text
 803	At this difficulty level, enemies will completely ignore your invisible characters.
 804	At this difficulty level, only enemies that are immune to magic are able to see through invisibility.
 805	At this difficulty level, enemies are able to spot your characters even while invisible, but most will have trouble landing a hit.
+806	Buy Weapons
+807	Buy Armor
+808	Buy Magic

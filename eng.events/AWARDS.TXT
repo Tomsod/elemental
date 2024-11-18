@@ -107,3 +107,4 @@ A Bit	Awards	Sort	Notes
 106	Manticore Hunter	3
 107	Champion of the Arena	1
 108	Found the obelisk treasure	1
+109	Joined the Thieves' Guild	5

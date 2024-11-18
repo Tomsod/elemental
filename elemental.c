@@ -372,6 +372,9 @@ enum new_strings
     STR_INVISIBILITY_EASY,
     STR_INVISIBILITY_MEDIUM,
     STR_INVISIBILITY_HARD,
+    STR_BUY_WEAPONS,
+    STR_BUY_ARMOR,
+    STR_BUY_MAGIC,
     NEW_STRING_COUNT
 };
 
@@ -496,7 +499,7 @@ struct __attribute__((packed)) player
     uint16_t age_bonus;
     SKIP(40);
     uint16_t skills[SKILL_COUNT];
-    SKIP(64);
+    uint32_t awards[16];
     uint8_t spells_known[100];
     SKIP(2);
     uint32_t black_potions[7];
@@ -971,6 +974,7 @@ enum item_types
     ITEM_TYPE_SCROLL = 16,
     ITEM_TYPE_BOOK = 17,
     ITEM_TYPE_GEM = 20, // sometimes it's "1h weapon" instead
+    ITEM_TYPE_MISC = 22,
     ITEM_TYPE_SWORD = 23,
     ITEM_TYPE_DAGGER = 24,
     ITEM_TYPE_AXE = 25,
@@ -1408,9 +1412,9 @@ enum monster_buffs
 // new NPC topic count
 #define TOPIC_COUNT 631
 // count of added NPC text entries
-#define NEW_TEXT_COUNT (901-789)
+#define NEW_TEXT_COUNT (905-789)
 // new award count
-#define AWARD_COUNT 108
+#define AWARD_COUNT 109
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658
@@ -1584,6 +1588,25 @@ typedef struct event2d s_event2d;
 #define EVENTS2D_ADDR 0x5912b8
 #define EVENTS2D ((struct event2d *) EVENTS2D_ADDR)
 
+// there are two black market buildings with different price multipliers
+#define BLACK_MARKET_1 39
+#define BLACK_MARKET_2 40
+#define FIRST_GUILD 139
+#define MASTER_THIEF 185
+
+// Shop subactions.  The third one has remnant code but was unused.
+#define CONV_BUY_STD 2
+#define CONV_BUY_SPC 95
+#define CONV_BUY_ARMOR 6
+#define CONV_INVENTORY 94
+#define CONV_LEARN 96
+// My additions.
+#define CONV_QUERY_ORDER 97
+#define CONV_CONFIRM_ORDER 98
+// Magic guild subactions -- the second one is my addition.
+#define CONV_BUY_SPELLS 18
+#define CONV_BUY_SCROLLS 19
+
 // From npcprof.txt, now extended and relocated.
 static struct npcprof
 {
@@ -1618,7 +1641,7 @@ struct __attribute__((packed)) house_movie
     char *name;
     SKIP(4);
     uint32_t portrait;
-    SKIP(1);
+    uint8_t type;
     uint8_t voice;
     SKIP(2);
 };
@@ -1678,6 +1701,9 @@ enum struct_offsets
 #define MESSAGE_DIALOG 0x507a64
 #define SHOPKEEPER_MOOD 0xf8b064
 #define SHOP_VOICE_NO_GOLD 2
+#define NEW_SKILL_COST 0xf8b034
+// can learn skill, can join guild, returned judge item
+#define TOPIC_ACTION 0xf8b028
 
 #define WEAPON_SHOP_STD ((uint16_t (*)[5]) 0x4f0288)
 #define WEAPON_SHOP_SPC ((uint16_t (*)[5]) 0x4f04c8)
@@ -1998,7 +2024,7 @@ static void __fastcall (*set_mouse_mask)(int *buffer, void *image, int id)
     = (funcptr_t) 0x40f936;
 static int *__thiscall (*get_mouse_coords)(void *this, int *buffer)
     = (funcptr_t) 0x469c3d;
-static void __thiscall (*randomize_item)(void *this, int level, int type,
+static void __thiscall (*randomize_item)(int this, int level, int type,
                                          void *item) = (funcptr_t) 0x45664c;
 static void __fastcall (*set_image_mouseover)(void *buffer, void *image,
                                               int id) = (funcptr_t) 0x40f8a8;
@@ -12223,7 +12249,7 @@ static void __declspec(naked) increase_arena_reward(void)
     asm
       {
         lea eax, [eax+eax*2]
-        mov dword ptr [0xf8b034], eax ; replaced code
+        mov dword ptr [NEW_SKILL_COST], eax ; replaced code
         ret
       }
 }
@@ -12614,14 +12640,14 @@ static void __declspec(naked) fix_infinite_di_books(void)
 {
     asm
       {
-        cmp dword ptr [0xf8b028], FIRST_BOOK + SPL_DIVINE_INTERVENTION - 1
+        cmp dword ptr [TOPIC_ACTION], FIRST_BOOK + SPL_DIVINE_INTERVENTION - 1
         jne skip
         push 0 ; unset
         mov edx, QBIT_LOST_DIVINE_INTERVENTION
         mov ecx, QBITS_ADDR
         call dword ptr ds:change_bit
         skip:
-        cmp dword ptr [0xf8b028], 601 ; replaced code
+        cmp dword ptr [TOPIC_ACTION], 601 ; replaced code
         ret
       }
 }
@@ -12653,10 +12679,19 @@ static void __declspec(naked) short_id_skill_names(void)
 }
 
 // Do not use the discount merchant dialog line if the discount is negative.
+// Also here: accept all (incl. stolen) items in the black market.
 static void __declspec(naked) check_for_negative_discount(void)
 {
     asm
       {
+        mov eax, dword ptr [ebp+16] ; house id
+        cmp eax, BLACK_MARKET_1
+        je black
+        cmp eax, BLACK_MARKET_2
+        jne skip
+        black:
+        and dword ptr [ebp+12], 0 ; skip shop type checks
+        skip:
         push ecx
         push SKILL_MERCHANT
         call dword ptr ds:get_skill ; replaced call
@@ -18116,8 +18151,11 @@ static void __declspec(naked) charge_shop_wands_special(void)
 
 static char recharge_buffer[100], name_buffer[100];
 static const float shop_recharge_multiplier = 0.2; // from 30% to 80%
+// Defined below.
+static void knife_repair_dialog(void);
 
 // Wand recharge dialog: print cost and resulting number of charges.
+// Also here: jump into the knife repair hook if in the black market.
 static void __declspec(naked) shop_recharge_dialog(void)
 {
     asm
@@ -18128,7 +18166,16 @@ static void __declspec(naked) shop_recharge_dialog(void)
         cmp dword ptr [esi], LAST_WAND
         jbe wand
         not_wand:
-        test byte ptr [esi].s_item.flags, 2 ; replaced code
+        mov edx, dword ptr [DIALOG2]
+        mov edx, dword ptr [edx+28] ; shop id
+        cmp edx, BLACK_MARKET_1
+        je black
+        cmp edx, BLACK_MARKET_2
+        jne not_black
+        black:
+        jmp knife_repair_dialog ; same as for weapon shops
+        not_black:
+        test byte ptr [esi].s_item.flags, IFLAGS_BROKEN ; replaced code
         ret
         wand:
         movzx eax, byte ptr [esi].s_item.max_charges
@@ -21321,8 +21368,7 @@ static void __declspec(naked) print_monster_special_bonus(void)
       }
 }
 
-static int *const new_skill_cost = (int *) 0xf8b034;
-static int *const can_learn_skill = (int *) 0xf8b028;
+// Set just below, later checked in learn_gm_skill().
 static int gm_quest;
 
 // Let GM teachers be more creative with their demands.
@@ -21420,7 +21466,7 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
             if (check_bit(QBITS, skill == SKILL_LIGHT ? QBIT_LIGHT_PATH
                                                       : QBIT_DARK_PATH))
               {
-                *new_skill_cost = 0;
+                dword(NEW_SKILL_COST) = 0;
                 return ACCEPT;
               }
             return REFUSE;
@@ -21434,7 +21480,7 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
                     continue;
                 else if (elemdata.reputation[i] > -5)
                     return REFUSE;
-            *new_skill_cost = 20000;
+            dword(NEW_SKILL_COST) = 20000;
             return ACCEPT;
         case SKILL_REPAIR:
             train_req = 40;
@@ -21509,7 +21555,7 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
         case SKILL_ALCHEMY:
             if (check_bit(QBITS, QBIT_ALCHEMY_GM_QUEST))
               {
-                *new_skill_cost = 0;
+                dword(NEW_SKILL_COST) = 0;
                 return ACCEPT;
               }
             gm_quest = 601;
@@ -21521,7 +21567,7 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
       }
     if (gm_quest)
       {
-        *can_learn_skill = 1; // not really, but allows clicking
+        dword(TOPIC_ACTION) = TRUE; // can't really learn, but allows clicking
         return NPC_TOPIC_TEXT[gm_quest].topic;
       }
     if (train_req)
@@ -21554,13 +21600,13 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
       }
     if (item >= 0)
       {
-        *new_skill_cost = ~item;
+        dword(NEW_SKILL_COST) = ~item;
         char name_buffer[100];
         sprintf(name_buffer, COLOR_FORMAT, colors[CLR_ITEM],
                 item_name(&player->items[player->inventory[item]-1]));
         sprintf(reply_buffer, new_strings[STR_GM_FOR_ITEM],
                 SKILL_NAMES[skill], name_buffer);
-        *can_learn_skill = 1;
+        dword(TOPIC_ACTION) = TRUE;
         return reply_buffer;
       }
     return DEFAULT;
@@ -24070,11 +24116,6 @@ static inline void balance_tweaks(void)
     erase_code(0x493c31, 2);
 }
 
-#define FIRST_GUILD 139
-// Magic guild subactions -- the second one is my addition.
-#define CONV_BUY_SPELLS 18
-#define CONV_BUY_SCROLLS 19
-
 // Add a "buy scrolls" option to magic guild dialogs.
 static void __declspec(naked) add_scroll_reply(void)
 {
@@ -24253,11 +24294,16 @@ static void __declspec(naked) check_scroll_bought_reply(void)
 }
 
 // Treat buy scrolls window the same as buy spells for clicking purposes.
+// Also here: support black market's armor screen in a similar way.
 static void __declspec(naked) click_buy_scroll(void)
 {
     asm
       {
         mov eax, dword ptr [CURRENT_CONVERSATION] ; replaced code
+        cmp eax, CONV_BUY_ARMOR
+        jne not_armor
+        mov al, CONV_BUY_SPC
+        not_armor:
         cmp eax, CONV_BUY_SCROLLS
         jne quit
         dec eax ; pretend it`s books
@@ -24444,10 +24490,6 @@ static void __declspec(naked) print_restore_sp_display(void)
       }
 }
 
-// My additions.
-#define CONV_QUERY_ORDER 97
-#define CONV_CONFIRM_ORDER 98
-
 // Reimplement weapon, armor and magic shop replies with a fifth one added.
 // Also here: remove the confirm order button when it's no longer needed.
 static void __declspec(naked) add_order_reply(void)
@@ -24455,19 +24497,19 @@ static void __declspec(naked) add_order_reply(void)
     asm
       {
         xor ecx, ecx
-        mov edx, 2 ; buy standard
+        mov edx, CONV_BUY_STD
         call dword ptr ds:add_reply
         mov ecx, 1
-        mov edx, 95 ; buy special
+        mov edx, CONV_BUY_SPC
         call dword ptr ds:add_reply
         mov ecx, 2
         mov edx, CONV_QUERY_ORDER ; the new one!
         call dword ptr ds:add_reply
         mov ecx, 3
-        mov edx, 94 ; display inventory
+        mov edx, CONV_INVENTORY
         call dword ptr ds:add_reply
         mov ecx, 4
-        mov edx, 96 ; learn skills
+        mov edx, CONV_LEARN
         call dword ptr ds:add_reply
         cmp dword ptr [CURRENT_CONVERSATION], CONV_CONFIRM_ORDER
         je ok
@@ -24488,14 +24530,17 @@ static void __declspec(naked) add_order_reply(void)
       }
 }
 
+// The array for store main screen topic options.
+#define SHOP_REPLIES 0xf8b038
+
 // Print the text for the new reply.
 static void __declspec(naked) print_order_reply(void)
 {
     asm
       {
         mov ecx, dword ptr [new_strings+STR_PLACE_ORDER*4]
-        mov dword ptr [0xf8b044], eax ; replaced code, but shifted down
-        mov dword ptr [0xf8b040], ecx ; and we put the new text in its place
+        mov dword ptr [SHOP_REPLIES+12], eax ; replaced code, but shifted down
+        mov dword ptr [SHOP_REPLIES+8], ecx ; and we put new text in its place
         ret
       }
 }
@@ -25369,6 +25414,7 @@ static const char orderbtn[] = "orderbtn";
 
 // Load the background and item graphics when visualising the order.
 // Also here: add the confirm order button.
+// Also also: switch shop backgrounds for the black market.
 static void __declspec(naked) preload_order_images(void)
 {
     asm
@@ -25446,19 +25492,38 @@ static void __declspec(naked) preload_order_images(void)
         add esp, 48
         mov ecx, ebp ; restore
         skip:
+        mov eax, dword ptr [DIALOG2]
+        mov eax, dword ptr [eax+28] ; shop id
+        cmp eax, BLACK_MARKET_1
+        je black
+        cmp eax, BLACK_MARKET_2
+        jne quit
+        black:
+        mov eax, dword ptr [CURRENT_CONVERSATION]
+        cmp eax, CONV_BUY_STD
+        jne nonweap
+        mov dword ptr [esp+4], 0x4f0e04 ; weapon bg
+        nonweap:
+        cmp eax, CONV_BUY_ARMOR
+        jne quit
+        mov dword ptr [esp+4], 0x4f0dfc ; armor bg
+        quit:
         jmp dword ptr ds:load_bitmap ; replaced call
       }
 }
 
 // Enable hints on clicking the order blueprint items.
+// Also here: hints for the black market armor screen.
 static void __declspec(naked) right_click_order(void)
 {
     asm
       {
         mov eax, dword ptr [CURRENT_CONVERSATION] ; replaced code
         cmp eax, CONV_CONFIRM_ORDER
-        jne skip
-        sub eax, 3 ; pretend it`s buy special
+        je skip
+        cmp eax, CONV_BUY_ARMOR
+        je skip
+        cmp eax, CONV_BUY_STD ; also replaced code
         skip:
         ret
       }
@@ -25696,6 +25761,10 @@ static void __declspec(naked) faster_shop_restock(void)
         movzx eax, word ptr [EVENTS2D_ADDR+esi].s_event2d.restock
         mov bx, word ptr [EVENTS2D_ADDR+esi].s_event2d.type
         mov esi, 24 ; magic shop, guild
+        cmp edi, BLACK_MARKET_1
+        je black
+        cmp edi, BLACK_MARKET_2
+        je black
         dec ebx
         jz weapon
         dec ebx
@@ -25706,7 +25775,9 @@ static void __declspec(naked) faster_shop_restock(void)
         weapon:
         sub esi, 4 ; weapon = 12
         armor:
-        sub esi, 8 ; armor = 16
+        sub esi, 10 ; armor = 16
+        black:
+        add esi, 2 ; black market = 26
         restock:
         mov ebx, ONE_DAY
         mul ebx
@@ -25742,6 +25813,364 @@ static void __declspec(naked) faster_shop_restock(void)
         inc ebx ; restore
         skip:
         jmp dword ptr ds:spend_gold ; replaced call
+      }
+}
+
+// For the black market, have buy weapon/armor/misc options instead of std/spc.
+static void __declspec(naked) black_market_replies(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [DIALOG2]
+        mov ecx, dword ptr [ecx+28] ; shop id
+        cmp ecx, BLACK_MARKET_1
+        je black
+        cmp ecx, BLACK_MARKET_2
+        jne add_order_reply ; old hook at this address
+        black:
+        xor ecx, ecx
+        mov edx, CONV_BUY_STD ; weapons
+        call dword ptr ds:add_reply
+        mov ecx, 1
+        mov edx, CONV_BUY_ARMOR
+        call dword ptr ds:add_reply
+        mov ecx, 2
+        mov edx, CONV_BUY_SPC ; magic
+        call dword ptr ds:add_reply
+        mov ecx, 3
+        mov edx, CONV_INVENTORY
+        call dword ptr ds:add_reply
+        mov ecx, 4
+        mov edx, CONV_LEARN
+        call dword ptr ds:add_reply
+        mov eax, 0x4b3c84 ; five-reply code
+        jmp eax
+      }
+}
+
+// Depending on the current screen, reuse weapon/armor/magic shop code.
+static void __declspec(naked) black_market_screens(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [DIALOG2]
+        mov ecx, dword ptr [ecx+28] ; shop id
+        cmp ecx, BLACK_MARKET_1
+        je black
+        cmp ecx, BLACK_MARKET_2
+        jne skip
+        black:
+        mov eax, dword ptr [CURRENT_CONVERSATION]
+        cmp eax, CONV_BUY_STD
+        je weapon
+        cmp eax, CONV_BUY_ARMOR
+        je armor
+        skip:
+        mov eax, 0x4b4f32 ; replaced call (magic shop)
+        jmp eax
+        weapon:
+        mov eax, 0x4b9072 ; weapon shop
+        jmp eax
+        armor:
+        mov eax, 0x4ba88b ; armor shop
+        jmp eax
+      }
+}
+
+// Pretend the black market armor screen is a "buy special" screen.
+static void __declspec(naked) init_bm_armor_screen(void)
+{
+    asm
+      {
+        mov edx, dword ptr [esp+20] ; replaced code, basically
+        cmp edx, CONV_BUY_ARMOR
+        je skip
+        cmp edx, CONV_BUY_SPC ; also replaced code
+        skip:
+        ret
+      }
+}
+
+// Forbid stealing from the black market.  Cugel is just better than you!
+static void __declspec(naked) disable_bm_theft(void)
+{
+    asm
+      {
+        cmp dword ptr [CURRENT_SCREEN], 0
+        jz skip ; if stealing from monsters
+        mov eax, dword ptr [DIALOG2]
+        mov eax, dword ptr [eax+28] ; shop id
+        cmp eax, BLACK_MARKET_1
+        je black
+        cmp eax, BLACK_MARKET_2
+        jne skip
+        black:
+        xor eax, eax ; pretend we have no skill
+        ret 4
+        skip:
+        jmp dword ptr ds:get_skill ; replaced call
+      }
+}
+
+// Implement the special logic for black market wares generation.
+static void __thiscall restock_black_market(int house)
+{
+    static const struct { struct item *wares; int level, num, extra, type[4]; }
+        stock[] = {
+          { (void *) SHOP_STANDARD_ITEMS, 5, 6, 6,
+              { ITEM_TYPE_WEAPON, ITEM_TYPE_WEAPON,
+                ITEM_TYPE_WEAPON2, ITEM_TYPE_MISSILE } },
+          { (void *) SHOP_SPECIAL_ITEMS, 4, 12, 12,
+              { ITEM_TYPE_MISC, ITEM_TYPE_MISC,
+                ITEM_TYPE_MISC, ITEM_TYPE_MISC } },
+          { (struct item *) SHOP_SPECIAL_ITEMS + 12, 5, 4, 8,
+              { ITEM_TYPE_HELM, ITEM_TYPE_CLOAK,
+                ITEM_TYPE_GAUNTLETS, ITEM_TYPE_BOOTS } },
+          { (struct item *) SHOP_SPECIAL_ITEMS + 16, 5, 4, 0,
+              { ITEM_TYPE_ARMOR, ITEM_TYPE_ARMOR,
+                ITEM_TYPE_ARMOR, ITEM_TYPE_SHIELD } },
+    };
+    for (int i = 0, bonus; i < sizeof(stock) / sizeof(stock[0]); i++)
+      {
+        if (stock[i].extra)
+            bonus = random() % stock[i].extra;
+        for (int j = 0; j < stock[i].num; j++)
+          {
+            int extra = !bonus--;
+            struct item *current = &stock[i].wares[house*12+j];
+            randomize_item(ITEMS_TXT_ADDR - 4, stock[i].level + extra,
+                           stock[i].type[random()&3], current);
+            if (current->id >= FIRST_WAND && current->id <= LAST_WAND
+                || current->id == THROWING_KNIVES)
+                current->charges = current->max_charges;
+            current->flags = IFLAGS_ID;
+            if (extra || random() % 3 == 0)
+                current->flags |= IFLAGS_STOLEN;
+          }
+      }
+}
+
+// Hook for the above.
+static void __declspec(naked) restock_black_market_hook(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [DIALOG2]
+        mov ecx, dword ptr [ecx+28] ; shop id
+        cmp ecx, BLACK_MARKET_1
+        je black
+        cmp ecx, BLACK_MARKET_2
+        jne skip
+        black:
+        add dword ptr [esp], 5 ; skip over restock spc, too
+        jmp restock_black_market
+        skip:
+        mov eax, 0x4b8da0 ; replaced call (restock std)
+        jmp eax
+      }
+}
+
+// Enable the code that randomizes weapon positions for the black market.
+static void __declspec(naked) black_market_weapon_spread(void)
+{
+    asm
+      {
+        je skip ; replaced jne
+        mov eax, dword ptr [esi+28] ; shop id
+        cmp eax, BLACK_MARKET_1
+        je skip
+        cmp eax, BLACK_MARKET_2
+        je skip
+        mov dword ptr [esp], 0x4bd810 ; replaced jump destination
+        skip:
+        ret
+      }
+}
+
+// Print the text for black market replies.
+static void __declspec(naked) print_bm_replies(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [DIALOG2]
+        mov ecx, dword ptr [ecx+28] ; shop id
+        cmp ecx, BLACK_MARKET_1
+        je black
+        cmp ecx, BLACK_MARKET_2
+        jne print_order_reply ; old hook here
+        black:
+        mov dword ptr [SHOP_REPLIES+12], eax ; replaced code, but shifted down
+        mov eax, dword ptr [new_strings+STR_BUY_WEAPONS*4]
+        mov dword ptr [SHOP_REPLIES], eax ; was buy std
+        mov eax, dword ptr [new_strings+STR_BUY_ARMOR*4]
+        mov dword ptr [SHOP_REPLIES+4], eax ; was buy spc
+        mov eax, dword ptr [new_strings+STR_BUY_MAGIC*4]
+        mov dword ptr [SHOP_REPLIES+8], eax ; inserted
+        ret
+      }
+}
+
+// Buy the proper item on BM armor screen.
+static void __declspec(naked) buy_bm_armor(void)
+{
+    asm
+      {
+        cmp dword ptr [CURRENT_CONVERSATION], CONV_BUY_ARMOR
+        jne skip
+        add ecx, SIZE_ITEM * 3
+        skip:
+        lea ecx, [SHOP_SPECIAL_ITEMS+ecx*4] ; replaced code
+        ret
+      }
+}
+
+// Also get the correct item info on a right-click.
+static void __declspec(naked) rmb_bm_armor(void)
+{
+    asm
+      {
+        cmp dword ptr [CURRENT_CONVERSATION], CONV_BUY_ARMOR
+        jne skip
+        add eax, SIZE_ITEM * 3
+        skip:
+        lea ecx, [SHOP_SPECIAL_ITEMS-SIZE_ITEM+eax*4] ; replaced code
+        ret
+      }
+}
+
+// Finally, load the proper item bitmap.
+static void __declspec(naked) bmp_bm_armor(void)
+{
+    asm
+      {
+        cmp dword ptr [esp+20], CONV_BUY_ARMOR ; action param
+        jne skip
+        add eax, SIZE_ITEM * 3
+        skip:
+        mov eax, dword ptr [SHOP_SPECIAL_ITEMS+eax*4] ; replaced code
+        ret
+      }
+}
+
+// Fix overly tall boots crashing in the BM armor screen.
+// This is the same as clip_boots_to_screen(), but with different registers.
+static void __declspec(naked) clip_bm_boots_to_screen(void)
+{
+    asm
+      {
+        xchg ebx, edi ; the only difference
+        push dword ptr [esp+4]
+        call clip_boots_to_screen ; same hack as for std/spc
+        xchg ebx, edi ; restore
+        ret 4
+      }
+}
+
+// Always show the restock timer in BM armor screen.
+// This hook is more involved than the others because of different code order.
+static void __declspec(naked) bm_armor_restock_msg(void)
+{
+    asm
+      {
+        jl skip ; replaced jump
+        cmp word ptr [ebp-20], 0 ; mouseover item
+        jnz ok
+        mov dword ptr [esp], 0x4bb2a6 ; to restock message
+        ok:
+        ret
+        skip:
+        mov dword ptr [esp], 0x4bb600 ; replaced jump address
+        ret
+      }
+}
+
+// Allow selling any items (incl. stolen ones) to the black market.
+static void __declspec(naked) bm_sell_stolen_items(void)
+{
+    asm
+      {
+        base:
+        mov ebx, dword ptr [DIALOG2]
+        mov ebx, dword ptr [ebx+28] ; shop id
+        cmp ebx, BLACK_MARKET_1
+        je black
+        cmp ebx, BLACK_MARKET_2
+        jne skip
+        black:
+        xor eax, eax
+        inc eax ; allow
+        add dword ptr [esp], 97 ; to function end
+        skip:
+        mov ebx, 740 ; restore
+        ret
+      }
+}
+
+// Give the black market an unique, thematic set of taught skills.
+static void __declspec(naked) black_market_skills(void)
+{
+    asm
+      {
+        mov edx, dword ptr [DIALOG2]
+        mov edx, dword ptr [edx+28] ; shop id
+        cmp edx, BLACK_MARKET_1
+        je black
+        cmp edx, BLACK_MARKET_2
+        jne skip
+        black:
+        mov dword ptr [ebp-4], 4 ; skill count
+        mov dword ptr [ebp-28], SKILL_DAGGER + 36
+        mov dword ptr [ebp-24], SKILL_LEATHER + 36
+        mov dword ptr [ebp-20], SKILL_DISARM_TRAPS + 36
+        mov dword ptr [ebp-16], SKILL_THIEVERY + 36
+        ret
+        skip:
+        mov dword ptr [ebp-24], SKILL_REPAIR + 36 ; replaced code
+        ret
+      }
+}
+
+// Let Lasker teach skills for free if you have guild membership.
+static void __declspec(naked) lasker_free_teaching(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [DIALOG2]
+        cmp dword ptr [ecx+28], MASTER_THIEF
+        jne skip
+        ; thieves guild membership award
+        test byte ptr [esi+(109-1)/8].s_player.awards, 0x80 >> (109-1) % 8
+        jz skip
+        and dword ptr [NEW_SKILL_COST], 0
+        skip:
+        cmp dword ptr [NEW_SKILL_COST], 0 ; replaced code
+        ret
+      }
+}
+
+// Also use unique NPC text that reflects the lack of money cost.
+static void __declspec(naked) lasker_teacher_text(void)
+{
+    asm
+      {
+        mov edx, dword ptr [DIALOG2]
+        cmp dword ptr [edx+28], MASTER_THIEF
+        jne skip
+        mov edx, dword ptr [CURRENT_PLAYER]
+        mov edx, dword ptr [PC_POINTERS+edx*4-4]
+        ; thieves guild membership award
+        test byte ptr [edx+(109-1)/8].s_player.awards, 0x80 >> (109-1) % 8
+        jz skip
+        xor eax, eax
+        cmp ecx, 287 ; disarm
+        setne al
+        cmp ecx, 207 ; dagger
+        sete dl
+        add al, dl
+        mov eax, dword ptr [new_npc_text+903*4-790*4+eax*4] ; new dialog
+        skip:
+        mov dword ptr [CURRENT_TEXT], eax ; replaced code
+        ret
       }
 }
 
@@ -25783,10 +26212,10 @@ static inline void shop_changes(void)
     // The next three hooks are in a jumptable.
     patch_pointer(0x4b3d51, add_order_reply); // weapon shop
     patch_pointer(0x4b3d55, add_order_reply); // armor shop
-    patch_pointer(0x4b3d59, add_order_reply); // magic shop
+    // magic shop called from black_market_replies() below
     hook_call(0x4b937c, print_order_reply, 5); // weapon shop
     hook_call(0x4bab8f, print_order_reply, 5); // armor shop
-    hook_call(0x4b523d, print_order_reply, 5); // magic shop
+    // magic shop called from print_bm_replies() below
     // Shift the replies down.
     patch_dword(0x4b9389, dword(0x4b9389) + 4); // weapon, the last reply
     patch_dword(0x4b93ac, dword(0x4b93ac) + 4); // weapon, replies loop
@@ -25802,7 +26231,7 @@ static inline void shop_changes(void)
     patch_byte(0x4326dd, byte(0x4326dd) + 11); // do not reset screen to 0
     patch_byte(0x41c486, 50); // allow longer prompts
     hook_call(0x4bcb97, preload_order_images, 5);
-    hook_call(0x4b1a32, right_click_order, 5);
+    hook_call(0x4b1a32, right_click_order, 8);
     hook_call(0x4b1aae, right_click_order_hint, 7);
     // Slightly lower shop text so it won't overwrite shk name in extremis.
     patch_dword(0x4b921e, dword(0x4b921e) + 14); // weapon
@@ -25912,6 +26341,33 @@ static inline void shop_changes(void)
     // Same, but for the fake boat before getting permission.
     HOUSE_MOVIES[185].name = HOUSE_MOVIES[19].name;
     HOUSE_MOVIES[185].voice = 37;
+    // Setup the house animation for the black market.
+    HOUSE_MOVIES[17].type = 3; // magic shop
+    HOUSE_MOVIES[17].voice = 35; // warlock armor
+    patch_pointer(0x4b3d59, black_market_replies); // overrides magic shop code
+    hook_call(0x4b330d, black_market_screens, 5);
+    // different bgs in preload_order_images() above
+    // armor screen clicks in click_buy_scroll() and right_click_order() above
+    hook_call(0x4bd3ba, init_bm_armor_screen, 7);
+    hook_call(0x492c3a, disable_bm_theft, 5);
+    hook_call(0x4bd54b, restock_black_market_hook, 5);
+    hook_call(0x4bd62c, black_market_weapon_spread, 6);
+    hook_call(0x4b523d, print_bm_replies, 5);
+    // Use the next store's inventory for BM armor, to prevent overlap.
+    patch_dword(0x4bb50a, SHOP_SPECIAL_ITEMS + SIZE_ITEM * 12); // check empty
+    patch_dword(0x4bb59c, SHOP_SPECIAL_ITEMS + SIZE_ITEM * 12); // mouseover
+    patch_dword(0x4bb614, SHOP_SPECIAL_ITEMS + SIZE_ITEM * 12); // draw
+    hook_call(0x4bdffa, buy_bm_armor, 7);
+    hook_call(0x4b1aae, rmb_bm_armor, 7);
+    hook_call(0x4bd6bd, bmp_bm_armor, 7);
+    hook_call(0x4bb6a1, clip_bm_boots_to_screen, 5);
+    erase_code(0x4bb57e, 3); // preserve mouseover item var
+    hook_call(0x4bb6ae, bm_armor_restock_msg, 6);
+    // replies for stolen items enabled in check_for_negative_discount() above
+    hook_call(0x4bda4e, bm_sell_stolen_items, 5); // overwrites mm7patch nop's
+    hook_call(0x4b371a, black_market_skills, 7);
+    hook_call(0x4b26ca, lasker_free_teaching, 7);
+    hook_call(0x4b3f5e, lasker_teacher_text, 5);
 }
 
 // Allow non-bouncing projectiles to trigger facets in Altar of Wishes.

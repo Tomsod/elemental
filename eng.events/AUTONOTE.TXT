@@ -130,8 +130,8 @@ Note bit	Autonote Text	Category
 129	"The ultimate teacher in the ways of the Staff, Jillian Mithrit, can be found in the elven territory of Avlee.  Her home is in the city in the northeast."	teacher
 130	"The Master instructor of the Sword, Tugor Slicer, maintains his residence in a small village in the western region of Deyja."	teacher
 131	"The Grandmaster of the Sword, Chadric Townsaver, can be found in a small village in Welnin, just south of the city of Harmondale."	teacher
-132	"The Master tutor of the Dagger, Aznog Slasher, can be found in the northern region of Nighon."	teacher
-133	"The Grandmaster of the Dagger, Token Fist, can be found in city of Tidewater in Tatalia.  Rumor has it that the Master Thief in the depths of the Erathian Sewers beneath the capitol city of Steadwick can also instruct at this level."	teacher
+132	"The Master tutor of the Dagger, Aznog Slasher, can be found in the northern region of Nighon.  Rumor has it that the Master Thief in the depths of the Erathian Sewers beneath the capitol city of Steadwick can also instruct at this level."	teacher
+133	"The Grandmaster of the Dagger, Token Fist, can be found in city of Tidewater in Tatalia."	teacher
 134	"The Master Instructor of all that is the Axe, Dalin Keenedge, can be found in the northeast corner of Stone City."	teacher
 135	"The ultimate teacher of the uses of the Axe, Karn Stonecleaver, can be found in the snowy heights of the northeast region of Tatalia."	teacher
 136	"The Master teacher, Claderin Silverpoint, can be found in the northeast section of the city of Pierpont in the elven region of the Tularean Forest. There he will further you knowledge of the Spear."	teacher

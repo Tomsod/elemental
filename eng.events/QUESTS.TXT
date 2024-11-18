@@ -410,7 +410,7 @@ Q Bit	Quest Note Text	Notes	Owner
 409	"Find a manticore lair under Nighon, slay the largest manticore and bring its venom to William Smithson west of the Evenmorn Island."	Monk token quest	0	0
 410		Got permission to use the pirate ship	0	0
 411		Talked with the pirate captain	0	0
-412	0	0	0	0
+412		Visited Lasker	0	0
 413	0	0	0	0
 414	0	0	0	0
 415	0	0	0	0

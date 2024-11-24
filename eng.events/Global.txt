@@ -809,3 +809,5 @@ Global Text
 806	Buy Weapons
 807	Buy Armor
 808	Buy Magic
+809	Oh, things are same old, nothing major changed lately.
+810	I heard that %s changed greatly compared to before.

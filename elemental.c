@@ -375,6 +375,8 @@ enum new_strings
     STR_BUY_WEAPONS,
     STR_BUY_ARMOR,
     STR_BUY_MAGIC,
+    STR_NO_REFILL,
+    STR_REFILLED_MAP,
     NEW_STRING_COUNT
 };
 
@@ -919,6 +921,8 @@ static struct elemdata
     int monster_loot_seed[MAP_COUNT];
     // For fountain_timers(), to reset them only after rest.
     uint64_t last_rest_time;
+    // To track area refill when the maps are unloaded.
+    int next_refill_day[MAP_COUNT];
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -929,6 +933,9 @@ enum qbits
     QBIT_EVENMORN_MAP = 64,
     QBIT_LIGHT_PATH = 99,
     QBIT_DARK_PATH = 100,
+    QBIT_KILL_TOLBERTI = 109,
+    QBIT_KILL_ROBERT = 127,
+    QBIT_LEFT_EMERALD_ISLAND = 136,
     QBIT_FIRST_OBELISK = 164,
     QBIT_LAST_OBELISK = 177,
     QBIT_LOST_DIVINE_INTERVENTION = 226,
@@ -1309,9 +1316,12 @@ typedef struct mapstats_item s_mapstats_item;
 static const char map_altar_of_wishes[] = "genie.blv";
 #define UNDERWATER 0x6be244
 #define CURRENT_MAP_ID 0x6bdfbc
+static int castle_id, bottle_id;
 
 #define OUTDOOR_LAST_VISIT_TIME 0x6a1160
 #define INDOOR_LAST_VISIT_TIME 0x6be534
+#define OUTDOOR_LAST_REFILL_DAY 0x6a113c
+#define INDOOR_LAST_REFILL_DAY 0x6be510
 // Indoor or outdoor reputation for the loaded map.
 #define OUTDOORS 0x6be1e0
 #define CURRENT_REP (*(int32_t *) (dword(OUTDOORS) == 2 ? 0x6a1140 : 0x6be514))
@@ -1875,8 +1885,8 @@ static void __fastcall (*summon_monster)(int id, int x, int y, int z)
     = (funcptr_t) 0x4bbec4;
 static int __thiscall (*dir_cosine)(void *this, int dir)
     = (funcptr_t) 0x402cae;
-static int __thiscall (*find_active_player)(void *this) = (funcptr_t) 0x493707;
 #define TRIG_THIS ((void *) 0x56c680)
+static int __thiscall (*find_active_player)(void *this) = (funcptr_t) 0x493707;
 static int __thiscall (*get_map_index)(struct mapstats_item *mapstats,
                                        char *filename) = (funcptr_t) 0x4547cf;
 static void *__thiscall (*find_in_lod)(void *lod, char *filename, int unknown)
@@ -9881,7 +9891,7 @@ static int loading_different_map;
 static void load_map_rep(void)
 {
     reputation_index = 0;
-    int map_index = get_map_index(MAPSTATS, CUR_MAP_FILENAME) - 1;
+    int map_index = dword(CURRENT_MAP_ID) - 1;
     int group = MAPSTATS[map_index].reputation_group;
     reputation_group[0] = group;
     CURRENT_REP = elemdata.reputation[group];
@@ -9900,13 +9910,11 @@ static void load_map_rep(void)
             return;
         int visit_addr = dword(OUTDOORS) == 2 ? OUTDOOR_LAST_VISIT_TIME
                                               : INDOOR_LAST_VISIT_TIME;
-        static int castle, bottle; // these two never refill
-        if (!castle) castle = get_map_index(MAPSTATS, "d29.blv");
-        if (!bottle) bottle = get_map_index(MAPSTATS, "nwc.blv");
         // refill count, starts at 1
         if (dword(visit_addr - 40) > 1 && !*(uint64_t *) visit_addr)
             show_status_text(new_strings[STR_MAP_REFILL], 4);
-        else if (map_index != castle - 1 && map_index != bottle - 1)
+        // these two never refill
+        else if (map_index != castle_id && map_index != bottle_id)
           {
             unsigned int day = CURRENT_TIME >> 13;
             day /= 256 * 60 * 24 >> 13; // avoid long division dependency
@@ -9963,12 +9971,17 @@ static void __declspec(naked) load_map_hook(void)
 // Somewhat redundant, as every map change induces an autosave,
 // and we sync rep on saving, but better safe than sorry.
 // Also here: sync extra chests, which otherwise break in Arena.
+// Also also: store the next refill day for later.
 static void leave_map_rep(void)
 {
     int group = reputation_group[reputation_index];
     if (group) // do not store group 0
         elemdata.reputation[group] = CURRENT_REP;
     replace_chest(-1);
+    int map = dword(CURRENT_MAP_ID) - 1;
+    elemdata.next_refill_day[map] = MAPSTATS[map].refill_days - 1
+                        + dword(dword(OUTDOORS) == 2 ? OUTDOOR_LAST_REFILL_DAY
+                                                     : INDOOR_LAST_REFILL_DAY);
 }
 
 // Hook for the above.  Again, inserted in a somewhat inconvenient place.
@@ -10250,7 +10263,7 @@ static void set_npc_beacon(int id)
 {
     elemdata.beacon_masters[id] = (struct beacon) {
         dword(PARTY_X), dword(PARTY_Y), dword(PARTY_Z), dword(PARTY_DIR),
-        dword(PARTY_LOOK_ANGLE), get_map_index(MAPSTATS, CUR_MAP_FILENAME) - 1,
+        dword(PARTY_LOOK_ANGLE), dword(CURRENT_MAP_ID) - 1,
     };
 }
 
@@ -11491,6 +11504,9 @@ static void __declspec(naked) th_spear(void)
       }
 }
 
+// For the "winds of change" hireling hint text.
+static char *map_refill_reply;
+
 // Let's give some hirelings new abilities.
 static int __thiscall new_hireling_action(int id)
 {
@@ -11508,6 +11524,45 @@ static int __thiscall new_hireling_action(int id)
             add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
             add_action(ACTION_THIS, ACTION_EXTRA_CHEST, 4, 1);
             return TRUE;
+        case NPC_GUIDE:
+        case NPC_TRACKER:
+        case NPC_PATHFINDER:
+        case NPC_SAILOR:
+        case NPC_NAVIGATOR:
+        case NPC_HORSEMAN:
+        case NPC_EXPLORER:
+        case NPC_PIRATE:
+          {
+            unsigned int day = CURRENT_TIME >> 13;
+            day /= 256 * 60 * 24 >> 13; // avoid long division dependency
+            int refilled = -1;
+            static int house; // the small house for assassination quests
+            if (!house) house = get_map_index(MAPSTATS, "mdt15.blv") - 1;
+            for (int i = 0, c = 0; i < MAP_COUNT; i++)
+              {
+                if (i == dword(CURRENT_MAP_ID) - 1
+                    || i == castle_id || i == bottle_id // never refilled
+                    || !MAPSTATS[i].refill_days // proving grounds/arena
+                    || !elemdata.next_refill_day[i]) // not visited yet
+                    continue;
+                if (i == house && !check_bit(QBITS, QBIT_KILL_TOLBERTI)
+                               && !check_bit(QBITS, QBIT_KILL_ROBERT)
+                    || MAPSTATS[i].reputation_group == 1
+                       && check_bit(QBITS, QBIT_LEFT_EMERALD_ISLAND))
+                    continue; // these areas become inaccessible later
+                if (elemdata.next_refill_day[i] <= day && !(random() % ++c))
+                    refilled = i;
+              }
+            static char buffer[160];
+            if (refilled >= 0)
+              {
+                sprintf(buffer, new_strings[STR_REFILLED_MAP],
+                        MAPSTATS[refilled].name);
+                map_refill_reply = buffer;
+              }
+            else map_refill_reply = new_strings[STR_NO_REFILL];
+          }
+            // fallthrough
         case NPC_COOK:
         case NPC_CHEF:
             byte(HIRELING_REPLY) = 2;
@@ -11564,6 +11619,22 @@ static void __declspec(naked) enable_new_hireling_action(void)
         je enable
         cmp eax, NPC_BEACON_MASTER
         je enable
+        cmp eax, NPC_GUIDE
+        je enable
+        cmp eax, NPC_TRACKER
+        je enable
+        cmp eax, NPC_PATHFINDER
+        je enable
+        cmp eax, NPC_SAILOR
+        je enable
+        cmp eax, NPC_NAVIGATOR
+        je enable
+        cmp eax, NPC_HORSEMAN
+        je enable
+        cmp eax, NPC_EXPLORER
+        je enable
+        cmp eax, NPC_PIRATE
+        je enable
         cmp eax, 10 ; replaced code
         ret
         enable:
@@ -11591,6 +11662,22 @@ static void __declspec(naked) new_hireling_action_text(void)
         cmp ecx, NPC_ALCHEMIST
         jz quit
         cmp ecx, NPC_BEACON_MASTER
+        jz quit
+        cmp ecx, NPC_GUIDE
+        jz quit
+        cmp ecx, NPC_TRACKER
+        jz quit
+        cmp ecx, NPC_PATHFINDER
+        jz quit
+        cmp ecx, NPC_SAILOR
+        jz quit
+        cmp ecx, NPC_NAVIGATOR
+        jz quit
+        cmp ecx, NPC_HORSEMAN
+        jz quit
+        cmp ecx, NPC_EXPLORER
+        jz quit
+        cmp ecx, NPC_PIRATE
         quit:
         ret
       }
@@ -12170,7 +12257,7 @@ static void __declspec(naked) toggle_cook_reply(void)
 // Storage for the new NPC text entries.
 static char *new_npc_text[NEW_TEXT_COUNT];
 
-// Print the decription for the applied buff.
+// Print the decription for the applied buff, or a refilled map name.
 static void __declspec(naked) print_cook_reply(void)
 {
     asm
@@ -12178,6 +12265,22 @@ static void __declspec(naked) print_cook_reply(void)
         mov ecx, dword ptr [npcprof+eax*4+4] ; replaced code, almost
         cmp byte ptr [HIRELING_REPLY], 2
         jne quit
+        cmp eax, NPC_GUIDE * 5
+        je refill
+        cmp eax, NPC_TRACKER * 5
+        je refill
+        cmp eax, NPC_PATHFINDER * 5
+        je refill
+        cmp eax, NPC_SAILOR * 5
+        je refill
+        cmp eax, NPC_NAVIGATOR * 5
+        je refill
+        cmp eax, NPC_HORSEMAN * 5
+        je refill
+        cmp eax, NPC_EXPLORER * 5
+        je refill
+        cmp eax, NPC_PIRATE * 5
+        je refill
         sub eax, NPC_COOK * 5
         jz cook
         cmp eax, 5 ; chef is next
@@ -12187,6 +12290,9 @@ static void __declspec(naked) print_cook_reply(void)
         add eax, dword ptr [ebx+68] ; ability/dish flag
         mov ecx, dword ptr [new_npc_text+810*4-790*4+eax*4] ; decriptions
         quit:
+        ret
+        refill:
+        mov ecx, dword ptr [map_refill_reply]
         ret
       }
 }
@@ -13702,6 +13808,8 @@ static inline void misc_rules(void)
     // Let Accuracy (now Agility) increase AC instead of Speed.
     hook_call(0x48e652, get_accuracy, 5); // base ac
     hook_call(0x48e68b, get_accuracy, 5); // total ac
+    // Bug fix: indoor refill count wasn't incremented.
+    patch_byte(0x49a5c3, 0);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -16060,7 +16168,7 @@ static void save_temple_beacon(void)
 {
     elemdata.bottle = (struct beacon) {
         dword(PARTY_X), dword(PARTY_Y), dword(PARTY_Z), dword(PARTY_DIR),
-        dword(PARTY_LOOK_ANGLE), get_map_index(MAPSTATS, CUR_MAP_FILENAME) - 1,
+        dword(PARTY_LOOK_ANGLE), dword(CURRENT_MAP_ID) - 1,
     };
     change_bit(QBITS, QBIT_TEMPLE_UNDERWATER,
                !uncased_strcmp(CUR_MAP_FILENAME, MAP_SHOALS));
@@ -16366,10 +16474,10 @@ static void __declspec(naked) new_consumable_items(void)
         cmp dword ptr [OUTDOORS], 2
         jne indoors
         shr eax, 1 ; may need to be used twice
-        sub dword ptr [0x6a113c], eax ; last refill day
+        sub dword ptr [OUTDOOR_LAST_REFILL_DAY], eax
         jmp message
         indoors:
-        sub dword ptr [0x6be510], eax ; ditto
+        sub dword ptr [INDOOR_LAST_REFILL_DAY], eax
         message:
         mov ecx, dword ptr [new_strings+STR_HOURGLASS_USED*4]
         mov edx, 2
@@ -19547,6 +19655,7 @@ static int __cdecl get_max_skill_level(int class, int race,
 }
 
 // Prefetch text color constants.  Called from spells_txt_tail() above.
+// Also here: prefetch unrefillable map IDs.
 static void set_colors(void)
 {
     colors[CLR_WHITE] = rgb_color(255, 255, 255);
@@ -19557,6 +19666,8 @@ static void set_colors(void)
     colors[CLR_GREEN] = rgb_color(0, 255, 0);
     colors[CLR_BLUE] = rgb_color(0, 251, 251); // 252+ breaks in widescreen
     colors[CLR_PURPLE] = rgb_color(255, 0, 255);
+    castle_id = get_map_index(MAPSTATS, "d29.blv") - 1;
+    bottle_id = get_map_index(MAPSTATS, "nwc.blv") - 1;
 }
 
 // Colorize skill ranks more informatively (also respect racial skills).

@@ -660,6 +660,7 @@ enum items
     FIRST_SCROLL = 300,
     SCROLL_FATE = 399,
     FIRST_BOOK = 400,
+    FIRST_LOST_ITEM = 487, // divine intervention book
     SCROLL_TELEPATHY = 499,
     FIRST_ARTIFACT = 500,
     PUCK = 500,
@@ -717,6 +718,7 @@ enum items
     ROBE_OF_THE_ARCHMAGISTER = 598,
     RED_APPLE = 630,
     FIRST_ORE = 686,
+    LAST_LOST_ITEM = 702, // scroll of waves
     FIRST_RECIPE = 740,
     LAST_RECIPE = 780,
     MAGIC_EMBER = 785,
@@ -842,12 +844,13 @@ struct __attribute__((packed)) file_header
     SKIP(4);
 };
 
+#define CHEST_MAX_ITEMS 140
 struct __attribute__((packed)) map_chest
 {
     uint16_t picture;
     uint16_t bits;
-    struct item items[140];
-    int16_t slots[140];
+    struct item items[CHEST_MAX_ITEMS];
+    int16_t slots[CHEST_MAX_ITEMS];
 };
 typedef struct map_chest s_map_chest;
 
@@ -923,6 +926,11 @@ static struct elemdata
     uint64_t last_rest_time;
     // To track area refill when the maps are unloaded.
     int next_refill_day[MAP_COUNT];
+    // A better tracking system for misplaced quest items.
+    char lost_items[LAST_LOST_ITEM-FIRST_LOST_ITEM+1];
+#define LOST_NOTRACK 0
+#define LOST_INV -1
+#define LOST_GONE -2
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -960,6 +968,10 @@ enum qbits
     QBIT_TEMPLE_UNDERWATER = 386,
     QBIT_PIRATE_SHIP = 410,
 };
+
+// The table of qbits and item ids for the vanilla judge "I lost it" thing.
+#define LOST_QBITS 0x4f0700
+#define LOST_QBIT_COUNT 27
 
 enum item_types
 {
@@ -1213,8 +1225,11 @@ struct __attribute__((packed)) map_monster
     uint16_t action_length;
     SKIP(14);
     uint16_t ai_state;
+#define AI_PURSUE 6
+#define AI_REMOVED 11
+#define AI_INVISIBLE 19
     uint16_t gfx_state;
-    SKIP(2);
+    uint16_t item;
     uint8_t id_level; // was padding
     uint8_t mod_flags; // same
 #define MMF_ERADICATED 1
@@ -1226,7 +1241,7 @@ struct __attribute__((packed)) map_monster
     uint32_t action_time;
     SKIP(24);
     struct spell_buff spell_buffs[22];
-    SKIP(144);
+    struct item items[4];
     uint32_t group;
     uint32_t ally;
     SKIP(104);
@@ -1414,6 +1429,7 @@ enum monster_buffs
     MBUFF_DAY_OF_PROTECTION = 13,
 };
 
+#define NPC_COMMAND 0x590f0c
 // Flag controlling which hireling reply is displayed.
 #define HIRELING_REPLY 0xf8b06c
 
@@ -1455,7 +1471,11 @@ struct __attribute__((packed)) map_object
     int16_t speed_x;
     int16_t speed_y;
     int16_t speed_z;
-    SKIP(8);
+    SKIP(4);
+    uint16_t bits;
+#define MO_DROPPED 8
+#define MO_MISSILE 0x100
+    SKIP(2);
     uint16_t age;
     SKIP(4);
     struct item item;
@@ -1467,10 +1487,7 @@ struct __attribute__((packed)) map_object
     SKIP(20);
 };
 typedef struct map_object s_map_object;
-
-#define AI_PURSUE 6
-#define AI_REMOVED 11
-#define AI_INVISIBLE 19
+#define MAP_OBJECTS ((struct map_object *) 0x6650b0)
 
 #define COLOR_FORMAT_ADDR 0x4e2d60
 #define COLOR_FORMAT ((char *) COLOR_FORMAT_ADDR)
@@ -1705,7 +1722,8 @@ enum struct_offsets
 #define SCANLINE_OFFSET 0x505828
 #define SHOP_STANDARD_ITEMS 0xad45b4
 #define SHOP_SPECIAL_ITEMS 0xad9f24
-#define CURRENT_TEXT 0xf8b068
+#define CURRENT_TEXT_ADDR 0xf8b068
+#define CURRENT_TEXT (*(char **) CURRENT_TEXT_ADDR)
 #define STATUS_MESSAGE 0x5c32a8
 #define ARRUS_FNT 0x5c3468
 #define MESSAGE_DIALOG 0x507a64
@@ -1788,6 +1806,8 @@ static void __thiscall (*make_sound)(void *this, int sound, int object,
 #define SOUND_THIS ((void *) SOUND_THIS_ADDR)
 static void __thiscall (*evt_set)(void *player, int what, int amount)
     = (funcptr_t) 0x44a5ee;
+static void __thiscall (*evt_add)(void *player, int what, int amount)
+    = (funcptr_t) 0x44b01e;
 static int __thiscall (*exists_in_lod)(void *lod, char *filename)
     = (funcptr_t) 0x461659;
 static char *__thiscall (*load_from_lod)(void *lod, char *filename,
@@ -4830,7 +4850,7 @@ static void __thiscall genie_lamp(struct player *player)
                   }
               }
             byte(0x5b07b8) = 0; // reset message override
-            *(char **) CURRENT_TEXT = new_strings[STR_GENIE_ITEM_INIT];
+            CURRENT_TEXT = new_strings[STR_GENIE_ITEM_INIT];
             strcpy((char *) STATUS_MESSAGE, new_strings[STR_GENIE_ITEM_ASK]);
             message_dialog(MESSAGE_MARKER, 2, MESSAGE_QUESTION);
             genie_wish_attempts = 5;
@@ -7420,12 +7440,13 @@ static void __declspec(naked) master_town_portal(void)
 }
 
 // When adding a town portal quest bit, also update last TP region.
+// Also here: track quest items when their corresponding qbit is set.
 static void __declspec(naked) update_new_tp_region(void)
 {
     asm
       {
         cmp eax, 211 ; last TP qbit
-        ja quit
+        ja lost
         sub eax, 206 ; first TP qbit
         jb skip
         jz update
@@ -7442,7 +7463,18 @@ static void __declspec(naked) update_new_tp_region(void)
         update:
         mov dword ptr [elemdata.last_region], eax
         skip:
-        mov eax, dword ptr [ebp+12]
+        mov eax, dword ptr [ebp+12] ; restore
+        lost:
+        mov ecx, LOST_QBIT_COUNT
+        loop:
+        cmp ax, word ptr [LOST_QBITS+ecx*4-4]
+        loopne loop
+        cmove cx, word ptr [LOST_QBITS+ecx*4+2]
+        test ecx, ecx
+        jz quit
+        cmp byte ptr [elemdata.lost_items+ecx-FIRST_LOST_ITEM], LOST_NOTRACK
+        jne quit
+        mov byte ptr [elemdata.lost_items+ecx-FIRST_LOST_ITEM], LOST_GONE
         quit:
         cmp dword ptr [0x722d90+eax*4], 0 ; replaced code
         ret
@@ -9970,18 +10002,93 @@ static void __declspec(naked) load_map_hook(void)
 // Store the current reputation as the map is offloaded.
 // Somewhat redundant, as every map change induces an autosave,
 // and we sync rep on saving, but better safe than sorry.
-// Also here: sync extra chests, which otherwise break in Arena.
-// Also also: store the next refill day for later.
 static void leave_map_rep(void)
 {
     int group = reputation_group[reputation_index];
     if (group) // do not store group 0
         elemdata.reputation[group] = CURRENT_REP;
+}
+
+// Defined below.
+static int get_active_chests(void);
+
+// Update the current status of all tracked quest items.
+static void track_lost_items(int left)
+{
+    int map = dword(CURRENT_MAP_ID);
+    char *lost = elemdata.lost_items - FIRST_LOST_ITEM;
+#define FIND(what, where) \
+    if ((what) >= FIRST_LOST_ITEM && (what) <= LAST_LOST_ITEM \
+        && lost[what] != LOST_NOTRACK) \
+        lost[what] = (where)
+    for (int i = FIRST_LOST_ITEM; i <= LAST_LOST_ITEM; i++)
+        if (i == BAG_OF_HOLDING || lost[i] == map || lost[i] == LOST_INV)
+            lost[i] = LOST_GONE; // assume the worst
+    for (int i = 0; i < 20; i++)
+        if (MAP_CHESTS[i].bits & 2) // has been opened
+            for (int j = 0; j < CHEST_MAX_ITEMS; j++)
+                FIND(MAP_CHESTS[i].items[j].id, map);
+    int objmask = MO_MISSILE | !!left * MO_DROPPED;
+    for (int i = 0; i < dword(0x6650ac); i++) // map obj count
+        if (!(MAP_OBJECTS[i].bits & objmask))
+            FIND(MAP_OBJECTS[i].item.id, map);
+    for (int i = 0; i < dword(MONSTER_COUNT); i++)
+        if (MAP_MONSTERS[i].ai_state != AI_REMOVED
+            && MAP_MONSTERS[i].ai_state != AI_INVISIBLE)
+          {
+            FIND(MAP_MONSTERS[i].item, map);
+            for (int j = 0; j < 4; j++)
+                FIND(MAP_MONSTERS[i].items[j].id, map);
+          }
+    int chests = get_active_chests();
+    if (elemdata.deposit_box)
+        chests |= 1 << 0; // count bank chest as party inventory here
+    for (int p = -1; p < 4 + EXTRA_CHEST_COUNT; p++)
+      {
+        int limit = PLAYER_MAX_ITEMS;
+        int loc = LOST_INV;
+        if (p < 0)
+            limit = 1; // no inner loop
+        else if (p >= 4)
+          {
+            if (p - 4 == BOH_CHEST_ID)
+              {
+                loc = lost[BAG_OF_HOLDING];
+                if (loc == LOST_GONE)
+                    continue;
+              }
+            else if (~chests & 1 << (p - 4))
+                continue;
+            limit = CHEST_MAX_ITEMS;
+          }
+        for (int i = limit - 1; i >= 0; i--)
+          {
+            struct item *check;
+            if (p < 0)
+                check = (void *) MOUSE_ITEM;
+            else if (p < 4)
+                check = &PARTY[p].items[i];
+            else
+                check = &elemdata.extra_chests[p-4].items[i];
+            FIND(check->id, loc);
+          }
+      }
+    lost[BAG_OF_HOLDING] = LOST_NOTRACK; // restore
+}
+
+// Call the above (which is also called from gm_teaching_conditions() below).
+// Also here: sync extra chests, which otherwise break in Arena.
+// Also also: store the next refill day for later.
+// Finally, we track lost items here.
+static void leave_map(void)
+{
+    leave_map_rep();
     replace_chest(-1);
     int map = dword(CURRENT_MAP_ID) - 1;
     elemdata.next_refill_day[map] = MAPSTATS[map].refill_days - 1
                         + dword(dword(OUTDOORS) == 2 ? OUTDOOR_LAST_REFILL_DAY
                                                      : INDOOR_LAST_REFILL_DAY);
+    track_lost_items(TRUE);
 }
 
 // Hook for the above.  Again, inserted in a somewhat inconvenient place.
@@ -9990,13 +10097,13 @@ static void __declspec(naked) leave_map_hook(void)
     asm
       {
         jle quit
-        call leave_map_rep
+        call leave_map
         pop eax
         push esi ; replaced code
         mov esi, 0x5b645c ; replaced code
         jmp eax
         quit:
-        call leave_map_rep
+        call leave_map
         push 0x443ffd ; replaced jump
         ret 4
       }
@@ -11504,6 +11611,24 @@ static void __declspec(naked) th_spear(void)
       }
 }
 
+// Whether it makes sense to check a map for refill.
+static int can_refill_map(int id)
+{
+    static int house; // the small house for assassination quests
+    if (!house) house = get_map_index(MAPSTATS, "mdt15.blv") - 1;
+    if (id == dword(CURRENT_MAP_ID) - 1
+        || id == castle_id || id == bottle_id // never refilled
+        || !MAPSTATS[id].refill_days // proving grounds/arena
+        || !elemdata.next_refill_day[id]) // not visited yet
+        return 0; // nothing to refill
+    if (id == house && !check_bit(QBITS, QBIT_KILL_TOLBERTI)
+                    && !check_bit(QBITS, QBIT_KILL_ROBERT)
+        || MAPSTATS[id].reputation_group == 1
+           && check_bit(QBITS, QBIT_LEFT_EMERALD_ISLAND))
+        return -1; // no longer visitable
+    return 1; // ok to check
+}
+
 // For the "winds of change" hireling hint text.
 static char *map_refill_reply;
 
@@ -11536,21 +11661,10 @@ static int __thiscall new_hireling_action(int id)
             unsigned int day = CURRENT_TIME >> 13;
             day /= 256 * 60 * 24 >> 13; // avoid long division dependency
             int refilled = -1;
-            static int house; // the small house for assassination quests
-            if (!house) house = get_map_index(MAPSTATS, "mdt15.blv") - 1;
             for (int i = 0, c = 0; i < MAP_COUNT; i++)
               {
-                if (i == dword(CURRENT_MAP_ID) - 1
-                    || i == castle_id || i == bottle_id // never refilled
-                    || !MAPSTATS[i].refill_days // proving grounds/arena
-                    || !elemdata.next_refill_day[i]) // not visited yet
-                    continue;
-                if (i == house && !check_bit(QBITS, QBIT_KILL_TOLBERTI)
-                               && !check_bit(QBITS, QBIT_KILL_ROBERT)
-                    || MAPSTATS[i].reputation_group == 1
-                       && check_bit(QBITS, QBIT_LEFT_EMERALD_ISLAND))
-                    continue; // these areas become inaccessible later
-                if (elemdata.next_refill_day[i] <= day && !(random() % ++c))
+                if (can_refill_map(i) > 0
+                    && elemdata.next_refill_day[i] <= day && !(random() % ++c))
                     refilled = i;
               }
             static char buffer[160];
@@ -11566,7 +11680,7 @@ static int __thiscall new_hireling_action(int id)
         case NPC_COOK:
         case NPC_CHEF:
             byte(HIRELING_REPLY) = 2;
-            dword(0x590f0c) = 77; // enable reply code
+            dword(NPC_COMMAND) = 77; // enable reply code
             return TRUE;
         case NPC_NINJA:
             if (byte(STATE_BITS) & 0x30)
@@ -11711,7 +11825,7 @@ static void __declspec(naked) empty_extra_chest_hook(void)
         jnz ok
         inc dword ptr [confirm_hireling_dismiss]
         mov ecx, dword ptr [new_strings+STR_CONFIRM_DISMISS*4]
-        mov dword ptr [0x590f0c], 77 ; enable reply
+        mov dword ptr [NPC_COMMAND], 77 ; enable reply
         mov byte ptr [HIRELING_REPLY], 0 ; choose reply
         mov dword ptr [esp], 0x4bc6f0 ; show statusline text
         ret
@@ -12710,6 +12824,7 @@ static void __declspec(naked) lich_mental_age(void)
 }
 
 // Do not make the PC smile when subtracting a QBit that was unset or hidden.
+// Also here: stop tracking quest items when their bit is unset.
 static void __declspec(naked) check_subtracted_qbit(void)
 {
     asm
@@ -12723,6 +12838,15 @@ static void __declspec(naked) check_subtracted_qbit(void)
         skip:
         add dword ptr [esp], 15 ; skip the smile
         ok:
+        mov ecx, LOST_QBIT_COUNT
+        loop:
+        cmp dx, word ptr [LOST_QBITS+ecx*4-4]
+        loopne loop
+        cmove cx, word ptr [LOST_QBITS+ecx*4+2]
+        test ecx, ecx
+        jz quit
+        mov byte ptr [elemdata.lost_items+ecx-FIRST_LOST_ITEM], LOST_NOTRACK
+        quit:
         mov ecx, QBITS_ADDR ; restore
         jmp dword ptr ds:change_bit ; replaced call
       }
@@ -12737,23 +12861,6 @@ static void __declspec(naked) reset_hireling_reply(void)
         mov dword ptr [DIALOG_NPC], ecx ; replaced code
         mov byte ptr [HIRELING_REPLY], bl ; ebx == 0
         mov dword ptr [confirm_hireling_dismiss], ebx
-        ret
-      }
-}
-
-// Prevent the exploit that allowed unlimited DI books from the Judge.
-static void __declspec(naked) fix_infinite_di_books(void)
-{
-    asm
-      {
-        cmp dword ptr [TOPIC_ACTION], FIRST_BOOK + SPL_DIVINE_INTERVENTION - 1
-        jne skip
-        push 0 ; unset
-        mov edx, QBIT_LOST_DIVINE_INTERVENTION
-        mov ecx, QBITS_ADDR
-        call dword ptr ds:change_bit
-        skip:
-        cmp dword ptr [TOPIC_ACTION], 601 ; replaced code
         ret
       }
 }
@@ -13710,7 +13817,6 @@ static inline void misc_rules(void)
     // Fix some buffs not disappearing on rest.
     patch_byte(0x490d25, 24);
     hook_call(0x445db5, reset_hireling_reply, 6);
-    hook_call(0x4b1ed6, fix_infinite_di_books, 10);
     hook_call(0x49672a, short_id_skill_names, 5);
     // Fix floor gold piles not being nerfed by map treasure level.
     patch_dword(0x450084, 0x9090d889); // mov eax, ebx; nop; nop
@@ -20260,6 +20366,7 @@ static void __declspec(naked) add_to_damage(void)
 
 // In vanilla the interface only changed color after the arbiter movie.
 // As there are now other ways to choose a path, let's set it along with qbit.
+// Also here: track quest items when their corresponding qbit is set.
 static void __declspec(naked) set_light_dark_path(void)
 {
     asm
@@ -20275,6 +20382,18 @@ static void __declspec(naked) set_light_dark_path(void)
         mov edx, 1
         call dword ptr ds:reset_interface
         skip:
+        mov ecx, LOST_QBIT_COUNT
+        lea eax, [esi+1]
+        loop:
+        cmp ax, word ptr [LOST_QBITS+ecx*4-4]
+        loopne loop
+        cmove cx, word ptr [LOST_QBITS+ecx*4+2]
+        test ecx, ecx
+        jz quit
+        cmp byte ptr [elemdata.lost_items+ecx-FIRST_LOST_ITEM], LOST_NOTRACK
+        jne quit
+        mov byte ptr [elemdata.lost_items+ecx-FIRST_LOST_ITEM], LOST_GONE
+        quit:
         mov eax, esi ; replaced code
         mov ecx, 8 ; also replaced code
         ret
@@ -21809,7 +21928,7 @@ static void __declspec(naked) keep_text_on_exit(void)
         mov dword ptr [keep_text], edi ; reset the flag
         ret
         erase:
-        mov dword ptr [CURRENT_TEXT], edi
+        mov dword ptr [CURRENT_TEXT_ADDR], edi
         ret
       }
 }
@@ -23575,7 +23694,7 @@ static void __declspec(naked) difficult_spell_cost(void)
 static void __thiscall break_chest(struct map_chest *chest)
 {
     if (!elemdata.difficulty) return; // not on easy
-    for (int i = 0; i < 140; i++)
+    for (int i = 0; i < CHEST_MAX_ITEMS; i++)
       {
         struct item *item = &chest->items[i];
         if ((signed) item->id <= 0 || item->id > LAST_PREFIX
@@ -23992,7 +24111,7 @@ static void __declspec(naked) horse_topics(void)
         mov ecx, QBITS_ADDR
         call dword ptr ds:change_bit
         quit:
-        mov dword ptr [0x590f0c], 78 ; fix null pointer reply
+        mov dword ptr [NPC_COMMAND], 78 ; fix null pointer reply
         mov dword ptr [esp], 0x4bc81e ; after action code
         ret
       }
@@ -24744,7 +24863,7 @@ static void __declspec(naked) query_order(void)
         jne not_emerald
         emerald:
         mov eax, dword ptr [new_strings+STR_EI_NO_ORDER*4]
-        mov dword ptr [CURRENT_TEXT], eax
+        mov dword ptr [CURRENT_TEXT_ADDR], eax
         jmp simple_message
         not_emerald:
         lea ecx, [elemdata.order_timers+ecx*8-8]
@@ -24778,7 +24897,7 @@ static void __declspec(naked) query_order(void)
 #endif
         call dword ptr ds:sprintf
         add esp, 12
-        mov dword ptr [CURRENT_TEXT], offset order_message_buffer
+        mov dword ptr [CURRENT_TEXT_ADDR], offset order_message_buffer
         cmp dword ptr [SHOPKEEPER_MOOD], 0 ; skip if happy already
         jnz simple_message
         mov dword ptr [SHOPKEEPER_MOOD], 2 ; neutral
@@ -24795,7 +24914,7 @@ static void __declspec(naked) query_order(void)
         mov ecx, PARTY_BIN_ADDR
         call dword ptr ds:add_mouse_item
         mov eax, dword ptr [new_strings+STR_ORDER_READY*4]
-        mov dword ptr [CURRENT_TEXT], eax
+        mov dword ptr [CURRENT_TEXT_ADDR], eax
         simple_message:
         push MESSAGE_SIMPLE
         xor edx, edx
@@ -24807,7 +24926,7 @@ static void __declspec(naked) query_order(void)
         cmove eax, dword ptr [new_npc_text+857*4-790*4]
         cmova eax, dword ptr [new_npc_text+858*4-790*4]
         and dword ptr [order_message_type], 0 ; reset
-        mov dword ptr [CURRENT_TEXT], eax
+        mov dword ptr [CURRENT_TEXT_ADDR], eax
         push dword ptr [new_strings+STR_PROMPT2*4]
         push STATUS_MESSAGE
         call dword ptr ds:strcpy_ptr
@@ -25503,7 +25622,7 @@ static void __declspec(naked) complete_order_prompt(void)
         dec dword ptr [genie_wish_attempts]
         jz refused_wish
         mov eax, dword ptr [new_npc_text+857*4-790*4]
-        mov dword ptr [CURRENT_TEXT], eax
+        mov dword ptr [CURRENT_TEXT_ADDR], eax
         and byte ptr [0x5b07b8], 0 ; reset override
         push dword ptr [new_strings+STR_GENIE_ITEM_ASK*4]
         push STATUS_MESSAGE
@@ -25852,7 +25971,7 @@ static void __declspec(naked) arcomage_hint_hook(void)
         ret
         arcomage:
         call arcomage_hint
-        mov dword ptr [CURRENT_TEXT], eax
+        mov dword ptr [CURRENT_TEXT_ADDR], eax
         add dword ptr [esp], 16 ; jump over vanilla code
         ret
       }
@@ -26280,9 +26399,39 @@ static void __declspec(naked) lasker_teacher_text(void)
         add al, dl
         mov eax, dword ptr [new_npc_text+903*4-790*4+eax*4] ; new dialog
         skip:
-        mov dword ptr [CURRENT_TEXT], eax ; replaced code
+        mov dword ptr [CURRENT_TEXT_ADDR], eax ; replaced code
         ret
       }
+}
+
+// The new Judge code that only returns truly lost items.
+// This is most likely temporary.
+static void return_lost_item(void)
+{
+    replace_chest(-1); // for the below call
+    track_lost_items(FALSE);
+    dword(NPC_COMMAND) = 84;
+    unsigned int day = CURRENT_TIME >> 13;
+    day /= 256 * 60 * 24 >> 13; // avoid long division dependency
+    for (int i = FIRST_LOST_ITEM; i <= LAST_LOST_ITEM; i++)
+      {
+        char *lost = &elemdata.lost_items[i-FIRST_LOST_ITEM];
+        if (*lost > 0)
+          {
+            int check = can_refill_map(*lost - 1);
+            if (!check || check > 0 && elemdata.next_refill_day[*lost-1] > day)
+                continue;
+          }
+        if (*lost == LOST_GONE || *lost > 0)
+          {
+            CURRENT_TEXT = NPC_TOPIC_TEXT[667].text; // "here's %s you lost"
+            dword(TOPIC_ACTION) = i;
+            evt_add(PARTY, EVT_ITEMS, i);
+            *lost = LOST_INV;
+            return;
+          }
+      }
+    CURRENT_TEXT = NPC_TOPIC_TEXT[668].text; // "you never had it"
 }
 
 // Various changes to stores, guilds and other buildings.
@@ -26479,6 +26628,8 @@ static inline void shop_changes(void)
     hook_call(0x4b371a, black_market_skills, 7);
     hook_call(0x4b26ca, lasker_free_teaching, 7);
     hook_call(0x4b3f5e, lasker_teacher_text, 5);
+    hook_jump(0x4b1e31, return_lost_item);
+    patch_word(0x4f075e, 0); // don't return wetsuits for now
 }
 
 // Allow non-bouncing projectiles to trigger facets in Altar of Wishes.

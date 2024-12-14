@@ -291,3 +291,5 @@ Please rescue him!  Not even I can bear to think of my brother in those conditio
 228	Nice to meet you!  I'm Pip, and I breed the best racing horses in the land!	Hello again.  Found any more horseshoes?	Pip Hillier
 229	Hello.  Fancy making some money on the side?	Hello again.  Pleasant weather, eh?	Robert Belknap
 230	Welcome, my lords!  I have a deal for you that might pleasantly surprise you.	Greetings, my lords!  I'm still ready to extend my most favorable terms to you.	Evan Nasir
+231	Well met, lords.  Could you perhaps run an errand for me?	Good day.  I would still appreciate your help.	Halain Sampson
+232	Greetings, lords!  Thank you again for returning my heirloom to me.	Greetings, lords!  Thank you again for returning my heirloom to me.	Halain Sampson (post-quest)

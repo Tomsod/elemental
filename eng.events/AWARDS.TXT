@@ -108,3 +108,4 @@ A Bit	Awards	Sort	Notes
 107	Champion of the Arena	1
 108	Found the obelisk treasure	1
 109	Joined the Thieves' Guild	5
+110	Retrieved the stolen heirloom	3

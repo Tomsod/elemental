@@ -630,3 +630,5 @@
 629	Курганы		Unused vanilla quest hint
 630	Корабль до Эвенморна	Tatalia pirate boat
 631	Таталийские пираты	Lasker vouches for you
+632	Квест	Black Market intro quest
+633	Утерянное и найденное	Black Market hint

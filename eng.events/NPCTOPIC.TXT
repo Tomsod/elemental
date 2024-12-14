@@ -630,3 +630,5 @@
 629	Barrows		Unused vanilla quest hint
 630	Travel to Evenmorn	Tatalia pirate boat
 631	Tatalian Pirates	Lasker vouches for you
+632	Quest	Black Market intro quest
+633	Lost and Found	Black Market hint

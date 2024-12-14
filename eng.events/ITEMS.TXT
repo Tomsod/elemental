@@ -599,12 +599,12 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 597	item007	The DeathBlade	666	Weapon2	Sword	4d5	250	Special	-50	Two-Handed Sword	2	of Darkness	0	16	142	For testing only!
 598	itemroba	Robe of the Archmagister	2500	Armor	Misc	1	3	Special	-20	Robe	152	of Water Magic	0	0	0	"This ceremonial robe is used by the Archmagister of the School of Sorcery (currently Thomas Grey) on the official occasions and during certain magic rituals.  To assist in the latter, the fabric is enchanted to improve spells of the Water domain."		
 599	itemstar	Staff of the Archmagister	2500	Weapon2	Staff	2d4	8	Special	-20	Staff	17	of Air Magic	0	6	95	"This ceremonial staff is wielded by the Archmagister of the School of Sorcery (currently Thomas Grey) on the official occasions and during certain magic rituals.  To assist in the latter, the orb on top of the staff is enchanted to improve spells of the Air domain."
-600	item297	Heart of the Wood	0	N / A	Misc	0	0	0	0	Gem	145	0	0	0	0	Quest Item:  A jewel like none you have ever seen.
+600	item297	Heart of the Wood	5000	N / A	Misc	0	0	0	0	Gem	145	0	0	0	0	Quest Item:  A jewel like none you have ever seen.
 601	item259	Lich Jar	0	0	0	0	0	0	0	Jar	92	0	0	0	0	Quest Item:  A jar holding your physical and spiritual essence.  Don't lose the jar.
-602	item351	Case of Soul Jars	0	N / A	Misc	0	0	0	0	Case of Jars	134	0	0	0	0	Quest Item:  A rosewood case lovingly crafted to contain a set of Lich Jars.  This case appears to be full.
+602	item351	Case of Soul Jars	3000	N / A	Misc	0	0	0	0	Case of Jars	134	0	0	0	0	Quest Item:  A rosewood case lovingly crafted to contain a set of Lich Jars.  This case appears to be full.
 603	item247	Parson's Quill	0	N / A	Misc	0	0	3	0	Quill	81	0	0	0	0	Quest Item:  King Parson's hand employed this quill to sign the treaty ending the first Timber War.
 604	item299	Wetsuit	0	N / A	Misc	0	0	3	0	Strange Suit	133	0	0	0	0	"Quest Item:  This environmental suit handles not only respiration, but protection from the extreme pressure of deep sea diving.  It does not look like any other items may be worn while wearing the suit.  You must remove ALL equipment to wear the suit."
-605	item362	Oscillation Overthruster	0	N / A	Misc	0	0	3	0	Ancient Part	147	0	0	0	0	Quest Item:  This device has no visible symbols or parts.  Why it is so valuable is beyond your comprehension.
+605	item362	Oscillation Overthruster	30000	N / A	Misc	0	0	3	0	Ancient Part	147	0	0	0	0	Quest Item:  This device has no visible symbols or parts.  Why it is so valuable is beyond your comprehension.
 606	item250	Signet Ring	0	N / A	Misc	0	0	2	0	Ring	83	0	0	0	0	Quest Item:  A highly stylized 'D' and 'P' intertwined by a snake with a crown above its head are engraved into the face of this ring.  This must certainly be Davrick's.		
 607	item251	Letter from Johann Kerrid to the Faerie King	0	N / A	Misc	0	0	4	0	Letter	84	0	0	0	0	"Quest Item:  A letter from Johann Kerrid to the Faerie King.  Opening a sealed letter is in the poorest of taste, and would be frowned upon by both parties."		
 608	item252	Sealed Letter 2	0	N / A	Misc	0	0	4	0	Letter	84	0	0	0	0	A sealed letter.		
@@ -623,12 +623,12 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 621	item265	Angel Statue Painting	0	N / A	Misc	0	0	5	0	Painting	98	0	0	0	0	Quest Item:  A painting of the angel fountain in the courtyard of Castle Ironfist.		
 622	item266	Archibald Ironfist Painting	0	N / A	Misc	0	0	5	0	Painting	99	0	0	0	0	Quest Item:  A painting of Archibald Ironfist just prior to his War of Succession in Enroth.
 623	item267	Roland Ironfist Painting	0	N / A	Misc	0	0	3	0	Painting	100	0	0	0	0	Quest Item:  A painting of Roland Ironfist just prior to the War of Succession in Enroth.
-624	item268	Vase	0	N / A	Misc	0	0	3	0	Vase	101	0	0	0	0	"Quest Item:  This small, porcelain vase has been etched with the inscription, ""To Lord Markham, for a great job in the war, Queen Catherine."""
-625	item269	Flower (Rose)	0	N / A	Misc	0	0	3	0	Flower	102	0	0	0	0	"A red, red, rose."
-626	item270	Zokarr IV's Skull	0	N / A	Misc	0	0	3	0	Skull	103	0	0	0	0	"Quest Item:  The skull of the old Dwarf King, Zokarr IV.  It doesn't look particularly impressive."
+624	item268	Vase	1000	N / A	Misc	0	0	3	0	Vase	101	0	0	0	0	"Quest Item:  This small, porcelain vase has been etched with the inscription, ""To Lord Markham, for a great job in the war, Queen Catherine."""
+625	heirloom	Heirloom Amulet	1250	Amulet	Misc	0	0	4	-14	Amulet	33	0	0	0	0	"Quest Item:  This metal rectangle bears ancient hieroglyphs, presumably the name and peerage of your client's ancestor."
+626	item270	Zokarr IV's Skull	100	N / A	Misc	0	0	3	0	Skull	103	0	0	0	0	"Quest Item:  The skull of the old Dwarf King, Zokarr IV.  It doesn't look particularly impressive."
 627	item271	Thigh Bone	0	N / A	Misc	0	0	3	0	Bone	104	0	0	0	0	A human(?) thigh bone.
 628	item272	Haldar's Remains	0	N / A	Misc	0	0	6	0	Jar	105	0	0	0	0	Quest Item:  This strangely shaped jar resists all attempts to open or break.  Haldar apparently doesn't like to be disturbed. 
-629	item273	Elixir	0	N / A	Misc	0	0	6	0	Bottle	106	0	0	0	0	Quest Item:  A glowing elixir of obviously magical properties.
+629	item273	Elixir	750	N / A	Misc	0	0	6	0	Bottle	106	0	0	0	0	Quest Item:  A glowing elixir of obviously magical properties.
 630	item274	Red Apple	300	N / A	Misc	0	0	3	0	Apple	107	0	0	0	0	"Apples like these are produced by trees saturated by magic-- usually in the elven lands of Avlee and the Tularean Forest, though not restricted to these areas.  To use the apple, pick the apple up and left-click over the picture of your character in the inventory screen."
 631	item275	Wealthy Hat	0	N / A	Misc	0	0	4	0	Hat	108	0	0	0	0	"Quest Item: This hat appears to belong to a more affluent member of society, the feather is genuine and the construction is solid.  Unfortunately, it doesn't seem to fit."
 632	item277	Lute	0	N / A	Misc	0	0	4	0	Instrument	110	0	0	0	0	Quest Item: This lute has been masterfully crafted and lovingly maintained.  This instrument clearly belongs to a Bard.
@@ -638,17 +638,17 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 636	Item280	Floor Tile (w/ moon insignia)	0	N / A	Misc	0	0	6	0	Tile	113	0	0	0	0	Quest Item: This tile was apparently part of the library in a Temple of the Moon.
 637	item281	Winged Sandals	0	Boots	Misc	0	0	3	-40	Sandals	114	0	0	0	0	"(+100 Speed, +50 Agility, +50 Air Resistance, Regenerate SP and HP over time, and Feather Falling) Rumored to be the footwear of a god, the winged sandals confer enormous power on the wearer."
 638	item282	Season's Stole	0	N / A	Misc	0	0	3	0	Scarf	115	0	0	0	0	"Quest Item: The Seasons' Stole is worn by priests during seasonal festivities.  Though it doesn't have any direct power, most commonfolk believe it grants luck in the planting or harvest."
-639	item368	Golem Chest	0	N / A	Misc	0	0	2	0	Golem part	116	0	0	0	0	Quest Item:  The broad torso of a mighty golem.  It appears to require a bit of assembly before being fully functional.
-640	item369	Abbey Normal Golem Head	0	N / A	Misc	0	0	6	0	Golem part	117	0	0	0	0	Quest Item:  The dented head of a mighty golem.  It looks a little…strange.  It appears to require a bit of assembly before being fully functional.
-641	item370	Golem Head	0	N / A	Misc	0	0	4	0	Golem part	118	0	0	0	0	Quest Item:  The proud head of a mighty golem.  It appears to require a bit of assembly before being fully functional.
-642	item371	Golem Left Leg	0	N / A	Misc	0	0	2	0	Golem part	119	0	0	0	0	Quest Item:  The massive left leg of a mighty golem.  It appears to require a bit of assembly before being fully functional.
-643	item372	Golem Right Leg	0	N / A	Misc	0	0	6	0	Golem part	120	0	0	0	0	Quest Item:  The massive right leg of a mighty golem.  It appears to require a bit of assembly before being fully functional.
-644	item373	Golem Right Arm	0	N / A	Misc	0	0	1	0	Golem part	121	0	0	0	0	Quest Item:  The powerful right arm of a mighty golem.  It appears to require a bit of assembly before being fully functional.
-645	item374	Golem Left Arm	0	N / A	Misc	0	0	5	0	Golem part	122	0	0	0	0	Quest Item:  The powerful left arm of a mighty golem.  It appears to require a bit of assembly before being fully functional.
+639	item368	Golem Chest	500	N / A	Misc	0	0	2	0	Golem part	116	0	0	0	0	Quest Item:  The broad torso of a mighty golem.  It appears to require a bit of assembly before being fully functional.
+640	item369	Abbey Normal Golem Head	300	N / A	Misc	0	0	6	0	Golem part	117	0	0	0	0	Quest Item:  The dented head of a mighty golem.  It looks a little…strange.  It appears to require a bit of assembly before being fully functional.
+641	item370	Golem Head	400	N / A	Misc	0	0	4	0	Golem part	118	0	0	0	0	Quest Item:  The proud head of a mighty golem.  It appears to require a bit of assembly before being fully functional.
+642	item371	Golem Left Leg	400	N / A	Misc	0	0	2	0	Golem part	119	0	0	0	0	Quest Item:  The massive left leg of a mighty golem.  It appears to require a bit of assembly before being fully functional.
+643	item372	Golem Right Leg	400	N / A	Misc	0	0	6	0	Golem part	120	0	0	0	0	Quest Item:  The massive right leg of a mighty golem.  It appears to require a bit of assembly before being fully functional.
+644	item373	Golem Right Arm	400	N / A	Misc	0	0	1	0	Golem part	121	0	0	0	0	Quest Item:  The powerful right arm of a mighty golem.  It appears to require a bit of assembly before being fully functional.
+645	item374	Golem Left Arm	400	N / A	Misc	0	0	5	0	Golem part	122	0	0	0	0	Quest Item:  The powerful left arm of a mighty golem.  It appears to require a bit of assembly before being fully functional.
 646	item290	Horseshoe	800	N / A	Misc	0	0	5	0	Horseshoe	123	0	0	0	0	"This flawless horseshoe is made of silver.  To use, pick the horseshoe up and right-click over a character's portrait."
-647	item291	Dragon Egg	0	N / A	Misc	0	0	1	0	Egg	124	0	0	0	0	"Quest Item:  Rough, leathery, and strangely warm, this egg appears nearly ready to hatch."
+647	item291	Dragon Egg	2000	N / A	Misc	0	0	1	0	Egg	124	0	0	0	0	"Quest Item:  Rough, leathery, and strangely warm, this egg appears nearly ready to hatch."
 648	item292	Lantern of Light	0	N / A	Misc	0	0	4	0	Lantern	125	0	0	0	0	"Quest Item:  This lantern shines with a faint, holy light, though no flame appears to be lit inside."
-649	item293	Worn Belt	0	N / A	Misc	0	0	4	0	Belt	126	0	0	0	0	"Quest Item:  This belt is worn to the point where it should only last about an hour.  Hopefully, that will be long enough."
+649	item293	Worn Belt	50	N / A	Misc	0	0	4	0	Belt	126	0	0	0	0	"Quest Item:  This belt is worn to the point where it should only last about an hour.  Hopefully, that will be long enough."
 650	item288	Temple in a Bottle	0	N / A	Misc	0	0	1	0	Bottle	127	0	0	0	0	"A strangely shaped small building finely crafted inside a glass bottle.  Something about the bottle beckons you inside.  To use, pick the bottle up and click over the picture of your character in the inventory screen."
 651	item295	Arcomage Deck	0	N / A	Misc	0	0	4	0	Deck	128	0	0	0	0	Quest Item: A deck of fancifully drawn cards used for a popular card game.
 652	item209	West Pillar Key	0	N / A	Misc	0	0	6	0	Key	80	0	0	0	0	A small key.
@@ -674,15 +674,15 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 672	lshield3	Lord Kilburn's Shield	0	Shield	Shield	6	3	4	-8	Large Shield	23	0	0	0	0	Quest Item:  This battered shield still bears Kilburn's name etched near the bottom.
 673	item182	Lich Jar Placeholder	0	Mscroll	Misc	0	1	2	0	Message Scroll	135	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
 674	item182	Elixir Placeholder	0	Mscroll	Misc	0	1	2	0	Message Scroll	35	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
-675	item361	Control Cube	0	N / A	Misc	0	1	2	0	Cube	143	0	0	0	0	Quest Item:  A small black cube of an unidentifiable metal.
-676	item363	Altar Piece	0	N / A	Misc	0	1	2	0	Altar Piece	135	0	0	0	0	Quest Item:  A strange object made of an unfamiliar purplish metal.  It appears to only half complete.
-677	item364	Altar Piece	0	N / A	Misc	0	1	2	0	Altar Piece	135	0	0	0	0	Quest Item:  A strange object made of an unfamiliar purplish metal.  It appears to only half complete.
+675	item361	Control Cube	10000	N / A	Misc	0	1	2	0	Cube	143	0	0	0	0	Quest Item:  A small black cube of an unidentifiable metal.
+676	item363	Altar Piece	2000	N / A	Misc	0	1	2	0	Altar Piece	135	0	0	0	0	Quest Item:  A strange object made of an unfamiliar purplish metal.  It appears to only half complete.
+677	item364	Altar Piece	2000	N / A	Misc	0	1	2	0	Altar Piece	135	0	0	0	0	Quest Item:  A strange object made of an unfamiliar purplish metal.  It appears to only half complete.
 678	item182	Final Part Placeholder	0	Mscroll	Misc	0	1	2	0	Message Scroll	77	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
 679	item182	Level Design Placeholder	0	Mscroll	Misc	0	1	2	0	Message Scroll	77	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
 680	item182	Artifact Placeholder (Elf vs. Human)	0	Mscroll	Misc	0	1	2	0	Message Scroll	77	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
 681	item182	Riverstride Plans Placeholder	0	Mscroll	Misc	0	1	2	0	Message Scroll	77	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
 682	item182	False Plans Placeholder	0	Mscroll	Misc	0	1	2	0	Message Scroll	77	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
-683	item182	Map to Evenmorn Island	0	Mscroll	Misc	0	1	2	0	Message Scroll	77	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
+683	item182	Map to Evenmorn Island	400	Mscroll	Misc	0	1	2	0	Message Scroll	77	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
 684	item182	Neutral Bow Placeholder	0	Mscroll	Misc	0	1	2	0	Message Scroll	35	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
 685	item182	Elf/Human Artifact Placeholder	0	Mscroll	Misc	0	1	2	0	Message Scroll	35	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
 686	item353	Iron-laced Ore	100	N / A	Misc	0	1	2	0	Lump of Ore	137	0	0	0	0	"A small chunk of iron-laced ore.  In the hands of a skilled craftsman, this could make a weapon, an amulet, a ring, armor, or almost any other useful item."
@@ -700,8 +700,8 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 698	item182	Orders from Snergle	0	Mscroll	Misc	0	1	2	0	Message Scroll	77	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
 699	item182	Name of Message	0	Mscroll	Misc	0	1	2	0	Message Scroll	77	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
 700	item182	Message from Erathia	0	Mscroll	Misc	M1	1	2	0	Message Scroll	77	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
-701	item182	Cipher	0	Mscroll	Misc	M2	1	2	0	Message Scroll	77	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
-702	item182	Scroll of Waves	0	Mscroll	Misc	M3	1	2	0	Message Scroll	77	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
+701	item182	Cipher	200	Mscroll	Misc	M2	1	2	0	Message Scroll	77	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
+702	item182	Scroll of Waves	300	Mscroll	Misc	M3	1	2	0	Message Scroll	77	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
 703	item182	Basic Cryptography	0	Mscroll	Misc	M4	1	2	0	Message Scroll	77	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
 704	item182	Message from Mr. Stantley	0	Mscroll	Misc	M5	1	2	0	Message Scroll	77	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."
 705	item182	Riverstride Plans	0	Mscroll	Misc	M6	1	2	0	Message Scroll	77	0	0	0	0	"A message scroll.  To read this message, pick the scroll up and left-click over the character picture in the inventory screen."

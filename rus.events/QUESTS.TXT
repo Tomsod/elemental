@@ -180,7 +180,7 @@ Q Bit	Quest Note Text	Notes	Owner
 179	Возьмите запечатанное письмо для Короля Фей в чертоге под холмом в АвЛи.		Bryan	0
 180	Возьмите волшебную свирель для Иоханна Кэррида в Тулареанский лес.		Bryan	0
 181	В течение двух недель необходимо прибыть в Гильдию наемников и поговорить с Найлзом Стэнтли.	Goto Merc Guild	Bryan	0
-182	Выкрадите гобелен из дружественного вам замка и верните его Найлзу Стэнтли в гильдию наемников в Танталии.	Do the Merc Guild Quest	Bryan	0
+182	Выкрадите гобелен из дружественного вам замка и верните его Найлзу Стэнтли в гильдию наемников в Таталии.	Do the Merc Guild Quest	Bryan	0
 183		Failed either goto or do guild quest	Bryan	0
 184		Killed all castle monsters	Bryan	0
 185		Killed all outdoor monsters	Bryan	0
@@ -411,7 +411,7 @@ Q Bit	Quest Note Text	Notes	Owner
 410		Got permission to use the pirate ship	0	0
 411		Talked with the pirate captain	0	0
 412		Visited Lasker	0	0
-413	0	0	0	0
+413	"Купите фамильный амулет на Чёрном рынке в Эрафийской канализации и верните его в Таталию Халейну Сэмпсону."	Black Market intro quest	0	0
 414	0	0	0	0
 415	0	0	0	0
 416	0	0	0	0

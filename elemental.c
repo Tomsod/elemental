@@ -814,6 +814,7 @@ enum face_animations
 #define EVT_DISABLED_SPELL 401
 #define EVT_MOUSE_ITEM_CONDITION 402
 #define EVT_VARIABLE 403
+#define EVT_LOST_ITEM 404
 
 #define MAP_EVT_DATA 0x5b33a0
 #define MAP_EVT_LINES 0x5b6458
@@ -931,6 +932,8 @@ static struct elemdata
 #define LOST_NOTRACK 0
 #define LOST_INV -1
 #define LOST_GONE -2
+    // The artifact for sale on the Black Market.
+    int bm_artifact;
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -1434,13 +1437,13 @@ enum monster_buffs
 #define HIRELING_REPLY 0xf8b06c
 
 // new NPC greeting count (starting from 1)
-#define GREET_COUNT 230
+#define GREET_COUNT 232
 // new NPC topic count
-#define TOPIC_COUNT 631
+#define TOPIC_COUNT 633
 // count of added NPC text entries
-#define NEW_TEXT_COUNT (905-789)
+#define NEW_TEXT_COUNT (909-789)
 // new award count
-#define AWARD_COUNT 109
+#define AWARD_COUNT 110
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658
@@ -1806,8 +1809,6 @@ static void __thiscall (*make_sound)(void *this, int sound, int object,
 #define SOUND_THIS ((void *) SOUND_THIS_ADDR)
 static void __thiscall (*evt_set)(void *player, int what, int amount)
     = (funcptr_t) 0x44a5ee;
-static void __thiscall (*evt_add)(void *player, int what, int amount)
-    = (funcptr_t) 0x44b01e;
 static int __thiscall (*exists_in_lod)(void *lod, char *filename)
     = (funcptr_t) 0x461659;
 static char *__thiscall (*load_from_lod)(void *lod, char *filename,
@@ -1853,7 +1854,7 @@ static int __fastcall (*is_hostile_to)(void *monster, void *target)
     = (funcptr_t) 0x40104c;
 static int __fastcall (*color_stat)(int modified, int base)
     = (funcptr_t) 0x4178a7;
-static void __thiscall (*set_specitem_bonus)(void *items_txt, void *item)
+static void __thiscall (*set_specitem_bonus)(int this, void *item)
     = (funcptr_t) 0x456d51;
 // Possibly it's not just for buttons.
 static int __thiscall (*remove_button)(void *this, void *button)
@@ -10198,6 +10199,8 @@ static void __declspec(naked) evt_add_hook(void)
         je spell
         cmp eax, EVT_VARIABLE
         je variable
+        cmp eax, EVT_LOST_ITEM
+        je lost
         sub eax, 307 ; replaced code
         ret
         rep:
@@ -10207,6 +10210,10 @@ static void __declspec(naked) evt_add_hook(void)
         spell:
         push dword ptr [ebp+12]
         call disable_spell
+        jmp quit
+        lost:
+        mov eax, dword ptr [ebp+12]
+        mov byte ptr [elemdata.lost_items+eax-FIRST_LOST_ITEM], LOST_GONE
         quit:
         push 0x44b90d
         ret 4
@@ -10253,6 +10260,8 @@ static void __declspec(naked) evt_sub_hook(void)
         je spell
         cmp eax, EVT_VARIABLE
         je variable
+        cmp eax, EVT_LOST_ITEM
+        je lost
         sub eax, 308 ; replaced code
         ret
         rep:
@@ -10262,6 +10271,10 @@ static void __declspec(naked) evt_sub_hook(void)
         spell:
         push dword ptr [ebp+12]
         call enable_spell
+        jmp quit
+        lost:
+        mov eax, dword ptr [ebp+12]
+        mov byte ptr [elemdata.lost_items+eax-FIRST_LOST_ITEM], LOST_NOTRACK
         quit:
         push 0x44bb0d
         ret 4
@@ -12892,29 +12905,34 @@ static void __declspec(naked) short_id_skill_names(void)
 }
 
 // Do not use the discount merchant dialog line if the discount is negative.
-// Also here: accept all (incl. stolen) items in the black market.
+// Also here: buy/sell all (incl. stolen) items in the black market.
 static void __declspec(naked) check_for_negative_discount(void)
 {
     asm
       {
-        mov eax, dword ptr [ebp+16] ; house id
-        cmp eax, BLACK_MARKET_1
-        je black
-        cmp eax, BLACK_MARKET_2
-        jne skip
-        black:
-        and dword ptr [ebp+12], 0 ; skip shop type checks
-        skip:
         push ecx
         push SKILL_MERCHANT
         call dword ptr ds:get_skill ; replaced call
         pop ecx
         test eax, eax
-        jz quit
+        jz skip
         call dword ptr ds:get_merchant_bonus
         test eax, eax
-        jge quit
+        jge skip
         xor eax, eax
+        skip:
+        mov edx, dword ptr [ebp+8] ; item
+        mov edx, dword ptr [edx] ; id, was set below hook in vanilla
+        mov ecx, dword ptr [ebp+16] ; house id
+        cmp ecx, BLACK_MARKET_1
+        je black
+        cmp ecx, BLACK_MARKET_2
+        jne quit
+        black:
+        and dword ptr [ebp+12], 0 ; skip shop type checks
+        cmp dword ptr [ebp+20], 2 ; sell action
+        jne quit
+        xor edx, edx ; skip item id checks
         quit:
         ret 4
       }
@@ -17670,7 +17688,7 @@ static inline void new_artifacts(void)
     hook_call(0x450657, mark_guaranteed_artifacts, 5);
     hook_call(0x45028f, fix_static_chest_items, 6);
     hook_call(0x45052f, mark_chest_checked, 6);
-    patch_byte(0x456935, 11); // reduce max randomly generated artifacts
+    patch_byte(0x456935, 10); // reduce max randomly generated artifacts
     // lady escort and sniper quiver shielding are in shield_stacking() above
     hook_call(0x4397bb, double_axe_mace_chance, 5);
     hook_call(0x4397ec, provide_mace_chance, 6); // stun
@@ -23629,7 +23647,7 @@ static void __declspec(naked) difficult_looted_gold(void)
 // I need to exempt box traders from difficulty gold penalties,
 // as the profit margin is their entire point, so I'll use
 // evt.Sub("Gold", -sell_price) for them, and make it give irreducible gold.
-// TODO: unnecessary now that the traders are removed
+// Update: no box traders anymore, but this is still used elsewhere.
 static void __declspec(naked) subtract_negative_gold(void)
 {
     asm
@@ -26142,6 +26160,19 @@ static void __declspec(naked) disable_bm_theft(void)
       }
 }
 
+// Some help code for the below function, reused twice.
+static int get_shelf(int item)
+{
+    int type = ITEMS_TXT[item].equip_stat + 1;
+    if (type <= ITEM_TYPE_MISSILE)
+        return 0;
+    else if (type <= ITEM_TYPE_SHIELD)
+        return 3;
+    else if (type <= ITEM_TYPE_BOOTS && ITEMS_TXT[item].mod1_dice_count > 0)
+        return 2;
+    else return 1;
+}
+
 // Implement the special logic for black market wares generation.
 static void __thiscall restock_black_market(int house)
 {
@@ -26160,6 +26191,7 @@ static void __thiscall restock_black_market(int house)
               { ITEM_TYPE_ARMOR, ITEM_TYPE_ARMOR,
                 ITEM_TYPE_ARMOR, ITEM_TYPE_SHIELD } },
     };
+    int artifact_unsold = FALSE;
     for (int i = 0, bonus; i < sizeof(stock) / sizeof(stock[0]); i++)
       {
         if (stock[i].extra)
@@ -26168,6 +26200,8 @@ static void __thiscall restock_black_market(int house)
           {
             int extra = !bonus--;
             struct item *current = &stock[i].wares[house*12+j];
+            if (elemdata.bm_artifact == current->id)
+                artifact_unsold = TRUE;
             randomize_item(ITEMS_TXT_ADDR - 4, stock[i].level + extra,
                            stock[i].type[random()&3], current);
             if (current->id >= FIRST_WAND && current->id <= LAST_WAND
@@ -26177,6 +26211,54 @@ static void __thiscall restock_black_market(int house)
             if (extra || random() % 3 == 0)
                 current->flags |= IFLAGS_STOLEN;
           }
+      }
+    // Offer lost quest items, if any.
+    // NB: we assume that they get lost 1-2 at a time,
+    // so the code just replaces a random item generated above.
+    // With many lost items, they might start replacing each other,
+    // which thankfully doesn't really break anything either.
+    replace_chest(-1); // for the below call
+    track_lost_items(FALSE);
+    unsigned int day = CURRENT_TIME >> 13;
+    day /= 256 * 60 * 24 >> 13; // avoid long division dependency
+    for (int i = FIRST_LOST_ITEM; i <= LAST_LOST_ITEM; i++)
+      {
+        int lost = elemdata.lost_items[i-FIRST_LOST_ITEM];
+        if (lost > 0)
+          {
+            int check = can_refill_map(lost - 1);
+            if (!check || check > 0 && elemdata.next_refill_day[lost-1] > day)
+                continue;
+          }
+        else if (lost != LOST_GONE) continue;
+        int shelf = get_shelf(i);
+        struct item *item = stock[shelf].wares + house * 12
+                            + random() % stock[shelf].num;
+        init_item(item);
+        item->id = i;
+        item->flags = IFLAGS_ID;
+        set_specitem_bonus(ITEMS_TXT_ADDR - 4, item);
+      }
+    // Once per game, sell an artifact (will reappear on restock if unsold).
+    if (!elemdata.bm_artifact)
+      {
+        for (struct player *p = PARTY; p < PARTY + 4; p++)
+            if (p->class % 4 == 0) // everyone must be promoted
+                return;
+        struct item temp;
+        generate_artifact(&temp);
+        elemdata.bm_artifact = temp.id;
+        artifact_unsold = TRUE;
+      }
+    if (artifact_unsold)
+      {
+        int shelf = get_shelf(elemdata.bm_artifact);
+        struct item *artifact = stock[shelf].wares + house * 12
+                                + random() % stock[shelf].num;
+        init_item(artifact);
+        artifact->id = elemdata.bm_artifact;
+        artifact->flags = IFLAGS_ID | IFLAGS_STOLEN;
+        set_specitem_bonus(ITEMS_TXT_ADDR - 4, artifact);
       }
 }
 
@@ -26404,36 +26486,6 @@ static void __declspec(naked) lasker_teacher_text(void)
       }
 }
 
-// The new Judge code that only returns truly lost items.
-// This is most likely temporary.
-static void return_lost_item(void)
-{
-    replace_chest(-1); // for the below call
-    track_lost_items(FALSE);
-    dword(NPC_COMMAND) = 84;
-    unsigned int day = CURRENT_TIME >> 13;
-    day /= 256 * 60 * 24 >> 13; // avoid long division dependency
-    for (int i = FIRST_LOST_ITEM; i <= LAST_LOST_ITEM; i++)
-      {
-        char *lost = &elemdata.lost_items[i-FIRST_LOST_ITEM];
-        if (*lost > 0)
-          {
-            int check = can_refill_map(*lost - 1);
-            if (!check || check > 0 && elemdata.next_refill_day[*lost-1] > day)
-                continue;
-          }
-        if (*lost == LOST_GONE || *lost > 0)
-          {
-            CURRENT_TEXT = NPC_TOPIC_TEXT[667].text; // "here's %s you lost"
-            dword(TOPIC_ACTION) = i;
-            evt_add(PARTY, EVT_ITEMS, i);
-            *lost = LOST_INV;
-            return;
-          }
-      }
-    CURRENT_TEXT = NPC_TOPIC_TEXT[668].text; // "you never had it"
-}
-
 // Various changes to stores, guilds and other buildings.
 static inline void shop_changes(void)
 {
@@ -26628,8 +26680,8 @@ static inline void shop_changes(void)
     hook_call(0x4b371a, black_market_skills, 7);
     hook_call(0x4b26ca, lasker_free_teaching, 7);
     hook_call(0x4b3f5e, lasker_teacher_text, 5);
-    hook_jump(0x4b1e31, return_lost_item);
     patch_word(0x4f075e, 0); // don't return wetsuits for now
+    erase_code(0x490f01, 2); // for black market quest item sell text hook
 }
 
 // Allow non-bouncing projectiles to trigger facets in Altar of Wishes.

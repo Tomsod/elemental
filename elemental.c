@@ -1121,6 +1121,7 @@ enum spells
     SPL_AURA_OF_CONFLICT = 59,
     SPL_CHARM = 60,
     SPL_BERSERK = 62,
+    SPL_MASS_FEAR = 63,
     SPL_CURE_INSANITY = 64,
     SPL_PSYCHIC_SHOCK = 65,
     SPL_ENSLAVE = 66,
@@ -1848,6 +1849,9 @@ static int __thiscall (*get_endurance)(void *player) = (funcptr_t) 0x48caa2;
 static int __thiscall (*get_accuracy)(void *player) = (funcptr_t) 0x48cb1f;
 static int __thiscall (*get_speed)(void *player) = (funcptr_t) 0x48cb9c;
 static int __thiscall (*get_luck)(void *player) = (funcptr_t) 0x48cc19;
+static int __thiscall (*do_monster_bonus)(void *player, int bonus,
+                                          void *monster)
+    = (funcptr_t) 0x48dcdc;
 static funcptr_t save_game = (funcptr_t) 0x45f4a2;
 static void (*change_weather)(void) = (funcptr_t) 0x48946d;
 static int __fastcall (*is_hostile_to)(void *monster, void *target)
@@ -1920,6 +1924,9 @@ static void __thiscall (*kill_civilian)(int id) = (funcptr_t) 0x438ce2;
 static int __thiscall (*monster_active)(void *monster) = (funcptr_t) 0x40894b;
 static int __fastcall (*parse_spell)(char **words, int *extra_words)
     = (funcptr_t) 0x45490e;
+static int __thiscall (*monster_considers_spell)(void *this, void *monster,
+                                                 int spell)
+    = (funcptr_t) 0x4270b9;
 static void __fastcall (*monster_casts_spell)(int monster_id, void *vector,
                                               int spell, int action, int skill)
     = (funcptr_t) 0x404ac7;
@@ -9027,12 +9034,16 @@ static int __fastcall parse_new_spells(char **words, int *extra_words)
               { "starburst", SPL_STARBURST, 0 },
               { "regeneration", SPL_REGENERATION, 0 },
               { "jump", SPL_JUMP, 0 },
+              { "prismatic", SPL_PRISMATIC_LIGHT, 1 },
               { NULL, 0 },
         };
         for (int i = 0;; i++)
             if (!new_spells[i].word)
               {
                 result = parse_spell(words, extra_words);
+                if (result == SPL_MASS_DISTORTION
+                    && !uncased_strcmp(words[2], "fear"))
+                    result = SPL_MASS_FEAR;
                 break;
               }
             else if (!uncased_strcmp(first_word, new_spells[i].word))
@@ -9057,25 +9068,10 @@ static int __fastcall parse_new_spells(char **words, int *extra_words)
     return result;
 }
 
-// Calls the original function.
-static int __thiscall __declspec(naked) monster_considers_spell(void *this,
-                                                                void *monster,
-                                                                int spell)
-{
-    asm
-      {
-        push ebp
-        mov ebp, esp
-        mov eax, dword ptr [ebp+12]
-        push 0x4270bf
-        ret
-      }
-}
-
 // Monsters can now cast turn undead (only on party, only if liches or zombies
 // present) and destroy undead (on any undead PC or monster).
 // Also here: fix dispel magic on party from non-hostile monsters.
-static int __thiscall consider_new_spells(void *this,
+static int __fastcall consider_new_spells(void *this, int first,
                                           struct map_monster *monster,
                                           int spell)
 {
@@ -9085,13 +9081,12 @@ static int __thiscall consider_new_spells(void *this,
     unsigned int target = MON_TARGETS[monster_id];
 
     // maybe substitute an alternative spell
-    int first = spell == monster->spell1;
     int marker = first ? monster->alter_flag1 : monster->alter_flag2;
     if (marker & 0x80 && elemdata.difficulty >= (marker & 0x7f))
         spell = first ? monster->alter_spell1 : monster->alter_spell2;
 
     if (!spell) return FALSE; // in case only alter spell exists
-    if (spell == SPL_TURN_UNDEAD)
+    if (spell == SPL_TURN_UNDEAD || spell == SPL_MASS_FEAR)
       {
         // Make sure we're targeting the party (no effect on monsters so far).
         if (target != TGT_PARTY)
@@ -9103,7 +9098,8 @@ static int __thiscall consider_new_spells(void *this,
             return FALSE;
 
         for (int i = 0; i < 4; i++)
-            if (is_undead(&PARTY[i]) && player_active(&PARTY[i])
+            if ((spell != SPL_TURN_UNDEAD) == !is_undead(&PARTY[i])
+                && player_active(&PARTY[i])
                 // TODO: may remove the below requirement if damage ever rises
                 && !PARTY[i].conditions[COND_AFRAID])
                 return TRUE;
@@ -9129,8 +9125,9 @@ static int __thiscall consider_new_spells(void *this,
                                 // avoid making WoM on Hard impossible
                                 || PARTY_BUFFS[BUFF_INVISIBILITY].expire_time))
         return FALSE; // would target the party even if not hostile
-    else if (spell == SPL_INFERNO) // mvm not implemented for now
-        return target == TGT_PARTY && monster->bits & 0x200000; // los bit
+    else if (spell == SPL_INFERNO || spell == SPL_PRISMATIC_LIGHT)
+        return target == TGT_PARTY // mvm not implemented for now
+               && dword(OUTDOORS) != 2 && monster->bits & 0x200000; // los bit
     else if (spell == SPL_REGENERATION) // less often if not too wounded
         return monster->hp * 2 <= monster->max_hp + random() % monster->max_hp;
     else if (spell == SPL_JUMP)
@@ -9215,6 +9212,27 @@ static int __thiscall consider_new_spells(void *this,
       }
 }
 
+// Hook for the above (for spell 1).
+static void __declspec(naked) consider_first_spell(void)
+{
+    asm
+      {
+        xor edx, edx
+        inc edx
+        jmp consider_new_spells
+      }
+}
+
+// Same, but for spell 2.
+static void __declspec(naked) consider_second_spell(void)
+{
+    asm
+      {
+        xor edx, edx
+        jmp consider_new_spells
+      }
+}
+
 //Defined below.
 static int __thiscall absorb_spell(struct player *player, int spell, int rank);
 // Used to properly calculate MvM Mass Distortion damage.
@@ -9234,7 +9252,7 @@ static int __fastcall cast_new_spells(int monster_id, void *vector, int spell,
       }
 
     // maybe substitute an alternative spell
-    int first = spell == monster->spell1;
+    int first = action == 2;
     int marker = first ? monster->alter_flag1 : monster->alter_flag2;
     if (marker & 0x80 && elemdata.difficulty >= (marker & 0x7f))
         spell = first ? monster->alter_spell1 : monster->alter_spell2;
@@ -9244,7 +9262,8 @@ static int __fastcall cast_new_spells(int monster_id, void *vector, int spell,
         spell = SPL_LIGHT_BOLT; // instead of forbidding, cast a weaker spell
 
     int result = FALSE;
-    if (spell == SPL_TURN_UNDEAD || spell == SPL_INFERNO)
+    if (spell == SPL_TURN_UNDEAD || spell == SPL_INFERNO
+        || spell == SPL_PRISMATIC_LIGHT)
       {
         // we must be targeting the party
         int mastery = skill_mastery(skill);
@@ -9258,8 +9277,15 @@ static int __fastcall cast_new_spells(int monster_id, void *vector, int spell,
                 int damage = spell_damage(spell, skill, mastery, 0);
                 if (damage_player(p, damage, ELEMENT(spell)) && turn
                     && player_active(p) && !p->conditions[COND_AFRAID])
-                    inflict_condition(p, COND_AFRAID, 0);
+                    inflict_condition(p, COND_AFRAID, FALSE);
               }
+      }
+    else if (spell == SPL_MASS_FEAR)
+      {
+        for (struct player *p = PARTY; p < PARTY + 4; p++)
+            if (player_active(p) && !p->conditions[COND_AFRAID]
+                && !absorb_spell(p, spell, MASTER))
+                do_monster_bonus(p, 23, monster); // afraid
       }
     else if (spell == SPL_DESTROY_UNDEAD || spell == SPL_IMPLOSION
              || spell == SPL_MASS_DISTORTION)
@@ -9730,6 +9756,17 @@ static void __declspec(naked) reset_jump_flag(void)
       }
 }
 
+// Disable Prismatic Light on summoned elementals as MvM isn't implemented.
+static void __declspec(naked) summon_elemental_no_spell(void)
+{
+    asm
+      {
+        mov word ptr [esi].s_map_monster.radius, ax ; replaced code
+        mov byte ptr [esi].s_map_monster.alter_flag1, 0 ; disable
+        ret
+      }
+}
+
 // Make Turn Undead and Destroy Undead castable by monsters.
 // Also enable Poison Spray, Starburst, and some others.
 // Also here: implement difficulty-dependent alternative monster spells.
@@ -9737,7 +9774,8 @@ static inline void new_monster_spells(void)
 {
     hook_call(0x455d70, parse_new_spells, 5); // first spell
     hook_call(0x455e86, parse_new_spells, 5); // second spell
-    hook_jump(0x4270b9, consider_new_spells);
+    hook_call(0x42703a, consider_first_spell, 5);
+    hook_call(0x427049, consider_second_spell, 5);
     hook_call(0x40213b, cast_new_spells_hook, 5); // realtime
     hook_call(0x40676e, cast_new_spells_hook, 5); // turn-based
     hook_call(0x404b02, cast_poison_blast, 6);
@@ -9779,6 +9817,7 @@ static inline void new_monster_spells(void)
     hook_call(0x46facf, monster_jump_speed, 6); // first hook
     hook_call(0x470876, monster_jump_speed, 6); // second hook
     hook_call(0x4597a6, reset_jump_flag, 7);
+    hook_call(0x44fb90, summon_elemental_no_spell, 7);
 }
 
 // Calling atoi directly from assembly doesn't seem to work,

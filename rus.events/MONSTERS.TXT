@@ -3,7 +3,7 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 																																						
 	A		0																																			
 1	Ангел	Angel A	30	180	25	1200	5%50D20+L4Sword	1	Y	Free	Aggress	3	250	60	0	0	Phys	2D8+10	0	0	0	0	0	30	"Light Bolt,M,8"	20	"Dispel Magic,M,8"	20	20	20	20	30	Imm	40	20	20	0
-2	Ангел-владыка	Angel B	50	400	35	3000	10%75D20+L5Sword	1	Y	Free	Aggress	3	275	50	0	0	Phys	2D8+15	0	0	0	0	0	30	"Destroy Undead,M,12"	50	"Day of Protection,M,12"	30	30	30	30	40	Imm	50	20	20	0
+2	Ангел-владыка	Angel B	50	400	35	3000	10%75D20+L5Sword	1	Y	Free	Aggress	3	275	50	0	0	Phys	2D8+15	0	0	Ener	2D4+12	Light	30	"Destroy Undead,M,12"	50	"Day of Protection,M,12"	30	30	30	30	40	Imm	50	20	20	0
 3	Архангел	Angel C	70	700	45	5600	15%100D20+L6Sword	1	Y	Free	Suicidal	3	300	40	2	0	Phys	2D8+20	0	0	0	0	0	30	"Light Bolt|Sunray,G,16"	50	"Hour of Power,G,16"	40	40	40	40	50	Imm	60	20	20	0
 4	Стрелок	Archer A	9	35	14	171	5%3D20+L1Bow	1	N	Short	Normal	4	140	90	AR	0	Phys	2D6+2	Arrow	10	Fire	3D6+2	ArrowF	20	"||Sparks,N,4"	50	"Shield,N,4"	5	5	5	0	10	Imm	0	5	5	0
 5	Лучник	Archer B	19	93	16	551	5%6D20+L2Bow	1	N	Short	Aggress	4	150	90	AR	0	Phys	3D6+3	Arrow	10	Fire	4D6+3	ArrowF	20	"Lightning Bolt,E,4"	50	"Shield,E,8"	10	10	10	5	15	Imm	5	10	10	0
@@ -26,9 +26,9 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 22	Дьявол-работник	Devil A	30	180	25	1200	20%L3	1	N	Med	Suicidal	2	200	60	0	Disease2	Phys	2D6+8	Fire	0	0	0	0	20	"Fireball,E,6"	30	"||Haste,E,6"	Imm	20	10	20	Imm	Imm	20	20	20	0
 23	Дьявол-воин	Devil B	50	400	35	3000	30%L4	1	N	Med	Aggress	2	250	50	0	Disease3	Phys	2D6+14	Fire	0	0	0	0	20	"Fireball,M,8"	15	"Meteor Shower,M,8"	Imm	30	15	30	Imm	Imm	30	30	30	0
 24	Капитан дьяволов	Devil C	70	700	45	5600	50%L5	1	N	Short	Aggress	2	300	40	0	DrainSP	Phys	2D6+20	Fire	0	0	0	0	20	"Incinerate,M,12"	15	"Meteor Shower,M,12"	Imm	40	20	40	Imm	Imm	40	40	40	0
-25	Зеленый дракон	Dragon A	80	880	60	7200	80%125D20+L6	1	Y	Long	Aggress	4	240	70	2	0	Elec	12D8	Air	0	0	0	0	0	0	0	0	50	Imm	50	Imm	50	Imm	30	50	50	0
-26	Синий дракон	Dragon B	90	1080	80	9000	80%150D20+L6	1	Y	Med	Aggress	4	260	65	3	0	Cold	14D8	Water	0	0	0	0	0	0	0	0	30	50	Imm	Imm	50	Imm	30	50	50	0
-27	Красный дракон	Dragon C	100	1300	100	11000	80%200D20+L6	1	Y	Short	Aggress	4	300	60	4	BrkArmor	Fire	16D8	Fire	0	0	0	0	0	0	0	0	Imm	70	40	Imm	70	Imm	40	70	70	0
+25	Зеленый дракон	Dragon A	80	880	60	7200	80%125D20+L6	1	Y	Long	Aggress	4	240	70	2	0	Elec	12D8	Air	0	0	0	0	15	"|Mass Fear,M,10"	20	"||Dragon Breath,M,10"	50	Imm	50	Imm	50	Imm	30	50	50	0
+26	Синий дракон	Dragon B	90	1080	80	9000	80%150D20+L6	1	Y	Med	Aggress	4	260	65	3	0	Cold	14D8	Water	0	0	0	0	15	"|Mass Fear,G,12"	20	"||Dragon Breath,G,12"	30	50	Imm	Imm	50	Imm	30	50	50	0
+27	Красный дракон	Dragon C	100	1300	100	11000	80%200D20+L6	1	Y	Short	Aggress	4	300	60	4	BrkArmor	Fire	16D8	Fire	0	0	0	0	15	"|Mass Fear,G,14"	20	"||Dragon Breath,G,14"	Imm	70	40	Imm	70	Imm	40	70	70	0
 28	Стрекозавр	Dragonfly A	2	6	4	24	3D6	1	Y	Free	Normal	3	400	50	0	0	Phys	2D2	0	0	0	0	0	0	0	0	0	10	0	0	0	0	Imm	0	0	0	0
 29	Огненный стрекозавр	Dragonfly B	4	13	8	56	7D6	1	Y	Free	Normal	3	350	50	0	0	Phys	3D2+1	0	0	0	0	0	10	"Fire Bolt,N,2"	0	0	20	0	0	0	0	Imm	0	0	0	0
 30	Королева стрекозавров	Dragonfly C	8	30	12	144	10D6	1	Y	Free	Normal	3	300	50	0	0	Phys	4D2+2	0	0	0	0	0	15	"Fire Bolt,N,4"	0	0	30	0	0	0	0	Imm	0	0	0	0
@@ -46,10 +46,10 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 42	Огненный элементал	Elemental Fire C	39	269	18	1911	12%L1Special	0	Y	Free	Suicidal	3	260	80	0	0	Fire	8D8	Fire	0	0	0	0	20	"Incinerate,G,12"	50	"Haste,G,12"	Imm	20	10	Imm	Imm	Imm	15	20	20	0
 43	Малый элементал Света	Elemental Light A	15	67	11	375	0	0	Y	Free	Suicidal	3	240	80	0	0	Ener	4D4	Light	0	0	0	0	0	0	0	0	10	10	10	Imm	Imm	Imm	Imm	10	10	"explode,5D8,ener"
 44	Элементал Света	Elemental Light B	23	121	14	759	0	0	Y	Free	Suicidal	3	260	80	0	0	Ener	9D4	Light	0	0	0	0	0	0	0	0	15	15	15	Imm	Imm	Imm	Imm	15	15	"explode,5D8,ener"
-45	Великий элементал Света	Elemental Light C	38	258	19	1824	0	0	Y	Free	Suicidal	3	280	80	0	0	Ener	14D4	Light	0	0	0	0	0	0	0	0	20	20	20	Imm	Imm	Imm	Imm	20	20	"explode,5D8,ener"
-46	Ундина	Elemental Water A	14	61	10	336	20%L2Potion	0	N	Free	Suicidal	2	220	90	0	0	Cold	3D12	Water	0	0	0	0	30	"Ice Bolt,E,4"	0	0	0	10	Imm	Imm	Imm	Imm	5	10	10	0
-47	Сильфида	Elemental Water B	24	129	13	816	25%L3Potion	0	N	Free	Suicidal	2	240	90	0	0	Cold	4D12	Water	0	0	0	0	30	"Acid Burst,M,8"	0	0	5	15	Imm	Imm	Imm	Imm	10	15	15	0
-48	Водный элементал	Elemental Water C	36	237	16	1656	30%L4Potion	0	N	Free	Suicidal	2	260	80	0	0	Cold	6D12	Water	0	0	0	0	30	"Ice Blast,G,12"	0	0	10	20	Imm	Imm	Imm	Imm	15	20	20	0
+45	Великий элементал Света	Elemental Light C	38	258	19	1824	0	0	Y	Free	Suicidal	3	280	80	0	0	Ener	14D4	Light	0	0	0	0	15	"||Prismatic Light,M,10"	0	0	20	20	20	Imm	Imm	Imm	Imm	20	20	"explode,5D8,ener"
+46	Ундина	Elemental Water A	14	61	10	336	20%L2Potion	0	N	Free	Suicidal	2	220	90	0	0	Cold	3D12	Water	0	0	0	0	30	"Ice Bolt,E,4"	20	"||Poison Spray,E,4"	0	10	Imm	Imm	Imm	Imm	5	10	10	0
+47	Сильфида	Elemental Water B	24	129	13	816	25%L3Potion	0	N	Free	Suicidal	2	240	90	0	0	Cold	4D12	Water	0	0	0	0	30	"Acid Burst,M,8"	20	"||Poison Spray,M,8"	5	15	Imm	Imm	Imm	Imm	10	15	15	0
+48	Водный элементал	Elemental Water C	36	237	16	1656	30%L4Potion	0	N	Free	Suicidal	2	260	80	0	0	Cold	6D12	Water	0	0	0	0	30	"Ice Blast,G,12"	20	"||Poison Spray,G,12"	10	20	Imm	Imm	Imm	Imm	15	20	20	0
 49	Эльф - стрелок	Elf Archer A	11	45	12	231	5%6D10+L2Bow	1	N	Short	Normal	4	160	70	H	0	Phys	4D2+2	Arrow	0	0	0	0	20	"|Deadly Swarm,N,3"	0	0	10	10	10	0	5	Imm	0	5	5	0
 50	Эльф - разведчик	Elf Archer B	23	121	14	759	5%12D10+L3Bow	1	N	Short	Aggress	4	170	70	H	0	Phys	6D2+4	Arrow	0	0	0	0	20	"|Blades,E,6"	50	"||Stone Skin,E,6"	15	15	15	5	10	Imm	5	10	10	0
 51	Эльф - рейнджер	Elf Archer C	35	227	20	1575	10%20D10+L4Bow	1	N	Short	Aggress	4	180	60	H	0	Phys	8D2+6	Arrow	0	0	0	0	15	"|Rock Blast,M,9"	50	"||Stone Skin,M,9"	20	20	20	10	15	Imm	10	15	15	"shot,x2"
@@ -98,12 +98,12 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 94	Волхв	Mage A	25	137	14	875	10%15D12+L3Staff	1	N	Med	Aggress	4	200	90	0	0	Ener	9D4	Light	0	0	0	0	20	"Dispel Magic,E,4"	30	"Destroy Undead,E,4"	20	20	20	10	15	Imm	30	10	10	"Summon,air,Elemental Light A"
 95	Чародей	Mage B	35	227	18	1575	10%25D12+L4Staff	1	N	Med	Aggress	4	220	80	0	0	Ener	12D4	Light	0	0	0	0	30	"Dispel Magic,M,8"	50	"Hour of Power,M,8"	30	30	30	15	20	Imm	40	20	20	"Summon,air,Elemental Light B"
 96	Архимаг	Mage C	50	400	30	3000	30%40D12+L5Staff	1	N	Short	Aggress	4	240	70	0	0	Ener	16D4	Light	0	0	0	0	33	"Hour of Power||Haste,M,12"	33	"Day of Protection,M,12"	40	40	40	20	25	Imm	50	30	30	"Summon,air,Elemental Light C"
-97	Миникора	Manticore A	40	280	40	2000	10%25D8+L4	1	N	Long	Normal	3	260	90	DR	Poison2	Phys	2D20	0	50	Phys	2D12+4	Arrow	0	0	0	0	10	10	10	20	10	Imm	5	10	10	0
+97	Миникора	Manticore A	40	280	40	2000	10%25D8+L4	1	N	Long	Normal	3	260	90	DR	Poison2	Phys	2D20	0	50	Phys	2D12+4	Arrow	10	"||Poison Spray,N,4"	0	0	10	10	10	20	10	Imm	5	10	10	0
 98	Мантикора 	Manticore B	50	400	48	3000	10%50D8+L5	1	N	Med	Aggress	3	280	80	DR	Poison3	Phys	3D20	0	50	Phys	2D12+8	Arrow	10	"Poison Spray,E,6"	0	0	20	20	20	30	20	Imm	10	20	20	0
 99	Скорпикора	Manticore C	60	540	54	4200	20%100D8+L5	1	N	Short	Suicidal	3	300	70	DR	Poison3x2	Phys	4D20	0	50	Phys	2D12+10	Arrow	10	"Poison Spray,M,8"	0	0	30	30	30	40	30	Imm	15	30	30	0
 100	Медуза	Medusa A	35	227	20	1575	10%10D20+L3Misc	1	N	Med	Normal	2	200	80	0	Paralyze	Phys	4D4+8	Arrow	0	0	0	0	0	0	0	0	Imm	Imm	Imm	Imm	Imm	Imm	Imm	150	0	0
 101	Королевская медуза	Medusa B	40	280	25	2000	10%15D20+L4Misc	1	N	Med	Aggress	2	220	80	0	Stone	Phys	5D4+10	Arrow	0	0	0	0	0	0	0	0	Imm	Imm	Imm	Imm	Imm	Imm	Imm	150	0	0
-102	Медуза-владычица	Medusa C	45	337	30	2475	30%30D20+L5Misc	1	N	Short	Suicidal	2	240	70	0	Stone	Phys	6D4+12	Arrow	0	0	0	0	0	0	0	0	Imm	Imm	Imm	Imm	Imm	Imm	Imm	150	0	0
+102	Медуза-владычица	Medusa C	45	337	30	2475	30%30D20+L5Misc	1	N	Short	Suicidal	2	240	70	0	Stone	Phys	6D4+12	Arrow	0	0	0	0	15	"||Dispel Magic,M,10"	0	0	Imm	Imm	Imm	Imm	Imm	Imm	Imm	150	0	0
 103	Минотавр	Minotaur A	39	269	30	1911	10%10D20+L4Axe	1	N	Long	Normal	2	250	80	0	0	Phys	3D7+25	0	0	0	0	0	40	"|Jump,N,8"	50	"||Heroism,N,6"	10	10	10	5	10	Imm	5	10	10	0
 104	Старший минотавр	Minotaur B	59	525	35	4071	10%20D20+L5Axe	1	N	Med	Aggress	2	260	70	0	Insane	Phys	3D7+40	0	0	0	0	0	40	"|Jump,N,8"	50	"||Heroism,N,9"	20	20	20	10	20	Imm	10	20	20	0
 105	Царь минотавров	Minotaur C	79	861	40	7031	20%50D20+L6Axe	1	N	Short	Suicidal	2	300	60	0	Dead	Phys	3D7+60	0	0	0	0	0	40	"|Jump,N,8"	50	"||Heroism,N,12"	30	30	30	15	30	Imm	15	30	30	0
@@ -227,9 +227,9 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 223	Призрак	Wight A	14	61	15	336	10%L2Dagger	0	N	Short	Suicidal	2	180	90	0	Afraid	Magic	2D5+6	0	0	0	0	0	33	"||Regeneration,N,2"	0	0	10	10	Imm	Imm	Imm	0	10	Imm	Imm	0
 224	Привидение	Wight B	19	93	20	551	10%L3Dagger	0	N	Short	Suicidal	2	200	80	0	DrainSP	Magic	2D5+12	0	0	0	0	0	33	"||Regeneration,N,3"	0	0	20	20	Imm	Imm	Imm	0	20	Imm	Imm	0
 225	Призрак Кургана	Wight C	26	145	25	936	20%L4Dagger	0	N	Short	Suicidal	2	220	70	0	Agex2	Magic	4D5+12	0	0	0	0	0	33	"||Regeneration,E,5"	0	0	30	30	Imm	Imm	Imm	0	30	Imm	Imm	0
-226	Виверн	Wyvern A	19	93	14	551	10%25D8+L3	1	Y	Free	Normal	3	250	80	DR	Poison2	Phys	7D6	0	0	0	0	0	30	"|Jump,N,7"	0	0	10	10	10	10	10	Imm	5	10	10	0
-227	Рогатый виверн	Wyvern B	28	162	28	1064	10%50D8+L4	1	Y	Long	Aggress	3	280	70	DR	Poison3	Phys	9D6	0	0	0	0	0	30	"|Jump,N,7"	0	0	20	20	20	20	20	Imm	10	20	20	0
-228	Древний виверн	Wyvern C	37	247	42	1739	15%100D8+L4	1	Y	Med	Suicidal	3	320	60	DR	Dead	Phys	12D6	0	0	0	0	0	30	"|Jump,N,7"	0	0	30	30	30	30	30	Imm	15	30	30	0
+226	Виверн	Wyvern A	19	93	14	551	10%25D8+L3	1	Y	Free	Normal	3	250	80	DR	Poison2	Phys	7D6	0	0	0	0	0	30	"|Jump,N,7"	20	"||Poison Spray,N,3"	10	10	10	10	10	Imm	5	10	10	0
+227	Рогатый виверн	Wyvern B	28	162	28	1064	10%50D8+L4	1	Y	Long	Aggress	3	280	70	DR	Poison3	Phys	9D6	0	0	0	0	0	30	"|Jump,N,7"	20	"||Poison Spray,N,6"	20	20	20	20	20	Imm	10	20	20	0
+228	Древний виверн	Wyvern C	37	247	42	1739	15%100D8+L4	1	Y	Med	Suicidal	3	320	60	DR	Dead	Phys	12D6	0	0	0	0	0	30	"|Jump,N,7"	20	"||Poison Spray,N,9"	30	30	30	30	30	Imm	15	30	30	0
 229	Гниющий труп	Zombie A	9	35	8	171	10%5D4	0	N	Med	Aggress	1	160	110	0	Disease1	Phys	1D7	0	0	0	0	0	0	0	0	0	5	5	5	Imm	Imm	0	10	10	10	0
 230	Ходячий мертвец	Zombie B	13	55	14	299	10%7D4	0	N	Med	Aggress	1	180	100	0	Disease2	Phys	2D7+2	0	0	0	0	0	0	0	0	0	10	10	10	Imm	Imm	0	20	20	20	0
 231	Зомби	Zombie C	17	79	20	459	25%12D4	0	N	Med	Suicidal	1	200	90	0	Disease2	Phys	3D7+4	0	0	0	0	0	0	0	0	0	15	15	15	Imm	Imm	0	30	30	30	0

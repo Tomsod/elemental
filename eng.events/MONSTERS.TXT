@@ -14,9 +14,9 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 10	Young Behemoth	Behemoth A	45	337	35	2475	50D10	1	N	Long	Normal	2	250	80	2	BrkArmor	Phys	3D10+20	0	0	0	0	0	40	"|Jump,N,9"	15	"||Rock Blast,M,8"	30	30	30	15	Imm	Imm	15	20	20	0
 11	Behemoth	Behemoth B	60	540	50	4200	100D10	1	N	Med	Aggress	2	260	70	2	BrkArmor	Phys	4D10+30	0	0	0	0	0	40	"|Jump,N,9"	20	"||Rock Blast,M,10"	40	40	40	20	Imm	Imm	20	25	25	0
 12	Ancient Behemoth	Behemoth C	85	977	80	8075	200D10	1	N	Short	Suicidal	2	300	60	3	BrkArmor	Phys	5D10+40	0	0	0	0	0	40	"|Jump,N,9"	25	"||Rock Blast,M,12"	50	50	50	25	Imm	Imm	25	30	30	0
-13	Floating Eye	Beholder A	30	180	20	1200	10%10D10+L4Ring	1	Y	Med	Aggress	3	140	70	S	Asleep	Cold	5D6	Water	0	0	0	0	0	0	0	0	20	30	Imm	Imm	Imm	Imm	20	30	30	0
-14	Gazer	Beholder B	40	280	30	2000	20%15D10+L5Ring	1	Y	Med	Aggress	3	160	60	SD	Afraid	Fire	6D6	Fire	0	0	0	0	0	0	0	0	Imm	40	30	Imm	Imm	Imm	30	40	40	0
-15	Evil Eye	Beholder C	50	400	40	3000	30%20D10+L6Ring	1	Y	Short	Aggress	3	180	50	0	Insane	Elec	7D6	Air	0	0	0	0	0	0	0	0	50	Imm	50	Imm	Imm	Imm	40	50	50	"shot,x3"
+13	Floating Eye	Beholder A	30	180	20	1200	10%10D10+L4Ring	1	Y	Med	Aggress	3	140	70	S	Asleep	Cold	5D6	Water	0	0	0	0	10	"||Telekinesis,M,8"	0	0	20	30	Imm	Imm	Imm	Imm	20	30	30	0
+14	Gazer	Beholder B	40	280	30	2000	20%15D10+L5Ring	1	Y	Med	Aggress	3	160	60	SD	Afraid	Fire	6D6	Fire	0	0	0	0	10	"||Telekinesis,M,10"	0	0	Imm	40	30	Imm	Imm	Imm	30	40	40	0
+15	Evil Eye	Beholder C	50	400	40	3000	30%20D10+L6Ring	1	Y	Short	Aggress	3	180	50	0	Insane	Elec	7D6	Air	0	0	0	0	10	"||Telekinesis,M,12"	0	0	50	Imm	50	Imm	Imm	Imm	40	50	50	"shot,x3"
 16	Acolyte of the Moon	Cleric Moon A	10	40	10	200	5%5D10+L2Mace	1	N	Med	Normal	2	160	90	CP	0	Phys	2D4	Air	0	0	0	0	30	"Toxic Cloud,N,4"	20	"Turn Undead,N,4"	5	5	5	0	5	Imm	20	10	10	0
 17	Cleric of the Moon	Cleric Moon B	20	100	15	600	5%10D10+L3Mace	1	N	Med	Normal	2	180	90	CP	0	Phys	2D4+4	Air	0	0	0	0	30	"Toxic Cloud|Shrapmetal,E,7"	30	"Bless,E,7"	10	10	10	5	10	Imm	30	15	15	0
 18	Priest of the Moon	Cleric Moon C	30	180	25	1200	10%20D10+L4Mace	1	N	Med	Aggress	2	200	80	CP	0	Phys	2D4+8	Dark	0	0	0	0	30	"Shrapmetal||Dragon Breath,M,10"	33	"Power Cure,G,10"	15	15	15	5	15	Imm	40	20	20	0

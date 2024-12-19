@@ -932,8 +932,11 @@ static struct elemdata
 #define LOST_NOTRACK 0
 #define LOST_INV -1
 #define LOST_GONE -2
-    // The artifact for sale on the Black Market.
+    // Whether the black market has generated an artifact for sale.
     int bm_artifact;
+#define MAX_STOLEN_ITEMS 16
+    // Party items stolen by enemy thieves etc.
+    struct item stolen_items[MAX_STOLEN_ITEMS];
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -1108,6 +1111,7 @@ enum spells
     SPL_DEADLY_SWARM = 37,
     SPL_STONE_SKIN = 38,
     SPL_ROCK_BLAST = 41,
+    SPL_TELEKINESIS = 42,
     SPL_DEATH_BLOSSOM = 43,
     SPL_MASS_DISTORTION = 44,
     SPL_BLESS = 46,
@@ -1159,6 +1163,7 @@ enum spells
     SPL_HOLY_WATER = 108,
     SPL_TELEPATHY = 109, // was 59
 };
+#define SPAN_DEBUFF 153
 
 #define SPELL_SOUNDS 0x4edf30
 
@@ -1253,6 +1258,9 @@ struct __attribute__((packed)) map_monster
     SKIP(12);
 };
 typedef struct map_monster s_map_monster;
+// I *think* this is the line-of-sight bit,
+// although it's inconsistent on peaceful monsters.
+#define MBIT_LOS 0x200000
 
 #define MAP_MONSTERS_ADDR 0x5fefd8
 #define MAP_MONSTERS ((struct map_monster *) MAP_MONSTERS_ADDR)
@@ -9035,6 +9043,7 @@ static int __fastcall parse_new_spells(char **words, int *extra_words)
               { "regeneration", SPL_REGENERATION, 0 },
               { "jump", SPL_JUMP, 0 },
               { "prismatic", SPL_PRISMATIC_LIGHT, 1 },
+              { "telekinesis", SPL_TELEKINESIS, 0 },
               { NULL, 0 },
         };
         for (int i = 0;; i++)
@@ -9092,9 +9101,7 @@ static int __fastcall consider_new_spells(void *this, int first,
         if (target != TGT_PARTY)
             return FALSE;
 
-        // I *think* this is the line-of-sight bit,
-        // although it's inconsistent on peaceful monsters.
-        if (!(monster->bits & 0x200000))
+        if (!(monster->bits & MBIT_LOS))
             return FALSE;
 
         for (int i = 0; i < 4; i++)
@@ -9109,7 +9116,7 @@ static int __fastcall consider_new_spells(void *this, int first,
       {
         if (target == TGT_PARTY)
           {
-            if (!(monster->bits & 0x200000)) // has line of sight
+            if (!(monster->bits & MBIT_LOS))
                 return FALSE;
             for (int i = 0; i < 4; i++)
                 if (is_undead(&PARTY[i]) && player_active(&PARTY[i]))
@@ -9127,7 +9134,9 @@ static int __fastcall consider_new_spells(void *this, int first,
         return FALSE; // would target the party even if not hostile
     else if (spell == SPL_INFERNO || spell == SPL_PRISMATIC_LIGHT)
         return target == TGT_PARTY // mvm not implemented for now
-               && dword(OUTDOORS) != 2 && monster->bits & 0x200000; // los bit
+               && dword(OUTDOORS) != 2 && monster->bits & MBIT_LOS;
+    else if (spell == SPL_TELEKINESIS)
+        return target == TGT_PARTY && monster->bits & MBIT_LOS; // same
     else if (spell == SPL_REGENERATION) // less often if not too wounded
         return monster->hp * 2 <= monster->max_hp + random() % monster->max_hp;
     else if (spell == SPL_JUMP)
@@ -9235,6 +9244,7 @@ static void __declspec(naked) consider_second_spell(void)
 
 //Defined below.
 static int __thiscall absorb_spell(struct player *player, int spell, int rank);
+static int weighted_monster_preference(struct map_monster *monster, int mask);
 // Used to properly calculate MvM Mass Distortion damage.
 static int mass_distortion_target_hp = 0;
 
@@ -9293,19 +9303,22 @@ static int __fastcall cast_new_spells(int monster_id, void *vector, int spell,
         unsigned int target = MON_TARGETS[monster_id];
         if (target == TGT_PARTY)
           {
-            struct player *target_player;
-            int count = 0;
+            int mask = 0;
             for (int i = 0; i < 4; i++)
                 if ((spell != SPL_DESTROY_UNDEAD || is_undead(&PARTY[i]))
-                    && player_active(&PARTY[i]) && !(random() % ++count))
-                    target_player = &PARTY[i]; // randomly choose one player
-            if (count && !absorb_spell(target_player, spell, NORMAL))
+                    && player_active(&PARTY[i]))
+                    mask |= 1 << i;
+            if (mask)
               {
+                struct player *target_player
+                    = PARTY + weighted_monster_preference(monster, mask);
                 int mastery = skill_mastery(skill);
-                skill &= SKILL_MASK;
-                int damage = spell_damage(spell, skill, mastery,
-                                          target_player->hp);
-                damage_player(target_player, damage, ELEMENT(spell));
+                if (!absorb_spell(target_player, spell, mastery))
+                  {
+                    int damage = spell_damage(spell, skill & SKILL_MASK,
+                                              mastery, target_player->hp);
+                    damage_player(target_player, damage, ELEMENT(spell));
+                  }
               }
           }
         else if ((target & 7) == TGT_MONSTER)
@@ -9381,6 +9394,45 @@ static int __fastcall cast_new_spells(int monster_id, void *vector, int spell,
         monster->action_time = 0;
         monster->action_length = length < limit ? length : limit;
         result = TRUE; // skip ai code
+      }
+    else if (spell == SPL_TELEKINESIS)
+      {
+        struct item *stash = NULL;
+        if (!monster->items[0].id)
+            stash = &monster->items[0];
+        else if (!monster->items[1].id)
+            stash = &monster->items[1];
+        else for (int i = 0; i < MAX_STOLEN_ITEMS; i++)
+            if (!elemdata.stolen_items[i].id)
+              {
+                stash = &elemdata.stolen_items[i];
+                break;
+              }
+        if (stash)
+          {
+            int mask = 0;
+            for (int i = 0; i < 4; i++)
+                if (player_active(&PARTY[i]))
+                    mask |= 1 << i;
+            struct player *mark
+                = PARTY + weighted_monster_preference(monster, mask);
+            int slot, count = 0;
+            for (int s = SLOT_OFFHAND; s <= SLOT_MISSILE; s++)
+                if (mark->equipment[s] && !(random() % ++count))
+                    slot = s;
+            int chance = (get_effective_stat(get_accuracy(mark))
+                          + get_effective_stat(get_luck(mark))) * 4;
+            if (count && random() % (chance + 30) < 30)
+              {
+                struct item *swag = &mark->items[mark->equipment[slot]-1];
+                mark->equipment[slot] = 0;
+                *stash = *swag;
+                stash->body_slot = 0;
+                init_item(swag);
+                show_face_animation(mark, ANIM_DISMAY, 0);
+                spell_face_anim(SPELL_ANIM_THIS, SPAN_DEBUFF, mark - PARTY);
+              }
+          }
       }
     else
       {
@@ -12129,21 +12181,18 @@ static void __declspec(naked) recharge_spent_charges_add_potion(void)
 
 // Instead of monsters always attacking their preferred targets,
 // use a weighted random that considers preferences and aggro effects.
-static int __stdcall weighted_monster_preference(struct map_monster *monster)
+static int weighted_monster_preference(struct map_monster *monster, int mask)
 {
     int preference = monster->preference;
     int weights[4];
     for (int i = 0; i < 4; i++)
       {
-        struct player *player = PARTY + i;
-        if (player->conditions[COND_PARALYZED]
-            || player->conditions[COND_UNCONSCIOUS]
-            || player->conditions[COND_DEAD] || player->conditions[COND_STONED]
-            || player->conditions[COND_ERADICATED])
+        if (!(mask & 1 << i))
           {
             weights[i] = 0;
             continue;
           }
+        struct player *player = PARTY + i;
         weights[i] = 1;
         for (int slot = 0; slot < SLOT_COUNT; slot++)
           {
@@ -12177,7 +12226,7 @@ static int __stdcall weighted_monster_preference(struct map_monster *monster)
       }
     int sum = weights[0] + weights[1] + weights[2] + weights[3];
     if (!sum)
-        return 0;
+        return random() & 3;
     int roll = random() % sum;
     for (int i = 0; i < 3; i++)
       {
@@ -12186,6 +12235,23 @@ static int __stdcall weighted_monster_preference(struct map_monster *monster)
             return i;
       }
     return 3;
+}
+
+// Use the above logic for a vanilla monster attack.
+static int __stdcall monster_chooses_player(void *monster)
+{
+    int mask = 0;
+    for (int i = 0; i < 4; i++)
+      {
+        struct player *player = PARTY + i;
+        if (player->conditions[COND_PARALYZED]
+            || player->conditions[COND_UNCONSCIOUS]
+            || player->conditions[COND_DEAD] || player->conditions[COND_STONED]
+            || player->conditions[COND_ERADICATED])
+            continue;
+        mask |= 1 << i;
+      }
+    return weighted_monster_preference(monster, mask);
 }
 
 // Allow monsters to attack their non-default enemies on sight.
@@ -13814,7 +13880,7 @@ static inline void misc_rules(void)
     hook_call(0x42aa9a, recharge_spent_charges_add_spell, 6);
     hook_call(0x4169bf, recharge_spent_charges_sub_potion, 6);
     hook_call(0x4169d0, recharge_spent_charges_add_potion, 6);
-    hook_jump(0x426dc7, weighted_monster_preference);
+    hook_jump(0x426dc7, monster_chooses_player);
     patch_bytes(0x4021ca, better_monster_hostility_chunk, 15);
     erase_code(0x4021d9, 23); // rest of old code
     hook_call(0x43420f, tavern_rest_buff, 5);
@@ -23804,7 +23870,7 @@ static int __thiscall chest_damage(struct player *player, int damage,
                 if (!count) break;
                 delete_backpack_item(player, slot);
                 show_face_animation(player, ANIM_DISMAY, 0);
-                spell_face_anim(SPELL_ANIM_THIS, 153, player - PARTY);
+                spell_face_anim(SPELL_ANIM_THIS, SPAN_DEBUFF, player - PARTY);
               }
             break;
         case SHOCK:
@@ -26035,10 +26101,12 @@ static void __declspec(naked) arcomage_hint_hook(void)
 }
 
 // Let shops and guilds restock faster if some items are bought.
+// Also here: remove bought BM items from the stolen items array.
 static void __declspec(naked) faster_shop_restock(void)
 {
     asm
       {
+        and byte ptr [edi-SIZE_ITEM].s_item.owner, 0 ; bought swag marker
         mov eax, dword ptr [ebp-4] ; the item
         cmp dword ptr [eax], POTION_BOTTLE
         je skip ; these restock immediately
@@ -26099,7 +26167,23 @@ static void __declspec(naked) faster_shop_restock(void)
         xor ebx, ebx
         inc ebx ; restore
         skip:
-        jmp dword ptr ds:spend_gold ; replaced call
+        call dword ptr ds:spend_gold ; replaced code
+        mov eax, dword ptr [DIALOG2]
+        mov eax, dword ptr [eax+28]
+        cmp eax, BLACK_MARKET_1
+        je swag
+        cmp eax, BLACK_MARKET_2
+        jne quit
+        swag:
+        mov ecx, dword ptr [ebp-4]
+        movzx eax, byte ptr [ecx].s_item.owner
+        dec eax
+        jl quit
+        lea ecx, [eax+eax*8]
+        lea ecx, [elemdata.stolen_items+ecx*4]
+        call dword ptr ds:init_item
+        quit:
+        ret
       }
 }
 
@@ -26230,7 +26314,6 @@ static void __thiscall restock_black_market(int house)
               { ITEM_TYPE_ARMOR, ITEM_TYPE_ARMOR,
                 ITEM_TYPE_ARMOR, ITEM_TYPE_SHIELD } },
     };
-    int artifact_unsold = FALSE;
     for (int i = 0, bonus; i < sizeof(stock) / sizeof(stock[0]); i++)
       {
         if (stock[i].extra)
@@ -26239,8 +26322,6 @@ static void __thiscall restock_black_market(int house)
           {
             int extra = !bonus--;
             struct item *current = &stock[i].wares[house*12+j];
-            if (elemdata.bm_artifact == current->id)
-                artifact_unsold = TRUE;
             randomize_item(ITEMS_TXT_ADDR - 4, stock[i].level + extra,
                            stock[i].type[random()&3], current);
             if (current->id >= FIRST_WAND && current->id <= LAST_WAND
@@ -26279,25 +26360,30 @@ static void __thiscall restock_black_market(int house)
         set_specitem_bonus(ITEMS_TXT_ADDR - 4, item);
       }
     // Once per game, sell an artifact (will reappear on restock if unsold).
-    if (!elemdata.bm_artifact)
+    if (!elemdata.bm_artifact) do
       {
         for (struct player *p = PARTY; p < PARTY + 4; p++)
-            if (p->class % 4 == 0) // everyone must be promoted
-                return;
-        struct item temp;
-        generate_artifact(&temp);
-        elemdata.bm_artifact = temp.id;
-        artifact_unsold = TRUE;
-      }
-    if (artifact_unsold)
+            if (p->class % 4 == 0) break; // everyone must be promoted
+        int i;
+        for (i = 0; i < MAX_STOLEN_ITEMS; i++)
+            if (!elemdata.stolen_items[i].id) break;
+        struct item *artifact = elemdata.stolen_items + i;
+        if (i >= MAX_STOLEN_ITEMS || !generate_artifact(artifact)) break;
+        elemdata.bm_artifact = TRUE;
+        artifact->flags |= IFLAGS_STOLEN;
+      } while (FALSE);
+    // Sell items stolen from party, including the above.
+    for (int i = 0; i < MAX_STOLEN_ITEMS; i++)
       {
-        int shelf = get_shelf(elemdata.bm_artifact);
-        struct item *artifact = stock[shelf].wares + house * 12
-                                + random() % stock[shelf].num;
-        init_item(artifact);
-        artifact->id = elemdata.bm_artifact;
-        artifact->flags = IFLAGS_ID | IFLAGS_STOLEN;
-        set_specitem_bonus(ITEMS_TXT_ADDR - 4, artifact);
+        struct item *swag = elemdata.stolen_items + i;
+        if (!swag->id) continue;
+        int shelf = get_shelf(swag->id);
+        struct item *sold = stock[shelf].wares + house * 12
+                            + random() % stock[shelf].num;
+        *sold = *swag;
+        sold->flags |= IFLAGS_ID;
+        sold->flags &= ~IFLAGS_BROKEN;
+        sold->owner = i + 1; // unused in vanilla?
       }
 }
 
@@ -26525,6 +26611,27 @@ static void __declspec(naked) lasker_teacher_text(void)
       }
 }
 
+// If an enemy has no space for stolen items, migrate them to BM instead.
+static void __declspec(naked) store_stolen_items(void)
+{
+    asm
+      {
+        add ecx, SIZE_ITEM ; replaced code, in spirit
+        cmp dword ptr [ecx], edi ; also this
+        jz quit
+        mov ecx, offset elemdata.stolen_items
+        mov edx, MAX_STOLEN_ITEMS - 1
+        loop:
+        cmp dword ptr [ecx], edi ; == 0
+        jz quit
+        add ecx, SIZE_ITEM
+        dec edx
+        jge loop
+        quit:
+        ret
+      }
+}
+
 // Various changes to stores, guilds and other buildings.
 static inline void shop_changes(void)
 {
@@ -26721,6 +26828,13 @@ static inline void shop_changes(void)
     hook_call(0x4b3f5e, lasker_teacher_text, 5);
     patch_word(0x4f075e, 0); // don't return wetsuits for now
     erase_code(0x490f01, 2); // for black market quest item sell text hook
+    hook_call(0x48e026, store_stolen_items, 8);
+    patch_dword(0x48dea1, LAST_PREFIX); // allow stealing robes etc.
+    // Revert an MM7Patch hook that forbade theft with mon inventory full.
+    // This will cause the face animation to still show on failed theft,
+    // but with space for 16 extra stolen items it's unlikely in practice.
+    patch_dword(0x48df0c, 0x8d08458b); // mov eax, [ebp+8]; lea...
+    patch_word(0x48df10, 0xff48); // ...ecx, [eax-1]
 }
 
 // Allow non-bouncing projectiles to trigger facets in Altar of Wishes.

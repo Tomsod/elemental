@@ -887,8 +887,6 @@ static struct elemdata
     int last_region;
     // For Harmondale taxes.
     int last_tax_month, last_tax_fame;
-    // Set to true after purchasing a safe deposit box in a bank.
-    int deposit_box;
     // Preserve the active PC on reload.
     int current_player;
     // Items for the newly added scroll shelves at the magic guilds.
@@ -899,8 +897,6 @@ static struct elemdata
     uint64_t order_timers[42];
     // Random seed for genie lamps.
     uint32_t genie;
-    // Remember if a genie artifact was already given.
-    int genie_artifact;
     // For the Armageddon nerf (healing monsters after 24 hours).
     int current_map;
     // Same.
@@ -913,8 +909,6 @@ static struct elemdata
     int quick_spells[4][4];
     // Total amount of arena wins multiplied by difficulty (determines prizes).
     int arena_points;
-    // Whether the ultimate arena prize was already given.
-    int arena_champion;
     // For Beacon Master NPCs.
     struct beacon beacon_masters[2];
     // Per-map random seeds for street NPCs and their expire time.
@@ -932,8 +926,6 @@ static struct elemdata
 #define LOST_NOTRACK 0
 #define LOST_INV -1
 #define LOST_GONE -2
-    // Whether the black market has generated an artifact for sale.
-    int bm_artifact;
 #define MAX_STOLEN_ITEMS 16
     // Party items stolen by enemy thieves etc.
     struct item stolen_items[MAX_STOLEN_ITEMS];
@@ -973,6 +965,10 @@ enum qbits
     QBIT_USED_PEGASUS = 384,
     QBIT_TEMPLE_UNDERWATER = 386,
     QBIT_PIRATE_SHIP = 410,
+    QBIT_DEPOSIT_BOX = 414,
+    QBIT_GENIE_ARTIFACT = 415,
+    QBIT_ARENA_CHAMPION = 416,
+    QBIT_BM_ARTIFACT = 417,
 };
 
 // The table of qbits and item ids for the vanilla judge "I lost it" thing.
@@ -4852,7 +4848,7 @@ static void __thiscall genie_lamp(struct player *player)
       {
         case 0:
             good = 1;
-            if (!elemdata.genie_artifact
+            if (!check_bit(QBITS, QBIT_GENIE_ARTIFACT)
                 && (elemdata.genie >> 18 & 1023) < get_luck(player))
               {
                 struct item artifact;
@@ -4861,7 +4857,7 @@ static void __thiscall genie_lamp(struct player *player)
                     add_mouse_item(PARTY_BIN, &artifact);
                     sprintf(status_text, new_strings[STR_GENIE_ARTIFACT],
                             ITEMS_TXT[artifact.id].generic_name);
-                    elemdata.genie_artifact = TRUE;
+                    change_bit(QBITS, QBIT_GENIE_ARTIFACT, TRUE);
                     break;
                   }
               }
@@ -10133,7 +10129,7 @@ static void track_lost_items(int left)
                 FIND(MAP_MONSTERS[i].items[j].id, map);
           }
     int chests = get_active_chests();
-    if (elemdata.deposit_box)
+    if (check_bit(QBITS, QBIT_DEPOSIT_BOX))
         chests |= 1 << 0; // count bank chest as party inventory here
     for (int p = -1; p < 4 + EXTRA_CHEST_COUNT; p++)
       {
@@ -13260,9 +13256,13 @@ static void __declspec(naked) open_deposit_box(void)
         jne quit
         cmp dword ptr [esp+20], 9 ; open box subaction
         jne quit
-        cmp dword ptr [elemdata.deposit_box], edi ; == 0
+        mov ecx, QBITS_ADDR
+        mov edx, QBIT_DEPOSIT_BOX
+        call dword ptr ds:check_bit
+        xor ecx, ecx ; just in case
+        test eax, eax
         jz quit
-        push edi
+        push edi ; == 0
         push edi
         push ACTION_EXIT
         mov ecx, ACTION_THIS_ADDR
@@ -13306,7 +13306,10 @@ static void __declspec(naked) buy_deposit_box(void)
         xor eax, eax
         ok:
         mov dword ptr [PARTY_GOLD], eax
-        mov dword ptr [elemdata.deposit_box], 1
+        push 1
+        mov ecx, QBITS_ADDR
+        mov edx, QBIT_DEPOSIT_BOX
+        call dword ptr ds:change_bit
         push edi
         push edi
         push edi
@@ -13478,7 +13481,10 @@ static void __declspec(naked) special_arena_prize(void)
         jne not_champion
         cmp dword ptr [elemdata.arena_points], 40
         jb not_champion
-        cmp dword ptr [elemdata.arena_champion], ebx
+        mov ecx, QBITS_ADDR
+        mov edx, QBIT_ARENA_CHAMPION
+        call dword ptr ds:check_bit
+        test eax, eax
         jnz not_champion
         sub esp, 36
         mov ecx, esp
@@ -13487,7 +13493,10 @@ static void __declspec(naked) special_arena_prize(void)
         jz restore
         mov eax, dword ptr [esp] ; art id
         mov dword ptr [arena_prize], eax
-        inc dword ptr [elemdata.arena_champion]
+        push 1
+        mov ecx, QBITS_ADDR
+        mov edx, QBIT_ARENA_CHAMPION
+        call dword ptr ds:change_bit
         or byte ptr [esp].s_item.flags, IFLAGS_ID ; we print the name anyway
         push esp
         mov ecx, PARTY_BIN_ADDR
@@ -26360,7 +26369,7 @@ static void __thiscall restock_black_market(int house)
         set_specitem_bonus(ITEMS_TXT_ADDR - 4, item);
       }
     // Once per game, sell an artifact (will reappear on restock if unsold).
-    if (!elemdata.bm_artifact) do
+    if (!check_bit(QBITS, QBIT_BM_ARTIFACT)) do
       {
         for (struct player *p = PARTY; p < PARTY + 4; p++)
             if (p->class % 4 == 0) break; // everyone must be promoted
@@ -26369,7 +26378,7 @@ static void __thiscall restock_black_market(int house)
             if (!elemdata.stolen_items[i].id) break;
         struct item *artifact = elemdata.stolen_items + i;
         if (i >= MAX_STOLEN_ITEMS || !generate_artifact(artifact)) break;
-        elemdata.bm_artifact = TRUE;
+        change_bit(QBITS, QBIT_BM_ARTIFACT, TRUE);
         artifact->flags |= IFLAGS_STOLEN;
       } while (FALSE);
     // Sell items stolen from party, including the above.

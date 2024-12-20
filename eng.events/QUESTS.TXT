@@ -412,10 +412,10 @@ Q Bit	Quest Note Text	Notes	Owner
 411		Talked with the pirate captain	0	0
 412		Visited Lasker	0	0
 413	"Purchase the heirloom amulet at the Black Market in the Erathian Sewers and return it to Halain Sampson in Tatalia."	Black Market intro quest	0	0
-414	0	0	0	0
-415	0	0	0	0
-416	0	0	0	0
-417	0	0	0	0
+414		Purchased the safe deposit box	0	0
+415		Got artifact from a genie lamp	0	0
+416		Got the ultimate arena prize	0	0
+417		Black marked had put an artifact on sale	0	0
 418	0	0	0	0
 419	0	0	0	0
 420	0	0	0	0

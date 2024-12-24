@@ -109,3 +109,4 @@ A Bit	Awards	Sort	Notes
 108	Found the obelisk treasure	1
 109	Joined the Thieves' Guild	5
 110	Retrieved the stolen heirloom	3
+111	Found tears of the Ancients	3

@@ -207,7 +207,7 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 205	Everil Nightwalker	403	0	0	0	389	0	0	0	304	446	0	0	0	0	Grand Master Stealing (13)	13
 206	Edgar Willowbark	408	0	0	0	323	0	0	0	305	375	0	0	0	0	Expert Alchemy (4)	4
 207	Elzbet Winterspoon	207	0	0	0	508	0	0	0	306	376	0	0	0	0	Master Alchemy (10)	10
-208	Lucid Apple	643	0	0	0	506	0	0	0	307	435	0	0	0	0	Grand Master Alchemy (14)	14
+208	Lucid Apple	643	0	0	0	506	0	0	0	307	634	435	0	0	0	Grand Master Alchemy (14)	14
 209	Agatha Putnam	203	0	0	0	497	0	0	0	308	377	0	0	0	0	Expert Learning (5)	5
 210	Dorothy Senjac	204	0	0	0	358	0	0	0	309	378	0	0	0	0	Master Learning (10)	10
 211	William Smithson	614	0	0	0	350	0	0	0	310	610	0	0	0	0	Grand Master Learning (9)	9
@@ -478,9 +478,9 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 476	Sly Silverstone	749	0	0	0	379	37	185	y	431	435	0	0	0	0	Hireling in Avlee (14)
 477	Marc Teagan	767	0	0	0	505	40	185	y	431	445	0	0	0	0	Hireling in Avlee (14)
 478	Maxwell the Captain	803	0	0	0	237	0	0	0	630	0	0	0	0	0	Tatalia (13) pirate boatman (before travel enabled)
-479	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0
-480	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0
-481	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+479	Jasmine	461	0	0	0	506	4	233	0	635	636	639	0	0	0	Bonus hireling (quest reward)
+480	Rose	480	0	0	0	506	17	233	0	635	637	639	0	0	0	Bonus hireling (quest reward)
+481	Violet	465	0	0	0	506	46	233	0	635	638	639	0	0	0	Bonus hireling (quest reward)
 482	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0
 483	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0
 484	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0

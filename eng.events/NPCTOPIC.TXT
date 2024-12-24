@@ -632,3 +632,9 @@
 631	Tatalian Pirates	Lasker vouches for you
 632	Quest	Black Market intro quest
 633	Lost and Found	Black Market hint
+634	Quest	Bonus hirelings quest
+635	A Weird Day	Bonus hirelings flavor
+636	Come With Us!	Bonus hirelings post-quest
+637	Come With Us!	Bonus hirelings post-quest
+638	Come With Us!	Bonus hirelings post-quest
+639	Go Home for Now	Bonus hirelings post-quest

@@ -293,3 +293,5 @@ Please rescue him!  Not even I can bear to think of my brother in those conditio
 230	Welcome, my lords!  I have a deal for you that might pleasantly surprise you.	Greetings, my lords!  I'm still ready to extend my most favorable terms to you.	Evan Nasir
 231	Well met, lords.  Could you perhaps run an errand for me?	Good day.  I would still appreciate your help.	Halain Sampson
 232	Greetings, lords!  Thank you again for returning my heirloom to me.	Greetings, lords!  Thank you again for returning my heirloom to me.	Halain Sampson (post-quest)
+233	"Well met, strangers.  Me and my sisters are living here with our mother for now, but we'll surely have our own adventure soon!"	"Well met, strangers.  Me and my sisters are living here with our mother for now, but we'll surely have our own adventure soon!"	Bonus hirelings
+234	"So that's why today was so weird!  Can't believe I've lost over two years of life…  Thank you, lords!  I'm at your service if you need my help."	"Well, why do we tarry?  Adventure awaits!"	Bonus hirelings (post-quest)

@@ -207,7 +207,7 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 205	Эверил Найтвокер	403	0	0	0	389	0	0	0	304	446	0	0	0	0	Grand Master Stealing (13)	13
 206	Эдгар Виллоубарк	408	0	0	0	323	0	0	0	305	375	0	0	0	0	Expert Alchemy (4)	4
 207	Элзбет Винтерспун	207	0	0	0	508	0	0	0	306	376	0	0	0	0	Master Alchemy (10)	10
-208	Люсид Эппл	643	0	0	0	506	0	0	0	307	435	0	0	0	0	Grand Master Alchemy (14)	14
+208	Люсид Эппл	643	0	0	0	506	0	0	0	307	634	435	0	0	0	Grand Master Alchemy (14)	14
 209	Агата Путнам	203	0	0	0	497	0	0	0	308	377	0	0	0	0	Expert Learning (5)	5
 210	Дороти Сеньяк	204	0	0	0	358	0	0	0	309	378	0	0	0	0	Master Learning (10)	10
 211	Вильям Смитсон	614	0	0	0	350	0	0	0	310	610	0	0	0	0	Grand Master Learning (9)	9
@@ -478,9 +478,9 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 476	Слай Сильверстоун	749	0	0	0	379	37	185	y	431	435	0	0	0	0	Hireling in Avlee (14)
 477	Марк Тиган	767	0	0	0	505	40	185	y	431	445	0	0	0	0	Hireling in Avlee (14)
 478	Максвелл Капитан	803	0	0	0	237	0	0	0	630	0	0	0	0	0	Tatalia (13) pirate boatman (before travel enabled)
-479	Пусто	0	0	0	0	0	0	0	0	0	0	0	0	0	0
-480	Пусто	0	0	0	0	0	0	0	0	0	0	0	0	0	0
-481	Пусто	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+479	Жасмин	461	0	0	0	506	4	233	0	635	636	639	0	0	0	Bonus hireling (quest reward)
+480	Роза	480	0	0	0	506	17	233	0	635	637	639	0	0	0	Bonus hireling (quest reward)
+481	Виолетта	465	0	0	0	506	46	233	0	635	638	639	0	0	0	Bonus hireling (quest reward)
 482	Пусто	0	0	0	0	0	0	0	0	0	0	0	0	0	0
 483	Пусто	0	0	0	0	0	0	0	0	0	0	0	0	0	0
 484	Пусто	0	0	0	0	0	0	0	0	0	0	0	0	0	0

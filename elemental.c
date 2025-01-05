@@ -17189,10 +17189,10 @@ static void __declspec(naked) higher_ethric_drain(void)
 static const int gadgeteers_belt_xy[] = { 530, 185, 533, 171,
                                           532, 214, 535, 210, };
 static char gadgeteers_belt_gfx[] = "itemgadgv0";
-// Same for Sniper's Quiver. (TEMP)
-static const int snipers_quiver_xy[] = { 530, 185, 533, 171,
-                                         532, 214, 535, 210, };
-static char snipers_quiver_gfx[] = "itemgadgv0";
+// Same for Sniper's Quiver.
+static const int snipers_quiver_xy[] = { 539, 169, 538, 164,
+                                         537, 198, 542, 195, };
+static char snipers_quiver_gfx[] = "snipquivv0";
 // Also for Hero's Belt (used a MM6 image here).
 static const int heros_belt_xy[] = { 540, 180, 536, 169,
                                      540, 213, 539, 207, };

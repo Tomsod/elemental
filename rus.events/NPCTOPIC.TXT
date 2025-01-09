@@ -638,3 +638,4 @@
 637	Пошли с нами!	Bonus hirelings post-quest
 638	Пошли с нами!	Bonus hirelings post-quest
 639	Иди пока домой	Bonus hirelings post-quest
+640	Песочные часы	Rare item buyer

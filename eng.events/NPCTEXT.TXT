@@ -987,3 +987,5 @@ For example, these are all correct item descriptions:
 913	"Today has been so strange!  Our house is in disarray, the weather has changed rapidly, and even my own body feels weird somehow.  Oh well, I'm sure I'll be better tomorrow."	Quest flavor	Bonus hirelings
 914	"All right, I'm packing my things, let's have an adventure together!"	Post-quest	Bonus hirelings
 915	"Okay, then I'll stay in my Avlee home until you need me again."	Post-quest	Bonus hirelings
+916	"A lot of our arcane rituals require weeks or months to fully take effect, so the time magic that can speed them up is in high demand.  Unfortunately, in this era only the enigmatic Arena Master can mass-produce time-accelerating artifacts, and he asks for valor instead of money!  If you prefer the latter, I will gladly buy any magical hourglasses you can win at Arena for 5000 gold pieces each."	Explanation	Rydric
+917	"This hourglass is the genuine article!  As promised, here's your money."	Hourglass sold	Rydric

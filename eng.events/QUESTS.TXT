@@ -345,7 +345,7 @@ Q Bit	Quest Note Text	Notes	Owner
 344		TEMP hshoes explained	0	0
 345		TEMP embers explained	0	0
 346		TEMP lamps explained	0	0
-347	0	0	0	0
+347		TEMP hglass explained	0	0
 348	0	0	0	0
 349	0	0	0	0
 350		Refill barrels in the Walls of Mist	0	0

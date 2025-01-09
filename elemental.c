@@ -1442,11 +1442,11 @@ enum monster_buffs
 #define HIRELING_REPLY 0xf8b06c
 
 // new NPC greeting count (starting from 1)
-#define GREET_COUNT 234
+#define GREET_COUNT 235
 // new NPC topic count
-#define TOPIC_COUNT 639
+#define TOPIC_COUNT 640
 // count of added NPC text entries
-#define NEW_TEXT_COUNT (915-789)
+#define NEW_TEXT_COUNT (917-789)
 // new award count
 #define AWARD_COUNT 111
 

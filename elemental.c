@@ -5316,6 +5316,12 @@ static int __thiscall darkness_penalty(struct map_monster *monster)
         int power = 1;
         if (PARTY_BUFFS[BUFF_TORCH_LIGHT].expire_time)
             power = PARTY_BUFFS[BUFF_TORCH_LIGHT].power;
+        for (struct player *player = PARTY; player < PARTY + 4; player++)
+            if (has_item_in_slot(player, GHOULSBANE, SLOT_MAIN_HAND))
+              {
+                power = 5;
+                break;
+              }
         // TODO: these XYZ are a bit wrong (light goes from behind and above)
         add_light_source(LIGHT_SOURCE_THIS, dword(PARTY_X), dword(PARTY_Y),
                          dword(PARTY_Z), 0, power * 800, -1, -1, -1, 5);
@@ -9907,6 +9913,9 @@ static int reputation_index;
 // The extra chest that currently replaces chest 0 (-1 == none).
 static int replaced_chest;
 
+// To remember the current music track.
+static int current_track = 0;
+
 // Reset all new savegame data on a new game.
 static void new_game_data(void)
 {
@@ -9922,6 +9931,7 @@ static void new_game_data(void)
     replaced_chest = -1;
     elemdata.last_region = -1;
     elemdata.genie = random() << 16 | random(); // only 15 bytes per call
+    current_track = 0; // since the music has stopped at this point
 }
 
 // Hook for the above.
@@ -13132,9 +13142,6 @@ static void __declspec(naked) chest_hotkey_hook(void)
         jmp dword ptr ds:click_on_portrait ; replaced call
       }
 }
-
-// To remember the current music track.
-static int current_track = 0;
 
 // Do not restart music on reloads if the track would be the same.
 // Best used with infinite looping from MM7Patch.
@@ -25236,6 +25243,17 @@ static void __declspec(naked) disable_prompt_spell_icons(void)
       }
 }
 
+// Make sure the prompt is not white-on-white for the light path.
+static void __declspec(naked) prompt_text_color(void)
+{
+    asm
+      {
+        mov eax, dword ptr [0x50797c] ; current path-specific text color
+        mov dword ptr [esp+12], eax ; prompt color
+        jmp dword ptr ds:print_string ; replaced call
+      }
+}
+
 // A hacky strncasecmp replacement that ignores case both for ASCII and CP1251.
 // TODO: could parse E-dots in input
 static int __declspec(naked) __stdcall mystrcmp(char *left, char *right, int n)
@@ -25460,6 +25478,8 @@ static int __thiscall parse_item(const char *description)
         else if (number && !std && ITEMS_TXT[gid].mod1_dice_count)
           {
             int quality = ITEMS_TXT[gid].mod2;
+            if (ITEMS_TXT[gid].equip_stat + 1 >= ITEM_TYPE_ARMOR)
+                number -= ITEMS_TXT[gid].mod1_dice_count; // check total ac
             int sign = (number > quality) - (number < quality);
             if (sign) do quality = ITEMS_TXT[id+=sign].mod2;
             while (quality != number && !grouplen[id-1]);
@@ -25892,12 +25912,17 @@ static void __declspec(naked) right_click_order(void)
 }
 
 // Actually provide an item struct for the hint.
+// Also here: get the correct item for BM armor screen.
 static void __declspec(naked) right_click_order_hint(void)
 {
     asm
       {
         cmp dword ptr [CURRENT_CONVERSATION], CONV_CONFIRM_ORDER
         je order
+        cmp dword ptr [CURRENT_CONVERSATION], CONV_BUY_ARMOR
+        jne skip
+        add eax, SIZE_ITEM * 3
+        skip:
         lea ecx, [SHOP_SPECIAL_ITEMS+eax*4-SIZE_ITEM] ; replaced code
         ret
         order:
@@ -26470,20 +26495,6 @@ static void __declspec(naked) buy_bm_armor(void)
       }
 }
 
-// Also get the correct item info on a right-click.
-static void __declspec(naked) rmb_bm_armor(void)
-{
-    asm
-      {
-        cmp dword ptr [CURRENT_CONVERSATION], CONV_BUY_ARMOR
-        jne skip
-        add eax, SIZE_ITEM * 3
-        skip:
-        lea ecx, [SHOP_SPECIAL_ITEMS-SIZE_ITEM+eax*4] ; replaced code
-        ret
-      }
-}
-
 // Finally, load the proper item bitmap.
 static void __declspec(naked) bmp_bm_armor(void)
 {
@@ -26694,6 +26705,7 @@ static inline void shop_changes(void)
     hook_call(0x4badc3, query_order, 6); // armor shop
     hook_call(0x4b5477, query_order, 6); // magic shop
     hook_call(0x4416e3, disable_prompt_spell_icons, 5);
+    hook_call(0x44517e, prompt_text_color, 5);
     hook_call(0x4452e9, complete_order_prompt, 5);
     patch_byte(0x4326dd, byte(0x4326dd) + 11); // do not reset screen to 0
     patch_byte(0x41c486, 50); // allow longer prompts
@@ -26825,7 +26837,7 @@ static inline void shop_changes(void)
     patch_dword(0x4bb59c, SHOP_SPECIAL_ITEMS + SIZE_ITEM * 12); // mouseover
     patch_dword(0x4bb614, SHOP_SPECIAL_ITEMS + SIZE_ITEM * 12); // draw
     hook_call(0x4bdffa, buy_bm_armor, 7);
-    hook_call(0x4b1aae, rmb_bm_armor, 7);
+    // right-click in right_click_order_hint() above
     hook_call(0x4bd6bd, bmp_bm_armor, 7);
     hook_call(0x4bb6a1, clip_bm_boots_to_screen, 5);
     erase_code(0x4bb57e, 3); // preserve mouseover item var

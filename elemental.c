@@ -2840,7 +2840,7 @@ static inline void undead_immunities(void)
     hook_call(0x48e85f, holy_is_not_magic, 5);
     hook_call(0x48e764, holy_is_not_magic_base, 5);
     hook_call(0x48d4e7, immune_to_damage, 7);
-    erase_code(0x48d4f3, 10);
+    erase_code(0x48d4f3, 10); // overwrites an mm7patch hook
 
     // Remove the code that capped lich resistances at 200.
     erase_code(0x48e7af, 7);
@@ -3898,12 +3898,12 @@ static inline void temp_enchants(void)
     hook_call(0x41688e, weapon_potions, 6);
     hook_call(0x4168a9, potion_aura, 5);
     // remove some of the old restrictions
-    erase_code(0x416872, 12);
-    erase_code(0x41690b, 9);
-    erase_code(0x416932, 12);
+    erase_code(0x416872, 12); // overwrites an mm7patch change
+    erase_code(0x41690b, 9); // ditto
+    erase_code(0x416932, 12); // and here
     // pass the enchantment to our code in eax
     hook_call(0x416884, slaying_potion_enchantment, 7);
-    hook_call(0x41684e, permanent_slaying, 6);
+    hook_call(0x41684e, permanent_slaying, 6); // also ow's mm7patch
     erase_code(0x416953, 3);
 }
 
@@ -9506,8 +9506,8 @@ static void __declspec(naked) cast_new_spells_hook(void)
 }
 
 // Pretend Poison Spray is Shrapmetal when a monster casts it.
-// Also here: treat Deadly Swarm and Sunray as generic projectile spells,
-// and use Meteor Shower code for Starburst.
+// Also here: use Meteor Shower code for Starburst, and re-implement
+// an MM7Patch hook at this address that enables some projectile spells.
 static void __declspec(naked) cast_poison_blast(void)
 {
     asm
@@ -9518,6 +9518,10 @@ static void __declspec(naked) cast_poison_blast(void)
         mov ecx, SPL_SHRAPMETAL
         not_spray:
         cmp ecx, SPL_DEADLY_SWARM
+        je projectile
+        cmp ecx, SPL_ICE_BLAST
+        je projectile
+        cmp ecx, SPL_FLYING_FIST
         je projectile
         cmp ecx, SPL_SUNRAY
         jne not_proj
@@ -15469,7 +15473,7 @@ static inline void new_enchants(void)
     // masterful clubs are in blessed_rightnand_weapon()
     // other masterful weapons are in champion_leadership() below
     hook_call(0x48f3f6, of_doom_bonus, 7);
-    // Remove the old 2x slaying weapon damage.
+    // Remove the old 2x slaying weapon damage (also deletes mm7patch hacks).
     erase_code(0x48d25c, 70); // missile
     erase_code(0x48ce7b, 95); // right hand
     erase_code(0x48cfa6, 95); // left hand

@@ -32,11 +32,12 @@ The pre-placed monsters will be updated with your new monster properties,
 but any quirks they had in the original game (such as changed resistances)
 will remain the same.
 
-Anyway, if you just want to re-create the modified *.dlv and *.ddm files
-shipped with this mod (although some other changes will be lost), run:
+Anyway, the dungeon files in my mod are by now modified in other ways besides
+placed monster properties, so just this process cannot re-create them anymore,
+but monsters.bin and diff.txt in this directory reflect the mod as of v4.0,
+so if you decide to make some minor changes to either, you can then run:
 
 perl monpatch.pl monsters.bin < diff.txt
 
-after extracting the *.dlv and *.ddm files from games.lod.  Note that
-the diff.txt file has been edited manually, so the piped command above
-wouldn't work properly in this case.
+after extracting the *.dlv and *.ddm files from games.lod, to update them.
+Note that the diff.txt file has also been edited manually to some extent.

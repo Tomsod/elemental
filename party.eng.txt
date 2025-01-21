@@ -57,7 +57,9 @@ variants, as well as Paladins and Masters (LP Monks) are limited to Master
 Body, which is passable, but not as great.  Still, Heroes (LP Paladins) in
 particular make decent Cleric substitutes as they now get both GM Spirit and
 Master Light, which are both useful, especially in tandem with Ranger Lords
-who have Body, but cannot learn the other two schools at all.  In any case,
+who have Body, but cannot learn the other two schools at all.  You also can
+secure GM Immutability from either temple blessings or sold scrolls (both of
+which can be cast as GM now), but this is much less convenient. In any case,
 unless you're looking for a challenge, secure Master Body at the very least.
 
 Sorcerer casts travel spells.  Yes, most of elemental magic is actually about
@@ -259,7 +261,9 @@ don't even need to stay behind the monster, turning this into a pure melee
 damage multiplier.  The only downside is, backstabs do not stack with crits.
 
 Monks are still late bloomers, but potentially very strong in the late game,
-as GM Unarmed now gives a chance to instantly kill any enemy.  Also, staff at
+as GM Unarmed now gives a chance to instantly kill any enemy.  There's actually
+an optional quest to obtain one or two GMs before a second promotion for this
+class, which is nice if you don't want to wait for path choice.  Also, staff at
 GM level now not only gets both Armsmaster and Unarmed bonuses, but also
 Hammerhands damage, which makes endgame Monks hit very hard!  There's even an
 artifact staff with good on-hit abilities made specifically for this class.

@@ -1,6 +1,378 @@
 This is the change log for the Elemental Mod.  It's quite descriptive,
 and can be viewed as the chief source of information on the mod's features.
 
+== Elemental Mod ver. 4.0 ==
+
+This an open beta kind of release which I present mostly because I promised
+myself and others to have something by New Year; some of the new features
+that really ought to be here will be added in 4.1 or later.
+
+I have touched on hirelings, optional difficulty features, and money-related
+stuff.  There's also a brand new dungeon and a handful of added quests.
+
+
+=== Service changes ===
+
+In an effort to make SP restoration less trivial, temples no longer replenish
+it.  Instead, it's a magic guild service that's only available to characters
+with the guild's spell school learned.  Since some regions have only Elemental
+or only Self guilds, and most guilds are closed at night, the player will
+sometimes have to mind SP expenditure.  Furthermore, after refilling SP at a
+guild the character gets a debuff that will drain that exact SP amount if a
+Lloyd's Beacon is recalled within the next two hours, which dissuades the usual
+exploitative use of the spell to teleport to a town and refill spend magic.
+
+Magic guilds also sell spell scrolls, with the same spells they stock the books
+of (and also Telepathy and Fate at the respective Self guilds, since these are
+now scroll-only).  As such, it pays to join a guild even if (perhaps especially
+if) the party has no one to learn that magic school.  The scroll mastery rank
+(and power, to an extent) follows the guild rank (more on scroll power below).
+
+Instead of being exchanged for semi-random items, ore lumps can now be used to
+craft specific equipment items at appropriate shops.  This typically requires
+several lumps of ore, a sum of gold, and some other consumable (such as potion
+or scroll) thematically corresponding to the prospective item's enchantment.
+All weapon, armor, and magic shops (except those on EI) accept orders of any
+treasure level, but low-level shops will take a very long time to create an
+expensive item.  While fancier shops are much faster, but also more expensive.
+
+The regular items on sale in many shops have also been tweaked: except for
+magic shops, most of them now sell better stuff, and some stores' repertoire is
+changed as well -- notably, all armor stores now sell boots and cloaks.
+
+By popular request, empty bottles in alchemy shops now restock on each visit.
+Other items can be made to restock faster by buying them, which decreases the
+shop's restock timer to a minimum of 1 day (naturally, the bottles are exempt).
+
+One new unique store is added: the black market, which deals with stolen items,
+unlike other shops.  It's also the place to go if you lost an important quest
+item, since the Judge no longer returns them.  Items stolen by thief monsters
+can also end up here.  The black market is in Erathian sewers, next to Lasker's
+room, and the party will get a discount (as well as some other benefits) by
+getting there without killing the thieves (which was unimplemented in vanilla).
+
+Bank will now only grant interest to the money that spent one full week on the
+account (Monday to Sunday), to prevent an obvious exploit of putting all your
+gold there on Sunday evening and removing it the next day with interest.
+
+Arena gold reward is slightly reduced, instead you will occasionally be
+rewarded with magic hourglasses that can cause an area to refill on the next
+visit (outdoor maps may need two uses).  Also, winning enough Lord battles
+may grant a one-time special prize complete with a cosmetic title (award).
+
+The hourglasses can probably be abused in a number of ways (such as getting
+multiple copies of unique items).  I will try to fix this in future releases.
+
+The vanilla box traders have been removed in favor of NPCs that buy certain
+"special items" such as apples, horseshoes, ore, or the above hourglasses.
+Unlike in MM6 and MM8, all of these items can also be used in some other way
+besides just being sold, so it's an entirely optional feature.
+
+Hirelings have been tweaked a lot.  Scholars no longer identify all items, but
+instead only provide a bonus to ID Item skill (and experience gain).  Some
+other skill-boosting hirelings were improved; item repairers now also either
+grant a minor skill boost, or (in the case of alchemists) recharge wands daily.
+Healers are cheaper.  And travel hirelings now also boost walking speed on
+their respective terrain, including indoors, and hint which maps were refilled.
+
+There are also several new professions.  First, Self magic boosters were split
+into Sun clerics which also boost Light, and Moon clerics who boost Dark (and
+reduce reputation).  This is to make them competitive with the Elemental magic
+hirelings.  There are also ninjas who cast Invisibility daily, beacon masters
+who cast Lloyd's Beacon, and bards which improve your reputation over time.
+
+The identities of street NPCs no longer reset on each reload, but are now
+re-randomized only once per two weeks (pretty much like in Merge).
+
+Finally, some hirelings now reside in houses, like in MM6!  There's exactly one
+of each profession scattered around the world, except on EI which has doubles.
+Take note of the Evenmorn beacon master which are otherwise late-game-only.
+
+
+=== Difficulty tweaks ===
+
+People were complaining that the Hard difficulty is not hard enough, so I took
+some more steps in that direction.  I didn't manage to implement all my ideas
+before the release, so there'll be more hardiness later, until it's enough.
+
+First, only some skills now get penalty at high difficulty, these are: ID Item,
+Merchant, Repair, Perception, Disarm Traps, Dodging, Unarmed, ID Monster,
+Armsmaster, Thievery, and Alchemy.  Mostly these are "misc" utility skills,
+since I figured that combat is penalized enough already by monsters being
+stronger.  Knight and Monk's signature skills are the exception, since they're
+so strong (and since Thief's signature skill is still penalized, despite it now
+having combat use).  As some magic is also utility, (all) spells instead get a
+25%/50% increased cost -- this will also make SP run out faster as HP does now.
+
+Chest traps are more nasty.  Triggering a trap on Medium or Hard will break
+some of the items inside the chest, and inflict a further effect dependent on
+the trap type: chance of poison, paralysis, or destruction of some carried
+consumable items.  Naturally, on Hard all these effects are stronger.
+
+To discourage savescumming, monsters now have semi-fixed item loot, except on
+Easy (to make it optional).  Namely, for a given monster there's about a dozen
+possible items it can drop (less on Hard, determined on map refill), so looting
+and reloading will only grant one of these items (or none at all, if item drop
+chance is low enough).  So it's likely that a dragon will have something good,
+if you reload 4-5 times, but don't expect an artifact from each one you slay.
+
+Invisibility got nerfed.  On Medium, monsters that are immune to magic can see
+through it (this notably includes the blaster guys).  On Hard, ALL monsters see
+you, but those not immune will miss you very often, and won't cast Dispel.  The
+last one is just to keep Walls of Mist feasible, and may change upon feedback.
+
+Immutability is also nerfed: on Medium/Hard, there's 25%/50% chance it fails to
+protect you from a given bad condition (this does not weaken the spell).  This
+will hopefully make the added death resistance of Preservation, as well as the
+various condition immunity enchantments, less redundant even in the late game.
+
+Finally, a lot of monsters got new or alternative spells that only "turn on" if
+the difficulty is high enough (otherwise they keep their vanilla spellset).
+Additionally, above Easy the buffs that are party-wide for the player will also
+be applied to nearby allies of the monster that casts them, and a lot of new
+spellsets make use of that.  Also, some new (to monsters) spells were added:
+* Starburst, Deadly Swarm, Flying Fist and so on work as for the party;
+* Sunray works as for the party, except at night it's replaced by Light Bolt;
+* Inferno and Prismatic Light damage the entire party (and only it) at once;
+* Regeneration is actually a caster-only one-time heal, not buff;
+* Jump simply lets the monster quickly "sprint" towards the party;
+* Telekinesis steals a PC's equipped weapon from range.
+On that topic, most melee monsters have either Shield (cast on self only) or
+Jump on Medium+, to keep with ranged PCs.  We'll see how it plays out.
+
+
+=== Spells, potions and enchantments ===
+
+There were some more spell tweaks since 3.0.  First, Ice Blast once again deals
+1d6 damage per skill point, but there are no extra shards at GM, since they
+made the spell too powerful.  Lloyd's Beacon duration is reduced to 2 days per
+skill point, and it also interferes with SP restoration at guilds (see above).
+Resurrection heals a bit more HP, and Incinerate has higher instadeath chance.
+Also, Sunray has somewhat reduced recovery to make it more competitive.
+
+Immutability now degrades faster when used to prevent more dangerous
+conditions: at double speed against stoning and paralysis, and at triple speed
+against death and eradication.  See also the high difficulty nerf above.
+
+Turn Undead now deals minor damage to affected monsters, and if it's somehow
+reduced to zero, the fear effect will not be applied either.
+
+Psychic Shock is now an Expert-level spell with reduced cost and damage, as
+Clerics had no midgame attack spell before.  Berserk takes its place at Master.
+
+Armageddon again affects the entire map, and there's no unconditional
+reputation loss, however the party takes full responsibility (in reputation and
+fines) for killed innocents.  OTOH the XP for kills is not awarded anymore.
+Additionally, to prevent multi-day Armageddon camping, all monsters on the map
+are completely healed after approx. each full day the party spends there.
+
+Fire Spike is more effective as an obstacle, as the spike will damage a monster
+multiple time before disappearing, provided it's the monster stumbling into the
+spike instead of the other way around.  In practice, this will significantly
+delay non-fliers, since monsters abort walking whenever they take damage.
+Also, spikes always deal d6 damage, and how much you can cast at once depends
+on skill value, with rank instead determining each spike's durability.
+
+Divine Intervention and Sacrifice no longer restore SP, so their cost matters.
+
+Aura of Conflict can be dispelled with Ctrl-click on the spell icon.  And now
+that it can't create problems, the buff's duration is massively increased.
+
+Most spells can now be shot at an arbitrary point on screen with a Shift-click!
+Meteor Shower and Starburst don't precisely follow the cursor when cast that
+way, instead its vertical position determines distance from the party.
+Accordingly, Rock Blast can now be aimed manually, either at monsters or walls.
+
+Death Blossom can also be aimed, either at a monster (the game tries to predict
+the required trajectory), or anywhere with a Shift-click (it will still fly at
+an arc).  Also it has more shards on GM instead of the broken vanilla bonus.
+
+Shield spell now works properly (it did nothing in vanilla!)  However, multiple
+sources of half missile damage stack additively now, for 1/3 damage with two,
+1/4 with three, 1/5 with 4 and so on.  (It was 1/4, 1/8, 1/16 etc. in vanilla.)
+
+Temple blessings (cast on you for donations) now act as GM spells, except for
+Wizard Eye.  In particular, it's now a reliable source of GM Immutability.
+
+Scroll skill level is now variable, randomized based on item treasure level.
+In particular, you can find scrolls cast at GM, such as in Paramount guilds.
+
+There are two more weapon bonuses that add +5% and +10% to critical chance.
+Additionally, these and other bonuses grant an increased effect (about +50%)
+when applied to two-handed axes and swords (this also affects some artifacts).
+
+Some enchantments are a bit stronger now, such as Doom or skill buffs.  Gods
+is cheaper, and Carnage is nerfed: monsters are able to dodge the fireball.
+
+X Slaying weapons no longer double weapon damage, but instead add +30% crit
+chance (+20% for undead) against their targets, which scales into late-game
+better.  Backstabbing weapons add +15% backstab chance in a similar vein.
+
+Fixed bonuses are now somewhat more likely on armor, esp. from Enchant Item.
+
+Divine Mastery potion now grants a proper buff that times out after a while.
+
+Alchemy is now nerfed a bit: when distilling a reagent, skill value in excess
+of reagent power is halved.  However, all grey reagents are now stronger.
+
+There's one more black potion, Ultimate Cure, that fully heals a character (and
+then some).  For full asymmetry, Divine Power is also a bit weaker now.
+
+Finally, holy water now has lower duration when applied to coat weapons.
+
+
+=== Other items and map objects ===
+
+All monsters that leave corpses can now be looted for a chance of at least some
+treasure.  For instance, sharks may drop randomly enchanted sharktooth daggers.
+
+Fire elementals in particular may yield magic embers.  These are also
+occasionally found in campfires and basically act like a GM Fire Aura scroll.
+
+Other new consumable items include drinkable wines (one just makes you drunk,
+another raises stats) and rare golden apples which grant some single-PC buffs.
+Both kind of apple also cure weakness now, besides increasing party food.
+
+Genie lamps were reworked again, and now grant a random blessing or a curse
+that basically depends on the current day and the previously used lamps in a
+complicated way that varies between playthroughs.  One possible blessing allows
+you to "wish" for an enchanted item, much like a shop order (but for free).
+
+Ore veins now grant a variable amount of ore, depending on Perception skill.
+
+There are two new types of cauldrons, raising Mind and Magic resistance.
+
+All HP/SP recovering wells have a per-day limit now.  OTOH, stat-boosting wells
+are not once-per-day anymore, but once-per-rest, so they cannot be used twice.
+
+The temple in a bottle is once again in Shoals instead of randomly dropped.
+
+Many item caches that either contained fixed good items, or disappointing bad
+loot, now have random high-level items (the vanilla engine could not place
+random items with high treasure level to low-level areas; this is fixed now).
+
+All of unique items have their own graphics now, of varying quality.
+
+Weapon damage has been tweaked heavily, so that some items have higher damage
+and some, better accuracy.  I also replaced two-handed double damage with just
+higher attack/damage bonuses (and also stronger enchantments, see above.)
+
+Finally, rings and amulets cannot have most AC-affecting enchantments anymore.
+
+
+=== Other changes ===
+
+The mod now has a complete new dungeon!  Kaltenberg modeled it, and it's likely
+to be present in his mod, too, but I got to release first, at least.  The map
+features several interactive puzzles and it can be found in eastern Bracada.
+
+Snipers now have a unique promotion quest, tied to the above dungeon, with a
+new Bow-related unique item as the reward.  The Perfect Bow remains for Master
+Archers, and it's a much better weapon now (competitive even with artifacts).
+
+Another new quest allows Monks to advance some of their skills to GM before
+completing the second promotion.  This is an attempt to balance the extreme
+"late bloomer" flavor of this class, although since the quest is initiated in
+Evenmorn and then requires traveling to Nighon, it's not much of a shortcut.
+
+There's also an "introductory" quest for the black market in Tatalia, that just
+requires buying a "lost" quest item there.  Another quest is found in Avlee,
+and it rewards the player with a third hireling (choice of three professions).
+
+Choosing the new judge now provides an actual reward (XP and reputation).
+
+Tatalian pirate ship now sails to Evenmorn even without completing the Priest
+quest, but you'll need Bill Lasker to vouch for you, and it's not cheap either.
+
+Perception GM teacher now requires finding only 10 obelisks instead of all 14.
+
+Shield Master perk has changed: with it, the game treats your equipped shield
+as two identical items, doubling all affected bonuses that can be stacked.
+
+ID Monster shows a bit more info, and unlocking it just requires higher skill
+value instead of advancing in rank (instead the rank acts as a multiplier).
+
+Axe Expert recovery bonus is decreased from double skill to 1.5 times skill.
+
+Merchant bonus from hirelings etc. is now affected by the rank multiplier.
+
+Skill ranks available to some classes were changed again.  In particular,
+Sorcerers can no longer advance Earth magic to GM (Rangers can, though).
+
+Item repair now takes a turn, and cannot be performed by inactive characters.
+Smith-type hirelings can still repair their item types instantly, though.
+
+Some new hotkeys can be set in the Controls menu.  These include some MM7Patch
+keys, a hotkey for repairing carrying items (mass repair is restricted near
+enemies!), a hotkey for drinking a healing potion (on self only, for now), and
+four new quick spell hotkeys (7890 by default, spells set in the spellbook).
+Beware that hotkeys are system-wide, and if you, say, set the journal key to
+F8, it will break once you run vanilla MM7, as only my mod allows F-keys there.
+
+Accuracy stat was renamed to Agility, and it now affects AC instead of Speed.
+
+Starting skills now all also add varied items to the starting PC inventory.
+
+Shooting at monsters standing in unlit areas now imposes an accuracy penalty.
+
+Manticores are properly introduced into the game, specifically under Eeofol.
+Also, Tularean Forest has wild dragonflies now instead of just angry trees.
+
+Monsters that drain SP do so on every hit, but the SP lost is much less now.
+
+Chest traps have only a 50% chance to be disarmed if the skill is exactly equal
+to trap difficulty (which is always even), making odd skill values more useful.
+
+
+=== Bug fixes ===
+
+Naturally, there are some more since the last time.
+
+Fix: Efreet now attack with fire, and Genies with air.
+Fix: Monk and Initiate hirelings shared string resources with the class.
+Fix: Merchant hireling shared the string resource with the skill.
+Fix: Fallen Wizard's buff duration increased from 5 to 6 hours.
+Fix: some spells did not decrease recovery with rank despite the description.
+v3.0 fix: Aura of Conflict had Telepathy recovery values.
+Fix: preventing Stoned did not weaken Immutability.
+Fix: Elfbane did not do any extra damage to elves.
+Fix: GM Death Blossom wasn't actually improved besides recovery.
+Fix: Fire Spike max allowed count was off-by-one.
+Fix: the Shield spell actually works now.
+Fix: some map objects were buggy (e.g. duplicate ore veins).
+v2.0 fix: Sacrifice did not cure Eradicated characters.
+v3.0 fix: some spells were cast with the wrong mastery.
+Fix: Hero's Belt had Lady's Escort resistance bonus.
+v3.0 fix: Incinerate can now instakill in monster-on-monster combat.
+Fix: monster-on-monster spells had an attack roll.
+Fix: blaster AC penetration did not use Squire etc. skill bonuses.
+Fix: recovery penalty for running also applied while standing still.
+Fix: cold chest traps exploded in a fireball.
+Fix: one Walls of Mist area had random items lying on the ground.
+Fix: monster Meteor Shower used MM6 projectile numbers.
+Fix: armor shops were treated as empty with the two last items still unsold.
+Fix: sailing to Tatalia and Avlee rotated the party the wrong way.
+Fix: indoor map refill counter wasn't incremented properly.
+Fix: lady Carmine only appears when the quest to kill her is active.
+v3.1 fix: music is no longer disabled after starting a new game repeatedly.
+Also there are multiple minor text typo etc. fixes.
+
+-------------------------------------------------------------------------------
+
+== Elemental Mod ver. 3.1.2 ==
+
+Another tiny release with some bugfixes accumulated while writing 4.0.
+
+* Lloyd's Beacon recall counter is now incremented after the autosave.
+* Elixir of Life scrolls and spellbooks are now named as such.
+* Fix AC bonuses from skills broken by some 3.1 code.
+* Vanilla fix: now more than 9 sprites per map can emit sounds.
+* Also the distance at which these sounds play is now decreased a bit.
+* Fix the 3.0 bug that caused some chest items to be pre-identified.
+* A bunch of text typo fixes, including incorrect Ethric's Staff description.
+
+-------------------------------------------------------------------------------
+
 == Elemental Mod ver. 3.1.1 ==
 
 A really tiny release that fixes a handful of bugs before I start on 4.0.
@@ -9,6 +381,7 @@ A really tiny release that fixes a handful of bugs before I start on 4.0.
 * Killing monsters with Ethric's Staff shouldn't cause crashes now.
 * Fixed some typos in Russian documentation.
 
+-------------------------------------------------------------------------------
 
 == Elemental Mod ver. 3.1 ==
 

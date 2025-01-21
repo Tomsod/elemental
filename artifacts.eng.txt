@@ -1,4 +1,4 @@
-This is the new artifact spoiler for Elemental Mod, accurate as of v3.1.
+This is the new artifact spoiler for Elemental Mod, accurate as of v4.0.
 The player is not expected to read it before playing, as discovery is part of
 the fun.  However, you should consult this file if you're unsure precisely how
 the artifact you've found works.
@@ -6,18 +6,21 @@ the artifact you've found works.
 First of all, a total of 45 artifacts and relics exists in the mod, 16 of them
 newly added.  (This does not include various 'special items' that show up at
 predetermined places.)  In a single game, however, it's only possible to
-collect a total of 20 artifacts, 12 of them as random drop from dragons and
-other treasure level 6 generators (including some chests), and 8 more appearing
-in specific chests scattered throughout the game -- these chests always contain
-some kind of artifact or relic, but which one is usually random.  Unlike in
-vanilla, waiting for respawn won't grant you more artifacts from such chests.
+collect a total of 20 artifacts, 10 of them as random drop from dragons and
+other treasure level 6 generators (including some chests), and 10 more
+obtainable in specific chests scattered throughout the game, as well as by more
+exotic means - these chests etc. always contain some kind of artifact or relic,
+but which one you get varies per game.  Unlike in vanilla, waiting for respawn
+won't grant you more artifacts from said chests, so the limit of 10 is strict.
 
-Here's the list of those artifact chests:
+Here's the list of those guaranteed artifacts:
 * four artifacts in the obelisk treasure;
 * one artifact as part of Arcomage reward;
-* one artifact in Clanker's Laboratory (just like in vanilla);
-* one artifact in Colony Zod (also in vanilla);
-* and one artifact in the Shoals.
+* one artifact in a chest in Clanker's Laboratory (just like in vanilla);
+* one artifact in a chest in Colony Zod (also in vanilla);
+* one artifact as a reward for winning enough Arena Lord battles;
+* one artifact randomly obtainable from a genie lamp with enough Luck;
+* and one artifact on sale at the Black Market after your first promotions.
 
 Now I'll describe the 16 new artifacts in detail.
 
@@ -53,14 +56,11 @@ to cast Slow on hit.  The spell uses the wielder's Staff skill to determine
 duration, power, and resistance penetration.  This artifact is mostly intended
 for Monks, who lacked a good artifact weapon in vanilla.
 
-6. Temple in a Bottle (misc)
-Previously an entrance to the credits dungeon, it's now actually useful!  The
-bottle teleports the party to a small room with a temple and four chests, and
-exiting it will return to whenever the artifact was used (and give back the
-bottle).  It cannot be used before it's identified, and also in Arena.  Lloyd's
-Beacon and Invisibility cannot be cast inside the bottle.  It can still be
-found in Shoals, but may also appear randomly before that, in which case the
-Shoals chest will contain another random artifact.
+6. Fencer's Friend (dagger)
+An artifact dagger that doubles the chance of many random melee weapon effects,
+such as: stun, paralysis, halved armor, parry, curse, and some relic abilities.
+It also grants +10 to AC and crit chance and is vampiric.  It's intended as
+a good offhand weapon for characters who cannot use a sword in the left hand.
 
 7. Sword of Light (sword)
 A relic sword that attacks with Energy, adds +5 to Light Magic, and can only be
@@ -118,10 +118,10 @@ A relic amulet that lowers the recovery of all cast spells by 25% and also adds
 essentially increases the caster's DPS (but also SP expenses) by a third.
 
 15. Gadgeteer's Belt (belt)
-An artifact belt that improves magical consumables: both scrolls and wands are
-cast at GM and get +5 to spell power, and most potions (EXCEPT black) also get
-+25% to base power when used.  Thieves get double benefits from this artifact
-(+10 and +50% respectively).
+An artifact belt that improves magical consumables: wands are cast at GM and
+get +5 to spell power, while scrolls and most potions (EXCEPT black) also get
++25% to base power when used; scrolls also get one extra skill rank.  Thieves
+get double benefits from this artifact (+10 and +50% respectively).
 
 16. Gardener's Gloves (gauntlets)
 Artifact gloves that improve Earth Magic (the usual +50% bonus to skill), but

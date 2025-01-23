@@ -832,6 +832,7 @@ enum gender
 
 #define EVENTS_LOD ((void *) 0x6be8d8)
 #define SAVEGAME_LOD ((void *) 0x6a06a0)
+#define GAMES_LOD ((void *) 0x6a08e0)
 
 #define MAP_VARS ((uint8_t *) 0x5e4b10)
 #define MAP_COUNT 77
@@ -1339,7 +1340,7 @@ typedef struct mapstats_item s_mapstats_item;
 static const char map_altar_of_wishes[] = "genie.blv";
 #define UNDERWATER 0x6be244
 #define CURRENT_MAP_ID 0x6bdfbc
-static int castle_id, bottle_id;
+static int castle_id, bottle_id, genie_id;
 
 #define OUTDOOR_LAST_VISIT_TIME 0x6a1160
 #define INDOOR_LAST_VISIT_TIME 0x6be534
@@ -1917,9 +1918,10 @@ static int __thiscall (*dir_cosine)(void *this, int dir)
 #define TRIG_THIS ((void *) 0x56c680)
 static int __thiscall (*find_active_player)(void *this) = (funcptr_t) 0x493707;
 static int __thiscall (*get_map_index)(struct mapstats_item *mapstats,
-                                       char *filename) = (funcptr_t) 0x4547cf;
-static void *__thiscall (*find_in_lod)(void *lod, char *filename, int unknown)
-    = (funcptr_t) 0x4615bd;
+                                       const char *filename)
+    = (funcptr_t) 0x4547cf;
+static void *__thiscall (*find_in_lod)(void *lod, const char *filename,
+                                       int unknown) = (funcptr_t) 0x4615bd;
 static int __cdecl (*fread)(void *buffer, int size, int count, void *stream)
     = (funcptr_t) 0x4cb8a5;
 static int (*get_eff_reputation)(void) = (funcptr_t) 0x47752f;
@@ -2071,6 +2073,9 @@ static void __thiscall (*randomize_item)(int this, int level, int type,
 static void __fastcall (*set_image_mouseover)(void *buffer, void *image,
                                               int id) = (funcptr_t) 0x40f8a8;
 #define GET_ASYNC_KEY_STATE 0x4d8260
+static int __thiscall (*append_to_lod)(void *lod,
+                                       const struct file_header *header,
+                                       void *buffer) = (funcptr_t) 0x461fae;
 static int __thiscall (*get_config_key_color)(int id) = (funcptr_t) 0x414d2f;
 static char *__stdcall (*get_key_name)(int key) = (funcptr_t) 0x45ae65;
 static int __thiscall (*parse_key_name)(int this, const char *name)
@@ -19904,7 +19909,7 @@ static int __cdecl get_max_skill_level(int class, int race,
 }
 
 // Prefetch text color constants.  Called from spells_txt_tail() above.
-// Also here: prefetch unrefillable map IDs.
+// Also here: prefetch some map IDs.
 static void set_colors(void)
 {
     colors[CLR_WHITE] = rgb_color(255, 255, 255);
@@ -19917,6 +19922,7 @@ static void set_colors(void)
     colors[CLR_PURPLE] = rgb_color(255, 0, 255);
     castle_id = get_map_index(MAPSTATS, "d29.blv") - 1;
     bottle_id = get_map_index(MAPSTATS, "nwc.blv") - 1;
+    genie_id = get_map_index(MAPSTATS, map_altar_of_wishes);
 }
 
 // Colorize skill ranks more informatively (also respect racial skills).
@@ -26872,19 +26878,85 @@ static void __declspec(naked) genie_projectile_trigger(void)
         call eax ; ditto
         test eax, eax ; the check after the hook
         jnz quit
-        push CUR_MAP_FILENAME_ADDR
-#ifdef __clang__
-        mov eax, offset map_altar_of_wishes
-        push eax
-#else
-        push offset map_altar_of_wishes
-#endif
-        call dword ptr ds:uncased_strcmp
-        add esp, 8
-        inc eax ; -1 to 1 -> 0 to 2
-        and eax, 1 ; 2 -> 0
+        mov ecx, dword ptr [CURRENT_MAP_ID]
+        cmp ecx, dword ptr [genie_id]
+        sete al
         quit:
         ret
+      }
+}
+
+// Add genie.dlv to the save file at game start.
+static void new_game_genie(void)
+{
+    // this really oughta be unhardcoded, but ehh
+#define GENIE_DLV_SIZE 146281
+    static const struct file_header header = { "genie.dlv", GENIE_DLV_SIZE };
+    void *file = find_in_lod(GAMES_LOD, header.name, 1);
+    char buffer[GENIE_DLV_SIZE];
+    fread(buffer, 1, GENIE_DLV_SIZE, file);
+    append_to_lod(SAVEGAME_LOD, &header, buffer);
+}
+
+// Hook for the above.
+static void __declspec(naked) new_game_genie_hook(void)
+{
+    asm
+      {
+        mov eax, 0x461780 ; replaced call
+        call eax
+        call new_game_genie
+        ret
+      }
+}
+
+// Get the proper map ID when setting a Lloyd's Beacon inside the genie map.
+static void __declspec(naked) set_genie_beacon(void)
+{
+    asm
+      {
+        mov eax, dword ptr [genie_id]
+        cmp eax, dword ptr [CURRENT_MAP_ID]
+        je genie
+        mov eax, dword ptr [0x6a0b0c] ; replaced code
+        ret
+        genie:
+        mov word ptr [esp+20], ax ; the map index
+        add dword ptr [esp], 75 ; jump to set id code
+        ret
+      }
+}
+
+// Since the new map is not in the base games.lod, skip searching in there.
+static void __declspec(naked) genie_beacon_map_name(void)
+{
+    asm
+      {
+        shr ecx, 5 ; restore map id
+        cmp ecx, dword ptr [genie_id]
+        je genie
+        jmp dword ptr ds:uncased_strcmp ; replaced call
+        genie:
+        mov ebp, ecx ; return value
+        xor eax, eax ; skip the other code
+        ret
+      }
+}
+
+// Also fix the two recall beacon checks that try to pull map name from there.
+static void __declspec(naked) genie_recall_beacon_map_name(void)
+{
+    asm
+      {
+        pop ecx
+        mov eax, dword ptr [esp+32] ; beacon struct, maybe
+        mov ax, word ptr [eax+26] ; map id
+        cmp ax, word ptr [genie_id]
+        jne skip
+        mov dword ptr [esp], offset map_altar_of_wishes
+        skip:
+        push CUR_MAP_FILENAME_ADDR ; replaced code
+        jmp ecx
       }
 }
 
@@ -26906,7 +26978,8 @@ static inline void one_more_map(void)
         0x433c1b, 0x4340d8, 0x438d72, 0x438e4e, 0x444577, 0x44496f, 0x4449d7,
         0x444bcb, 0x444d60, 0x444f02, 0x444f80, 0x448d7f, 0x450275, 0x4603c7,
         0x460b96, 0x47a404, 0x49595c, 0x497f94, 0x4abfe0, 0x4ac0d1, 0x4b2a1f,
-        0x4b3518, 0x4b41ea, 0x4b69df, 0x4b6a91, 0x4b6de2, 0x4be05a };
+        0x4b3518, 0x4b41ea, 0x4b69df, 0x4b6a91, 0x4b6de2, 0x4be05a, 0x433a78,
+        0x433a7f, 0x433a86, 0x433a8d, 0x433a94, 0x433a9b };
     for (int idx = 0; idx < sizeof(mapstats) / sizeof(int); idx++)
         patch_dword(mapstats[idx], dword(mapstats[idx]) - SIZE_MAPSTAT);
     // map track reference at 0x4abf71 is tricky as it's overriden by mmext
@@ -26915,6 +26988,11 @@ static inline void one_more_map(void)
     patch_byte(0x433b8a, 78); // update map count (some map change code)
     patch_byte(0x497f8a, 78); // ditto (perception glow check)
     hook_call(0x47184c, genie_projectile_trigger, 5);
+    hook_call(0x460a07, new_game_genie_hook, 5);
+    hook_call(0x433819, set_genie_beacon, 5);
+    hook_call(0x410dbf, genie_beacon_map_name, 5);
+    hook_call(0x433630, genie_recall_beacon_map_name, 5); // current map check
+    hook_call(0x43369a, genie_recall_beacon_map_name, 5); // new map
 }
 
 // Provide names for new NPCs without discarding the old array.

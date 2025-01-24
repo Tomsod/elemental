@@ -31,7 +31,6 @@ if list then
     list:close()
     os.remove(name)
 end
-DataTables.LazyMode = true -- prevent the tables from being re-created in v2.3
 
 -- Disable MMExt v2.3 map array extender (we handle it ourselves).
 rawset(Game.MapStats, "count", 78)
@@ -49,4 +48,19 @@ function events.ScriptsLoaded()
         old_UpdateDataTables()
         rawset(Game.MapStats, "?ptr", Game.MapStats["?ptr"] + Game.MapStats[0]["?size"])
     end
+end
+if DataTables.LazyMode == nil then -- v2.2, can't turn tables off
+    local name = "Data/Tables/Transport Locations.txt" -- assume all tables are created at once
+    if not os.rename(name, name) then -- only need to shift when they're not created yet
+        function events.GameInitialized2()
+            rawset(Game.MapStats, "?ptr", Game.MapStats["?ptr"] - Game.MapStats[0]["?size"])
+        end
+        function events.ScriptsLoaded() -- after the data table hook is added
+            function events.GameInitialized2()
+                rawset(Game.MapStats, "?ptr", Game.MapStats["?ptr"] + Game.MapStats[0]["?size"])
+            end
+        end
+    end
+else
+    DataTables.LazyMode = true -- prevent the tables from being re-created in v2.3
 end

@@ -8,6 +8,7 @@ Data/Tables/ObjList.txt
 Data/Tables/SFT.txt
 Data/Tables/Shops.txt
 Data/Tables/Spells2.txt
+Data/Tables/Town Portal.txt
 Data/Tables/Transport Index.txt
 Data/Tables/Transport Locations.txt
 DataFiles/ddeclist.bin

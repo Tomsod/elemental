@@ -164,3 +164,6 @@ ID	Name	Gender
 163	Метательные ножи	plural
 164	Ножи из живого дерева	plural
 165	Нож-бумеранг	masculine
+166	Кастеты	plural
+167	Шипованные рукавицы	plural
+168	Цестусы	plural

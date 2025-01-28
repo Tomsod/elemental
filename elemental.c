@@ -621,7 +621,8 @@ enum items
     THROWING_KNIVES = 163,
     LIVING_WOOD_KNIVES = 164,
     BOOMERANG_KNIFE = 165,
-    LAST_PREFIX = 165, // last enchantable item
+    BRASS_KNUCKLES = 166,
+    LAST_PREFIX = 168, // last enchantable item
     CLANKERS_JOURNAL = 184,
     LARGE_GOLD_PILE = 199,
     FIRST_REAGENT = 200,
@@ -767,7 +768,7 @@ struct __attribute__((packed)) items_txt_item
     uint8_t equip_stat;
     uint8_t skill;
     uint8_t mod1_dice_count;
-    SKIP(1);
+    uint8_t mod1_dice_sides;
     uint8_t mod2;
     uint8_t type;
     SKIP(6);
@@ -1419,7 +1420,7 @@ struct __attribute__((packed)) spcitem
     uint8_t level; // A-D == 0-3
     uint8_t robe_prob; // my addition
     uint8_t crown_prob; // ditto
-    uint8_t prefix; // and this
+    uint8_t caestus_prob; // and this
 };
 typedef struct spcitem s_spcitem;
 
@@ -3661,7 +3662,8 @@ static int __thiscall can_add_temp_enchant(struct item *weapon, int enchant)
                 return FALSE;
             goto dupe;
         case SPC_SWIFT:
-            if (weapon->id == PUCK || weapon->bonus2 == SPC_DARKNESS)
+            if (weapon->id == PUCK || weapon->bonus2 == SPC_DARKNESS
+                || ITEMS_TXT[weapon->id].skill == SKILL_UNARMED)
                 return FALSE;
             goto dupe;
         case SPC_UNDEAD_SLAYING:
@@ -3851,8 +3853,16 @@ static void __declspec(naked) permanent_slaying(void)
         call dword ptr ds:is_artifact
         test eax, eax
         jnz quit
-        cmp dword ptr [ebp-4], 2 ; equip stat, 0-2 = weapon
-        ja quit
+        cmp dword ptr [ebp-4], ITEM_TYPE_MISSILE - 1
+        jbe ok
+        cmp dword ptr [ebp-4], ITEM_TYPE_GAUNTLETS - 1
+        jne quit
+        mov edx, dword ptr [esi]
+        lea edx, [edx+edx*2]
+        shl edx, 4
+        cmp byte ptr [ITEMS_TXT_ADDR+edx].s_items_txt_item.skill, SKILL_UNARMED
+        jne quit
+        ok:
         cmp dword ptr [MOUSE_ITEM], MAGIC_EMBER
         jne dragon
         mov dword ptr [esi].s_item.bonus2, SPC_INFERNOS_2 ; as gm fire aura
@@ -5185,8 +5195,13 @@ static void __declspec(naked) new_game_items(void)
         dec eax
         jz thievery
         dec eax
+        jz learning
+        dec eax
         jnz skip
-        ; otherwise learning
+        ; otherwise unarmed
+        push BRASS_KNUCKLES
+        jmp item
+        learning:
         push HORNED_HELM
         jmp item
         thievery:
@@ -5587,10 +5602,11 @@ static inline void misc_items(void)
     patch_byte(0x497935 + SKILL_DISARM_TRAPS, 19); // old dodging (boots)
     patch_byte(0x497935 + SKILL_DODGING, 28);
     patch_byte(0x497935 + SKILL_IDENTIFY_MONSTER, 29);
-    patch_byte(0x497935 + SKILL_ARMSMASTER, 20); // same as unarmed for now
+    patch_byte(0x497935 + SKILL_ARMSMASTER, 20); // old unarmed (gloves)
     patch_byte(0x497935 + SKILL_THIEVERY, 30);
     patch_byte(0x497935 + SKILL_ALCHEMY, 18); // vanilla bottle + reagent
     patch_byte(0x497935 + SKILL_LEARNING, 31);
+    patch_byte(0x497935 + SKILL_UNARMED, 32);
     hook_call(0x439614, blaster_fixes, 23);
     hook_call(0x43967b, carnage_hit_bonus, 7);
     hook_call(0x43a92c, carnage_dodge, 5);
@@ -8216,10 +8232,16 @@ static void __declspec(naked) death_blossom_gm(void)
 
 // Make the spc/std bonus relative chance when using Enchant Item equal
 // to their normal generaion odds.  This hook is for GM (tlvl 4/5).
+// Also here: treat brass knuckles as weapons for enchanting purposes.
 static void __declspec(naked) enchant_item_spc_chance_gm(void)
 {
     asm
       {
+        cmp byte ptr [esi].s_items_txt_item.equip_stat, ITEM_TYPE_GAUNTLETS - 1
+        jne ok
+        cmp byte ptr [esi].s_items_txt_item.skill, SKILL_UNARMED
+        je skip
+        ok:
         mov edx, dword ptr [enchant_item_gm_noon]
         mov ecx, dword ptr [0x5e3f14+edx*4+3*4] ; spc chance
         mov edx, dword ptr [0x5e3efc+edx*4+3*4] ; std chance
@@ -8240,6 +8262,12 @@ static void __declspec(naked) enchant_item_spc_chance_master(void)
 {
     asm
       {
+        mov esi, dword ptr [ebp-48] ; needed for master hook
+        cmp byte ptr [esi].s_items_txt_item.equip_stat, ITEM_TYPE_GAUNTLETS - 1
+        jne ok
+        cmp byte ptr [esi].s_items_txt_item.skill, SKILL_UNARMED
+        je skip
+        ok:
         mov ecx, dword ptr [0x5e3efc+2*4] ; std chance
         add ecx, dword ptr [0x5e3f14+2*4] ; spc chance
         jz skip ; sanity check
@@ -8800,10 +8828,24 @@ static void __declspec(naked) undead_slaying_element(void)
         mov edx, dword ptr [eax] ; id
         lea edx, [edx+edx*2]
         shl edx, 4
-        cmp byte ptr [ITEMS_TXT_ADDR+edx].s_items_txt_item.equip_stat, \
-            ITEM_TYPE_MISSILE - 1
+        mov ch, byte ptr [ITEMS_TXT_ADDR+edx].s_items_txt_item.equip_stat
+        movzx edx, byte ptr [ITEMS_TXT_ADDR+edx].s_items_txt_item.skill
+        xchg ch, dh
+        cmp dl, SKILL_UNARMED
+        jne not_caestus
+        cmp dh, ITEM_TYPE_GAUNTLETS - 1
+        je got_weapon
+        not_caestus:
+        cmp dh, ITEM_TYPE_MISSILE - 1
         ja other_hand
+        got_weapon:
         inc dword ptr [esp+8] ; have a weapon
+        cmp dl, SKILL_STAFF
+        jne no_staff
+        cmp word ptr [edi+SKILL_STAFF*2].s_player.skills, SKILL_GM
+        jb no_staff
+        neg dword ptr [esp+8] ; mark it
+        no_staff:
         cmp dword ptr [eax], SWORD_OF_LIGHT
         jne skip_light
         inc dword ptr [esp+12] ; have sword of light
@@ -8845,7 +8887,13 @@ static void __declspec(naked) undead_slaying_element(void)
         inc dword ptr [esp] ; have a spectral weapon
         other_hand:
         dec ecx
-        jnz check_hand
+        jg check_hand
+        cmp dword ptr [esp+8], ecx ; 0 for unarmed, -1 for gm staff
+        jg done
+        neg dword ptr [esp+8]
+        mov eax, dword ptr [edi+SLOT_GAUNTLETS*4].s_player.equipment
+        jmp check_slot
+        done:
         pop edx ; spectral
         pop ebx ; undead sl.
         pop ecx ; total
@@ -8871,8 +8919,8 @@ static void __declspec(naked) undead_slaying_element(void)
         mov eax, dword ptr [ebp-12]
         shr eax, 1
         sub dword ptr [esp+12], eax ; pushed damage
-        push eax
         cmp dword ptr [esp], 0
+        push eax
         jz holy_or_magic
         cmp ebx, edx ; 0,1 or 1,0 or 0,0
         je physical
@@ -11053,9 +11101,11 @@ static int __thiscall get_critical_chance(struct player *player,
     if (dagger > SKILL_MASTER)
         dagger &= SKILL_MASK;
     else dagger = 0;
-    int equip = player->equipment[ranged?SLOT_MISSILE:SLOT_OFFHAND];
-    for (int i = !!ranged; i < 2; i++)
+    int slot = ranged ? SLOT_MISSILE : SLOT_OFFHAND;
+    int caestus = !ranged;
+    for (int i = !!ranged; i < 3; i++)
       {
+        int equip = player->equipment[slot];
         if (equip)
           {
             struct item *weapon = &player->items[equip-1];
@@ -11065,8 +11115,11 @@ static int __thiscall get_critical_chance(struct player *player,
                 int two_handed = data->equip_stat + 1 == ITEM_TYPE_WEAPON2
                                  && (data->skill == SKILL_SWORD
                                      || data->skill == SKILL_AXE);
+                caestus = caestus && data->equip_stat + 1 == ITEM_TYPE_SHIELD;
                 if (data->skill == SKILL_DAGGER)
                     crit += dagger;
+                else if (data->skill == SKILL_STAFF)
+                    caestus = player->skills[SKILL_STAFF] >= SKILL_GM;
                 if (weapon->bonus2 == SPC_KEEN)
                     crit += two_handed ? 8 : 5;
                 else if (weapon->bonus2 == SPC_VORPAL)
@@ -11134,7 +11187,10 @@ static int __thiscall get_critical_chance(struct player *player,
               }
           }
         if (!i)
-            equip = player->equipment[SLOT_MAIN_HAND];
+            slot = SLOT_MAIN_HAND;
+        else if (caestus)
+            slot = SLOT_GAUNTLETS;
+        else break;
       }
     if (crit > 100) // can happen with stupid high dagger skill
         crit = 100;
@@ -14669,6 +14725,9 @@ static inline void spcitems_buffer(void)
     patch_pointer(0x42b232, &spcitems->level);
 }
 
+// For remembering the prefix spcitems column (no more space in the struct).
+static char spc_prefixes[SPC_COUNT];
+
 // Externalize the prefix/suffix enchantment distinction into spcitems.txt.
 static void __declspec(naked) parse_prefix_flag(void)
 {
@@ -14676,17 +14735,18 @@ static void __declspec(naked) parse_prefix_flag(void)
       {
         cmp eax, 2
         je prefix
-        cmp eax, 17 ; replaced code, but with our field number
+        cmp eax, 18 ; replaced code, but with our field number
         ret
         prefix:
-        mov ecx, dword ptr [ebp-16]
-        mov byte ptr [ecx].s_spcitem.prefix, 0
+        mov ecx, dword ptr [ebp-24]
+        neg ecx
+        mov byte ptr [spc_prefixes+SPC_COUNT+ecx], 0
         cmp byte ptr [esi], 'y'
         je yes
         cmp byte ptr [esi], 'Y'
         jne no
         yes:
-        mov byte ptr [ecx].s_spcitem.prefix, dl
+        mov byte ptr [spc_prefixes+SPC_COUNT+ecx], dl ; == 1
         no:
         test edx, edx ; set flags
         ret
@@ -14698,8 +14758,7 @@ static void __declspec(naked) read_prefix_flag(void)
 {
     asm
       {
-        imul ecx, eax, SIZE_SPCITEM
-        cmp byte ptr [spcitems+ecx-SIZE_SPCITEM].s_spcitem.prefix, 1
+        cmp byte ptr [spc_prefixes+eax-1], 1
         ret ; jz follows shortly
       }
 }
@@ -17116,8 +17175,7 @@ static void __declspec(naked) flattener_2h(void)
         mov eax, 4 ; pass the check
         ret 4
         skip:
-        push 0x48d637 ; replaced call
-        ret
+        jmp dword ptr ds:equipped_item_skill ; replaced call
       }
 }
 
@@ -22765,7 +22823,7 @@ static void __declspec(naked) spcitems_new_probability(void)
 {
     asm
       {
-        cmp edx, 15
+        cmp edx, 16
         jb old
         add edx, 5 ; skip over other fields
         old:
@@ -22849,6 +22907,8 @@ static void __declspec(naked) spc_ench_group(void)
         je armor
         cmp edx, ITEM_TYPE_HELM - 1
         je helm
+        cmp edx, ITEM_TYPE_GAUNTLETS - 1
+        je gauntlets
         other:
         mov dword ptr [ebp-8], edx
         ret
@@ -22869,6 +22929,11 @@ static void __declspec(naked) spc_ench_group(void)
         cmp byte ptr [edi+4+ecx].s_items_txt_item.mod1_dice_count, 0
         jnz other
         mov dword ptr [ebp-8], 18 ; crown
+        ret
+        gauntlets:
+        cmp byte ptr [edi+4+ecx].s_items_txt_item.skill, SKILL_UNARMED
+        jne other
+        mov dword ptr [ebp-8], 19 ; caestus
         ret
       }
 }
@@ -22908,6 +22973,8 @@ static void __declspec(naked) spc_ench_group_ei(void)
         je armor
         cmp eax, ITEM_TYPE_HELM - 1
         je helm
+        cmp eax, ITEM_TYPE_GAUNTLETS - 1
+        je gauntlets
         quit:
         mov dword ptr [ebp-36], eax ; store in an unused var
         lea eax, [ebp-3696] ; replaced code
@@ -22929,6 +22996,11 @@ static void __declspec(naked) spc_ench_group_ei(void)
         cmp byte ptr [ITEMS_TXT_ADDR+esi].s_items_txt_item.mod1_dice_count, 0
         jnz quit
         mov al, 18 ; crown
+        jmp quit
+        gauntlets:
+        cmp byte ptr [ITEMS_TXT_ADDR+esi].s_items_txt_item.skill, SKILL_UNARMED
+        jne quit
+        mov al, 19 ; caestus
         jmp quit
       }
 }
@@ -22975,11 +23047,11 @@ static inline void new_enchant_item_types(void)
     patch_dword(0x456f25, 11); // and totals
     // NB: new totals occupy (unused) part of bonus range array
     patch_dword(0x456f73, dword(0x456f73) + 2); // don't parse lvl1 bonus range
-    patch_byte(0x4570be, 17); // spcitems value column
-    patch_byte(0x45710d, 19); // column count
+    patch_byte(0x4570be, 18); // spcitems value column
+    patch_byte(0x45710d, 20); // column count
     hook_call(0x4570b3, spcitems_new_probability, 7);
     // This will calculate (junk) sums of levels and value too, but it`s ok.
-    patch_dword(0x457146, 19); // probabilities + fields we skip over
+    patch_dword(0x457146, 20); // probabilities + fields we skip over
     hook_call(0x456ace, std_ench_group, 5);
     patch_byte(0x456aee, 0x39); // use our ecx
     erase_code(0x456afa, 2); // don`t recalculate ecx
@@ -25382,7 +25454,7 @@ static int __thiscall parse_item(const char *description)
     for (int i = 0; i < SPC_COUNT; i++)
       {
         int len = spclen[i];
-        if (len <= maxlen || !spcitems[i].prefix)
+        if (len <= maxlen || !spc_prefixes[i])
             continue;
         if (!mystrcmp(current, spcitems[i].name, len))
           {
@@ -25464,7 +25536,7 @@ static int __thiscall parse_item(const char *description)
         if (!of) for (int i = 0; i < SPC_COUNT; i++)
           {
             int len = spclen[i];
-            if (len <= maxlen || spcitems[i].prefix)
+            if (len <= maxlen || spc_prefixes[i])
                 continue;
             if (!mystrcmp(current, spcitems[i].name, len))
               {
@@ -25505,7 +25577,9 @@ static int __thiscall parse_item(const char *description)
     int wand = equip == ITEM_TYPE_WAND;
     int robe = equip == ITEM_TYPE_ARMOR && ITEMS_TXT[id].skill == SKILL_MISC;
     int crown = equip == ITEM_TYPE_HELM && !ITEMS_TXT[id].mod1_dice_count;
-    if (equip <= ITEM_TYPE_MISSILE && std)
+    int caestus = equip == ITEM_TYPE_GAUNTLETS
+                  && ITEMS_TXT[id].skill == SKILL_UNARMED;
+    if ((equip <= ITEM_TYPE_MISSILE || caestus) && std)
         return FALSE;
     if (wand && (std || spc))
         return FALSE;
@@ -25519,6 +25593,8 @@ static int __thiscall parse_item(const char *description)
             prob = spcitems[spc-1].robe_prob;
         else if (crown)
             prob = spcitems[spc-1].crown_prob;
+        else if (caestus)
+            prob = spcitems[spc-1].caestus_prob;
         else
             prob = spcitems[spc-1].probability[equip-1];
         if (!prob)
@@ -25638,13 +25714,16 @@ static int verify_item(void)
             lmin = 3 + (tier > 'B') + (tier > 'C');
             lmax = 4 + (tier > 'A') + (tier > 'C');
             int equip = type->equip_stat + 1;
-            if (equip == ITEM_TYPE_WEAPON2 && type->skill != SKILL_STAFF)
+            int skill = type->skill;
+            if (equip == ITEM_TYPE_WEAPON2 && skill != SKILL_STAFF)
                 equip = ITEM_TYPE_WEAPON;
             int prob;
-            if (equip == ITEM_TYPE_ARMOR && type->skill == SKILL_MISC)
+            if (equip == ITEM_TYPE_ARMOR && skill == SKILL_MISC)
                 prob = spc->robe_prob;
             else if (equip == ITEM_TYPE_HELM && !type->mod1_dice_count)
                 prob = spc->crown_prob;
+            else if (equip == ITEM_TYPE_GAUNTLETS && skill == SKILL_UNARMED)
+                prob = spc->caestus_prob;
             else prob = spc->probability[equip-1];
             markup = (prob < 5) + (prob < 10);
           }
@@ -25976,7 +26055,7 @@ static void __declspec(naked) read_spc_craft_items(void)
 {
     asm
       {
-        cmp eax, 19 ; new column
+        cmp eax, 20 ; new column
         jb quit
         ja skip
         push esi
@@ -28216,6 +28295,264 @@ static inline void extra_key_config(void)
     hook_jump(0x433d47, provide_quick_spell_for_action);
 }
 
+// Display the damage numbers for unarmed-boosting gloves.
+static void __declspec(naked) brass_knuckles_rmb(void)
+{
+    asm
+      {
+        cmp byte ptr [edi].s_items_txt_item.skill, SKILL_UNARMED
+        je knuckles
+        lea eax, [ebp-524] ; replaced code
+        ret
+        knuckles:
+        pop eax
+        movzx eax, byte ptr [edi].s_items_txt_item.mod1_dice_sides
+        push eax
+        movzx eax, byte ptr [edi].s_items_txt_item.mod1_dice_count
+        push eax
+        push dword ptr [GLOBAL_TXT_ADDR+53*4] ; "damage"
+        push ecx ; full ac
+        push dword ptr [GLOBAL_TXT_ADDR+11*4] ; "armor"
+        mov ecx, 0x41dd28 ; to weapon stat code
+        jmp ecx
+      }
+}
+
+// Used just below.
+static const char unarmed_skill[] = "unarmed";
+
+// Recognize the unarmed skill in items.txt.
+static void __declspec(naked) parse_unarmed_items(void)
+{
+    asm
+      {
+        push ebx
+#ifdef __clang__
+        mov eax, offset unarmed_skill
+        push eax
+#else
+        push offset unarmed_skill
+#endif
+        call dword ptr ds:uncased_strcmp
+        pop ecx
+        pop ecx
+        test eax, eax
+        mov al, SKILL_UNARMED
+        mov cl, SKILL_MISC ; this was in the replaced code
+        cmove ecx, eax
+        lea eax, [esi+esi*2]
+        shl eax, 4
+        mov byte ptr [edi+4+eax].s_items_txt_item.skill, cl ; replaced, almost
+        ret
+      }
+}
+
+// Substitute brass knuckle damage for the vanilla 1d3 unarmed die.
+static void __declspec(naked) brass_knuckles_damage(void)
+{
+    asm
+      {
+        mov ecx, 3 ; replaced code, in spirit
+        mov edx, dword ptr [edi+SLOT_GAUNTLETS*4].s_player.equipment
+        test edx, edx
+        jz skip
+        lea edx, [edx+edx*8]
+        lea edx, [edi+edx*4-SIZE_ITEM].s_player.items
+        test byte ptr [edx].s_item.flags, IFLAGS_BROKEN
+        jnz skip
+        mov edx, dword ptr [edx]
+        lea edx, [edx+edx*2]
+        shl edx, 4
+        cmp byte ptr [ITEMS_TXT_ADDR+edx].s_items_txt_item.skill, SKILL_UNARMED
+        jne skip
+        mov cl, byte ptr [ITEMS_TXT_ADDR+edx].s_items_txt_item.mod1_dice_sides
+        skip:
+        xor edx, edx ; replaced code, basically
+        div ecx ; ditto
+        ret
+      }
+}
+
+// Also add the item quality to all unarmed damage evaluations.
+// I had to reimplement some of the unarmed skill damage code here.
+static void __declspec(naked) brass_knuckles_bonus(void)
+{
+    asm
+      {
+        and eax, SKILL_MASK
+        xor edx, edx
+        cmp ecx, SKILL_EXPERT
+        cmovb eax, edx
+        cmp ecx, SKILL_MASTER
+        setae cl
+        shl eax, cl
+        test ebx, ebx ; tell the hooks apart
+        jnz no_staff
+        add eax, dword ptr [ebp-12] ; armsmaster dmg as per mm7patch
+        no_staff:
+        mov ecx, dword ptr [esi+SLOT_GAUNTLETS*4].s_player.equipment
+        test ecx, ecx
+        jz skip
+        lea ecx, [ecx+ecx*8]
+        lea ecx, [esi+ecx*4-SIZE_ITEM].s_player.items
+        test byte ptr [ecx].s_item.flags, IFLAGS_BROKEN
+        jnz skip
+        mov ecx, dword ptr [ecx]
+        lea ecx, [ecx+ecx*2]
+        shl ecx, 4
+        cmp byte ptr [ITEMS_TXT_ADDR+ecx].s_items_txt_item.skill, SKILL_UNARMED
+        jne skip
+        mov dl, byte ptr [ITEMS_TXT_ADDR+ecx].s_items_txt_item.mod2
+        add eax, edx
+        skip:
+        mov ecx, 0x4900fa ; return from calling function
+        jmp ecx
+      }
+}
+
+// Also fix max damage for display purposes.
+static void __declspec(naked) brass_knuckles_max_damage(void)
+{
+    asm
+      {
+        test eax, eax ; replaced check, in spirit
+        jnz unarmed
+        add dword ptr [esp], 8 ; replaced jump
+        ret
+        unarmed:
+        mov edx, dword ptr [ebx+SLOT_GAUNTLETS*4].s_player.equipment
+        test edx, edx
+        jz skip
+        lea edx, [edx+edx*8]
+        lea edx, [ebx+edx*4-SIZE_ITEM].s_player.items
+        test byte ptr [edx].s_item.flags, IFLAGS_BROKEN
+        jnz skip
+        mov edx, dword ptr [edx]
+        lea edx, [edx+edx*2]
+        shl edx, 4
+        cmp byte ptr [ITEMS_TXT_ADDR+edx].s_items_txt_item.skill, SKILL_UNARMED
+        jne skip
+        movzx edi, byte ptr [ITEMS_TXT_ADDR+edx] \
+                            .s_items_txt_item.mod1_dice_sides
+        add dword ptr [esp], 3 ; after setting the damage
+        skip:
+        ret
+      }
+}
+
+// Do not generate brass knuckles with numeric enchantments.
+static void __declspec(naked) brass_knuckles_no_std(void)
+{
+    asm
+      {
+        cmp byte ptr [edi+4+eax].s_items_txt_item.skill, SKILL_UNARMED
+        mov al, byte ptr [edi+4+eax].s_items_txt_item.equip_stat ; replaced
+        jne skip
+        cmp al, ITEM_TYPE_GAUNTLETS - 1
+        je quit ; treat as weapon
+        skip:
+        cmp al, ITEM_TYPE_MISSILE - 1 ; also replaced code
+        quit:
+        ret
+      }
+}
+
+// Activate brass knuckles damage or vampiric bonuses on eligible attacks.
+static void __declspec(naked) brass_knuckles_elem_damage(void)
+{
+    asm
+      {
+        add dword ptr [ebp-36], 4 ; replaced code
+        cmp dword ptr [ebp-28], 2 ; ditto, but changed
+        jne quit
+        mov ecx, edi ; the pc
+        call dword ptr ds:is_bare_fisted
+        test eax, eax
+        jnz ok
+        cmp word ptr [edi+SKILL_STAFF*2].s_player.skills, SKILL_GM
+        jb skip
+        push SLOT_MAIN_HAND
+        mov ecx, edi
+        call dword ptr ds:has_anything_in_slot
+        test eax, eax
+        jz skip
+        push SLOT_MAIN_HAND
+        mov ecx, edi
+        call dword ptr ds:equipped_item_skill
+        cmp eax, SKILL_STAFF
+        jne skip
+        ok:
+        push SLOT_GAUNTLETS
+        mov ecx, edi
+        call dword ptr ds:equipped_item_skill
+        cmp eax, SKILL_UNARMED
+        jnz skip
+        add dword ptr [ebp-28], SLOT_GAUNTLETS - 2
+        add dword ptr [ebp-36], SLOT_GAUNTLETS * 4 - 2 * 4
+        xor eax, eax ; set zf
+        quit:
+        ret
+        skip:
+        test edi, edi ; set greater
+        ret
+      }
+}
+
+// Let brass knuckles be affected by temporary enchantment spells.
+static void __declspec(naked) brass_knuckles_aura_spells(void)
+{
+    asm
+      {
+        cmp byte ptr [eax].s_items_txt_item.skill, SKILL_UNARMED
+        mov al, byte ptr [eax].s_items_txt_item.equip_stat ; replaced code
+        jne skip
+        cmp al, ITEM_TYPE_GAUNTLETS - 1
+        je quit
+        skip:
+        test al, al ; replaced code
+        quit:
+        ret
+      }
+}
+
+// Ditto, but for potions (except for the swift potion).
+static void __declspec(naked) brass_knuckles_weapon_potions(void)
+{
+    asm
+      {
+        je quit ; replaced jump
+        cmp dword ptr [ebp-4], ITEM_TYPE_WEAPON2 - 1 ; replaced code
+        je quit
+        cmp dword ptr [ebp-4], ITEM_TYPE_GAUNTLETS - 1
+        jne quit
+        mov edx, dword ptr [esi]
+        lea edx, [edx+edx*2]
+        shl edx, 4
+        cmp byte ptr [ITEMS_TXT_ADDR+edx].s_items_txt_item.skill, SKILL_UNARMED
+        quit:
+        ret
+      }
+}
+
+
+// Add a new type of gauntlet that strengthens the Monk class.
+static inline void brass_knuckles(void)
+{
+    hook_call(0x41dcd3, brass_knuckles_rmb, 6);
+    hook_call(0x4576e3, parse_unarmed_items, 5);
+    hook_call(0x48cde7, brass_knuckles_damage, 6);
+    hook_jump(0x48fd62, brass_knuckles_bonus); // bare-handed
+    patch_word(0x48fe36, 0xdb31); // xor ebx, ebx; tell the hooks apart
+    hook_jump(0x48fe38, brass_knuckles_bonus); // staff gm
+    hook_call(0x48ed1f, brass_knuckles_max_damage, 5);
+    hook_call(0x456a34, brass_knuckles_no_std, 6);
+    hook_call(0x439a17, brass_knuckles_elem_damage, 8);
+    hook_call(0x429104, brass_knuckles_aura_spells, 5); // fire aura etc.
+    hook_call(0x42de36, brass_knuckles_aura_spells, 5); // vampiric weapon
+    hook_call(0x416920, brass_knuckles_weapon_potions, 6); // white potions
+    hook_call(0x416860, brass_knuckles_weapon_potions, 6); // slaying potion
+}
+
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
                     LPVOID const reserved)
 {
@@ -28266,6 +28603,7 @@ BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
         one_more_map();
         new_hireling_types();
         extra_key_config();
+        brass_knuckles();
       }
     return TRUE;
 }

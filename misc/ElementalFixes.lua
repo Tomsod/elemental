@@ -14,6 +14,8 @@ rawset(Party.ArtifactsFound, "?ptr", mem.u4[0x4568f7])
 rawset(Map.SoundSprites, "?ptr", mem.u4[0x4ab49d])
 -- Same for v2.3 hireling professions array (I added several new ones).
 if Game.NPCProfTxt then rawset(Game.NPCProfTxt, "?ptr", mem.u4[0x420cab]) end
+-- Also v2.3 spcitems.txt struct, which is relocated by me.
+if Game.SpcItemsTxt then rawset(Game.SpcItemsTxt, "?ptr", mem.u4[0x456616] + structs.SpcItemsTxtItem["?size"]) end
 
 -- The mod overwrites some exe data that is exposed by MMExtension tables.
 -- Since pre-existing tables would take higher precedence than elemental.dll,

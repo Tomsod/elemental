@@ -34,8 +34,25 @@ if list then
     os.remove(name)
 end
 
--- Disable MMExt v2.3 map array extender (we handle it ourselves).
-rawset(Game.MapStats, "count", 78)
+-- Disable MMExt map array extender (we handle it ourselves).
+if mem.ExtendGameStructure then -- v2.3
+    rawset(Game.MapStats, "count", 78)
+else -- v2.2, tricky
+    local old_ComputeRowCountInPChar = DataTables.ComputeRowCountInPChar
+    function DataTables.ComputeRowCountInPChar(p, MinCols, NeedCol)
+        local genie = string.find(mem.string(p), "genie.blv")
+        local restore
+        if genie then
+            restore = mem.u1[p+genie]
+            mem.u1[p+genie] = 0 -- disable the last line
+        end
+        local result = old_ComputeRowCountInPChar(p, MinCols, NeedCol)
+        if restore then
+            mem.u1[p+genie] = restore
+        end
+        return result
+    end
+end
 -- Same for the hireling text array.
 if Game.NPCProfNames then rawset(Game.NPCProfNames, "limit", 63) end
 -- Also the award text/category array (which is relocated by us).

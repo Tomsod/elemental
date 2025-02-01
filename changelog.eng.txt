@@ -1,6 +1,25 @@
 This is the change log for the Elemental Mod.  It's quite descriptive,
 and can be viewed as the chief source of information on the mod's features.
 
+== Elemental Mod ver. 4.0.1 ==
+
+A tiny release that introduces a couple of sorely missing features and
+fixes several bugs that came up while playtesting 4.0 on the forums.
+
+* Added three kinds of "martial gauntlets" that go into the gloves slot and
+  provide bonuses to unarmed damage, including possible temporary and/or
+  permanent elemental/etc. enchantments.  Now Monks benefit from Fire Aura!
+* On Medium+, monsters try to predict the party's position when aiming spells
+  and missiles, based on your momentary speed.  On Hard, party hitbox for the
+  purpose of determining projectile hits is also doubled in every direction.
+* EI shop teaches Dagger instead of Staff; characters may start with knives.
+* Fixed multiple game-breaking issues with the newly added dungeon.
+* MMExtension v2.2 no longer breaks transport and Town portal destinations.
+* Turn speed is fixed on smooth, ignoring possible incorrect registry values.
+* v3.0 fix: dual-wielding Spectral/etc. weapons again splits damage properly.
+
+-------------------------------------------------------------------------------
+
 == Elemental Mod ver. 4.0 ==
 
 This an open beta kind of release which I present mostly because I promised

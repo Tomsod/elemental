@@ -693,7 +693,7 @@ Global Text
 690	%s inflicts %lu total damage to %lu monsters
 691	%s inflicts %lu total damage to %lu monsters, killing %lu
 692	Hunter
-693	Elemental Mod ver. 4.0 beta
+693	Elemental Mod ver. 4.0.1 beta
 694	Black potion used
 695	Average damage reduction
 696	accounting for race

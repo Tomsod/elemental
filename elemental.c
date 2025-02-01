@@ -22833,7 +22833,7 @@ static void __declspec(naked) spcitems_new_probability(void)
 {
     asm
       {
-        cmp edx, 16
+        cmp edx, 15
         jb old
         add edx, 5 ; skip over other fields
         old:
@@ -23568,6 +23568,30 @@ static void __declspec(naked) knife_price(void)
       }
 }
 
+// Give a set of knives for starting with dagger skill.
+static void __declspec(naked) start_with_knives(void)
+{
+    asm
+      {
+        push ebx
+        push esi
+        lea esi, [ebp-116]
+        mov ecx, esi
+        call dword ptr ds:init_item
+        mov dword ptr [esi], THROWING_KNIVES
+        call init_knife_charges
+        mov eax, esi
+        pop esi ; restore
+        pop ebx
+        push eax
+        push edi ; == -1
+        mov ecx, esi
+        call dword ptr ds:put_item_in_backpack
+        mov eax, 0x497753 ; old pointer here
+        jmp eax ; (will also give a dagger)
+      }
+}
+
 // Implement a dagger-skill alternative to bows.
 static inline void throwing_knives(void)
 {
@@ -23592,7 +23616,7 @@ static inline void throwing_knives(void)
     hook_call(0x42ecf9, use_knife_charge, 8);
     hook_call(0x4b954b, knife_repair_dialog, 11);
     // actually repaired in prepare_shop_recharge() and perform_shop_recharge()
-    WEAPON_SHOP_STD[0][3] = ITEM_TYPE_MISSILE; // allow EI shop to sell knives
+    patch_pointer(0x4978e5, start_with_knives);
 }
 
 // Draw the right options difficulty button in the settings screen.
@@ -24185,12 +24209,22 @@ static void __declspec(naked) shoot_adjust_hitbox(void)
       }
 }
 
+// Fix turn rate at smooth to prevent trouble from bad registry settings.
+static void __declspec(naked) smooth_turn_chunk(void)
+{
+    asm
+      {
+        mov eax, 3
+      }
+}
+
 // Allow optionally increasing game difficulty.
 static inline void difficulty_level(void)
 {
     hook_call(0x414fe1, get_difficulty_button, 6);
     hook_call(0x431d9f, change_difficulty, 5);
     erase_code(0x431da4, 21); // rest of the old button-press code
+    patch_bytes(0x465ba3, smooth_turn_chunk, 5);
     hook_call(0x4064b5, difficult_monster_recovery, 6);
     hook_call(0x40657e, difficult_monster_recovery_esi, 6);
     hook_call(0x40363a, difficult_monster_recovery_after, 7);
@@ -26927,6 +26961,12 @@ static inline void shop_changes(void)
     for (int i = 2; i <= 8; i++) // not level 1/2
         POTION_SHOP_STD[i]++; // reagents
     // Also tweak the sold item types.
+    // allow EI shop to teach dagger and sell knives
+    WEAPON_SHOP_STD[0][3] = ITEM_TYPE_MISSILE; // both bows and knives
+    WEAPON_SHOP_STD[0][2] = ITEM_TYPE_AXE; // move here from spc
+    WEAPON_SHOP_SPC[0][1] = ITEM_TYPE_BOW; // swap with above
+    WEAPON_SHOP_SPC[0][2] = ITEM_TYPE_DAGGER; // teach the skill
+    WEAPON_SHOP_SPC[0][3] = ITEM_TYPE_WEAPON2; // still sell 2h axes/swords
     // celeste & pit weapon shops tried to teach everything,
     // but there's a hardcoded limit of 5 skills per shop
     WEAPON_SHOP_STD[4][3] = ITEM_TYPE_WEAPON; // no axe in cel

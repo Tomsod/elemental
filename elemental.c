@@ -2046,6 +2046,11 @@ static int __thiscall (*repair_price)(void *player, int item_value,
                                       float shop_multiplier)
     = (funcptr_t) 0x4b8126;
 static void __thiscall (*set_gold)(int value) = (funcptr_t) 0x492b68;
+static int *__fastcall (*aim_at_target)(int attacker, int target, int *buffer,
+                                        int eye_level) = (funcptr_t) 0x4040e9;
+static void __fastcall (*monster_shoots)(int monster_id, void *vector,
+                                         int missile, int attack)
+    = (funcptr_t) 0x404874;
 static int __fastcall (*get_text_height)(void *font, char *string,
                                          const int *bounds, int unknown,
                                          int unknown2) = (funcptr_t) 0x44c5c9;
@@ -9300,6 +9305,7 @@ static void __declspec(naked) consider_second_spell(void)
 //Defined below.
 static int __thiscall absorb_spell(struct player *player, int spell, int rank);
 static int weighted_monster_preference(struct map_monster *monster, int mask);
+static void adjust_aim(int attacker, int speed, int *buffer);
 // Used to properly calculate MvM Mass Distortion damage.
 static int mass_distortion_target_hp = 0;
 
@@ -9325,6 +9331,16 @@ static int __fastcall cast_new_spells(int monster_id, void *vector, int spell,
     if (spell == SPL_SUNRAY // like for pcs, no casting it at night
         && (dword(HOUR_OF_DAY) < 5 || dword(HOUR_OF_DAY) >= 21))
         spell = SPL_LIGHT_BOLT; // instead of forbidding, cast a weaker spell
+
+    // improve monster aim at medium+
+    unsigned int target = MON_TARGETS[monster_id];
+    if (target == TGT_PARTY && elemdata.difficulty)
+      {
+        int object = dword(SPELL_OBJ_IDS + (spell - 1) * 4);
+        int line = find_objlist_item(OBJLIST_THIS, object);
+        int speed = word(dword(OBJLIST_THIS_ADDR + 4) + line * 56 + 48);
+        if (speed) adjust_aim(monster_id, speed, vector);
+      }
 
     int result = FALSE;
     if (spell == SPL_TURN_UNDEAD || spell == SPL_INFERNO
@@ -9355,7 +9371,6 @@ static int __fastcall cast_new_spells(int monster_id, void *vector, int spell,
     else if (spell == SPL_DESTROY_UNDEAD || spell == SPL_IMPLOSION
              || spell == SPL_MASS_DISTORTION)
       {
-        unsigned int target = MON_TARGETS[monster_id];
         if (target == TGT_PARTY)
           {
             int mask = 0;
@@ -9413,7 +9428,6 @@ static int __fastcall cast_new_spells(int monster_id, void *vector, int spell,
       }
     else if (spell == SPL_JUMP)
       {
-        unsigned int target = MON_TARGETS[monster_id];
         int tx, ty, tz;
         int melee = 300;
         if (target == TGT_PARTY)
@@ -9515,16 +9529,16 @@ static int __fastcall cast_new_spells(int monster_id, void *vector, int spell,
             case SPL_HOUR_OF_POWER:
                 for (int id = 0; id < dword(MONSTER_COUNT); id++)
                   {
-                    struct map_monster *target = &MAP_MONSTERS[id];
-                    int dx = monster->x - target->x;
-                    int dy = monster->y - target->y;
-                    int dz = monster->z - target->z;
+                    struct map_monster *ally = &MAP_MONSTERS[id];
+                    int dx = monster->x - ally->x;
+                    int dy = monster->y - ally->y;
+                    int dz = monster->z - ally->z;
                     if (dx * dx + dy * dy + dz * dz > reach
-                        || !monster_active(target)
-                        || is_hostile_to(monster, target))
+                        || !monster_active(ally)
+                        || is_hostile_to(monster, ally))
                         continue;
                     if (spell == SPL_HAMMERHANDS // monks only
-                        && (monster->id - 1) / 3 != (target->id - 1) / 3)
+                        && (monster->id - 1) / 3 != (ally->id - 1) / 3)
                         continue;
                     monster_casts_spell(id, vector, spell, action, skill);
                   }
@@ -13701,25 +13715,21 @@ static void __declspec(naked) restore_random_seed(void)
       }
 }
 
-// Used just below, to check if the party moved last tick.
-static struct { int x, y; } running_old;
+// The party's current speed.  Used just below and also for predictive aim.
+static struct { int x, y, z; } party_speed;
 
 // Only apply recovery penalty for running when the party actually moves.
-// NB: this will be a false positive for one tick after reload etc., but w/e.
+// This will lag one tick behind actual movement, but it doesn't matter much.
 static void __declspec(naked) running_recovery(void)
 {
     asm
       {
-        mov ecx, dword ptr [PARTY_X]
-        mov edx, dword ptr [PARTY_Y]
         test byte ptr [0xacd6bc], 2 ; replaced code (running bit)
         jz skip
-        cmp ecx, dword ptr [running_old.x]
-        jne skip
-        cmp edx, dword ptr [running_old.y]
+        cmp dword ptr [party_speed.x], 0
+        jnz skip
+        cmp dword ptr [party_speed.y], 0
         skip:
-        mov dword ptr [running_old.x], ecx
-        mov dword ptr [running_old.y], edx
         ret
       }
 }
@@ -24093,6 +24103,88 @@ static void __declspec(naked) invisibility_description_spellbook(void)
       }
 }
 
+// Note the party's current speed vector.
+static void __declspec(naked) remember_movement_speed(void)
+{
+    asm
+      {
+        mov ecx, 0x7213b0 ; replaced code
+        mov edx, dword ptr [ecx+28]
+        mov dword ptr [party_speed.x], edx
+        mov edx, dword ptr [ecx+32]
+        mov dword ptr [party_speed.y], edx
+        mov edx, dword ptr [ecx+36]
+        mov dword ptr [party_speed.z], edx
+        cmp dword ptr [esp], 0x473897 ; outdoor code
+        jb skip
+        mov eax, dword ptr [ebp-72] ; new z
+        sub eax, dword ptr [0xacd528] ; (old) stable z
+        cdq
+        shld edx, eax, 7
+        shl eax, 7
+        cmp dword ptr [0x50ba7c], 1 ; just in case
+        jle small
+        idiv dword ptr [0x50ba7c] ; ticks since last frame
+        small:
+        add dword ptr [party_speed.z], eax
+        skip:
+        ret
+      }
+}
+
+// Improve monster accuracy by aiming at where party is moving towards.
+// Called just below and also in cast_new_spells() above.
+static void adjust_aim(int attacker, int speed, int *buffer)
+{
+    int old_x = dword(PARTY_X);
+    int old_y = dword(PARTY_Y);
+    int old_z = dword(PARTY_Z);
+    struct map_monster *monster = MAP_MONSTERS + attacker;
+    int dx = old_x - monster->x;
+    int dy = old_y - monster->y;
+    int dz = old_z - monster->z - monster->height * 3 / 4;
+    double time = sqrt(dx * dx + dy * dy + dz * dz) / speed;
+    dword(PARTY_X) = old_x + time * party_speed.x;
+    dword(PARTY_Y) = old_y + time * party_speed.y;
+    dword(PARTY_Z) = old_z + time * party_speed.z;
+    aim_at_target(attacker * 8 + TGT_MONSTER, TGT_PARTY, buffer, FALSE);
+    dword(PARTY_X) = old_x;
+    dword(PARTY_Y) = old_y;
+    dword(PARTY_Z) = old_z;
+}
+
+// Adjust monster aim when shooting non-spell projectiles.
+static void __fastcall shoot_adjust_aim(int monster_id, void *vector,
+                                        int missile, int attack)
+{
+    if (MON_TARGETS[monster_id] == TGT_PARTY && elemdata.difficulty)
+      {
+        // TODO: unhardcode this
+        int speed = 4000; // most monster missiles
+        if (missile == 4 || missile == 13) // air or ener/laser
+            speed = 6000; // a bit faster
+        adjust_aim(monster_id, speed, vector);
+      }
+    monster_shoots(monster_id, vector, missile, attack);
+}
+
+// Also increase party hitbox WRT projectiles on Hard.
+static void __declspec(naked) shoot_adjust_hitbox(void)
+{
+    asm
+      {
+        mov eax, 0x46ef05 ; replaced call
+        cmp dword ptr [elemdata.difficulty], 2
+        je hard
+        jmp eax
+        hard:
+        shl dword ptr [0xacce4c], 1 ; party radius
+        call eax
+        shr dword ptr [0xacce4c], 1 ; restore
+        ret
+      }
+}
+
 // Allow optionally increasing game difficulty.
 static inline void difficulty_level(void)
 {
@@ -24127,6 +24219,12 @@ static inline void difficulty_level(void)
     hook_call(0x4013c8, see_through_invisibility, 6);
     hook_call(0x4b15cb, invisibility_description_guild, 5);
     hook_call(0x410c63, invisibility_description_spellbook, 5);
+    hook_call(0x47315c, remember_movement_speed, 5); // indoors
+    hook_call(0x4745b4, remember_movement_speed, 5); // outdoors
+    hook_call(0x402159, shoot_adjust_aim, 5); // realtime
+    hook_call(0x4067ab, shoot_adjust_aim, 5); // turn-based
+    hook_call(0x4716b9, shoot_adjust_hitbox, 5); // indoors
+    hook_call(0x471ea2, shoot_adjust_hitbox, 5); // outdoors
 }
 
 // Holds an unused travel reply that can be replaced with ours.

@@ -26615,18 +26615,20 @@ static void __thiscall restock_black_market(int house)
         set_specitem_bonus(ITEMS_TXT_ADDR - 4, item);
       }
     // Once per game, sell an artifact (will reappear on restock if unsold).
-    if (!check_bit(QBITS, QBIT_BM_ARTIFACT)) do
+    if (!check_bit(QBITS, QBIT_BM_ARTIFACT))
       {
+        unsigned int i = 0;
         for (struct player *p = PARTY; p < PARTY + 4; p++)
-            if (p->class % 4 == 0) break; // everyone must be promoted
-        int i;
-        for (i = 0; i < MAX_STOLEN_ITEMS; i++)
+            if (p->class % 4 == 0) i = -1; // everyone must be promoted
+        for (/* i */; i < MAX_STOLEN_ITEMS; i++)
             if (!elemdata.stolen_items[i].id) break;
         struct item *artifact = elemdata.stolen_items + i;
-        if (i >= MAX_STOLEN_ITEMS || !generate_artifact(artifact)) break;
-        change_bit(QBITS, QBIT_BM_ARTIFACT, TRUE);
-        artifact->flags |= IFLAGS_STOLEN;
-      } while (FALSE);
+        if (i < MAX_STOLEN_ITEMS && generate_artifact(artifact))
+          {
+            change_bit(QBITS, QBIT_BM_ARTIFACT, TRUE);
+            artifact->flags |= IFLAGS_STOLEN;
+          }
+      }
     // Sell items stolen from party, including the above.
     for (int i = 0; i < MAX_STOLEN_ITEMS; i++)
       {

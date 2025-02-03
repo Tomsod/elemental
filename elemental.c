@@ -17335,9 +17335,9 @@ static void __declspec(naked) gadgeteer_special_scroll_bonus(void)
 {
     asm
       {
-        pop eax
+        pop edx
         push dword ptr [scroll_power]
-        jmp eax
+        jmp edx
       }
 }
 

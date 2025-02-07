@@ -7179,10 +7179,12 @@ static int __stdcall alternative_spell_mode(int player_id, int spell)
             for (int pc = 0; pc < 4; pc++)
               {
                 struct player *current = PARTY + pc;
+                int unarmed = TRUE;
                 int right = current->equipment[SLOT_MAIN_HAND];
                 if (right)
                   {
                     struct item *weapon = &current->items[right-1];
+                    unarmed = ITEMS_TXT[weapon->id].skill == SKILL_STAFF;
                     expire_temp_bonus(weapon, CURRENT_TIME);
                     if (can_add_temp_enchant(weapon, enchant))
                       {
@@ -7195,12 +7197,28 @@ static int __stdcall alternative_spell_mode(int player_id, int spell)
                 if (left)
                   {
                     struct item *weapon = &current->items[left-1];
+                    if (ITEMS_TXT[weapon->id].equip_stat < ITEM_TYPE_MISSILE)
+                      {
+                        unarmed = FALSE;
+                        expire_temp_bonus(weapon, CURRENT_TIME);
+                        if (can_add_temp_enchant(weapon, enchant))
+                          {
+                            pcs[count] = pc;
+                            items[count] = left - 1;
+                            count++;
+                          }
+                      }
+                  }
+                int gaunt = current->equipment[SLOT_GAUNTLETS];
+                if (unarmed && gaunt)
+                  {
+                    struct item *weapon = &current->items[gaunt-1];
                     expire_temp_bonus(weapon, CURRENT_TIME);
-                    if (ITEMS_TXT[weapon->id].equip_stat < ITEM_TYPE_MISSILE
+                    if (ITEMS_TXT[weapon->id].skill == SKILL_UNARMED
                         && can_add_temp_enchant(weapon, enchant))
                       {
                         pcs[count] = pc;
-                        items[count] = left - 1;
+                        items[count] = gaunt - 1;
                         count++;
                       }
                   }
@@ -7274,8 +7292,9 @@ static int __stdcall alternative_spell_mode(int player_id, int spell)
       }
     if (unsafe)
         return FALSE;
-    // this relies on the fact none of these spells have a variable cost
-    int max_count = player->sp / SPELL_INFO[spell].cost_gm;
+    // this relies on the fact none of these spells have a mastery-varied cost
+    int cost = SPELL_INFO[spell].cost_gm * (elemdata.difficulty + 4) / 4;
+    int max_count = player->sp / cost;
     if (max_count <= 0)
         return FALSE;
     if (count > max_count)

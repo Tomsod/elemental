@@ -27085,6 +27085,7 @@ static inline void shop_changes(void)
     // but with space for 16 extra stolen items it's unlikely in practice.
     patch_dword(0x48df0c, 0x8d08458b); // mov eax, [ebp+8]; lea...
     patch_word(0x48df10, 0xff48); // ...ecx, [eax-1]
+    erase_code(0x4b2076, 53); // don't remove the topic on joining a guild
 }
 
 // Allow non-bouncing projectiles to trigger facets in Altar of Wishes.

@@ -538,7 +538,15 @@ monster 1 id 27
 2B : 46 00
 2D : 46 00
 36 : 01 00
+38 : 0E 00
+39 : 01 00
+3A : 0E 00
+3B : 01 00
+3E : 3F 00
+3F : 61 00
 54 : 00 12
+56 : 81 00
+57 : 82 00
 file d29.dlv offset 21325
 monster 1 id 81
 0F : 00 04
@@ -1087,6 +1095,10 @@ monster 6 id 69
 file mdt09.dlv offset 2051
 monster 1 id 26
 1B : 04 00
+3A : 0C 00
+3B : 01 00
+3F : 61 00
+57 : 82 00
 file mdt10.dlv offset 1653
 monster 1 id 63
 24 : 32 00

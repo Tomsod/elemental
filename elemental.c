@@ -948,7 +948,7 @@ enum qbits
     QBIT_LEFT_EMERALD_ISLAND = 136,
     QBIT_FIRST_OBELISK = 164,
     QBIT_LAST_OBELISK = 177,
-    QBIT_LOST_DIVINE_INTERVENTION = 226,
+    QBIT_DIVINE_INTERVENTION = 239,
     QBIT_DUMMY = 245,
     // my additions
     QBIT_REFILL_WOM_BARRELS = 350,
@@ -24858,22 +24858,23 @@ static void __declspec(naked) mov_scroll_reply_chunk(void)
       }
 }
 
-#define SCHOOL_SPIRIT (SKILL_SPIRIT - SKILL_FIRE)
-#define SCHOOL_MIND (SKILL_MIND - SKILL_FIRE)
-
 // Populate a magic guild with appropriate scrolls.
 static void __thiscall restock_scrolls(int guild)
 {
     int max_level = word(0x4f0db0 + guild * 2); // vanilla book lvl array
     int school = EVENTS2D[guild + FIRST_GUILD].type - 5;
-    int extra = school == SCHOOL_SPIRIT || school == SCHOOL_MIND; // 12 spells
+#define SCHOOL(element) (school == SKILL_##element - SKILL_FIRE)
+    int extra = SCHOOL(SPIRIT) || SCHOOL(MIND); // 12 spells
+    if (SCHOOL(LIGHT) && max_level == 11
+        && !check_bit(QBITS, QBIT_DIVINE_INTERVENTION))
+        extra = -1; // 11th spell not found yet
     int image = dword(CURRENT_CONVERSATION) == CONV_BUY_SCROLLS;
     for (int i = 0; i < 12; i++)
       {
         int roll = random() % (max_level + extra);
         int id = FIRST_SCROLL + school * 11 + roll;
         if (roll == max_level)
-            id = school == SCHOOL_SPIRIT ? SCROLL_FATE : SCROLL_TELEPATHY;
+            id = SCHOOL(SPIRIT) ? SCROLL_FATE : SCROLL_TELEPATHY;
         struct item *scroll = &elemdata.guild_scrolls[guild][i];
         init_item(scroll);
         scroll->id = id;

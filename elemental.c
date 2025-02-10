@@ -931,6 +931,8 @@ static struct elemdata
 #define MAX_STOLEN_ITEMS 16
     // Party items stolen by enemy thieves etc.
     struct item stolen_items[MAX_STOLEN_ITEMS];
+    // Prevent the player from stealing too many items at once.
+    int shop_wariness[53];
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -10010,7 +10012,7 @@ static int current_track = 0;
 static void new_game_data(void)
 {
     memset(&elemdata, 0, sizeof(elemdata));
-    elemdata.version = 400; // v4.0.0
+    elemdata.version = 402; // v4.0.2
     for (int i = 0; i < EXTRA_CHEST_COUNT; i++)
       {
         elemdata.extra_chests[i].picture = i ? 6 : 3; // [0] is bank safe
@@ -10046,7 +10048,14 @@ static void load_game_data(void)
 {
     void *file = find_in_lod(SAVEGAME_LOD, "elemdata.bin", 1);
     if (file)
+      {
         fread(&elemdata, sizeof(elemdata), 1, file);
+        if (elemdata.version == 400) // save file compatibility
+          {
+            memset(elemdata.shop_wariness, 0, sizeof(elemdata.shop_wariness));
+            elemdata.version = 402;
+          }
+      }
     else // probably won't happen; reset all data just in case
         new_game_data();
     reputation_group[0] = 0; // will be set on map load
@@ -10604,6 +10613,62 @@ static void __declspec(naked) hire_npc_hook(void)
       }
 }
 
+// Instead of a global reputation penalty for (successfull) shoplifting,
+// just make stealing from this particular shopkeeper harder in the future.
+static void __declspec(naked) increase_shop_wariness(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [DIALOG2]
+        mov ecx, dword ptr [ecx+28] ; shop id
+        shl esi, 2 ; vanilla reputation change
+        add dword ptr [elemdata.shop_wariness+ecx*4-4], esi
+        mov edi, PC_POINTERS ; replaced code
+        ret
+      }
+}
+
+// Actually check the current shop wariness when trying to steal.
+static void __declspec(naked) account_for_shop_wariness(void)
+{
+    asm
+      {
+        call dword ptr ds:get_eff_reputation ; replaced call
+        mov ecx, dword ptr [DIALOG2]
+        mov ecx, dword ptr [ecx+28] ; shop id
+        mov ecx, dword ptr [elemdata.shop_wariness+ecx*4-4]
+        sar ecx, 2
+        add eax, ecx
+        ret
+      }
+}
+
+// Also decrease wariness slightly for each sold party item.
+static void __declspec(naked) decrease_shop_wariness(void)
+{
+    asm
+      {
+        mov eax, dword ptr [esp+32] ; replaced code (shop id)
+        cmp dword ptr [elemdata.shop_wariness+eax*4-4], 0
+        jle skip
+        dec dword ptr [elemdata.shop_wariness+eax*4-4]
+        skip:
+        imul eax, eax, SIZE_EVENT2D ; also replaced code
+        ret
+      }
+}
+
+// Make the max price of an item that can be stolen while being caught
+// double that of the usual limit, to make up for the large penalties.
+static void __declspec(naked) open_shoplift_chunk(void)
+{
+    asm
+      {
+        cmp esi, edi
+        setle al
+      }
+}
+
 // Let the reputation values be shared between different locations
 // in the same region.  Among other things, this makes quests
 // completed in castles affect your reputation properly.
@@ -10625,12 +10690,17 @@ static inline void reputation(void)
     // Some further reputation tweaks.
     hook_call(0x42ec41, pickpocket_rep, 5);
     // Do not decrease rep on successful shoplift.
-    patch_byte(0x4b13bf, 0);
+    patch_byte(0x4b13c2, byte(0x4b13c2) + 9);
     hook_call(0x4bd223, bounty_hook, 7);
     hook_call(0x4bc695, hire_npc_hook, 6); // from street
     hook_call(0x4b230e, hire_npc_hook, 6); // from house
     // Remove an ongoing NPC rep penalty.
     erase_code(0x477549, 72);
+    hook_call(0x4b1445, increase_shop_wariness, 5);
+    hook_call(0x4be061, account_for_shop_wariness, 5);
+    // decrease for bought items in faster_shop_restock() below
+    hook_call(0x4be250, decrease_shop_wariness, 7);
+    patch_bytes(0x48d861, open_shoplift_chunk, 5);
 }
 
 // Instead of copying the entire lines buffer, just store a pointer.
@@ -26376,6 +26446,7 @@ static void __declspec(naked) arcomage_hint_hook(void)
 
 // Let shops and guilds restock faster if some items are bought.
 // Also here: remove bought BM items from the stolen items array.
+// Also also: decrease shop wariness for each bought item (except bottles).
 static void __declspec(naked) faster_shop_restock(void)
 {
     asm
@@ -26386,6 +26457,12 @@ static void __declspec(naked) faster_shop_restock(void)
         je skip ; these restock immediately
         mov edi, dword ptr [DIALOG2]
         mov edi, dword ptr [edi+28] ; shop id
+        cmp dword ptr [elemdata.shop_wariness+edi*4-4], 0
+        jle calm
+        dec dword ptr [elemdata.shop_wariness+edi*4-4]
+        jz calm
+        dec dword ptr [elemdata.shop_wariness+edi*4-4]
+        calm:
         imul esi, edi, SIZE_EVENT2D
         movzx eax, word ptr [EVENTS2D_ADDR+esi].s_event2d.restock
         mov bx, word ptr [EVENTS2D_ADDR+esi].s_event2d.type

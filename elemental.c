@@ -7484,11 +7484,17 @@ static void __declspec(naked) wear_off_paralysis(void)
       }
 }
 
+// Effective Town Portal spell cost.  Used just below.
+static int town_portal_cost;
+
 // On Master, always town portal to the last visited region like in MM6.
+// Also here: remember the current spell cost (for scrolls or hard difficulty).
 static void __declspec(naked) master_town_portal(void)
 {
     asm
       {
+        mov eax, dword ptr [ebp-36] ; spell cost
+        mov dword ptr [town_portal_cost], eax
         cmp dword ptr [ebp-24], GM
         jae skip
         mov eax, dword ptr [elemdata.last_region]
@@ -7547,16 +7553,18 @@ static void __declspec(naked) update_new_tp_region(void)
 }
 
 // Do not issue exit action if already in main screen.
+// Also here: use the stored spell cost.
 static void __declspec(naked) town_portal_from_main_screen(void)
 {
     asm
       {
+        mov eax, dword ptr [town_portal_cost]
+        mov dword ptr [esp+4], eax ; was always 20
         cmp dword ptr [CURRENT_SCREEN], ebx ; == 0
-        jz main
-        mov eax, 0x4333af ; replaced jump
-        jmp eax
-        main:
-        mov eax, 0x4314ca ; skip exit action
+        jnz skip
+        mov dword ptr [esp], 0x4314ca ; skip exit action
+        skip:
+        mov eax, 0x4276e7 ; replaced call
         jmp eax
       }
 }
@@ -8568,7 +8576,7 @@ static inline void misc_spells(void)
     hook_jump(0x42b512, (void *) 0x42a8aa); // waste a turn on failure
     hook_call(0x42b530, master_town_portal, 5);
     hook_call(0x44b2b4, update_new_tp_region, 8);
-    hook_jump(0x4339f9, town_portal_from_main_screen);
+    hook_call(0x4339f4, town_portal_from_main_screen, 5);
     hook_call(0x4339d0, town_portal_without_dialog, 5);
     hook_call(0x4336ee, beacon_recall_effects_hook, 5);
     hook_call(0x42b570, lloyd_starting_tab, 5);

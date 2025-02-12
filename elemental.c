@@ -1698,6 +1698,7 @@ enum sizes
     SIZE_SPCITEM = sizeof(struct spcitem),
     SIZE_EVENT2D = sizeof(struct event2d),
     SIZE_NPC = sizeof(struct npc),
+    SIZE_MONSTER = sizeof(struct map_monster),
 };
 
 // Some inline assembly limitations prevent directly addressing these.
@@ -9910,6 +9911,30 @@ static void __declspec(naked) reset_jump_flag(void)
       }
 }
 
+// While sprinting, allow monsters to pass through non-hostiles.
+static void __declspec(naked) jump_past_allies(void)
+{
+    asm
+      {
+        test byte ptr [esi].s_map_monster.mod_flags, MMF_JUMPING
+        jz skip
+        push ecx
+        imul edx, ecx, SIZE_MONSTER
+        mov ecx, esi
+        add edx, MAP_MONSTERS_ADDR
+        call dword ptr ds:is_hostile_to
+        test eax, eax
+        pop ecx
+        jnz restore
+        ret ; do not register a collision
+        restore:
+        mov edx, 40
+        skip:
+        mov eax, 0x46df1e ; replaced call
+        jmp eax
+      }
+}
+
 // Disable Prismatic Light on summoned elementals as MvM isn't implemented.
 static void __declspec(naked) summon_elemental_no_spell(void)
 {
@@ -9971,6 +9996,8 @@ static inline void new_monster_spells(void)
     hook_call(0x46facf, monster_jump_speed, 6); // first hook
     hook_call(0x470876, monster_jump_speed, 6); // second hook
     hook_call(0x4597a6, reset_jump_flag, 7);
+    hook_call(0x46fe7a, jump_past_allies, 5); // indoors
+    hook_call(0x470cb9, jump_past_allies, 5); // outdoors
     hook_call(0x44fb90, summon_elemental_no_spell, 7);
 }
 

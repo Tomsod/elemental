@@ -2410,10 +2410,18 @@ static void __thiscall partial_sp_drain(struct player *player,
             break;
         fraction /= 2;
       }
+    int heal = player->sp;
     if (fraction >= 1)
         player->sp = 0;
     else
         player->sp *= 1 - fraction;
+    // since mostly vampires do this, let them heal
+    if (elemdata.difficulty && (heal -= player->sp))
+      {
+        monster->hp += heal * elemdata.difficulty;
+        if (monster->hp > monster->max_hp)
+            monster->hp = monster->max_hp;
+      }
 }
 
 // Hook for the above.

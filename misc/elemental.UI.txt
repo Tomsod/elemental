@@ -48,3 +48,6 @@ pcx %sBtnS5					R-(btnW-btnSep)*btn-bx	h+dh-by				ui				Dialog
 	518+30+24	416	1	1	R-(btnW-btnSep)*(btn+1)-bx	h+dh-by	+	-			55	17 + NoPartyDlg		Dialog	+1 to XY to ensure it's clickable
 	518+30+24*2	416	1	1	R-(btnW-btnSep)*btn-bx	h+dh-by	+	-			55	17 + NoPartyDlg		Dialog	+1 to XY to ensure it's clickable
 if
+
+SCREEN					fw	fh			MidDialog and s13 and Game.HouseScreen=98						confirm order screen
+	519	410	75	26	DlgBtnX0	DlgBtnY+40	+	+	MidDialog and s13 and Game.HouseScreen=98					Dialog	order button

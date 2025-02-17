@@ -804,8 +804,8 @@ Global Text
 801	The winds of change here hit you like a gale!
 802	Congratulations on yet another win… here's your stuff… %s and %u gold.
 803	At this difficulty level, enemies will completely ignore your invisible characters.
-804	At this difficulty level, only enemies that are immune to magic are able to see through invisibility.
-805	At this difficulty level, enemies are able to spot your characters even while invisible, but most will have trouble landing a hit.
+804	At this difficulty level, enemies that are immune to magic are able to see through invisibility.
+805	At this difficulty level, enemies that are immune to magic ignore invisibility completely, while others become alerted if you come near.
 806	Buy Weapons
 807	Buy Armor
 808	Buy Magic

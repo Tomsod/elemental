@@ -1763,6 +1763,8 @@ enum struct_offsets
 #define SPELLS_TXT 0x5cbeb0
 #define MOVEMAP_STYLE 0x576cbc
 #define HOUR_OF_DAY 0xacd554
+#define REFRESH_SCREEN 0x576eac
+#define CURRENT_HITBOX 0x7213b0
 
 #ifdef CHECK_OVERWRITE
 #define sprintf sprintf_mm7
@@ -1861,6 +1863,8 @@ static int __thiscall (*get_luck)(void *player) = (funcptr_t) 0x48cc19;
 static int __thiscall (*do_monster_bonus)(void *player, int bonus,
                                           void *monster)
     = (funcptr_t) 0x48dcdc;
+static int __fastcall (*check_monster_in_hitbox)(int monster_id, int radius)
+    = (funcptr_t) 0x46df1e;
 static funcptr_t save_game = (funcptr_t) 0x45f4a2;
 static void (*change_weather)(void) = (funcptr_t) 0x48946d;
 static int __fastcall (*is_hostile_to)(void *monster, void *target)
@@ -7843,7 +7847,7 @@ static void __declspec(naked) blink_mass_buffs(void)
         jae ok
         test byte ptr [ANIM_TIMER], 0x40
         jnz ok
-        mov dword ptr [0x576eac], 1 ; refresh screen
+        mov dword ptr [REFRESH_SCREEN], 1
         skip:
         cmp ebx, esi ; set flags
         ret
@@ -7866,7 +7870,7 @@ static void __declspec(naked) blink_pc_buffs(void)
         ja ok
         cmp ecx, 10 * MINUTE
         jae ok
-        mov dword ptr [0x576eac], 1 ; refresh screen
+        mov dword ptr [REFRESH_SCREEN], 1
         test byte ptr [ANIM_TIMER], 0x40
         jnz ok
         skip:
@@ -9226,9 +9230,7 @@ static int __fastcall consider_new_spells(void *this, int first,
         else // shouldn't happen
             return FALSE;
       }
-    else if (spell == SPL_DISPEL_MAGIC && (target != TGT_PARTY
-                                // avoid making WoM on Hard impossible
-                                || PARTY_BUFFS[BUFF_INVISIBILITY].expire_time))
+    else if (spell == SPL_DISPEL_MAGIC && target != TGT_PARTY)
         return FALSE; // would target the party even if not hostile
     else if (spell == SPL_INFERNO || spell == SPL_PRISMATIC_LIGHT)
         return target == TGT_PARTY // mvm not implemented for now
@@ -9938,8 +9940,7 @@ static void __declspec(naked) jump_past_allies(void)
         restore:
         mov edx, 40
         skip:
-        mov eax, 0x46df1e ; replaced call
-        jmp eax
+        jmp dword ptr ds:check_monster_in_hitbox ; replaced call
       }
 }
 
@@ -12427,9 +12428,7 @@ static int weighted_monster_preference(struct map_monster *monster, int mask)
               }
           }
         weights[i] += elemdata.new_pc_buffs[i][NBUFF_AURA_OF_CONFLICT].power;
-        if (has_item_in_slot(player, SHADOWS_MASK, SLOT_HELM)
-            || PARTY_BUFFS[BUFF_INVISIBILITY].expire_time
-               && (!elemdata.difficulty || monster->magic_resistance < IMMUNE))
+        if (has_item_in_slot(player, SHADOWS_MASK, SLOT_HELM))
             continue; // race/class/gender hidden
         static const int class_pref[9] = { 0x1, 0x80, 0x100, 0x2, 0x4,
                                            0x40, 0x10, 0x8, 0x20 };
@@ -17096,7 +17095,7 @@ static void __declspec(naked) open_regular_chest(void)
         mov ecx, PARTY_BUFF_ADDR + BUFF_INVISIBILITY * SIZE_BUFF
         call dword ptr ds:remove_buff
         or eax, 1
-        mov dword ptr [0x576eac], eax ; refresh screen
+        mov dword ptr [REFRESH_SCREEN], eax
         quit:
         ret
       }
@@ -22454,15 +22453,11 @@ static void __declspec(naked) alchemy_quest_hook(void)
 }
 
 // A wrapper for monster hit roll, registers armor/shield training
-// on a successfull block.  Also here: handle cursed monster attacks,
-// and impose a high miss chance for attacking invisible players.
+// on a successfull block.  Also here: handle cursed monster attacks.
 static int __stdcall train_armor(struct map_monster *monster,
                                  struct player *player)
 {
-    if (monster->spell_buffs[MBUFF_CURSED].expire_time && random() & 1
-        || PARTY_BUFFS[BUFF_INVISIBILITY].expire_time
-           && (!elemdata.difficulty || monster->magic_resistance < IMMUNE)
-           && random() & 3)
+    if (monster->spell_buffs[MBUFF_CURSED].expire_time && random() & 1)
         return FALSE; // missed but technically not blocked
     int result = monster_hits_player(monster, player);
     if (!result)
@@ -24189,19 +24184,16 @@ static void __declspec(naked) fixed_corpse_loot(void)
       }
 }
 
-// Allow some/all monsters to ignore Invisibility on Medium/Hard.
-// For Hard, most monsters still get lowered to-hit in train_armor() above.
+// Allow some monsters to ignore Invisibility on Medium/Hard.
 static void __declspec(naked) see_through_invisibility(void)
 {
     asm
       {
-        cmp dword ptr [elemdata.difficulty], 1
-        jl ok
-        jg skip
+        cmp dword ptr [elemdata.difficulty], ebx ; == 0
+        jz ok
         cmp byte ptr [esi].s_map_monster.magic_resistance, IMMUNE
         jb ok
-        skip:
-        cmp ebx, esi ; set less (ebx == 0)
+        cmp ebx, esi ; set less
         ret
         ok:
         ; replaced code below:
@@ -24259,12 +24251,59 @@ static void __declspec(naked) invisibility_description_spellbook(void)
       }
 }
 
+// The distance from monster at which Invisibility is removed (on Hard).
+#define INVISIBILITY_DISTANCE 700
+
+// On Hard, dispel Invisibility when party is too close to a monster.
+static void __declspec(naked) invisibility_hitbox_check(void)
+{
+    asm
+      {
+        cmp dword ptr [MONSTER_COUNT], 0 ; replaced code
+        jle quit
+        cmp dword ptr [elemdata.difficulty], 2
+        jne skip
+        cmp dword ptr [PARTY_BUFF_ADDR+BUFF_INVISIBILITY*SIZE_BUFF], 0
+        jnz invis
+        cmp dword ptr [PARTY_BUFF_ADDR+BUFF_INVISIBILITY*SIZE_BUFF+4], 0
+        jz skip
+        invis:
+        sub dword ptr [CURRENT_HITBOX+156], INVISIBILITY_DISTANCE ; lower bound
+        add dword ptr [CURRENT_HITBOX+160], INVISIBILITY_DISTANCE ; upper bound
+        push dword ptr [CURRENT_HITBOX+120] ; preserve entity
+        push dword ptr [CURRENT_HITBOX+124] ; preserve distance
+        push dword ptr [MONSTER_COUNT]
+        loop:
+        dec dword ptr [esp]
+        jl restore
+        mov ecx, dword ptr [esp]
+        mov edx, INVISIBILITY_DISTANCE
+        call dword ptr ds:check_monster_in_hitbox
+        test eax, eax
+        jz loop
+        mov ecx, PARTY_BUFF_ADDR + BUFF_INVISIBILITY * SIZE_BUFF
+        call dword ptr ds:remove_buff
+        mov dword ptr [REFRESH_SCREEN], 1
+        restore:
+        pop eax
+        pop dword ptr [CURRENT_HITBOX+124]
+        pop dword ptr [CURRENT_HITBOX+120]
+        add dword ptr [CURRENT_HITBOX+156], INVISIBILITY_DISTANCE
+        sub dword ptr [CURRENT_HITBOX+160], INVISIBILITY_DISTANCE
+        skip:
+        xor eax, eax
+        inc eax ; set greater
+        quit:
+        ret
+      }
+}
+
 // Note the party's current speed vector.
 static void __declspec(naked) remember_movement_speed(void)
 {
     asm
       {
-        mov ecx, 0x7213b0 ; replaced code
+        mov ecx, CURRENT_HITBOX ; replaced code
         mov edx, dword ptr [ecx+28]
         mov dword ptr [party_speed.x], edx
         mov edx, dword ptr [ecx+32]
@@ -24385,6 +24424,8 @@ static inline void difficulty_level(void)
     hook_call(0x4013c8, see_through_invisibility, 6);
     hook_call(0x4b15cb, invisibility_description_guild, 5);
     hook_call(0x410c63, invisibility_description_spellbook, 5);
+    hook_call(0x473182, invisibility_hitbox_check, 7); // indoors
+    hook_call(0x4745fd, invisibility_hitbox_check, 6); // outdoors
     hook_call(0x47315c, remember_movement_speed, 5); // indoors
     hook_call(0x4745b4, remember_movement_speed, 5); // outdoors
     hook_call(0x402159, shoot_adjust_aim, 5); // realtime

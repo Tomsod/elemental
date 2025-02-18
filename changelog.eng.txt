@@ -1,6 +1,28 @@
 This is the change log for the Elemental Mod.  It's quite descriptive,
 and can be viewed as the chief source of information on the mod's features.
 
+== Elemental Mod ver. 4.0.2 ==
+
+Another tiny release that focuses on bugfixes and balance tweaks.
+
+* Stealing now makes the shopkeeper wary of you, making further theft harder.
+  This penalty may be reduced with enough normal buying or selling.
+* Invisibility on Hard is reworked: instead of all enemies seeing you with a
+  chance to miss etc., the buff is dispelled within a few feet of any monster.
+* On Medium+, monsters that drain SP also get cured by that now.
+* Hands of the Master (the artifact) are now considered martial gauntlets.
+* Join guild dialog topics now never disappear after joining.
+* Fix: Town Portal always used 20 SP, even if cast from a scroll.
+* v4.0 fix: Black Market had an artifact for sale earlier than intended.
+* v4.0 fix: the game crashed after using certain item-affecting scrolls.
+* v4.0 fix: auto-casting now targets martial gauntlets and uses proper SP cost.
+* v4.0 fix: removed some difficulty-dependent spells from the unique dragons.
+* v4.0 fix: the Light guild now only sells DI scrolls after the spell is found.
+* v4.0 fix: sprinting (jumping) monsters are no longer obstructed by allies.
+* v4.0 fix: the FloatingScreens patch option no longer breaks shop orders.
+
+-------------------------------------------------------------------------------
+
 == Elemental Mod ver. 4.0.1 ==
 
 A tiny release that introduces a couple of sorely missing features and

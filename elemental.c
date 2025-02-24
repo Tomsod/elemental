@@ -16895,7 +16895,7 @@ static void __declspec(naked) new_consumable_items(void)
         call dword ptr ds:spell_face_anim
         ; also the ordinary wine effect
         wine:
-        mov dword ptr [esp], ebx ; cannot resist
+        push ebx ; cannot resist
         push COND_DRUNK
         mov ecx, esi
         call inflict_condition
@@ -16908,7 +16908,7 @@ static void __declspec(naked) new_consumable_items(void)
         mov word ptr [AUTONOTES_ADDR+12], ax
         or byte ptr [AUTONOTES_ADDR+14], 0xc0 ; up to 114
         mov byte ptr [0x5077c9], 1 ; blink notes
-        and dword ptr [0x5063e8], 0 ; potions page
+        and dword ptr [0x5063e8], ebx ; potions page
         mov ecx, dword ptr [CGAME]
         mov ecx, dword ptr [ecx+0xe50]
         mov eax, dword ptr [ebp+8]
@@ -16916,6 +16916,7 @@ static void __declspec(naked) new_consumable_items(void)
         push eax
         push SPL_INVISIBILITY
         call dword ptr ds:spell_face_anim
+        push ebx ; unused
         push ANIM_LEARN
         mov ecx, esi
         call dword ptr ds:show_face_animation

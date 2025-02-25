@@ -194,7 +194,7 @@ Note bit	Autonote Text	Category
 193	"The Grand Master of Light Magic can be found in the wizards castle, Castle Lambent."	teacher
 194	"The Master of Dark, Seth Darkenmore, can be found in The Pit beneath Deyja!"	teacher
 195	"The Grand Master of Dark Magic can be found in the necromancer castle, Castle Gloaming.  At times Archibald has been know to take the journey to Clankers Lab."	teacher
-196	 	
+196	2 points of permanent Agility from the well near the magic guilds in the city of Harmondale.	Stat	2
 197		
 198		
 199		

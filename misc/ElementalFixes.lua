@@ -58,6 +58,16 @@ if Game.NPCProfNames then rawset(Game.NPCProfNames, "limit", 63) end
 -- Also the award text/category array (which is relocated by us).
 rawset(Party.PlayersArray[0].Awards, "count", 500) -- there are 512 pc bits
 rawset(Game.AwardsTxt, "?ptr", mem.u4[0x41910b]) -- must provide new address
+-- And the autonote text/category array (also relocated).
+if mem.ExtendGameStructure then -- v2.3
+    rawset(Game.AutonoteTxt, "limit", 256)
+    -- reverse what we can't knock out
+    mem.IgnoreProtection(true)
+    mem.i4[0x412648] = mem.i4[0x412648] + 196 - 256
+    mem.i4[0x413827] = mem.i4[0x413827] + 196 - 256
+    mem.i4[0x47689D] = mem.i4[0x47689D] + (196 - 256) * 8
+    mem.IgnoreProtection(false)
+end
 
 -- Fix travel table generation (it breaks now that mapstats start from 0).
 function events.ScriptsLoaded()

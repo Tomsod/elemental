@@ -28876,6 +28876,23 @@ static inline void brass_knuckles(void)
     hook_call(0x416860, brass_knuckles_weapon_potions, 6); // slaying potion
 }
 
+// Expand the autonotes text/category array.
+static inline void more_autonotes(void)
+{
+#define AUTONOTE_COUNT 200
+    static struct { char *text; int category; } autonote_txt[AUTONOTE_COUNT];
+    static const int references[] = { 0x412656, 0x412665, 0x4137DC, 0x4137F1,
+                                      0x41392B, 0x44ACE1, 0x44ACFC, 0x44B6A6,
+                                      0x44B6C4, 0x476797 };
+    for (int idx = 0; idx < sizeof(references) / sizeof(int); idx++)
+        patch_dword(references[idx],
+                    dword(references[idx]) - 0x723598 + (int) autonote_txt);
+    patch_dword(0x47689D, (int) &autonote_txt[AUTONOTE_COUNT].category);
+    patch_dword(0x412648, AUTONOTE_COUNT);
+    patch_dword(0x413827, AUTONOTE_COUNT);
+    patch_byte(0x44a0e2, 0x90); // fix broken autonote cmp
+}
+
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
                     LPVOID const reserved)
 {
@@ -28927,6 +28944,7 @@ BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
         new_hireling_types();
         extra_key_config();
         brass_knuckles();
+        more_autonotes();
       }
     return TRUE;
 }

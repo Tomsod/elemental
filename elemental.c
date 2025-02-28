@@ -28879,7 +28879,8 @@ static inline void brass_knuckles(void)
 // Expand the autonotes text/category array.
 static inline void more_autonotes(void)
 {
-#define AUTONOTE_COUNT 200
+    // NB: the array is 0-based, although the 0th entry is unused
+#define AUTONOTE_COUNT 204
     static struct { char *text; int category; } autonote_txt[AUTONOTE_COUNT];
     static const int references[] = { 0x412656, 0x412665, 0x4137DC, 0x4137F1,
                                       0x41392B, 0x44ACE1, 0x44ACFC, 0x44B6A6,
@@ -28891,6 +28892,7 @@ static inline void more_autonotes(void)
     patch_dword(0x412648, AUTONOTE_COUNT);
     patch_dword(0x413827, AUTONOTE_COUNT);
     patch_byte(0x44a0e2, 0x90); // fix broken autonote cmp
+    patch_pointer(0x476821, "misc"); // move barrels/cauldrons to the seer tab
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

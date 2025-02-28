@@ -123,7 +123,7 @@ Global Text
 120	Inventory
 121	Permanent
 122	Join
-123	Miscellaneous Notes
+123	Bounties and Traders
 124	Sniper
 125	+2 Skill Points!
 126	Do you wish to leave %s?
@@ -141,7 +141,7 @@ Global Text
 138	Magic
 139	Maps
 140	Your packs are already full!
-141	Seer Notes
+141	Magical Brews
 142	Mind
 143	Misc
 144	Might

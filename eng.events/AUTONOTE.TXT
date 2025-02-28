@@ -1,5 +1,5 @@
 Note bit	Autonote Text	Category		
-1	Accepted fireball wand from Mr. Malwick on Emerald Island.	Misc	1	
+1	Accepted fireball wand from Mr. Malwick on Emerald Island in exchange for a future favor.	Trader	1
 2	50 points of temporary Fire resistance from the central town well on Emerald Island.	Stat	1	Stat
 3	5 Hit Points regained from the well east of the Temple on Emerald Island.	Stat	1	Misc
 4	5 Spell Points regained from the well west of the Temple on Emerald Island.	Stat	1	Arbiter
@@ -195,13 +195,13 @@ Note bit	Autonote Text	Category
 194	"The Master of Dark, Seth Darkenmore, can be found in The Pit beneath Deyja!"	teacher
 195	"The Grand Master of Dark Magic can be found in the necromancer castle, Castle Gloaming.  At times Archibald has been know to take the journey to Clankers Lab."	teacher
 196	2 points of permanent Agility from the well near the magic guilds in the city of Harmondale.	Stat	2
-197		
-198		
-199		
-200		
-201		
-202		
-203		
+197	Calindra Goldensight will buy apples for at least 300 gold each near Lord Markham's manor in southern Tatalia.	Trader	13
+198	Infernon will buy wine bottles for at least 1000 gold each at the northern end of the city of Spaward in Avlee.	Trader	14
+199	Arvin Beneclowd will buy lumps of ore at varied prices in the northeastern Barrow Downs, near the tavern.	Trader	11
+200	Pip Hillier will buy horseshoes for 800 gold each in the northwestern part of the city of Steadwick in Erathia.	Trader	3
+201	Robert Belknap will buy magic embers for 1500 gold each in the northwestern part of the city of Pierpont in the Tularean Forest.	Trader	4
+202	Evan Nasir will exchange genie lamps for golden lamps in the village south of Harmondale.	Trader	2
+203	Rydric will buy hourglasses of impatience for 5000 gold each in the village in central Bracada Desert.	Trader	6
 204		
 205		
 206		

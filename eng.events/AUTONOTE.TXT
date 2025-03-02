@@ -202,16 +202,16 @@ Note bit	Autonote Text	Category
 201	Robert Belknap will buy magic embers for 1500 gold each in the northwestern part of the city of Pierpont in the Tularean Forest.	Trader	4
 202	Evan Nasir will exchange genie lamps for golden lamps in the village south of Harmondale.	Trader	2
 203	Rydric will buy hourglasses of impatience for 5000 gold each in the village in central Bracada Desert.	Trader	6
-204		
-205		
-206		
-207		
-208
-209
-210
-211
-212
-213
+204	Kill a %s and return to Harmondale Townhall before the end of the month to claim the %u gold reward.	Trader	2
+205	Return to Harmondale Townhall before the end of the month to claim the %u gold reward for the %s you've killed.	Trader	2
+206	Kill a %s and return to Steadwick Townhall in Erathia before the end of the month to claim the %u gold reward.	Trader	3
+207	Return to Steadwick Townhall in Erathia before the end of the month to claim the %u gold reward for the %s you've killed.	Trader	3
+208	Kill a %s and return to Pierpont Townhall in the Tularean Forest before the end of the month to claim the %u gold reward.	Trader	4
+209	Return to Pierpont Townhall in the Tularean Forest before the end of the month to claim the %u gold reward for the %s you've killed.	Trader	4
+210	Kill a %s and return to Hall of Dawn in Celeste before the end of the month to claim the %u gold reward.	Trader	7
+211	Return to Hall of Dawn in Celeste before the end of the month to claim the %u gold reward for the %s you've killed.	Trader	7
+212	Kill a %s and return to Hall of Midnight in the Pit before the end of the month to claim the %u gold reward.	Trader	8
+213	Return to Hall of Midnight in the Pit before the end of the month to claim the %u gold reward for the %s you've killed.	Trader	8
 214
 215
 216

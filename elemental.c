@@ -794,6 +794,7 @@ enum face_animations
     ANIM_SMILE = 36,
     ANIM_DISMAY = 40,
     ANIM_SHAKE_HEAD = 67,
+    ANIM_AWARD = 96,
 };
 
 #define SOUND_BUZZ 27
@@ -805,6 +806,7 @@ enum face_animations
 #define SOUND_DRINK 210
 #define SOUND_HARM 16031
 #define SOUND_DIE 18100
+#define SOUND_QUEST 20001
 
 #define EVT_AWARDS 12
 #define EVT_QBITS 16
@@ -1163,6 +1165,7 @@ enum spells
     SPL_HOLY_WATER = 108,
     SPL_TELEPATHY = 109, // was 59
 };
+#define SPAN_EVT_SET 150
 #define SPAN_DEBUFF 153
 
 #define SPELL_SOUNDS 0x4edf30
@@ -1172,7 +1175,9 @@ struct __attribute__((packed)) map_monster
     SKIP(36);
     uint32_t bits;
     uint16_t hp;
-    SKIP(10);
+    SKIP(2);
+    char *name;
+    SKIP(4);
     uint8_t level;
     uint8_t item_chance;
     SKIP(2);
@@ -1258,6 +1263,7 @@ struct __attribute__((packed)) map_monster
     SKIP(12);
 };
 typedef struct map_monster s_map_monster;
+#define MONSTERS_TXT 0x5cccc0
 // I *think* this is the line-of-sight bit,
 // although it's inconsistent on peaceful monsters.
 #define MBIT_LOS 0x200000
@@ -1765,6 +1771,8 @@ enum struct_offsets
 #define HOUR_OF_DAY 0xacd554
 #define REFRESH_SCREEN 0x576eac
 #define CURRENT_HITBOX 0x7213b0
+#define BLINK_AUTONOTES 0x5077c9
+#define AUTONOTES_PAGE 0x5063e8
 
 #ifdef CHECK_OVERWRITE
 #define sprintf sprintf_mm7
@@ -10610,7 +10618,7 @@ static void __declspec(naked) bounty_hook(void)
 {
     asm
       {
-        movzx ebx, byte ptr [0x5cccc0+eax-44].s_map_monster.level
+        movzx ebx, byte ptr [MONSTERS_TXT+eax-44].s_map_monster.level
         push ebx
         call bounty_rep
         mov eax, ebx
@@ -16907,8 +16915,8 @@ static void __declspec(naked) new_consumable_items(void)
         mov dword ptr [AUTONOTES_ADDR+8], eax
         mov word ptr [AUTONOTES_ADDR+12], ax
         or byte ptr [AUTONOTES_ADDR+14], 0xc0 ; up to 114
-        mov byte ptr [0x5077c9], 1 ; blink notes
-        and dword ptr [0x5063e8], ebx ; potions page
+        mov byte ptr [BLINK_AUTONOTES], 1
+        mov dword ptr [AUTONOTES_PAGE], ebx ; potions page
         mov ecx, dword ptr [CGAME]
         mov ecx, dword ptr [ecx+0xe50]
         mov eax, dword ptr [ebp+8]
@@ -17581,14 +17589,48 @@ static void __declspec(naked) plant_seed(void)
       }
 }
 
+// Whether to do autonote animations.  Filled in check_bounty_kill() below.
+static int bounty_completed = 0;
+
 // Possibly drop the reagent on death.  This uses the vanilla code
 // that drops reagents from some monsters with a 20% chance.
 // These monsters are NOT affected by the Gloves' ability.
 // Eradicated and zombified monsters never drop any reagents (even vanilla).
+// Also here: blink journal etc. on bounty completion.
 static void __declspec(naked) harvest_seed(void)
 {
     asm
       {
+        cmp dword ptr [bounty_completed], 0
+        jz no_bounty
+        mov edi, 4
+        loop:
+        mov ecx, dword ptr [PC_POINTERS+edi*4-4]
+        push 0 ; unused
+        push ANIM_AWARD
+        call dword ptr ds:show_face_animation
+        lea edx, [edi-1]
+        push edx
+        push SPAN_EVT_SET
+        mov ecx, dword ptr [CGAME]
+        mov ecx, dword ptr [ecx+0xe50]
+        call dword ptr ds:spell_face_anim
+        dec edi
+        jnz loop
+        push edi
+        push edi
+        push edi
+        push edi
+        push -1
+        push edi
+        push edi
+        push SOUND_QUEST
+        mov ecx, SOUND_THIS_ADDR
+        call dword ptr ds:make_sound
+        mov byte ptr [BLINK_AUTONOTES], 1
+        mov dword ptr [AUTONOTES_PAGE], 4 ; traders page
+        mov dword ptr [bounty_completed], edi
+        no_bounty:
         mov edi, 20 ; drop chance
         test byte ptr [esi].s_map_monster.mod_flags, \
              MMF_ERADICATED + MMF_ZOMBIE
@@ -23795,7 +23837,7 @@ static void __declspec(naked) difficult_monster_recovery(void)
 {
     asm
       {
-        mov eax, dword ptr [0x5cccc0+eax-44].s_map_monster.recovery ; replaced
+        mov eax, dword ptr [MONSTERS_TXT+eax-44].s_map_monster.recovery ; repl.
         cmp dword ptr [elemdata.difficulty], ebx
         jz skip
         mov ecx, eax
@@ -23815,7 +23857,7 @@ static void __declspec(naked) difficult_monster_recovery_esi(void)
 {
     asm
       {
-        mov esi, dword ptr [0x5cccc0+esi-44].s_map_monster.recovery ; replaced
+        mov esi, dword ptr [MONSTERS_TXT+esi-44].s_map_monster.recovery ; repl.
         cmp dword ptr [elemdata.difficulty], ecx
         jz skip
         mov ebx, esi
@@ -28876,11 +28918,139 @@ static inline void brass_knuckles(void)
     hook_call(0x416860, brass_knuckles_weapon_potions, 6); // slaying potion
 }
 
+#define BOUNTY_MONSTER 0xacd588
+#define BOUNTY_DEADLINE 0xacce74
+#define BOUNTY_COMPLETE 0xacd592
+// The start of our new ten dynamic autonotes.
+#define FIRST_BOUNTY_AUTONOTE 204
+
+// Check whether we need to display dynamic autonotes for town hall bounties.
+static void __declspec(naked) bounty_autonotes(void)
+{
+    asm
+      {
+        cmp edx, FIRST_BOUNTY_AUTONOTE
+        jb skip
+        cmp edx, FIRST_BOUNTY_AUTONOTE + 10
+        jb bounty
+        skip:
+        jmp dword ptr ds:check_bit ; replaced call
+        bounty:
+        sub edx, FIRST_BOUNTY_AUTONOTE
+        shr edx, 1
+        sbb ecx, ecx
+        cmp word ptr [BOUNTY_MONSTER+edx*2], 0
+        jz fail
+        mov eax, dword ptr [BOUNTY_DEADLINE+edx*8+4]
+        cmp eax, dword ptr [CURRENT_TIME_ADDR+4]
+        jg ok
+        jl fail
+        mov eax, dword ptr [BOUNTY_DEADLINE+edx*8]
+        cmp eax, dword ptr [CURRENT_TIME_ADDR]
+        jb fail
+        ok:
+        xor eax, eax
+        add cx, word ptr [BOUNTY_COMPLETE+edx*2]
+        setz al
+        ret
+        fail:
+        xor eax, eax
+        ret
+      }
+}
+
+// Used just below.
+static char bounty_buffer[200];
+
+// Actually format the dynamic autonotes for printing.
+static void __declspec(naked) print_bounty_autonote(void)
+{
+    asm
+      {
+        sub eax, FIRST_BOUNTY_AUTONOTE
+        jb skip
+        cmp eax, 10
+        jae skip
+        shr eax, 1
+        sbb ecx, ecx
+        movzx edx, word ptr [BOUNTY_MONSTER+eax*2]
+        imul edx, edx, 88 ; sizeof(monsters_txt_item)
+        movzx eax, byte ptr [MONSTERS_TXT+edx-44].s_map_monster.level
+        imul eax, eax, 100
+        mov edx, dword ptr [MONSTERS_TXT+edx-44].s_map_monster.name
+        test ecx, ecx
+        jz ok
+        xchg eax, edx
+        ok:
+        mov ecx, offset bounty_buffer
+        mov dword ptr [esp+16], ecx
+        push eax
+        push edx
+        push edi ; raw autonote text
+        mov edi, ecx ; for height calc
+        push ecx
+        call dword ptr ds:sprintf
+        add esp, 16
+        lea ecx, [esp+52] ; restore
+        mov edx, dword ptr [0x5c3460] ; ditto
+        skip:
+        jmp dword ptr ds:print_string ; replaced call
+      }
+}
+
+// Trigger all the new autonote animations when a new bounty is given.
+static void __declspec(naked) new_bounty_autonote(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [CURRENT_PLAYER]
+        mov ecx, dword ptr [PC_POINTERS+ecx*4-4]
+        push ebp ; == 0
+        push ANIM_AWARD
+        call dword ptr ds:show_face_animation
+        mov edx, dword ptr [CURRENT_PLAYER]
+        dec edx
+        push edx
+        push SPAN_EVT_SET
+        mov ecx, dword ptr [CGAME]
+        mov ecx, dword ptr [ecx+0xe50]
+        call dword ptr ds:spell_face_anim
+        push ebp
+        push ebp
+        push ebp
+        push ebp
+        push -1
+        push ebp
+        push ebp
+        push SOUND_QUEST
+        mov ecx, SOUND_THIS_ADDR
+        call dword ptr ds:make_sound
+        mov byte ptr [BLINK_AUTONOTES], 1
+        mov dword ptr [AUTONOTES_PAGE], 4 ; traders page
+        jmp dword ptr ds:random ; replaced call
+      }
+}
+
+// Mark whether the player's just completed a bounty.
+// Checked in harvest_seed() above.
+static void __declspec(naked) check_bounty_kill(void)
+{
+    asm
+      {
+        cmp word ptr [eax], 0 ; bounty flag
+        jnz quit
+        inc word ptr [eax] ; replaced code, in spirit
+        inc dword ptr [bounty_completed]
+        quit:
+        ret
+      }
+}
+
 // Expand the autonotes text/category array.
 static inline void more_autonotes(void)
 {
     // NB: the array is 0-based, although the 0th entry is unused
-#define AUTONOTE_COUNT 204
+#define AUTONOTE_COUNT 214
     static struct { char *text; int category; } autonote_txt[AUTONOTE_COUNT];
     static const int references[] = { 0x412656, 0x412665, 0x4137DC, 0x4137F1,
                                       0x41392B, 0x44ACE1, 0x44ACFC, 0x44B6A6,
@@ -28893,6 +29063,11 @@ static inline void more_autonotes(void)
     patch_dword(0x413827, AUTONOTE_COUNT);
     patch_byte(0x44a0e2, 0x90); // fix broken autonote cmp
     patch_pointer(0x476821, "misc"); // move barrels/cauldrons to the seer tab
+    hook_call(0x412676, bounty_autonotes, 5); // initial open
+    hook_call(0x413802, bounty_autonotes, 5); // changing pages
+    hook_call(0x41393a, print_bounty_autonote, 5);
+    hook_call(0x4bcd07, new_bounty_autonote, 5);
+    hook_call(0x402dfe, check_bounty_kill, 5);
 }
 
 BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,

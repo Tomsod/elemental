@@ -29050,7 +29050,7 @@ static void __declspec(naked) check_bounty_kill(void)
 static inline void more_autonotes(void)
 {
     // NB: the array is 0-based, although the 0th entry is unused
-#define AUTONOTE_COUNT 214
+#define AUTONOTE_COUNT 215
     static struct { char *text; int category; } autonote_txt[AUTONOTE_COUNT];
     static const int references[] = { 0x412656, 0x412665, 0x4137DC, 0x4137F1,
                                       0x41392B, 0x44ACE1, 0x44ACFC, 0x44B6A6,

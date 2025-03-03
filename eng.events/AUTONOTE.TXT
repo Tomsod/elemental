@@ -212,7 +212,7 @@ Note bit	Autonote Text	Category
 211	Return to Hall of Dawn in Celeste before the end of the month to claim the %u gold reward for the %s you've killed.	Trader	7
 212	Kill a %s and return to Hall of Midnight in the Pit before the end of the month to claim the %u gold reward.	Trader	8
 213	Return to Hall of Midnight in the Pit before the end of the month to claim the %u gold reward for the %s you've killed.	Trader	8
-214
+214	25 points of temporary Magic Resistance from the trough in the Maze in Mount Nighon.	Stat	38
 215
 216
 217

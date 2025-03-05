@@ -1233,8 +1233,8 @@ struct __attribute__((packed)) map_monster
     int16_t z;
     SKIP(4);
     int16_t speed_z;
-    uint16_t direction;
-    SKIP(2);
+    int16_t direction;
+    int16_t look_angle;
     uint16_t room;
     uint16_t action_length;
     SKIP(14);
@@ -2112,8 +2112,8 @@ static void __thiscall (*unload_bitmap)(void *bitmap) = (funcptr_t) 0x40f788;
 static char __stdcall (*check_key_pressed)(int key) = (funcptr_t) 0x45b118;
 static void __thiscall (*set_recovery_delay)(void *player, int delay)
     = (funcptr_t) 0x48e962;
-#define TURN_BASED_THIS ((void *) 0x4f86d8)
-static void __thiscall (*turn_based_pass)(void *this) = (funcptr_t) 0x40471c;
+#define TURN_BASED_THIS 0x4f86d8
+static void __thiscall (*turn_based_pass)(int this) = (funcptr_t) 0x40471c;
 #define CAN_REPAIR_ADDR 0x491149
 static int __thiscall (*can_repair)(struct player *player, struct item *item)
     = (funcptr_t) CAN_REPAIR_ADDR;
@@ -4427,14 +4427,14 @@ static void __declspec(naked) drink_swift_potion(void)
         mov word ptr [esi].s_player.recovery, bx ; == 0
         cmp dword ptr [TURN_BASED], ebx
         jz quit
-        mov ecx, dword ptr [0x4f86d8+12] ; count of tb actors
+        mov ecx, dword ptr [TURN_BASED_THIS+12] ; count of tb actors
         cmp ecx, ebx ; just in case
         jle quit
         mov eax, dword ptr [ebp+8] ; player id
         dec eax
         shl eax, 3
         add eax, TGT_PARTY
-        mov edx, 0x4f86d8 + 16
+        mov edx, TURN_BASED_THIS + 16
         next_actor:
         add edx, 16
         cmp dword ptr [edx], eax ; tb actor id
@@ -7742,7 +7742,7 @@ static void __declspec(naked) stun_recovery(void)
         mov edx, dword ptr [ebp-24] ; monster id
         shl edx, 3
         add edx, TGT_MONSTER
-        mov eax, 0x4f86d8 + 16 ; tb queue
+        mov eax, TURN_BASED_THIS + 16 ; tb queue
         mov ecx, dword ptr [eax-4]
         test ecx, ecx
         jle quit
@@ -9510,6 +9510,20 @@ static int __fastcall cast_new_spells(int monster_id, void *vector, int spell,
         monster->mod_flags |= MMF_JUMPING;
         monster->action_time = 0;
         monster->action_length = length < limit ? length : limit;
+        monster->direction = atan2(dy, dx) / M_PI * 1024;
+        if (monster->flight)
+            monster->look_angle = atan2(dz, sqrt(dx * dx + dy * dy))
+                                / M_PI * 1024;
+        monster->recovery = 0; // attack as soon as possible
+        if (dword(TURN_BASED)) // tb tracks recovery in a separate stack
+            for (int i = dword(TURN_BASED_THIS + 12); i > 0; i--)
+                if (dword(TURN_BASED_THIS + 16 + i * 16)
+                    == monster_id * 8 + TGT_MONSTER)
+                  {
+                    // can't set recovery too low or it resets/glitches
+                    dword(TURN_BASED_THIS + 20 + i * 16) = 20;
+                    break;
+                  }
         result = TRUE; // skip ai code
       }
     else if (spell == SPL_TELEKINESIS)

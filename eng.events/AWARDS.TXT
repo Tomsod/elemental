@@ -110,3 +110,6 @@ A Bit	Awards	Sort	Notes
 109	Joined the Thieves' Guild	5
 110	Retrieved the stolen heirloom	3
 111	Found tears of the Ancients	3
+112	Returned Gryphonheart's Trumpet to Erathia	2
+113	Returned Gryphonheart's Trumpet to Avlee	2
+114	Returned Gryphonheart's Trumpet to the Judge	2

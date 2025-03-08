@@ -1395,9 +1395,9 @@ enum profession
 };
 
 // New max number of global.evt commands (was 4400 before).
-#define GLOBAL_EVT_LINES 5897
+#define GLOBAL_EVT_LINES 5950
 // New max size of global.evt itself (was 46080 bytes before).
-#define GLOBAL_EVT_SIZE 58856
+#define GLOBAL_EVT_SIZE 59000
 
 #define CURRENT_PLAYER 0x507a6c
 
@@ -1458,7 +1458,7 @@ enum monster_buffs
 // count of added NPC text entries
 #define NEW_TEXT_COUNT (917-789)
 // new award count
-#define AWARD_COUNT 111
+#define AWARD_COUNT 114
 
 // exposed by MMExtension in "Class Starting Stats.txt"
 #define RACE_STATS_ADDR 0x4ed658
@@ -29064,7 +29064,7 @@ static void __declspec(naked) check_bounty_kill(void)
 static inline void more_autonotes(void)
 {
     // NB: the array is 0-based, although the 0th entry is unused
-#define AUTONOTE_COUNT 215
+#define AUTONOTE_COUNT 216
     static struct { char *text; int category; } autonote_txt[AUTONOTE_COUNT];
     static const int references[] = { 0x412656, 0x412665, 0x4137DC, 0x4137F1,
                                       0x41392B, 0x44ACE1, 0x44ACFC, 0x44B6A6,
@@ -29076,6 +29076,7 @@ static inline void more_autonotes(void)
     patch_dword(0x412648, AUTONOTE_COUNT);
     patch_dword(0x413827, AUTONOTE_COUNT);
     patch_byte(0x44a0e2, 0x90); // fix broken autonote cmp
+    patch_byte(0x44bfd6, 0); // also sub
     patch_pointer(0x476821, "misc"); // move barrels/cauldrons to the seer tab
     hook_call(0x412676, bounty_autonotes, 5); // initial open
     hook_call(0x413802, bounty_autonotes, 5); // changing pages

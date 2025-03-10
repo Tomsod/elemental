@@ -25778,7 +25778,8 @@ static int __thiscall parse_item(const char *description)
             gnamelen[i-1] = strlen(ITEMS_TXT[i].generic_name);
             samename[i-1] = !strcmp(ITEMS_TXT[i].name,
                                     ITEMS_TXT[i].generic_name);
-            if (ITEMS_TXT[group_start].mod1_dice_count ? !ITEMS_TXT[i].mod2
+            if (ITEMS_TXT[group_start].mod1_dice_count
+                                 ? !ITEMS_TXT[i].mod2 || i == BLASTER
                                  : strcmp(ITEMS_TXT[i].generic_name,
                                           ITEMS_TXT[group_start].generic_name))
               {

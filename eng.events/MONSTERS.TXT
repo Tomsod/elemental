@@ -94,7 +94,7 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 90	Chaos Hydra	Hydra C	65	617	66	4875	80%200D10+L5	1	N	Short	Aggress	2	260	80	0	BrkArmor	Ener	20D5	Ener	0	0	0	0	33	"|Regeneration,G,12"	0	0	40	40	40	40	30	Imm	50	40	40	0
 91	Lich	Lich A	20	100	15	600	10%10D20+L3Misc	0	N	Med	Aggress	4	180	90	DC	0	Fire	3D8+6	Fire	0	0	0	0	20	"Toxic Cloud,E,4"	30	"||Shield,E,4"	20	20	20	Imm	Imm	10	30	20	20	0
 92	Power Lich	Lich B	30	180	20	1200	10%15D20+L4Misc	0	N	Med	Aggress	4	200	80	DC	0	Elec	4D8+12	Air	0	0	0	0	20	"Shrapmetal,M,8"	30	"||Haste,M,8"	25	25	25	Imm	Imm	15	35	25	25	0
-93	Lich King	Lich C	40	280	25	2000	30%30D20+L5Misc	0	N	Short	Suicidal	4	220	70	DC	Insane	Magic	5D8+20	Dark	0	0	0	0	30	"Dragon Breath,M,12"	50	"Pain Reflection,M,12"	30	30	30	Imm	Imm	20	40	30	30	0
+93	Lich King	Lich C	40	280	25	2000	30%30D20+L5Misc	0	N	Short	Suicidal	4	220	70	DC	Insane	Phys	5D8+20	Dark	0	0	0	0	30	"Dragon Breath,M,12"	50	"Pain Reflection,M,12"	30	30	30	Imm	Imm	20	40	30	30	0
 94	Sorcerer	Mage A	25	137	14	875	10%15D12+L3Staff	1	N	Med	Aggress	4	200	90	0	0	Ener	9D4	Light	0	0	0	0	20	"Dispel Magic,E,4"	30	"Destroy Undead,E,4"	20	20	20	10	15	Imm	30	10	10	"Summon,air,Elemental Light A"
 95	Wizard	Mage B	35	227	18	1575	10%25D12+L4Staff	1	N	Med	Aggress	4	220	80	0	0	Ener	12D4	Light	0	0	0	0	30	"Dispel Magic,M,8"	50	"Hour of Power,M,8"	30	30	30	15	20	Imm	40	20	20	"Summon,air,Elemental Light B"
 96	Archmage	Mage C	50	400	30	3000	30%40D12+L5Staff	1	N	Short	Aggress	4	240	70	0	0	Ener	16D4	Light	0	0	0	0	33	"Hour of Power||Haste,M,12"	33	"Day of Protection,M,12"	40	40	40	20	25	Imm	50	30	30	"Summon,air,Elemental Light C"
@@ -110,9 +110,9 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 106	Monk	Monk A	8	30	16	144	5%L1Misc	1	N	Long	Normal	2	200	100	M	0	Phys	2D8+4	0	0	0	0	0	10	"Fate,N,3"	50	"Hammerhands,N,3"	5	5	5	0	10	Imm	10	5	5	0
 107	Initiate	Monk B	16	73	19	416	5%L2Misc	1	N	Long	Aggress	2	220	90	M	0	Phys	2D8+12	0	0	0	0	0	10	"Harm,E,6"	50	"Hammerhands|Heroism,E,6"	10	10	10	5	15	Imm	15	10	10	0
 108	Master	Monk C	27	153	28	999	10%L3Misc	1	N	Long	Suicidal	2	240	80	M	0	Phys	2D8+20	0	0	0	0	0	10	"Flying Fist,M,9"	50	"Hammerhands,M,9"	15	15	15	5	25	Imm	25	15	15	0
-109	Necromancer	Necromancer A	25	137	14	875	10%15D12+L3Boots	1	N	Med	Aggress	4	200	90	P	Curse	Magic	9D4	Dark	0	0	0	0	20	"Toxic Cloud,E,4"	30	"||Haste,E,4"	20	20	20	20	15	Imm	30	10	10	"Summon,ground,Ghost A"
-110	Speaker for the Dead	Necromancer B	35	227	18	1575	10%25D12+L4Boots	1	N	Med	Aggress	4	220	80	P	Cursex2	Magic	12D4	Dark	0	0	0	0	30	"Shrapmetal,M,8"	30	"||Stone Skin,M,8"	30	30	30	30	20	Imm	40	20	20	"Summon,ground,Ghost B"
-111	Queen of the Dead	Necromancer C	50	400	30	3000	30%40D12+L5Boots	1	N	Short	Aggress	4	240	70	P	Cursex3	Magic	16D4	Dark	0	0	0	0	30	"Dragon Breath,M,10"	50	"Pain Reflection,M,10"	40	40	40	40	25	Imm	50	30	30	"Summon,ground,Ghost C"
+109	Necromancer	Necromancer A	25	137	14	875	10%15D12+L3Boots	1	N	Med	Aggress	4	200	90	P	Curse	Phys	9D4	Dark	0	0	0	0	20	"Toxic Cloud,E,4"	30	"||Haste,E,4"	20	20	20	20	15	Imm	30	10	10	"Summon,ground,Ghost A"
+110	Speaker for the Dead	Necromancer B	35	227	18	1575	10%25D12+L4Boots	1	N	Med	Aggress	4	220	80	P	Cursex2	Phys	12D4	Dark	0	0	0	0	30	"Shrapmetal,M,8"	30	"||Stone Skin,M,8"	30	30	30	30	20	Imm	40	20	20	"Summon,ground,Ghost B"
+111	Queen of the Dead	Necromancer C	50	400	30	3000	30%40D12+L5Boots	1	N	Short	Aggress	4	240	70	P	Cursex3	Phys	16D4	Dark	0	0	0	0	30	"Dragon Breath,M,10"	50	"Pain Reflection,M,10"	40	40	40	40	25	Imm	50	30	30	"Summon,ground,Ghost C"
 112	Emerald Ooze	Ooze A	12	50	8	264	5%L2	0	N	Free	Normal	1	120	100	0	Brkweapon	Pois	1D6	0	0	0	0	0	0	0	0	0	0	0	0	Imm	Imm	Imm	0	Imm	Imm	0
 113	Sapphire Ooze	Ooze B	18	86	10	504	5%L3	0	N	Free	Suicidal	1	140	100	0	BrkArmor	Pois	3D6	0	0	0	0	0	10	"Toxic Cloud,E,1"	0	0	0	0	0	Imm	Imm	Imm	0	Imm	Imm	0
 114	Bloodstone Ooze	Ooze C	25	137	12	875	5%L4	0	N	Free	Suicidal	1	160	100	0	BrkItem	Pois	5D6	0	0	0	0	0	15	"Toxic Cloud,E,2"	0	0	0	0	0	Imm	Imm	Imm	0	Imm	Imm	0

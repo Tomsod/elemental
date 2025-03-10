@@ -131,7 +131,7 @@ enum elements
     MIND = 7,
     MAGIC = 8,
     PHYS_SPELL = 9, // like physical, but medusae resist a lot
-    FIRE_POISON = 10,
+    DRAGONFIRE = 10, // fire AND physical
     ENERGY = 12, // conforming to mmpatch
 };
 
@@ -220,7 +220,6 @@ enum player_stats
     STAT_LIGHT_MAGIC = 41,
     STAT_DARK_MAGIC = 42,
     STAT_BOW = 44,
-    STAT_FIRE_POISON_RES = 47,
 };
 
 enum class
@@ -1206,7 +1205,8 @@ struct __attribute__((packed)) map_monster
     uint8_t mind_resistance;
     uint8_t holy_resistance;
     uint8_t magic_resistance;
-    SKIP(2);
+    uint8_t phys_spell_resistance;
+    SKIP(1);
     uint8_t physical_resistance;
     SKIP(6);
     uint16_t id;
@@ -1781,6 +1781,8 @@ enum struct_offsets
 
 static int __cdecl (*uncased_strcmp)(const char *left, const char *right)
     = (funcptr_t) 0x4caaf0;
+static int __thiscall (*player_resists)(void *player, int element, int damage)
+    = (funcptr_t) 0x48d499;
 static int __thiscall (*get_resistance)(const void *player, int stat)
     = (funcptr_t) 0x48e7c8;
 static int __thiscall (*has_item_in_slot)(void *player, int item, int slot)
@@ -2125,7 +2127,7 @@ static void __thiscall (*fetch_spell_sound)(void *this, int spell, int id)
 
 static const char *const elements[] = {"fire", "elec", "cold", "pois", "phys",
                                        0, "holy", "mind", "magic", 0,
-                                       "firepois", 0, "ener"};
+                                       "dragfire", 0, "ener"};
 
 // Patch spells.txt parsing, specifically possible spell elements.
 static inline void spells_txt(void)
@@ -2138,7 +2140,7 @@ static inline void spells_txt(void)
     patch_byte(0x4539ea, PHYS_SPELL); // separate from weapon to handle medusae
     patch_pointer(0x4539f2, elements[ENERGY]);
     patch_byte(0x453a03, ENERGY);
-    patch_pointer(0x453a0b, elements[FIRE_POISON]);
+    patch_pointer(0x453a0b, elements[DRAGONFIRE]);
     patch_byte(0x453a39, MAGIC); // was unused (5)
 }
 
@@ -2315,71 +2317,81 @@ static inline void elemental_weapons(void)
     patch_byte(0x439f82, 13); // this is now Old Nick's posion damage
 }
 
-// Fire-poison resistance is the minimum of the two.
-static void __declspec(naked) fire_poison_monster(void)
+// Fire-physical resistance is the minimum of the two.
+static void __declspec(naked) dragonfire_monster(void)
 {
     asm
       {
         movzx edx, byte ptr [eax].s_map_monster.fire_resistance
-        movzx eax, byte ptr [eax].s_map_monster.poison_resistance
-        cmp eax, edx
-        jbe fire
-        mov eax, edx
+        movzx eax, byte ptr [eax].s_map_monster.phys_spell_resistance
+        cmp eax, IMMUNE
+        jae fire
+        lea esi, [edx+ecx] ; with day of protection
+        cmp eax, esi
+        jae fire
+        xor edx, edx
+        jmp quit
         fire:
-        push 0x427583
-        ret
+        mov eax, edx
+        mov edx, ecx
+        quit:
+        mov ecx, 0x427595 ; after res code
+        jmp ecx
       }
 }
 
-// Recognise element 10 (fire-poison) as the stat 47 (hitherto unused).
-// Also here: equal element 9 (physical spells) with physical damage.
-static void __declspec(naked) fire_poison_stat(void)
+// Equal element 9 (physical spells) with physical damage.
+static void __declspec(naked) physical_spells(void)
 {
     asm
       {
         jnz not_magic
-        push 0x48d4c1
-        ret
+        mov eax, 0x48d4c1
+        jmp eax
         not_magic:
         dec eax
-        jz phys_spell
-        dec eax
         jnz skip
-        push STAT_FIRE_POISON_RES
-        push 0x48d4db
-        ret
         phys_spell:
         mov dword ptr [ebp+8], PHYSICAL
         skip:
         xor edi, edi
-        push 0x48d4e4
-        ret
+        mov eax, 0x48d4e4
+        jmp eax
       }
 }
 
-// Can't just compare resistance values in-function, as player resistances
-// are quite complex.  So we're replacing the call entirely and calling
-// the original function twice.
-static int __thiscall fire_poison_player(const void *player, int stat)
-{
-    if (stat != STAT_FIRE_POISON_RES)
-        return get_resistance(player, stat);
-    int fire_res = get_resistance(player, STAT_FIRE_RES);
-    int poison_res = get_resistance(player, STAT_POISON_RES);
-    if (fire_res < poison_res)
-        return fire_res;
-    else
-        return poison_res;
+// Defined below.
+static int __thiscall resist_phys_damage(struct player *player, int damage);
+static int __thiscall is_immune(struct player *player, unsigned int element);
 
+// Can't just compare resistance values in-function, as player resistances
+// are quite complex, and furthermore physical damage uses fixed reduction
+// instead of random rolls.  So let's replace the call to player_resists()
+// and figure out the element which will be resisted less on average.
+static int __thiscall dragonfire_player(void *player, int element, int damage)
+{
+    if (element == DRAGONFIRE)
+      {
+        int fire_res = get_resistance(player, STAT_FIRE_RES);
+        if (fire_res)
+            fire_res += get_effective_stat(get_luck(player)) * 4;
+        int physical = resist_phys_damage(player, 12); // it's in 1/12s
+        // convert fixed damage reduction to equivalent resistance
+        static const int effective_res[13] = { 99999, 2292, 420, 211, 131,
+                                               89, 62, 44, 31, 21, 13, 6, 0};
+        if (is_immune(player, FIRE) || fire_res >= effective_res[physical])
+            element = PHYSICAL;
+        else element = FIRE;
+      }
+    return player_resists(player, element, damage);
 }
 
-// Implement dual fire-poison damage as element 10 (formerly Dark).
-// So far only used by Dragon Breath.
-static inline void fire_poison(void)
+// Handle exotic spell elements (Dragon Breath and physical vs. medusae).
+static inline void special_spell_elements(void)
 {
-    patch_pointer(0x427615, fire_poison_monster); // patch jumptable
-    hook_jump(0x48d4bb, fire_poison_stat);
-    hook_call(0x48d4dd, fire_poison_player, 5);
+    patch_pointer(0x427615, dragonfire_monster); // patch jumptable
+    hook_jump(0x48d4bb, physical_spells);
+    hook_call(0x48dc1a, dragonfire_player, 5);
 }
 
 // Increase primary stat effect on resisting conditions 4x.
@@ -2507,10 +2519,6 @@ static int __thiscall __declspec(naked) is_undead(void *player)
 // (lich or artifact), 3 for both, or 0 if no immunity.
 static int __thiscall is_immune(struct player *player, unsigned int element)
 {
-    // dragon breath; we don't return 2 or 3 here
-    if (element == FIRE_POISON)
-        return is_immune(player, FIRE) && is_immune(player, POISON);
-
     int result = 0;
     if (element <= POISON || element == MIND || element == MAGIC)
       {
@@ -29098,7 +29106,7 @@ BOOL WINAPI DllMain(HINSTANCE const instance, DWORD const reason,
         monsters_txt();
         skip_monster_res();
         elemental_weapons();
-        fire_poison();
+        special_spell_elements();
         condition_resistances();
         undead_immunities();
         global_txt();

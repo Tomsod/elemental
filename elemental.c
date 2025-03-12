@@ -27197,11 +27197,13 @@ static inline void shop_changes(void)
         if (i == 10) // castle shops are already resp. 2/4 and 3/4
             continue;
         WEAPON_SHOP_SPC[i][0]++;
-        ARMOR_SHOP_STD[i][0][0]++;
         ARMOR_SHOP_STD[i][1][0]++;
-        ARMOR_SHOP_SPC[i][0][0]++;
         ARMOR_SHOP_SPC[i][1][0]++;
       }
+    // keep top shelf one tlvl lower
+    ARMOR_SHOP_SPC[0][0][0]--;
+    ARMOR_SHOP_STD[10][0][0]--;
+    ARMOR_SHOP_SPC[10][0][0]--;
     // why were surface bracada/deyja magic shops better than celeste/pit?
     MAGIC_SHOP_STD[4] = MAGIC_SHOP_STD[5] = 3; // bra/dey
     MAGIC_SHOP_SPC[4] = MAGIC_SHOP_SPC[5] = 4;

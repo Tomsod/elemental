@@ -25763,6 +25763,7 @@ static int __declspec(naked) __stdcall mystrcmp(char *left, char *right, int n)
 static int __thiscall parse_item(const char *description)
 {
     static int namelen[LAST_PREFIX], gnamelen[LAST_PREFIX];
+    static int wandof[LAST_WAND-FIRST_WAND+1][2];
     static char samename[LAST_PREFIX];
     static int grouplen[LAST_PREFIX+1] = {0};
     static int stdlen[24], spclen[SPC_COUNT], spc2len[SPC_COUNT];
@@ -25785,6 +25786,18 @@ static int __thiscall parse_item(const char *description)
               {
                 grouplen[group_start-1] = i - group_start;
                 group_start = i;
+              }
+            if (i >= FIRST_WAND && i <= LAST_WAND)
+              {
+                char *after = strstr(ITEMS_TXT[i].name,
+                                     ITEMS_TXT[FIRST_WAND].generic_name);
+                if (after)
+                  {
+                    after += strlen(ITEMS_TXT[FIRST_WAND].generic_name);
+                    wandof[i-FIRST_WAND][0] = after - ITEMS_TXT[i].name;
+                    wandof[i-FIRST_WAND][1] = wandof[i-FIRST_WAND][0] + 1
+                                            + !strncmp(after, " of", 3) * 3;
+                  }
               }
             if (i == LAST_PREFIX)
                 grouplen[group_start-1] = LAST_PREFIX + 1 - group_start;
@@ -25862,7 +25875,6 @@ static int __thiscall parse_item(const char *description)
             maxlen = gnlen;
             id = gid = i;
           }
-        // TODO: allow parsing e.g. "wand of 20 fireballs"
         int nlen = namelen[i-1];
         if (nlen > maxlen && !mystrcmp(current, ITEMS_TXT[i].name, nlen))
           {
@@ -25870,16 +25882,45 @@ static int __thiscall parse_item(const char *description)
             id = i;
             gid = 0;
           }
+        if (i >= FIRST_WAND && i <= LAST_WAND)
+          {
+            int wnlen = wandof[i-FIRST_WAND][0];
+            if (wnlen > maxlen && !mystrcmp(current, ITEMS_TXT[i].name, wnlen))
+              {
+                maxlen = wnlen;
+                id = i;
+                gid = FIRST_WAND;
+              }
+          }
       }
     if (!id || id == BLASTER || id == BLASTER_RIFLE)
         return FALSE;
     current += maxlen;
+    if (gid == FIRST_WAND)
+      {
+        current += strspn(current, space);
+        if (!mystrcmp(current, "of", 2))
+            current += 2;
+      }
     if (!number)
         number = strtol(current, &current, 10);
     current += strspn(current, space);
     int std = 0;
     maxlen = 0;
-    if (!spc)
+    if (gid == FIRST_WAND) for (int i = FIRST_WAND; i <= LAST_WAND; i++)
+      {
+        if (gid / 5 != id / 5 && id / 5 != i / 5)
+            continue; // skip wrong wand appearances
+        int of = wandof[i-FIRST_WAND][1];
+        int nlen = namelen[i-1] - of;
+        if (nlen > maxlen && !mystrcmp(current, ITEMS_TXT[i].name + of, nlen))
+          {
+            maxlen = nlen;
+            id = i;
+            gid = 0;
+          }
+      }
+    else if (!spc)
       {
         int of = FALSE;
         if (!number && !mystrcmp(current, "of", 2))
@@ -25992,7 +26033,9 @@ static int __thiscall parse_item(const char *description)
       {
         if (!fanciness)
             fanciness = random() % 300 + 1;
-        fanciness *= grouplen[gid-1] - 1;
+        if (wand && id != gid) // by appearance
+            fanciness *= 5 - 1;
+        else fanciness *= grouplen[gid-1] - 1;
         id += fanciness / 300 + (random() % 300 < fanciness % 300);
       }
     order_result.id = id;

@@ -25759,11 +25759,27 @@ static int __declspec(naked) __stdcall mystrcmp(char *left, char *right, int n)
                      + (2 << STAT_DISARM) + (2 << STAT_ARMSMASTER) \
                      + (2 << STAT_DODGING) + (2 << STAT_UNARMED))
 
+// Helper function for sorting each skill by item bonus.
+static int skill_sort(const void *pleft, const void *pright)
+{
+    int left = *(int *) pleft, right = *(int *) pright;
+    int result = ITEMS_TXT[left].mod2 - ITEMS_TXT[right].mod2;
+    if (ITEMS_TXT[left].equip_stat + 1 >= ITEM_TYPE_ARMOR)
+        result += ITEMS_TXT[left].mod1_dice_count
+                - ITEMS_TXT[right].mod1_dice_count;
+    if (result) return result;
+    result = ITEMS_TXT[left].value - ITEMS_TXT[right].value;
+    if (result) return result;
+    return left - right;
+}
+
 // Get an (equippable, regular) item by its textual description.
 static int __thiscall parse_item(const char *description)
 {
     static int namelen[LAST_PREFIX], gnamelen[LAST_PREFIX];
     static int wandof[LAST_WAND-FIRST_WAND+1][2];
+    static int skills[SKILL_PLATE+1][3];
+    static int skill_sorted[LAST_SHIELD+1];
     static char samename[LAST_PREFIX];
     static int grouplen[LAST_PREFIX+1] = {0};
     static int stdlen[24], spclen[SPC_COUNT], spc2len[SPC_COUNT];
@@ -25773,6 +25789,7 @@ static int __thiscall parse_item(const char *description)
     static const char space[] = " \f\n\r\t\v";
     if (!init)
       {
+        int skill = SKILL_NONE;
         for (int i = 1, group_start = 1; i <= LAST_PREFIX; i++)
           {
             namelen[i-1] = strlen(ITEMS_TXT[i].name);
@@ -25799,10 +25816,30 @@ static int __thiscall parse_item(const char *description)
                                             + !strncmp(after, " of", 3) * 3;
                   }
               }
+            // we don't track knives here, since they barely count
+            // as a "random dagger"; other new items are also a miss
+            if (skill != SKILL_MISC)
+              {
+                int new_skill = ITEMS_TXT[i].skill;
+                if (new_skill != skill)
+                  {
+                    if (skill < SKILL_NONE)
+                        skills[skill][1] = i - skills[skill][0];
+                    skill = new_skill;
+                    if (skill < SKILL_NONE) skills[skill][0] = i;
+                  }
+              }
+            if (i <= LAST_SHIELD) skill_sorted[i] = i;
             if (i == LAST_PREFIX)
                 grouplen[group_start-1] = LAST_PREFIX + 1 - group_start;
           }
         grouplen[LAST_PREFIX] = -1; // guard from overflow
+        for (int i = SKILL_STAFF; i <= SKILL_PLATE; i++)
+          {
+            skills[i][2] = strlen(SKILL_NAMES[i]);
+            qsort(skill_sorted + skills[i][0], skills[i][1],
+                  sizeof(int), skill_sort);
+          }
         for (int i = 0; i < 24; i++)
           {
             stdlen[i] = strlen(STDITEMS[i].name);
@@ -25893,6 +25930,17 @@ static int __thiscall parse_item(const char *description)
               }
           }
       }
+    int by_skill = FALSE;
+    // not clubs since their generic name already matches
+    if (!id) for (int i = SKILL_STAFF; i <= SKILL_PLATE; i++)
+        if (!mystrcmp(current, SKILL_NAMES[i], skills[i][2]))
+          {
+            id = skills[i][0];
+            gid = skill_sorted[id];
+            by_skill = TRUE;
+            maxlen = skills[i][2];
+            break;
+          }
     if (!id || id == BLASTER || id == BLASTER_RIFLE)
         return FALSE;
     current += maxlen;
@@ -25907,17 +25955,23 @@ static int __thiscall parse_item(const char *description)
     current += strspn(current, space);
     int std = 0;
     maxlen = 0;
-    if (gid == FIRST_WAND) for (int i = FIRST_WAND; i <= LAST_WAND; i++)
+    if (gid == FIRST_WAND)
       {
-        if (gid / 5 != id / 5 && id / 5 != i / 5)
-            continue; // skip wrong wand appearances
-        int of = wandof[i-FIRST_WAND][1];
-        int nlen = namelen[i-1] - of;
-        if (nlen > maxlen && !mystrcmp(current, ITEMS_TXT[i].name + of, nlen))
+        int ap = id / 5; // skip wrong wand appearances
+        int by_ap = gid / 5 != ap; // basic wands have a generic name
+        for (int i = FIRST_WAND; i <= LAST_WAND; i++)
           {
-            maxlen = nlen;
-            id = i;
-            gid = 0;
+            if (by_ap && i / 5 != ap)
+                continue;
+            int of = wandof[i-FIRST_WAND][1];
+            int len = namelen[i-1] - of;
+            if (len > maxlen
+                && !mystrcmp(current, ITEMS_TXT[i].name + of, len))
+              {
+                maxlen = len;
+                id = i;
+                gid = 0;
+              }
           }
       }
     else if (!spc)
@@ -25972,16 +26026,26 @@ static int __thiscall parse_item(const char *description)
             adjust = TRUE; // will just be randomized
         else if (number && !std && ITEMS_TXT[gid].mod1_dice_count)
           {
-            int quality = ITEMS_TXT[gid].mod2;
-            if (ITEMS_TXT[gid].equip_stat + 1 >= ITEM_TYPE_ARMOR)
-                number -= ITEMS_TXT[gid].mod1_dice_count; // check total ac
+            int armor = ITEMS_TXT[gid].equip_stat + 1 >= ITEM_TYPE_ARMOR;
+            int quality = ITEMS_TXT[gid].mod2
+                        + armor * ITEMS_TXT[gid].mod1_dice_count;
             int sign = (number > quality) - (number < quality);
-            if (sign) do quality = ITEMS_TXT[id+=sign].mod2;
-            while (quality != number && !grouplen[id-1]);
-            if (quality != number)
-                return FALSE;
+            int eid, skill;
+            if (by_skill) skill = ITEMS_TXT[gid].skill;
+            if (sign) do
+              {
+                id += sign;
+                eid = by_skill ? skill_sorted[id] : id;
+                if (by_skill ? ITEMS_TXT[eid].skill != skill
+                             : grouplen[id-(sign==1)])
+                    return FALSE;
+                quality = ITEMS_TXT[eid].mod2
+                        + armor * ITEMS_TXT[eid].mod1_dice_count;
+              }
+            while (quality != number);
+            if (by_skill) id = skill_sorted[id];
           }
-        else if (grouplen[gid-1]) // exclude (elven) saber
+        else if (grouplen[gid-1] || by_skill) // exclude (elven) saber
             adjust = TRUE;
       }
     int equip = ITEMS_TXT[id].equip_stat + 1;
@@ -26029,14 +26093,19 @@ static int __thiscall parse_item(const char *description)
         order_result.bonus_strength = number;
         fanciness = number * (1 << std & HALVED_STDS ? 25 : 12);
       }
-    if (adjust && (fanciness || !samename[gid-1]))
+    if (adjust && (fanciness || by_skill || !samename[gid-1]))
       {
         if (!fanciness)
             fanciness = random() % 300 + 1;
+        int multiplier;
         if (wand && id != gid) // by appearance
-            fanciness *= 5 - 1;
-        else fanciness *= grouplen[gid-1] - 1;
+            multiplier = 5;
+        else if (by_skill)
+            multiplier = skills[ITEMS_TXT[gid].skill][1];
+        else multiplier = grouplen[gid-1];
+        fanciness *= multiplier - 1;
         id += fanciness / 300 + (random() % 300 < fanciness % 300);
+        if (by_skill) id = skill_sorted[id];
       }
     order_result.id = id;
     if (wand)

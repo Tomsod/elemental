@@ -1870,6 +1870,12 @@ static int __thiscall (*get_endurance)(void *player) = (funcptr_t) 0x48caa2;
 static int __thiscall (*get_accuracy)(void *player) = (funcptr_t) 0x48cb1f;
 static int __thiscall (*get_speed)(void *player) = (funcptr_t) 0x48cb9c;
 static int __thiscall (*get_luck)(void *player) = (funcptr_t) 0x48cc19;
+static int __thiscall (*get_base_intellect)(void *player)
+    = (funcptr_t) 0x48c852;
+static int __thiscall (*get_base_personality)(void *player)
+    = (funcptr_t) 0x48c869;
+static int __thiscall (*get_base_endurance)(void *player)
+    = (funcptr_t) 0x48c880;
 static int __thiscall (*do_monster_bonus)(void *player, int bonus,
                                           void *monster)
     = (funcptr_t) 0x48dcdc;
@@ -10082,6 +10088,9 @@ static int replaced_chest;
 // To remember the current music track.
 static int current_track = 0;
 
+// Don't run HP/SP change checks just after a reload.
+static int reset_hp_temp, reset_sp_temp;
+
 // Reset all new savegame data on a new game.
 static void new_game_data(void)
 {
@@ -10098,6 +10107,7 @@ static void new_game_data(void)
     elemdata.last_region = -1;
     elemdata.genie = random() << 16 | random(); // only 15 bytes per call
     current_track = 0; // since the music has stopped at this point
+    reset_hp_temp = reset_sp_temp = 0xf;
 }
 
 // Hook for the above.
@@ -10144,6 +10154,7 @@ static void load_game_data(void)
             player->recovery = player->recovery * 32 * 32 / 15 / 15; // adjust
         dword(TURN_BASED) = 0; // reset it to prevent garbage recovery
       }
+    reset_hp_temp = reset_sp_temp = 0xf;
 }
 
 // Hook for the above.
@@ -19425,45 +19436,64 @@ static void __declspec(naked) default_party_hook(void)
 // Our rewrite of get_full_hp().  Now Endurance and Bodybuilding
 // increase HP by 5% per point of effect, provided the level
 // is high enough.  Also, race affects HP factor.
+// Also here: scale current HP with total after temp changes to endurance.
 static int __thiscall get_new_full_hp(struct player *player)
 {
     int level = get_level(player);
-    int bonus = get_effective_stat(get_endurance(player))
-              + get_bodybuilding_bonus(player);
+    int bonus = get_bodybuilding_bonus(player);
     int base = CLASS_HP_FACTORS[player->class];
     int race = get_race(player);
     if (race == RACE_ELF)
         base--;
     else if (race != RACE_HUMAN)
         base++;
-    int total = CLASS_STARTING_HP[player->class>>2];
-    if (level <= 20)
-        total += base * (level + bonus);
-    else
-        total += base * level * (bonus + 20) / 20;
-    total += get_stat_bonus_from_items(player, STAT_HP, 0);
-    total += player->hp_bonus;
-    if (total <= 1)
-        return 1;
-    return total;
+    int add = CLASS_STARTING_HP[player->class>>2];
+    add += get_stat_bonus_from_items(player, STAT_HP, 0);
+    add += player->hp_bonus;
+    int endurance = get_base_endurance(player);
+    int temp = get_endurance(player) - endurance;
+    static int temps[4];
+    int id = player - PARTY;
+    int change = temp != temps[id] && !(reset_hp_temp & 1 << id);
+    int total[2];
+    for (int i = !change; i < 2; i++)
+      {
+        if (i) temps[id] = temp;
+        int full_bonus = bonus + get_effective_stat(endurance + temps[id]);
+        if (level <= 20)
+            total[i] = base * (level + full_bonus) + add;
+        else
+            total[i] = base * level * (full_bonus + 20) / 20 + add;
+        if (total[i] < 1)
+            total[i] = 1;
+      }
+    if (change && player->hp > 0)
+      {
+        player->hp = player->hp * total[1] / total[0];
+        if (player->hp <= 0) player->hp = 1;
+      }
+    reset_hp_temp &= ~(1 << id);
+    return total[1];
 }
 
 // Ditto, but for get_full_sp(), spellcasting stats, and Meditation.
 // NB: goblins get one less SP per 2 levels, so we operate in half-points.
 // Same is true for DP Thieves and LP monks (they trade 1 HP for 1/2 SP).
+// Also here: scale current SP with total after temp stat changes, as above.
 static int __thiscall get_new_full_sp(struct player *player)
 {
+    int id = player - PARTY;
     int stat = CLASS_SP_STATS[player->class];
     if (player->class < 5 || stat == 3)
         return 0;
     if (has_item_in_slot(player, WITCHBANE, SLOT_AMULET))
+      {
+        // no current sp changes!
+        reset_sp_temp |= 1 << id;
         return 0;
+      }
     int level = get_level(player);
     int bonus = get_meditation_bonus(player);
-    if (stat != 1)
-        bonus += get_effective_stat(get_intellect(player));
-    if (stat != 0)
-        bonus += get_effective_stat(get_personality(player));
     int base = CLASS_SP_FACTORS[player->class] * 2;
     if (player->class == CLASS_ASSASSIN || player->class == CLASS_MASTER)
         base--;
@@ -19472,17 +19502,59 @@ static int __thiscall get_new_full_sp(struct player *player)
         base += 2;
     else if (race == RACE_GOBLIN)
         base--;
-    int total = (base * level + 1) / 2; // round up for goblins
-    if (level <= 20)
-        total += base * bonus >> 1; // but round down here
-    else
-        total = total * (bonus + 20) / 20;
-    total += CLASS_STARTING_SP[player->class>>2];
-    total += get_stat_bonus_from_items(player, STAT_SP, 0);
-    total += player->sp_bonus;
-    if (total <= 0)
-        return 0;
-    return total;
+    int add = CLASS_STARTING_SP[player->class>>2];
+    add += get_stat_bonus_from_items(player, STAT_SP, 0);
+    add += player->sp_bonus;
+    static int average = 0;
+    if (!average) for (int i = 0; i < MAX_STATRATE_COUNT; i++)
+        if (statrates[i].bonus == 0)
+          {
+            average = statrates[i].value;
+            break;
+          }
+    int personality = average, intellect = average;
+    int temp_per = 0, temp_int = 0;
+    if (stat != 0)
+      {
+        personality = get_base_personality(player);
+        temp_per = get_personality(player) - personality;
+      }
+    if (stat != 1)
+      {
+        intellect = get_base_intellect(player);
+        temp_int = get_intellect(player) - intellect;
+      }
+    static int temps[4][2];
+    int change = (temp_per != temps[id][0] || temp_int != temps[id][1])
+               && !(reset_sp_temp & 1 << id);
+    int total[2];
+    for (int i = !change; i < 2; i++)
+      {
+        if (i)
+          {
+            temps[id][0] = temp_per;
+            temps[id][1] = temp_int;
+          }
+        int full_bonus = bonus + get_effective_stat(personality + temps[id][0])
+                               + get_effective_stat(intellect + temps[id][1]);
+        total[i] = (base * level + 1) / 2; // round up for goblins
+        if (level <= 20)
+            total[i] += base * full_bonus >> 1; // but round down here
+        else
+            total[i] = total[i] * (full_bonus + 20) / 20;
+        total[i] += add;
+        if (total[i] <= 0)
+            total[i] = 0;
+      }
+    if (change)
+      {
+        if (total[0])
+            player->sp = player->sp * total[1] / total[0];
+        else if (player->sp < total[1])
+            player->sp = total[1];
+      }
+    reset_sp_temp &= ~(1 << id);
+    return total[1];
 }
 
 // For a div in the below function.

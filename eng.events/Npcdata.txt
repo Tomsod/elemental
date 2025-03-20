@@ -398,7 +398,7 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 396	Alik Whitemoon	420	0	0	0	323	38	188	y	443	444	0	0	0	0	Hint NPC in Tularean Forest (4)
 397	Damon Hawker	37	0	0	0	498	14	190	y	422	499	0	0	0	0	Hint NPC in Deyja (5)
 398	Claes Mogren	562	0	0	0	338	31	190	y	423	444	0	0	0	0	Hint NPC in Deyja (5)
-399	Licia Rivenrock	376	0	0	0	520	13	183	y	457	609	0	0	0	0	Hint NPC in Barrow Downs (11)
+399	Licia Rivenrock	376	0	0	0	520	6	183	y	457	609	0	0	0	0	Hint NPC in Barrow Downs (11)
 400	Feldspar Toolmen	324	0	0	0	517	57	183	y	429	439	0	0	0	0	Hint NPC in Barrow Downs (11)
 401	Jasper Fissure	318	0	0	0	518	28	183	y	528	429	0	0	0	0	Hint NPC in Barrow Downs (11)
 402	Kelly Garnet	384	0	0	0	519	50	183	y	529	444	0	0	0	0	Hint NPC in Barrow Downs (11)

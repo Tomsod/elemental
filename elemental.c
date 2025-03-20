@@ -1600,6 +1600,8 @@ typedef struct npc s_npc;
 
 #define NPC_ADDR 0x72d50c
 #define NPCS ((struct npc *) NPC_ADDR)
+#define NPCDATA_ADDR 0x724050
+#define NPCDATA ((struct npc *) NPCDATA_ADDR)
 #define NPCS_LENGTH 0x73c014
 #define NPC_HIRED 0x80
 #define HIRED_NPC_1 0xad44f4
@@ -10095,7 +10097,7 @@ static int reset_hp_temp, reset_sp_temp;
 static void new_game_data(void)
 {
     memset(&elemdata, 0, sizeof(elemdata));
-    elemdata.version = 402; // v4.0.2
+    elemdata.version = 403; // v4.0.3
     for (int i = 0; i < EXTRA_CHEST_COUNT; i++)
       {
         elemdata.extra_chests[i].picture = i ? 6 : 3; // [0] is bank safe
@@ -10241,6 +10243,13 @@ static void load_map_rep(void)
                 show_status_text(new_strings[text], 4);
               }
           }
+      }
+    // can't do it on game load, as that hook is before npcs are loaded
+    if (elemdata.version == 402 && !(NPCS[399].bits & NPC_HIRED))
+      {
+        // update for a game in progress, unless in party
+        NPCS[399].profession = NPCDATA[399].profession;
+        elemdata.version = 403;
       }
 }
 
@@ -13846,7 +13855,7 @@ static void __declspec(naked) fixed_street_npcs(void)
         mul edx
         push eax
         call dword ptr ds:srandom
-        mov ecx, 0x724050 ; restore
+        mov ecx, NPCDATA_ADDR ; restore
         mov dword ptr [esp], 0x477330 ; replaced call
         ret
       }

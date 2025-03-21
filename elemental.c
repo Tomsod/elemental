@@ -127,6 +127,7 @@ enum elements
     COLD = 2,
     POISON = 3,
     PHYSICAL = 4,
+    NO_ELEMENT = 5,
     HOLY = 6,
     MIND = 7,
     MAGIC = 8,
@@ -1038,7 +1039,8 @@ enum objlist
 };
 #define SPELL_OBJ_IDS 0x4e3ab0
 
-#define ELEMENT(spell) byte(0x5cbecc + (spell) * 0x24)
+#define ELEMENT_ADDR 0x5cbecc
+#define ELEMENT(spell) byte(ELEMENT_ADDR + (spell) * 0x24)
 
 #define PARTY_BUFF_ADDR 0xacd6c4
 #define PARTY_BUFFS ((struct spell_buff *) PARTY_BUFF_ADDR)
@@ -2137,7 +2139,50 @@ static const char *const elements[] = {"fire", "elec", "cold", "pois", "phys",
                                        0, "holy", "mind", "magic", 0,
                                        "dragfire", 0, "ener"};
 
+// Translated attack element names.  Filled in new_element_names() below.
+static char *element_names[ENERGY+1];
+
+// Print the spell's attack element instead of its school.
+static void __declspec(naked) print_spell_element_common(void)
+{
+    asm
+      {
+        lea eax, [eax+eax*8]
+        mov eax, dword ptr [ELEMENT_ADDR+eax*4]
+        cmp eax, NO_ELEMENT
+        je skip
+        mov eax, dword ptr [element_names+eax*4]
+        mov dword ptr [esp+16], eax
+        jmp dword ptr ds:print_text ; replaced call
+        skip:
+        ret 20 ; print nothing
+      }
+}
+
+// Call the above hook for a spell in PC spellbook.
+static void __declspec(naked) print_spell_element_spellbook(void)
+{
+    asm
+      {
+        imul eax, eax, 11 ; spellbook page
+        add eax, dword ptr [ebp-20] ; spell idx on page
+        inc eax
+        jmp print_spell_element_common
+      }
+}
+
+// And also for spell preview in magic guilds.
+static void __declspec(naked) print_spell_element_guild(void)
+{
+    asm
+      {
+        mov eax, esi ; spell id
+        jmp print_spell_element_common
+      }
+}
+
 // Patch spells.txt parsing, specifically possible spell elements.
+// Also here: show attack element in spell description.
 static inline void spells_txt(void)
 {
     patch_pointer(0x45395c, elements[SHOCK]);
@@ -2150,6 +2195,9 @@ static inline void spells_txt(void)
     patch_byte(0x453a03, ENERGY);
     patch_pointer(0x453a0b, elements[DRAGONFIRE]);
     patch_byte(0x453a39, MAGIC); // was unused (5)
+    patch_byte(0x453947, NO_ELEMENT); // the new default
+    hook_call(0x410d34, print_spell_element_spellbook, 5);
+    hook_call(0x4b169c, print_spell_element_guild, 5);
 }
 
 // The original function compared the first letter only.
@@ -2953,9 +3001,23 @@ static void __declspec(naked) new_global_txt_parse_check(void)
       }
 }
 
+// Fetch the MM7Patch string for "energy".
+static char *__thiscall __declspec(naked) patch_energy(int address)
+{
+    asm
+      {
+        mov eax, ENERGY
+        push eax
+        call ecx
+        pop eax
+        ret
+      }
+}
+
 // Instead of replacing every instance of e.g. "water" with "cold",
 // overwrite string pointers themselves.  Note that spell school names
 // are stored separately by now and are thus not affected.
+// Also here: populate the element names array.
 static void new_element_names(void)
 {
     // fire is unchanged
@@ -2966,6 +3028,19 @@ static void new_element_names(void)
     // mind is unchanged
     GLOBAL_TXT[29] = GLOBAL_TXT[138]; // magic
     // light and dark are not displayed anymore
+    element_names[FIRE] = GLOBAL_TXT[87];
+    element_names[SHOCK] = GLOBAL_TXT[71];
+    element_names[COLD] = GLOBAL_TXT[43];
+    element_names[POISON] = GLOBAL_TXT[166];
+    element_names[PHYSICAL] = element_names[PHYS_SPELL] = GLOBAL_TXT[624];
+    element_names[HOLY] = new_strings[STR_HOLY];
+    element_names[MIND] = GLOBAL_TXT[142];
+    element_names[MAGIC] = GLOBAL_TXT[138];
+    static char fire_physical[20];
+    sprintf(fire_physical, "%s/\n%s",
+            element_names[FIRE], element_names[PHYSICAL]);
+    element_names[DRAGONFIRE] = fire_physical;
+    element_names[ENERGY] = patch_energy(dword(0x41ef90) + 0x41ef94 + 12);
 }
 
 // We need to do a few things after global.txt is parsed.
@@ -8407,7 +8482,7 @@ static void __declspec(naked) mvm_incinerate(void)
         mov ecx, SPL_LIGHT_BOLT * 9
         no_sun:
         cmp ecx, SPL_INCINERATE * 9
-        movzx ecx, byte ptr [0x5cbecc+ecx*4] ; replaced code (spell element)
+        movzx ecx, byte ptr [ELEMENT_ADDR+ecx*4] ; replaced code
         jne skip
         push eax ; preserve
         push ecx ; ditto

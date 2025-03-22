@@ -1,6 +1,31 @@
 This is the change log for the Elemental Mod.  It's quite descriptive,
 and can be viewed as the chief source of information on the mod's features.
 
+== Elemental Mod ver. 4.0.3 ==
+
+Yet another small release with a handful of experimental new features.
+
+* There's a new autonote tab for various business opportunities.
+* There are now awards for completing the trumpet quest.
+* Monster Jump spell has a much lower recovery now.
+* Dragon Breath is now fire/physical, making the Pit less trivial.
+* Necromancers and lich kings also have physical projectile attacks now.
+* Armor shop top shelves now once again have a lower treasure level.
+* Some black potion and GM teacher text has been made more clear.
+* It's now posible to order wands by appearance, or omitting appearance.
+* It's also possible to order a random item by skill name.
+* When a stat buff changes max HP or SP, the current value adjusts accordingly.
+* Spell RMB description now prints attack element instead of spell skill.
+* Fix: the 'hardened' label on artifacts wasn't shown in Russian translation.
+* Fix: some fountains did not have functional autonotes.
+* v3.0 fix: the fire resistance well on EI stacks with other bonuses now.
+* v4.0 fix: the game could crash on using some new items like wine.
+* v4.0 fix: jumping monsters will no longer miss their target.
+* v4.0 fix: ordering a random staff could crash the game.
+* v4.0 fix: there were two teachers and no tracker hirelings in houses.
+
+-------------------------------------------------------------------------------
+
 == Elemental Mod ver. 4.0.2 ==
 
 Another tiny release that focuses on bugfixes and balance tweaks.

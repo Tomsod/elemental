@@ -6434,6 +6434,7 @@ static void spell_elements(void)
 static void parse_statrate(void);
 static void set_colors(void);
 static void parse_clsskill(void);
+static void more_visible_facets(void);
 
 // Let's ride on the tail of the spells.txt parsing function.
 static void __declspec(naked) spells_txt_tail(void)
@@ -6447,6 +6448,7 @@ static void __declspec(naked) spells_txt_tail(void)
         call parse_statrate
         call set_colors
         call parse_clsskill
+        call more_visible_facets
         ret
       }
 }
@@ -27695,6 +27697,39 @@ static void __declspec(naked) genie_recall_beacon_map_name(void)
         push CUR_MAP_FILENAME_ADDR ; replaced code
         jmp ecx
       }
+}
+
+// Relocated visible facet buffer.  Used just below.
+#define FACET_LIMIT 4000
+static int facet_array[FACET_LIMIT+1];
+
+// For when we need both the original and relocated visible facet array ptrs.
+static void __declspec(naked) substitute_facet_array(void)
+{
+    asm
+      {
+        inc dword ptr [ebx] ; old count
+        mov ebx, offset facet_array
+        mov dword ptr [ebx], eax ; new count
+        mov word ptr [ebx+eax*4+4], dx ; replaced code
+        ret
+      }
+}
+
+// Extend the visible facet limit fore the new map.  Logic stolen from MMExt,
+// and the code will only activate if the original was not already applied.
+static void more_visible_facets(void)
+{
+    if (dword(0x4b136d) != 1000)
+        return; // must be extended already; avoid conflicts
+    patch_dword(0x4afebd, FACET_LIMIT);
+    patch_dword(0x4b136d, FACET_LIMIT);
+    static const uintptr_t refs[] = { 0x440b96, 0x440bc0, 0x440be4, 0x4b08de,
+                                      0x4b08fa, 0x4c0cc4, 0x4c164b };
+    for (int i = 0; i < sizeof(refs) / sizeof(uintptr_t); i++)
+        patch_dword(refs[i], dword(refs[i]) - 0x51b5f8 + (int) &facet_array);
+    hook_call(0x4afec7, substitute_facet_array, 5);
+    hook_call(0x4b1377, substitute_facet_array, 5);
 }
 
 // Add one extra map to game data structures, using the empty 0th element.

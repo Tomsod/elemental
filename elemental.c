@@ -7279,7 +7279,8 @@ static int __stdcall alternative_spell_mode(int player_id, int spell)
 {
     int unsafe = byte(STATE_BITS) & 0x30;
     struct player *player = PARTY + player_id;
-    int enchant, flags = 0x820, items[8], pcs[8] = { 0, 1, 2, 3 }, count = 4;
+    int enchant, flags = 0x820, items[8] = { 0 },
+        pcs[8] = { 0, 1, 2, 3 }, count = 4;
     switch (spell)
       {
         case SPL_FIRE_AURA:

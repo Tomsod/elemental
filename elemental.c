@@ -7208,6 +7208,29 @@ static void __declspec(naked) scroll_spell_id(void)
       }
 }
 
+// Reduce SW duration below Master.  Also reused for Vampiric Weapon.
+static void __declspec(naked) spectral_weapon_duration(void)
+{
+    asm
+      {
+        cmp word ptr [ebx], SPL_FIRE_AURA ; it reuses same code
+        je skip
+        cmp dword ptr [ebp-24], EXPERT ; skill rank
+        ja master
+        jb normal
+        lea eax, [eax+eax*2] ; 5 or 15 min/skill
+        normal:
+        add eax, 12 ; + one hour
+        imul eax, eax, 5 * 60
+        ret
+        master:
+        inc eax ; also + one hour for description clarity
+        skip:
+        imul eax, eax, 60 * 60 ; replaced code (1 hour/skill)
+        ret
+      }
+}
+
 // Item-targeting spells sometimes got confused when targeting the first item
 // in the PC's inventory, as its ID of 0 was mistaken for no chosen target,
 // and with software 3D the game sometimes attempted to target a nearby
@@ -8625,11 +8648,16 @@ static inline void misc_spells(void)
     hook_call(0x41f0ec, monster_fate, 7); // first spell
     hook_call(0x41f13c, monster_fate, 7); // second spell
     hook_call(0x468654, scroll_spell_id, 6); // for fate scrolls
-    // Set the same delays as Vampiric Weapon.
+    hook_call(0x429041, spectral_weapon_duration, 6); // nerf it a little
+    hook_call(0x42ddaa, spectral_weapon_duration, 6); // same for vamp weapon
+    // Set the same delay as Fire Aura.
     SPELL_INFO[SPL_SPECTRAL_WEAPON].delay_normal = 120;
-    SPELL_INFO[SPL_SPECTRAL_WEAPON].delay_expert = 100;
-    // BTW, GM Vampiric Weapon for some reason had a larger delay?  Fixed here:
-    SPELL_INFO[SPL_VAMPIRIC_WEAPON].delay_gm = 90;
+    SPELL_INFO[SPL_SPECTRAL_WEAPON].delay_expert = 120;
+    SPELL_INFO[SPL_SPECTRAL_WEAPON].delay_master = 120;
+    SPELL_INFO[SPL_SPECTRAL_WEAPON].delay_gm = 120;
+    // Same for Vampiric Weapon (for some reason it was already 120 at GM):
+    SPELL_INFO[SPL_VAMPIRIC_WEAPON].delay_expert = 120;
+    SPELL_INFO[SPL_VAMPIRIC_WEAPON].delay_master = 120;
     // Another MM8 idea: buff Flying Fist a little.
     SPELL_INFO[SPL_FLYING_FIST].damage_fixed = 20;
     SPELL_INFO[SPL_FLYING_FIST].damage_dice = 10;

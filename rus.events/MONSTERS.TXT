@@ -71,9 +71,9 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 67	Джинн	Genie A	33	207	35	1419	30%10D12+L4	0	Y	Free	Aggress	3	200	60	M	0	Cold	8D4+8	Water	0	0	0	0	25	"Ice Blast,M,6"	30	"||Stone Skin,M,6"	15	30	Imm	30	50	Imm	30	30	30	0
 68	Могучий джинн	Genie B	44	325	45	2376	30%15D12+L5	0	Y	Free	Aggress	3	220	50	M	Asleep	Elec	10D4+10	Air	0	0	0	0	25	"Lightning Bolt,M,8"	30	"||Shield,M,8"	30	Imm	30	30	50	Imm	30	30	30	0
 69	Ифрит	Genie C	55	467	55	3575	30%20D12+L6	0	Y	Free	Aggress	3	250	40	M	Afraid	Fire	12D4+12	Fire	0	0	0	0	25	"Fireball,M,10"	30	"||Haste,M,10"	Imm	50	25	50	50	Imm	50	50	50	0
-70	Бесплотный дух	Ghost A	9	35	8	171	5%L2	0	Y	Free	Normal	3	240	100	CP	Afraid	Magic	1D6+6	0	0	0	0	0	20	"||Fate,N,3"	0	0	10	10	Imm	Imm	Imm	10	10	Imm	Imm	0
-71	Привидение	Ghost B	13	55	14	299	10%L3	0	Y	Long	Normal	3	260	90	CP	Agex2	Magic	2D6+6	0	0	0	0	0	20	"||Fate,E,5"	0	0	15	15	Imm	Imm	Imm	15	15	Imm	Imm	0
-72	Призрак	Ghost C	19	93	20	551	20%L4	0	Y	Med	Suicidal	3	300	90	CP	Uncon	Magic	3D6+6	0	0	0	0	0	20	"||Fate,E,7"	0	0	20	20	Imm	Imm	Imm	20	20	Imm	Imm	0
+70	Бесплотный дух	Ghost A	9	35	8	171	5%L2	0	Y	Free	Normal	3	240	100	CP	Afraid	Magic	1D6+6	0	0	0	0	0	20	"||Fate,N,3"	0	0	10	10	Imm	Imm	Imm	0	10	Imm	Imm	0
+71	Привидение	Ghost B	13	55	14	299	10%L3	0	Y	Long	Normal	3	260	90	CP	Agex2	Magic	2D6+6	0	0	0	0	0	20	"||Fate,E,5"	0	0	15	15	Imm	Imm	Imm	5	15	Imm	Imm	0
+72	Призрак	Ghost C	19	93	20	551	20%L4	0	Y	Med	Suicidal	3	300	90	CP	Uncon	Magic	3D6+6	0	0	0	0	0	20	"||Fate,E,7"	0	0	20	20	Imm	Imm	Imm	10	20	Imm	Imm	0
 73	Гоблин	Goblin A	4	13	6	56	4D4	1	N	Med	Normal	1	160	100	W	0	Phys	1D9	0	10	Phys	4D2	Arrow	30	"|Jump,N,4"	0	0	0	0	0	0	0	Imm	0	0	0	0
 74	Гоблин-повелитель	Goblin B	6	21	10	96	8D4	1	N	Med	Normal	1	170	100	W	0	Phys	1D9+2	0	15	Phys	4D2+1	Arrow	25	"|Jump,N,4"	0	0	0	0	0	0	0	Imm	0	0	0	0
 75	Властелин гоблинов	Goblin C	10	40	14	200	10%15D4+L1	1	N	Short	Aggress	1	180	90	W	0	Phys	1D9+4	0	25	Phys	4D2+4	Arrow	20	"|Jump,N,4"	0	0	10	10	10	5	10	Imm	5	10	10	0

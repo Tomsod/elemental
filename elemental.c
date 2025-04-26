@@ -12954,11 +12954,18 @@ static void __declspec(naked) temple_heal_price(void)
 }
 
 // Multiply Arena money reward by 3.
+// Also, reduce the reward proportionately when below level 30.
 static void __declspec(naked) increase_arena_reward(void)
 {
     asm
       {
         lea eax, [eax+eax*2]
+        lea ecx, [ebx+30] ; ebx == 0
+        cmp dword ptr [ebp-12], ecx
+        jae ok
+        mul dword ptr [ebp-12]
+        div ecx
+        ok:
         mov dword ptr [NEW_SKILL_COST], eax ; replaced code
         ret
       }

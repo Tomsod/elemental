@@ -25212,6 +25212,8 @@ static void __thiscall restock_scrolls(int guild)
         && !check_bit(QBITS, QBIT_DIVINE_INTERVENTION))
         extra = -1; // 11th spell not found yet
     int image = dword(CURRENT_CONVERSATION) == CONV_BUY_SCROLLS;
+    int rank = max_level > 10 ? SKILL_GM : max_level > 7 ? SKILL_MASTER
+                                            : max_level > 4 ? SKILL_EXPERT : 0;
     for (int i = 0; i < 12; i++)
       {
         int roll = random() % (max_level + extra);
@@ -25222,9 +25224,14 @@ static void __thiscall restock_scrolls(int guild)
         init_item(scroll);
         scroll->id = id;
         scroll->flags = IFLAGS_ID;
-        scroll->charges = (max_level + 1) / 2 + random() % max_level;
-        scroll->charges += max_level > 10 ? SKILL_GM : max_level > 7 ?
-                               SKILL_MASTER : max_level > 4 ? SKILL_EXPERT : 0;
+        scroll->charges = (max_level + 1) / 2 + random() % max_level + rank;
+        int spell = ITEMS_TXT[id].mod1_dice_count;
+        // these would have permanent effects on gm
+        if ((spell == SPL_FIRE_AURA || spell == SPL_WIZARD_EYE
+             || spell == SPL_SPECTRAL_WEAPON || spell == SPL_CHARM
+             || spell == SPL_VAMPIRIC_WEAPON || spell == SPL_CONTROL_UNDEAD)
+            && rank == SKILL_GM)
+            scroll->charges += SKILL_MASTER - SKILL_GM;
         if (image)
           {
             int bitmap = load_bitmap(ICONS_LOD, ITEMS_TXT[id].bitmap, 2);

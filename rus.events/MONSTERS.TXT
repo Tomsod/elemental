@@ -11,9 +11,9 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 7	Летучая мышь	Bat A	3	9	5	39	2%L1Ring	1	Y	Free	Normal	3	280	50	0	Disease1	Phys	1D3	0	0	0	0	0	25	"|Jump,N,4"	0	0	0	0	0	0	0	Imm	0	0	0	0
 8	Летучая мышь-вампир	Bat B	6	21	8	96	5%L1Ring	1	Y	Free	Normal	3	300	50	0	Disease1	Phys	1D3+2	0	0	0	0	0	25	"|Jump,N,4"	0	0	0	0	0	0	0	Imm	0	0	0	0
 9	Адская летучая мышь	Bat C	9	35	10	171	5%L2Ring	1	Y	Free	Aggress	3	320	50	0	Disease2	Phys	2D3+2	0	15	Fire	3D2	Fire	20	"|Jump,N,4"	0	0	10	0	0	0	0	Imm	0	0	0	0
-10	Молодое чудище	Behemoth A	45	337	35	2475	50D10	1	N	Long	Normal	2	250	80	2	BrkArmor	Phys	3D10+20	0	0	0	0	0	40	"|Jump,N,9"	15	"||Rock Blast,M,8"	30	30	30	15	Imm	Imm	15	20	20	0
-11	Чудище	Behemoth B	60	540	50	4200	100D10	1	N	Med	Aggress	2	260	70	2	BrkArmor	Phys	4D10+30	0	0	0	0	0	40	"|Jump,N,9"	20	"||Rock Blast,M,10"	40	40	40	20	Imm	Imm	20	25	25	0
-12	Древнее чудище	Behemoth C	85	977	80	8075	200D10	1	N	Short	Suicidal	2	300	60	3	BrkArmor	Phys	5D10+40	0	0	0	0	0	40	"|Jump,N,9"	25	"||Rock Blast,M,12"	50	50	50	25	Imm	Imm	25	30	30	0
+10	Молодое чудище	Behemoth A	45	337	35	2475	50D10	1	N	Long	Normal	2	250	80	2	BrkArmor	Phys	3D10+20	0	0	0	0	0	40	"|Jump,N,9"	15	"||Rock Blast,M,6"	30	30	30	15	Imm	Imm	15	20	20	0
+11	Чудище	Behemoth B	60	540	50	4200	100D10	1	N	Med	Aggress	2	260	70	2	BrkArmor	Phys	4D10+30	0	0	0	0	0	40	"|Jump,N,9"	20	"||Rock Blast,M,8"	40	40	40	20	Imm	Imm	20	25	25	0
+12	Древнее чудище	Behemoth C	85	977	80	8075	200D10	1	N	Short	Suicidal	2	300	60	3	BrkArmor	Phys	5D10+40	0	0	0	0	0	40	"|Jump,N,9"	25	"||Rock Blast,M,10"	50	50	50	25	Imm	Imm	25	30	30	0
 13	Плавучий глаз	Beholder A	30	180	20	1200	10%10D10+L4Ring	1	Y	Med	Aggress	3	140	70	S	Asleep	Cold	5D6	Water	0	0	0	0	10	"||Telekinesis,M,8"	0	0	20	30	Imm	Imm	Imm	Imm	20	30	30	0
 14	Глазище	Beholder B	40	280	30	2000	20%15D10+L5Ring	1	Y	Med	Aggress	3	160	60	SD	Afraid	Fire	6D6	Fire	0	0	0	0	10	"||Telekinesis,M,10"	0	0	Imm	40	30	Imm	Imm	Imm	30	40	40	0
 15	Глаз дьявола	Beholder C	50	400	40	3000	30%20D10+L6Ring	1	Y	Short	Aggress	3	180	50	0	Insane	Elec	7D6	Air	0	0	0	0	10	"||Telekinesis,M,12"	0	0	50	Imm	50	Imm	Imm	Imm	40	50	50	"shot,x3"
@@ -252,8 +252,8 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 248	Местный житель	Peasant Goblin Male C B	2	6	5	24	3D6	1	N	Long	Wimp	4	140	100	0	0	Phys	2D2	0	0	0	0	0	0	0	0	0	0	0	0	0	0	Imm	0	0	0	0
 249	Местный житель	Peasant Goblin Male C C	3	9	6	39	4D6	1	N	Long	Wimp	4	140	100	0	0	Phys	2D2	0	0	0	0	0	0	0	0	0	0	0	0	0	0	Imm	0	0	0	0
 250	Болотный тролль	Troll A	18	86	18	504	5%12D10+L1Belt	1	N	Med	Aggress	2	200	90	W	0	Phys	2D10+4	0	0	0	0	0	33	"|Regeneration,N,3"	10	"||Rock Blast,M,3"	5	10	10	5	5	Imm	5	20	20	0
-251	Речной тролль	Troll B	28	162	28	1064	5%25D10+L2Belt	1	N	Med	Aggress	2	220	80	W	0	Phys	3D10+6	0	0	0	0	0	33	"|Regeneration,E,6"	10	"||Rock Blast,M,6"	10	20	20	10	10	Imm	10	30	30	0
-252	Горный тролль	Troll C	38	258	38	1824	5%45D10+L3Belt	1	N	Med	Suicidal	2	260	70	W	0	Phys	4D10+10	0	0	0	0	0	33	"|Regeneration,M,9"	10	"||Rock Blast,M,9"	15	30	30	15	15	Imm	15	40	40	0
+251	Речной тролль	Troll B	28	162	28	1064	5%25D10+L2Belt	1	N	Med	Aggress	2	220	80	W	0	Phys	3D10+6	0	0	0	0	0	33	"|Regeneration,E,6"	10	"||Rock Blast,M,5"	10	20	20	10	10	Imm	10	30	30	0
+252	Горный тролль	Troll C	38	258	38	1824	5%45D10+L3Belt	1	N	Med	Suicidal	2	260	70	W	0	Phys	4D10+10	0	0	0	0	0	33	"|Regeneration,M,9"	10	"||Rock Blast,M,7"	15	30	30	15	15	Imm	15	40	40	0
 253	Дерево	Treant A	12	50	8	264	20%L3Gem	0	N	stand	Suicidal	1	120	100	D	0	Phys	2D10	0	50	Pois	2D6	Earth	20	"|Deadly Swarm,N,3"	0	0	0	20	20	Imm	Imm	Imm	20	30	30	0
 254	Дерево	Treant B	18	86	10	504	35%L3Gem	0	N	stand	Suicidal	1	140	100	D	0	Phys	4D10	0	50	Pois	4D6	Earth	20	"|Deadly Swarm,E,6"	0	0	0	30	30	Imm	Imm	Imm	30	40	40	0
 255	Дерево	Treant C	25	137	12	875	50%L4Gem	0	N	stand	Suicidal	1	160	100	D	BrkItem	Phys	6D10	0	50	Pois	6D6	Earth	20	"|Deadly Swarm,E,9"	0	0	0	40	40	Imm	Imm	Imm	40	50	50	0

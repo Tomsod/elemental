@@ -377,6 +377,9 @@ enum new_strings
     STR_BUY_MAGIC,
     STR_NO_REFILL,
     STR_REFILLED_MAP,
+    STR_TELEPATHY_ITEM,
+    STR_TELEPATHY_GOLD,
+    STR_TELEPATHY_NOTHING,
     NEW_STRING_COUNT
 };
 
@@ -3017,7 +3020,7 @@ static char *__thiscall __declspec(naked) patch_energy(int address)
 // Instead of replacing every instance of e.g. "water" with "cold",
 // overwrite string pointers themselves.  Note that spell school names
 // are stored separately by now and are thus not affected.
-// Also here: populate the element names array.
+// Also here: populate the element names array and localize Telepathy.
 static void new_element_names(void)
 {
     // fire is unchanged
@@ -3041,6 +3044,10 @@ static void new_element_names(void)
             element_names[FIRE], element_names[PHYSICAL]);
     element_names[DRAGONFIRE] = fire_physical;
     element_names[ENERGY] = patch_energy(dword(0x41ef90) + 0x41ef94 + 12);
+    // Localize Telepathy output strings.
+    patch_pointer(0x42c3cd, new_strings[STR_TELEPATHY_ITEM]);
+    patch_pointer(0x42c3e1, new_strings[STR_TELEPATHY_GOLD]);
+    patch_pointer(0x42c410, new_strings[STR_TELEPATHY_NOTHING]);
 }
 
 // We need to do a few things after global.txt is parsed.
@@ -5965,10 +5972,15 @@ static void __declspec(naked) cast_potions_jump(void)
         ret 4
         fate:
         mov word ptr [ebx], SPL_SPECTRAL_WEAPON ; for the sound
+        mov dword ptr [ebp-0xb4], 90 ; recovery
         push 0x42b91d ; fate code
         ret 4
         telepathy:
         mov word ptr [ebx], SPL_AURA_OF_CONFLICT ; sound
+        xor ecx, 7 ; mastery
+        lea ecx, [ecx+ecx*4]
+        lea ecx, [50+ecx+ecx] ; 110 to 80
+        mov dword ptr [ebp-0xb4], ecx ; recovery
         mov dword ptr [ebp-168], 6030 ; anim
         mov dword ptr [esp], 0x42c2ca
         ret

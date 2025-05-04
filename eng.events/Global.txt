@@ -811,3 +811,6 @@ Global Text
 808	Buy Magic
 809	Oh, things are same old, nothing major changed lately.
 810	I heard that %s changed greatly compared to before.
+811	(%s), and %d gold
+812	%d gold
+813	nothing

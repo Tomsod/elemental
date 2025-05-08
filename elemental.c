@@ -26480,18 +26480,15 @@ static void __declspec(naked) complete_order_prompt(void)
         cmp dword ptr [0x5c3298], MESSAGE_MARKER
         jne quit
         cmp dword ptr [0x5c329c], 2 ; this is for genie wishes
-        je no_exit
-        ok:
+        je genie
+        pop ecx ; skip unpause code
         push 0
         push 0
         push ACTION_EXIT
         mov ecx, ACTION_THIS_ADDR
         call dword ptr ds:add_action
-        no_exit:
         cmp dword ptr [0x5c329c], 1 ; exit if just message
         je no_item
-        cmp dword ptr [0x5c329c], 2
-        je genie
         mov ecx, STATUS_MESSAGE
         cmp byte ptr [ecx], 0
         jz no_item
@@ -26512,8 +26509,6 @@ static void __declspec(naked) complete_order_prompt(void)
         call dword ptr ds:add_action
         no_item:
         and dword ptr [MESSAGE_DIALOG], 0 ; we skip over this
-        skip:
-        mov dword ptr [esp], 0x445321 ; skip event code
         quit:
         ret
         bad_type:
@@ -26537,6 +26532,7 @@ static void __declspec(naked) complete_order_prompt(void)
         mov ecx, dword ptr [new_strings+STR_GENIE_ITEM_DEFAULT*4]
         jmp give_item
         genie:
+        mov dword ptr [esp], 0x445321 ; skip event code
         mov ecx, STATUS_MESSAGE
         cmp byte ptr [ecx], 0
         jz refused_wish
@@ -26565,13 +26561,13 @@ static void __declspec(naked) complete_order_prompt(void)
         push dword ptr [new_strings+STR_GENIE_ITEM_ASK*4]
         push STATUS_MESSAGE
         call dword ptr ds:strcpy_ptr
-        add esp, 8
+        add esp, 12 ; also skip unpause code
         and dword ptr [MESSAGE_DIALOG], 0 ; otherwise it won`t reinit
         push MESSAGE_QUESTION
         mov edx, 2
         mov ecx, MESSAGE_MARKER
         call dword ptr ds:message_dialog
-        jmp skip
+        ret
       }
 }
 

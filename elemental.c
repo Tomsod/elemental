@@ -21766,6 +21766,8 @@ static void __declspec(naked) resist_phys_damage_hook(void)
 // Also here: robes of Absorption have a 10% chance of doing the same.
 static int __thiscall absorb_spell(struct player *player, int spell, int rank)
 {
+    if (spell <= 0 || spell > LAST_REAL_SPELL)
+        return FALSE; // don't absorb death explosions etc.
     if (spell == SPL_LIGHT_BOLT)
         return FALSE; // can't be blocked by anything
     if (!has_enchanted_item(player, SPC_ABSORPTION) || random() % 10)

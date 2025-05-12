@@ -14436,6 +14436,8 @@ static inline void misc_rules(void)
     hook_call(0x48e68b, get_accuracy, 5); // total ac
     // Bug fix: indoor refill count wasn't incremented.
     patch_byte(0x49a5c3, 0);
+    // Bug (?) fix: summoned monsters could be looted for random items.
+    patch_byte(0x44fe63, 0x35); // zero item chance instead of type
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

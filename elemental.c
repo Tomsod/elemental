@@ -23025,6 +23025,19 @@ static void __declspec(naked) randomized_chest_disarm(void)
       }
 }
 
+// Make monster level actually matter when stealing from it.
+static void __declspec(naked) steal_monster_level(void)
+{
+    asm
+      {
+        lea esi, [esi+esi*4] ; other factors (count x100%)
+        add esi, eax ; monster level (now counts x20%)
+        lea esi, [esi+esi*4]
+        shl esi, 2
+        ret
+      }
+}
+
 // Tweak various skill effects.
 static inline void skill_changes(void)
 {
@@ -23134,6 +23147,7 @@ static inline void skill_changes(void)
     // also double aggro in weighted_monster_preference() above
     patch_bytes(0x4911df, npc_repair_chunk, 3);
     hook_call(0x420451, randomized_chest_disarm, 5);
+    hook_call(0x48d93d, steal_monster_level, 5);
 }
 
 // The mod's new hotkeys.

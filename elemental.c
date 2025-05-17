@@ -21248,6 +21248,7 @@ static void __declspec(naked) lenient_alchemy_allow(void)
 }
 
 // This hook reduces the skill-less potion's power by 25%.
+// Also here: reset the stolen flag on newly brewed potions.
 static void __declspec(naked) botched_potion_power(void)
 {
     asm
@@ -21261,6 +21262,7 @@ static void __declspec(naked) botched_potion_power(void)
         sub dword ptr [ecx], eax
         or byte ptr [ecx-4+1].s_item.flags, 0x20 ; unused flag
         skip:
+        and byte ptr [ecx-4+1].s_item.flags, ~IFLAGS_STOLEN >> 8
         ret
       }
 }

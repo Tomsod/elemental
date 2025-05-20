@@ -1758,6 +1758,7 @@ enum struct_offsets
 #define NEW_SKILL_COST 0xf8b034
 // can learn skill, can join guild, returned judge item
 #define TOPIC_ACTION 0xf8b028
+#define ARENA_TOPIC 0xacd5ed
 
 #define WEAPON_SHOP_STD ((uint16_t (*)[5]) 0x4f0288)
 #define WEAPON_SHOP_SPC ((uint16_t (*)[5]) 0x4f04c8)
@@ -13866,7 +13867,7 @@ static void __declspec(naked) special_arena_prize(void)
     asm
       {
         mov dword ptr [arena_prize], ebx ; reset (ebx == 0)
-        movzx ecx, byte ptr [0xacd5ed] ; chosen arena topic
+        movzx ecx, byte ptr [ARENA_TOPIC]
         sub ecx, 84 ; now it`s earned points
         add dword ptr [elemdata.arena_points], ecx
         cmp ecx, 4
@@ -13911,7 +13912,7 @@ static void __declspec(naked) special_arena_prize(void)
         lea ecx, [edx+5]
         div ecx
         add edx, 84
-        cmp dl, byte ptr [0xacd5ed] ; below if just passed a multiple of 5
+        cmp dl, byte ptr [ARENA_TOPIC] ; below if just passed a multiple of 5
         jae skip
         mov dword ptr [arena_prize], HOURGLASS_OF_IMPATIENCE
         push HOURGLASS_OF_IMPATIENCE
@@ -27463,6 +27464,21 @@ static void __declspec(naked) store_stolen_items(void)
       }
 }
 
+// Vanilla bug: the code that changes the Arena Master's 'enter combat'
+// dialog topic into 'collect prize' also affected all hireling dialog.
+static void __declspec(naked) arena_prize_topic(void)
+{
+    asm
+      {
+        xor cl, cl ; prepare to skip the prize code
+        cmp eax, dword ptr [NPC_TOPIC_TEXT_ADDR-8+399*8] ; combat topic
+        jne quit
+        mov cl, byte ptr [ARENA_TOPIC] ; replaced code
+        quit:
+        ret
+      }
+}
+
 // Various changes to stores, guilds and other buildings.
 static inline void shop_changes(void)
 {
@@ -27676,6 +27692,7 @@ static inline void shop_changes(void)
     patch_dword(0x48df0c, 0x8d08458b); // mov eax, [ebp+8]; lea...
     patch_word(0x48df10, 0xff48); // ...ecx, [eax-1]
     erase_code(0x4b2076, 53); // don't remove the topic on joining a guild
+    hook_call(0x44581d, arena_prize_topic, 6);
 }
 
 // Allow non-bouncing projectiles to trigger facets in Altar of Wishes.

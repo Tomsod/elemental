@@ -814,3 +814,4 @@ Global Text
 811	(%s), and %d gold
 812	%d gold
 813	nothing
+814	That character is not wounded

@@ -380,6 +380,7 @@ enum new_strings
     STR_TELEPATHY_ITEM,
     STR_TELEPATHY_GOLD,
     STR_TELEPATHY_NOTHING,
+    STR_NOT_WOUNDED,
     NEW_STRING_COUNT
 };
 
@@ -1168,6 +1169,7 @@ enum spells
     SPL_NOXIOUS_POTION = 107,
     SPL_HOLY_WATER = 108,
     SPL_TELEPATHY = 109, // was 59
+    SPL_QUICK_HEAL = 110,
 };
 #define SPAN_EVT_SET 150
 #define SPAN_DEBUFF 153
@@ -5830,7 +5832,7 @@ static void aim_remove_fear(void); // defined below
 
 // Pretend that the thrown potion is Fire Bolt for aiming purposes.
 // There's also a Remove Fear aiming hook here now.
-// Also handles the new Fate and Telepathy spell ID.
+// Also handles the new Fate and Telepathy spell ID, and the quick heal key.
 static void __declspec(naked) aim_potions_type(void)
 {
     asm
@@ -5844,6 +5846,10 @@ static void __declspec(naked) aim_potions_type(void)
         debuff:
         mov ecx, SPL_PARALYZE ; same aiming mode
         not_debuff:
+        cmp ecx, SPL_QUICK_HEAL
+        jne not_heal
+        mov ecx, SPL_REGENERATION ; single-pc buff/cure
+        not_heal:
         cmp ecx, SPL_FLAMING_POTION
         jb ordinary
         cmp ecx, SPL_HOLY_WATER
@@ -5924,7 +5930,9 @@ static void __declspec(naked) cast_potions_object(void)
       }
 }
 
-static void forbid_spell(void); // defined below
+// Defined below.
+static void forbid_spell(void);
+static void __fastcall quick_heal(int caster, int target);
 
 // Used in damage_messages() below.
 static int last_hit_player;
@@ -5943,6 +5951,8 @@ static void __declspec(naked) cast_potions_jump(void)
         je fate
         cmp eax, SPL_TELEPATHY - 1
         je telepathy
+        cmp eax, SPL_QUICK_HEAL - 1
+        je heal
         cmp eax, SPL_FLAMING_POTION - 1
         jb not_it
         cmp eax, SPL_HOLY_WATER - 1
@@ -5985,6 +5995,11 @@ static void __declspec(naked) cast_potions_jump(void)
         mov dword ptr [ebp-168], 6030 ; anim
         mov dword ptr [esp], 0x42c2ca
         ret
+        heal:
+        movsx ecx, word ptr [ebx+2] ; caster
+        movsx edx, word ptr [ebx+4] ; target
+        mov dword ptr [esp], 0x42e8a4 ; past all the spell code
+        jmp quick_heal
       }
 }
 
@@ -14362,6 +14377,9 @@ static inline void misc_rules(void)
     // This also fixes wrong PC getting the result of Telekinesis.
     erase_code(0x433209, 5); // push 300
     erase_code(0x433215, 21); // rest of old code
+    // Same, but for PC-targeting spells.
+    erase_code(0x4332a3, 5); // push 300
+    erase_code(0x4332ac, 21); // the rest
     // Do not reset the current PC on load (we restore saved value instead).
     erase_code(0x45f26f, 41);
     // Expand the audible sprites array.
@@ -28430,15 +28448,17 @@ static void __fastcall __declspec(naked) delete_extra_chest_item(int chest,
 }
 
 // A new hotkey for chugging a healing potion.  Idea from MAW.
-static void quick_heal(void)
+static void __fastcall quick_heal(int caster, int target)
 {
-    int current = dword(CURRENT_PLAYER);
-    if (!current)
-        return;
-    struct player *player = &PARTY[current-1];
+    if (target < 0) return;
+    struct player *player = &PARTY[target];
     int wounded = get_full_hp(player) - player->hp;
-    if (wounded <= 0 || !patch_active_player_check(player))
+    if (wounded <= 0)
+      {
+        show_status_text(new_strings[STR_NOT_WOUNDED], 2);
+        make_sound(SOUND_THIS, SOUND_BUZZ, 0, 0, -1, 0, 0, 0, 0);
         return;
+      }
     int found_player = -2, found_slot, top_heal = -wounded;
     int chests = get_active_chests();
     replace_chest(-1);
@@ -28515,7 +28535,7 @@ static void quick_heal(void)
         delete_backpack_item(PARTY + found_player, found_slot);
     else
         delete_extra_chest_item(found_player - 4, found_slot);
-    recover_player(current, 100);
+    recover_player(caster + 1, 100);
 }
 
 // Another hotkey that tries to repair every broken item carried by party.
@@ -28594,7 +28614,17 @@ static void __declspec(naked) new_hotkeys(void)
         call dword ptr ds:check_key_pressed
         test al, al
         jz not_heal
-        call quick_heal
+        mov ecx, dword ptr [CURRENT_PLAYER]
+        mov ecx, dword ptr [PC_POINTERS+ecx*4-4]
+        call patch_active_player_check
+        test eax, eax
+        jz not_heal
+        push dword ptr [CURRENT_PLAYER]
+        dec dword ptr [esp]
+        push SPL_QUICK_HEAL
+        push ACTION_SCROLL
+        mov ecx, ACTION_THIS_ADDR
+        call dword ptr ds:add_action
         not_heal:
         push dword ptr [quick_repair_key]
         call dword ptr ds:check_key_pressed

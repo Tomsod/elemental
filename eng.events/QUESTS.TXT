@@ -101,10 +101,10 @@ Q Bit	Quest Note Text	Notes	Owner
 100		Chose the path of Dark	Bryan	0
 101	Complete the Walls of Mist without killing a single opponent and return to Gavin Magnus in Castle Lambent in Celeste.		Bryan	0
 102		Completed Proving Grounds without killing a single creature	Bryan	0
-103	Retrieve the altar piece from the Temple of Light in Celeste and the Temple of Dark in the Pit and return them to Resurectra in Castle Lambent in Celeste.		Bryan	0
+103	Retrieve the altar piece from the Temple of Light in Celeste and the Temple of Dark in the Pit and return them to Resurectra in Celeste.		Bryan	0
 104	Go to Colony Zod in the Land of the Giants and slay Xenofex then return to Resurectra in Castle Lambent in Celeste.	0	Bryan	0
 105		Slayed Xenofex	0	0
-106	Investigate the Wine Cellar in Tatalia and return to Crag Hack in Castle Lambent in Celeste.	0	Bryan	0
+106	Investigate the Wine Cellar in Tatalia and return to Crag Hack in Celeste.	0	Bryan	0
 107		Slayed the vampire	0	0
 108	Retrieve the Case of Soul Jars from Castle Gloaming in the Pit and return to Sir Caneghem in Celeste.	0	Bryan	0
 109	Assassinate Tolberti in his house in the Pit and return his control cube to Robert the Wise in Celeste.	0	Bryan	0

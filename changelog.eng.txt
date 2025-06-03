@@ -1,6 +1,37 @@
 This is the change log for the Elemental Mod.  It's quite descriptive,
 and can be viewed as the chief source of information on the mod's features.
 
+== Elemental Mod ver. 4.0.4 ==
+
+Probably the last bugfix release, also with a few balance changes.
+
+* Altar of Wishes third room should be easier to solve now.
+* Arena money reward below PC level 30 is lowered.
+* Spectral and Vampiric Weapon spells now have lower duration below Master.
+* Some scrolls that would have lasting effects in GM guilds are sold at Master.
+* The quick heal hotkey now allows choosing the target PC (click or 1234 keys).
+* Ghost holy resistance is reduced.
+* Rock Blast power of trolls and behemoths is lowered slightly.
+* High-level monsters are now harder to steal from.
+* Dragon scales and manticore venom can no longer be stolen.
+* Fix: summoned monsters could carry random items.
+* Fix: curing spells no longer have mandatory 300 tick realtime recovery.
+* Fix: mixed potions could inherit a parent's stolen status.
+* Fix: hireling dialog topics glitched immediately after Arena combat.
+* Fix: some light path quests had wrong quest-giver locations in the journal.
+* Fix: Telepathy statusline hints weren't localized.
+* v1.0 fix: the small house had a poison resistance scroll instead of magic.
+* v3.0 fix: Fate and Telepathy scrolls had garbage recovery values.
+* v3.0 fix: auto-casting some spells like Regeneration could crash the game.
+* v3.0 fix: monster death explosions could be absorbed for 0 SP.
+* v4.0 fix: Robert the Wise assassination quest was broken for a while.
+* v4.0 fix: Altar of Wishes had visual glitches without MMExt.
+* v4.0 fix: the first puzzle in Altar of Wishes had incomplete logic.
+* v4.0 fix: game would sometimes unpause while placing a shop order.
+* v4.0 fix: Lasker's pacified thieves would turn hostile on map refill.
+
+-------------------------------------------------------------------------------
+
 == Elemental Mod ver. 4.0.3 ==
 
 Yet another small release with a handful of experimental new features.

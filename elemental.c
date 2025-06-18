@@ -4178,10 +4178,11 @@ static int recursive_brew(struct player *player, int potion,
               {
                 memcpy(brews[0].unused_items, unused_items, 4*5);
                 brews[0].unused_items[i>>5] &= ~(1 << (i & 31));
-                //TODO: respect power limiting if added
-                brews[0].power = ITEMS_TXT[id].mod1_dice_count
-                               + (get_skill(player, SKILL_ALCHEMY)
-                                  & SKILL_MASK);
+                int power = ITEMS_TXT[id].mod1_dice_count;
+                int skill = get_skill(player, SKILL_ALCHEMY) & SKILL_MASK;
+                brews[0].power = power + skill;
+                if (power < skill) // like in alchemy_soft_cap()
+                    brews[0].power = brews[0].power / 2 + power;
                 brews[0].used_reagents = 1;
                 brews[0].used_bottles = 1;
                 brews[0].produced_bottles = 0;

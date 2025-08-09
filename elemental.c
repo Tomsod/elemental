@@ -27498,6 +27498,21 @@ static void __declspec(naked) arena_prize_topic(void)
       }
 }
 
+// Semi-bug fix: display greetings for extra NPCs put in stores.
+static void __declspec(naked) greetings_in_shops(void)
+{
+    asm
+      {
+        cmp dword ptr [0x591270], 1 ; only slot 1 is store owner
+        jne skip
+        cmp dword ptr [0x590f00], edi ; replaced code (owner pic check)
+        ret
+        skip:
+        xor ecx, ecx ; set zf
+        ret
+      }
+}
+
 // Various changes to stores, guilds and other buildings.
 static inline void shop_changes(void)
 {
@@ -27712,6 +27727,7 @@ static inline void shop_changes(void)
     patch_word(0x48df10, 0xff48); // ...ecx, [eax-1]
     erase_code(0x4b2076, 53); // don't remove the topic on joining a guild
     hook_call(0x44581d, arena_prize_topic, 6);
+    hook_call(0x4b2b56, greetings_in_shops, 6);
 }
 
 // Allow non-bouncing projectiles to trigger facets in Altar of Wishes.

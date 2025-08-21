@@ -6136,6 +6136,7 @@ static void __declspec(naked) explode_potions_sound(void)
 }
 
 // Calculate the potion damage and element for monsters.
+// Also here: add a stun effect to Lightning Bolt.
 static void __declspec(naked) damage_potions_monster(void)
 {
     asm
@@ -6157,6 +6158,12 @@ static void __declspec(naked) damage_potions_monster(void)
         push 0x439767
         ret 8
         ordinary:
+        cmp eax, SPL_LIGHTNING_BOLT
+        jne quit
+        mov eax, dword ptr [ebx].s_map_object.spell_power
+        not eax ; mark negative to distinguish from stun spell
+        mov dword ptr [ebp-32], eax ; stun flag/power
+        quit:
         push 0x48e189 ; replaced function call
         ret
       }
@@ -7922,13 +7929,18 @@ static void __declspec(naked) stun_power_chunk(void)
 
 // The same resist roll is shared by weapon stun and the Stun spell.
 // We need to change the element to Physical for the former.
+// Also here: use yet another element for Lightning Bolt stun.
 static void __declspec(naked) stun_element(void)
 {
     asm
       {
         cmp dword ptr [ebp-32], 1 ; stun flag / power
-        ja skip
+        jg skip
         mov dword ptr [esp+8], PHYSICAL
+        cmp dword ptr [ebp-32], ebx ; == 0
+        jge skip
+        neg dword ptr [ebp-32] ; lb uses negative values as a marker
+        mov dword ptr [esp+8], SHOCK
         skip:
         jmp dword ptr ds:monster_resists_condition ; replaced call
       }
@@ -8565,6 +8577,55 @@ static void __declspec(naked) mvm_incinerate(void)
       }
 }
 
+// Whether to attempt stunning a hit PC (+80 hit recovery).  Used below.
+static char lightning_bolt_stun;
+
+// Reset the above flag on function entry.
+static void __declspec(naked) init_stun_flag(void)
+{
+    asm
+      {
+        mov esi, ecx ; replaced code
+        and ecx, 7 ; ditto
+        mov byte ptr [lightning_bolt_stun], 0 ; reset
+        ret
+      }
+}
+
+// Increase hit recovery if the PC gets stunned.  Used twice.
+static void __declspec(naked) lb_stun_recovery(void)
+{
+    asm
+      {
+        test byte ptr [lightning_bolt_stun], 1
+        jz skip
+        push ecx
+        push STAT_SHOCK_RES
+        call dword ptr ds:get_resistance
+        pop ecx
+        push eax
+        call dword ptr ds:get_luck
+        push eax
+        call dword ptr ds:get_effective_stat
+        pop ecx
+        lea ecx, [ecx+eax*4+30] ; the usual debuff resistance roll
+        push ecx
+        call dword ptr ds:random
+        pop ecx
+        xor edx, edx
+        div ecx
+        cmp edx, 30
+        jb stun
+        skip:
+        jmp dword ptr ds:get_effective_stat ; replaced call
+        stun:
+        push dword ptr [esp+4] ; endurance value
+        call dword ptr ds:get_effective_stat
+        sub eax, 80 ; extra recovery
+        ret 4
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -8867,6 +8928,11 @@ static inline void misc_spells(void)
     hook_call(0x43b2d6, mvm_incinerate, 8);
     // Remove SP restoration from Divine Intervention.
     erase_code(0x42dad9, 6);
+    // PvM LB stun in damage_potions_monster() and stun_element()
+    hook_call(0x439ff6, init_stun_flag, 5);
+    // stun flag set in alter_spell_element() below
+    hook_call(0x43a366, lb_stun_recovery, 5); // melee attack (unnecessary?)
+    hook_call(0x43a88c, lb_stun_recovery, 5); // projectile hit
 }
 
 // For consistency with players, monsters revived with Reanimate now have
@@ -9975,6 +10041,7 @@ static void __declspec(naked) alter_spell_damage(void)
 }
 
 // Also get the right spell element (this hook is used twice).
+// Also here: set the Lightning Bolt stun flag.
 static void __declspec(naked) alter_spell_element(void)
 {
     asm
@@ -9986,6 +10053,8 @@ static void __declspec(naked) alter_spell_element(void)
         movzx eax, byte ptr [esi+ecx-2].s_map_monster.alter_spell1
         lea eax, [eax+eax*8]
         ok:
+        cmp eax, SPL_LIGHTNING_BOLT * 9
+        sete byte ptr [lightning_bolt_stun] ; 1 if lb
         cmp eax, SPL_SUNRAY * 9
         jne no_sun
         cmp dword ptr [HOUR_OF_DAY], 5
@@ -14753,7 +14822,7 @@ static void __declspec(naked) pierce_debuff_resistance(void)
         mov eax, dword ptr [ebp] ; old ebp
         mov eax, dword ptr [eax-32] ; stun power + 1
         dec eax
-        jz weapon
+        jle weapon
         jmp not_spell
         not_stun:
         cmp dword ptr [ebp+4], 0x439cdf ; mace paralysis
@@ -15370,7 +15439,9 @@ static void __declspec(naked) cursed_weapon(void)
         push esi
         call dword ptr ds:magic_sparkles
         fail:
-        jmp multihit_message_check ; other hook at this address
+        cmp dword ptr [ebp-12], 0 ; total damage
+        jnz multihit_message_check ; other hook at this address
+        ret ; no message if just stun (unless shown by stun code)
       }
 }
 
@@ -21858,7 +21929,7 @@ static void __declspec(naked) absorb_monster_spell(void)
         call dword ptr ds:get_luck
         push eax
         call dword ptr ds:get_effective_stat
-        lea ebx, [ebx+eax*2+30]
+        lea ebx, [ebx+eax*4+30]
         call dword ptr ds:random
         xor edx, edx
         div ebx

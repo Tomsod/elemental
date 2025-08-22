@@ -12682,6 +12682,8 @@ static int weighted_monster_preference(struct map_monster *monster, int mask)
               }
           }
         weights[i] += elemdata.new_pc_buffs[i][NBUFF_AURA_OF_CONFLICT].power;
+        if (monster->spell_buffs[MBUFF_BERSERK].expire_time)
+            continue; // too angry to tell pcs apart
         if (has_item_in_slot(player, SHADOWS_MASK, SLOT_HELM))
             continue; // race/class/gender hidden
         static const int class_pref[9] = { 0x1, 0x80, 0x100, 0x2, 0x4,

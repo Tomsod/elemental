@@ -1127,6 +1127,8 @@ enum spells
     SPL_PRESERVATION = 50,
     SPL_HEROISM = 51,
     SPL_SPIRIT_LASH = 52,
+    SPL_RAISE_DEAD = 53,
+    SPL_RESURRECTION = 55,
     SPL_REMOVE_FEAR = 56,
     SPL_MIND_BLAST = 57,
     SPL_AURA_OF_CONFLICT = 59,
@@ -1246,6 +1248,8 @@ struct __attribute__((packed)) map_monster
     uint16_t action_length;
     SKIP(14);
     uint16_t ai_state;
+#define AI_DYING 4
+#define AI_DEAD 5
 #define AI_PURSUE 6
 #define AI_REMOVED 11
 #define AI_INVISIBLE 19
@@ -1321,6 +1325,7 @@ struct __attribute__((packed)) spell_queue_item
     uint32_t target_object;
     SKIP(4);
 };
+typedef struct spell_queue_item s_spell_queue_item;
 
 #define STATE_BITS 0xad45b0
 
@@ -1868,6 +1873,7 @@ static void __thiscall (*init_item)(void *item) = (funcptr_t) 0x402f07;
 static void __fastcall (*print_text)(int *bounds, void *font, int x, int y,
                                      int color, char *text, int unknown)
     = (funcptr_t) 0x44d432;
+static int __thiscall (*spend_sp)(void *player, int sp) = (funcptr_t) 0x4276e7;
 static int (*get_game_speed)(void) = (funcptr_t) 0x46bdac;
 static void __fastcall (*projectile_hit)(int projectile, int target)
     = (funcptr_t) 0x43a9a1;
@@ -7738,8 +7744,7 @@ static void __declspec(naked) town_portal_from_main_screen(void)
         jnz skip
         mov dword ptr [esp], 0x4314ca ; skip exit action
         skip:
-        mov eax, 0x4276e7 ; replaced call
-        jmp eax
+        jmp dword ptr ds:spend_sp ; replaced call
       }
 }
 
@@ -14721,6 +14726,53 @@ static void __declspec(naked) elixir_of_life_heal_hp(void)
       }
 }
 
+// Allow reviving monsters with Spirit magic (they're not made friendly).
+static void __declspec(naked) revive_monster(void)
+{
+    asm
+      {
+        push dword ptr [esp+4]
+        call dword ptr ds:spend_sp ; replaced call
+        test eax, eax
+        jz quit
+        mov ecx, dword ptr [ebx].s_spell_queue_item.target_object
+        test ecx, ecx
+        jz quit ; to vanilla pc code
+        sar ecx, 3
+        imul edi, ecx, SIZE_MONSTER
+        add edi, MAP_MONSTERS_ADDR
+        cmp word ptr [edi].s_map_monster.hp, si ; == 0
+        jg fail
+        mov ax, word ptr [edi].s_map_monster.ai_state
+        cmp ax, AI_DYING
+        je ok
+        cmp ax, AI_DEAD
+        je ok
+        fail:
+        mov dword ptr [esp], 0x4290c1 ; fail spell code
+        quit:
+        ret 4
+        ok:
+        call dword ptr ds:resurrect_monster
+        mov dword ptr [edi].s_map_monster.experience, esi ; prevent farming
+        xor eax, eax
+        inc eax ; for raise dead
+        cmp word ptr [ebx], SPL_RESURRECTION
+        jne skip
+        mov eax, dword ptr [ebp-56] ; spell power
+        lea eax, [eax+eax*2]
+        lea eax, [eax+eax*4+30] ; 15 * skill + 30 HP
+        mov ecx, dword ptr [edi].s_map_monster.max_hp
+        cmp eax, ecx
+        cmova eax, ecx
+        skip:
+        mov word ptr [edi].s_map_monster.hp, ax
+        inc dword ptr [ebp-40] ; success flag
+        xor eax, eax ; skip vanilla code
+        ret 4
+      }
+}
+
 // Rehaul the condition cure spells.  Generally, GM no longer
 // removes time limit, with most spells' mastery effects shifted.
 static inline void cure_spells(void)
@@ -14795,6 +14847,11 @@ static inline void cure_spells(void)
     hook_call(0x42d016, elixir_of_life_applicable, 6);
     hook_call(0x42d0b4, elixir_of_life_new_cures, 5);
     hook_jump(0x42d0ff, elixir_of_life_heal_hp);
+    // Allow casting Raise Dead and Resurrection on monsters.
+    patch_byte(0x427c9f + SPL_RAISE_DEAD - 2, 5); // aim at pc or monster
+    patch_byte(0x427c9f + SPL_RESURRECTION - 2, 5); // ditto
+    hook_call(0x42bdb9, revive_monster, 5); // raise dead
+    hook_call(0x42c016, revive_monster, 5); // resurrection
 }
 
 // Bonus for mod-triggered debuffs.

@@ -151,6 +151,12 @@ enum spcitems_txt
     SPC_INFERNOS = 12,
     SPC_VENOM = 14,
     SPC_VAMPIRIC = 16,
+    SPC_IMMUNITY = 18,
+    SPC_SANITY = 19,
+    SPC_FREEDOM = 20,
+    SPC_ANTIDOTES = 21,
+    SPC_ALARMS = 22,
+    SPC_MEDUSA = 23,
     SPC_SHIELDING = 36,
     SPC_DEMON_SLAYING = 39,
     SPC_DRAGON_SLAYING = 40,
@@ -13040,7 +13046,7 @@ static void __declspec(naked) increase_training_price(void)
 }
 
 // Used below and also in id_monster_master().
-static const int ten = 10;
+static const int const_ten = 10;
 
 // Let temple heal price depend on PC level.
 static void __declspec(naked) temple_heal_price(void)
@@ -13050,7 +13056,7 @@ static void __declspec(naked) temple_heal_price(void)
         cmp word ptr [edi].s_player.level_base, 10
         jbe skip
         fild word ptr [edi].s_player.level_base
-        fidiv dword ptr [ten]
+        fidiv dword ptr [const_ten]
         fmul st(0), st(0)
         fmulp
         skip:
@@ -15779,6 +15785,7 @@ static void __declspec(naked) dispel_party_buffs(void)
 
 // Implement seven new enchantments that each boost one magic school slightly,
 // plus a corresponding stat.  Intended mainly for lower-tlvl robes and staves.
+// Also here: add various stat boni to condition immunity enchantments.
 static void __declspec(naked) magic_school_affinity(void)
 {
     asm
@@ -15788,6 +15795,45 @@ static void __declspec(naked) magic_school_affinity(void)
         ja quit
         cmp eax, SPC_FIRE_AFFINITY
         jae affinity
+        cmp eax, SPC_PERMANENCE
+        jne not_perm
+        cmp esi, STAT_PERSONALITY
+        je ten
+        not_perm:
+        cmp eax, SPC_IMMUNITY
+        jb quit
+        jne not_imm
+        cmp esi, STAT_ENDURANCE
+        je ten
+        not_imm:
+        cmp eax, SPC_MEDUSA
+        ja quit
+        jne not_med
+        cmp esi, STAT_MAGIC_RES
+        je fifteen
+        not_med:
+        cmp eax, SPC_SANITY
+        jne not_san
+        cmp esi, STAT_INTELLECT
+        je ten
+        not_san:
+        cmp eax, SPC_ANTIDOTES
+        jne not_ant
+        cmp esi, STAT_POISON_RES
+        je ten
+        not_ant:
+        cmp eax, SPC_ALARMS
+        jne not_ala
+        cmp esi, STAT_SPEED
+        je five
+        not_ala:
+        cmp eax, SPC_FREEDOM
+        jne quit
+        cmp esi, STAT_MIND_RES
+        jne quit
+        fifteen:
+        add edi, 15
+        quit:
         ret
         affinity:
         sub ecx, eax ; ecx == stat + 1
@@ -15806,20 +15852,21 @@ static void __declspec(naked) magic_school_affinity(void)
         ; so we check the difference or sum respectively
         ja ego
         cmp ecx, STAT_FIRE_RES + 1 - SPC_FIRE_AFFINITY
-        je resistance
+        je ten
         ret
         ego:
         lea ecx, [esi+eax]
         cmp ecx, STAT_POISON_RES + SPC_BODY_AFFINITY
-        jne quit
-        resistance:
+        jne skip
+        ten:
         add edi, 10
         ret
         earth:
         cmp esi, STAT_AC
-        jne quit
+        jne skip
+        five:
         add edi, 5
-        quit:
+        skip:
         ret
       }
 }
@@ -22272,7 +22319,7 @@ static void __declspec(naked) id_monster_master(void)
         jae no_bonus
         mov eax, 9
         mul dword ptr [esp+4] ; damage
-        div dword ptr [ten] ; no free registers
+        div dword ptr [const_ten] ; no free registers
         mov dword ptr [esp+4], eax
         no_bonus:
         jmp dword ptr ds:damage_player ; replaced call

@@ -19,12 +19,12 @@ Adds ^H[8;12] points of Poison damage.	of Venom	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0
 Adds ^H[12;18] points of Poison damage.	of Acid	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	2000	D	248	Noxious potion	(12) pois damage
 Drain Hit Points from target.	Vampiric	Y	5	5	5	0	0	0	0	0	0	0	0	0	0	0	5	X 2	D	390	Vampiric Weapon scroll	Heal 20% of damage done on attack
 Increases rate of Recovery.	of Recovery	N	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	200	B	250	Swift potion (unused)	(-10) pts on recovery from being hit
-Wearer resistant to Diseases.	of Immunity	N	0	0	0	10	10	10	10	10	0	0	10	10	10	10	0	1000	C	225	Cure Disease potion	Immune to desease condition
-Wearer resistant to Insanity.	of Sanity	N	0	0	0	5	5	5	5	5	0	0	5	5	5	5	0	1000	C	239	Cure Insanity potion	immune to insanity condition
-Wearer resistant to Paralysis.	of Freedom	N	0	0	0	10	10	10	10	10	0	0	10	10	10	10	0	2000	D	360	Cure Paralysis scroll	immune to paralize condition
-Wearer resistant to Poison.	of Antidotes	N	0	0	0	10	10	10	10	10	0	0	10	10	10	10	0	1000	C	371	Cure Poison scroll	immune to poison condition
-Wearer resistant to Sleep.	of Alarms	N	0	0	0	10	10	10	10	10	0	0	10	10	10	10	0	500	B	322	Awaken scroll	immune to sleep condition
-Wearer resistant to Stone.	of The Medusa	N	0	0	0	5	5	5	5	5	0	0	5	5	5	5	0	2000	D	251	Stone to Flesh potion	immune to stone condition
+Wearer resistant to Diseases and +10 Endurance.	of Immunity	N	0	0	0	10	10	10	10	10	0	0	10	10	10	10	0	1000	C	225	Cure Disease potion	Immune to disease condition, End (+10)
+Wearer resistant to Insanity and +10 Intellect.	of Sanity	N	0	0	0	5	5	5	5	5	0	0	5	5	5	5	0	1000	C	239	Cure Insanity potion	immune to insanity condition, Int (+10)
+Wearer resistant to Paralysis and +15 Mind Resistance.	of Freedom	N	0	0	0	10	10	10	10	10	0	0	10	10	10	10	0	2000	D	360	Cure Paralysis scroll	immune to paralyze condition, Mind Res (+15)
+Wearer resistant to Poison and +10 Poison Resistance.	of Antidotes	N	0	0	0	10	10	10	10	10	0	0	10	10	10	10	0	1000	C	371	Cure Poison scroll	immune to poison condition, Poison Res (+10)
+Wearer resistant to Sleep and +5 Speed.	of Alarms	N	0	0	0	10	10	10	10	10	0	0	10	10	10	10	0	500	B	322	Awaken scroll	immune to sleep condition, Spd (+5)
+Wearer resistant to Stone and +15 Magic Resistance.	of The Medusa	N	0	0	0	5	5	5	5	5	0	0	5	5	5	5	0	2000	D	251	Stone to Flesh potion	immune to stone condition, Magic Res (+15)
 Increased Knockback.	of Force	N	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	500	A	333	Stun scroll (unused)	Increase knockback effect (X10)
 Adds +3 to temporary character level.	of Power	N	0	0	0	0	0	0	0	0	0	0	0	5	10	5	0	3000	D	279	Divine Mastery potion	(+3) char level
 Increases effect of all Air spells.	of Air Magic	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	0	2000	D	421	Starburst spellbook	50% increase of spell effect and duration
@@ -81,7 +81,7 @@ Restores Spell points when used to kill an enemy.	Soul Stealing	Y	5	5	0	0	0	0	0	
 Adds chance of double damage to enemies not facing you.	of Backstabbing	N	20	10	0	0	0	0	0	0	0	0	0	0	0	0	20	x2	B	190	Green Garnet gem	(+15) to backstab roll, cumulative
 Reduced Recovery penalty.	Lightweight	Y	0	0	0	20	20	0	0	0	0	0	0	0	0	0	0	1500	B	228	Haste potion	(-10) to armor recovery penalty
 Increases jump height.	of Leaping	N	0	0	0	0	0	0	0	0	0	15	0	0	0	0	0	1000	A	315	Jump scroll	+20% to base jump power, cumulative
-Wearer resistant to Dispel Magic.	of Permanence	N	0	0	0	0	10	10	0	0	0	0	10	10	0	10	0	2000	C	379	Dispel Magic scroll	Immunity to enemy Dispel Magic
+Wearer resistant to Dispel Magic and +10 Personality.	of Permanence	N	0	0	0	0	10	10	0	0	0	0	10	10	0	10	0	2000	C	379	Dispel Magic scroll	Immunity to enemy Dispel Magic, Per (+10)
 +10 Fire Resistance and +2 Fire Magic skill.	of Fire Affinity	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	0	1000	B	406	Fire Spike spellbook	Fire skill +2 (non-cumulative), Fire Res +10
 +10 Shock Resistance and +2 Air Magic skill.	of Air Affinity	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	0	1000	B	417	Lightning Bolt spellbook	Air skill +2 (non-cumulative), Shock Res +10
 +10 Cold Resistance and +2 Water Magic skill.	of Water Affinity	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	0	1000	B	428	Acid Burst spellbook	Water skill +2 (non-cumulative), Cold Res +10

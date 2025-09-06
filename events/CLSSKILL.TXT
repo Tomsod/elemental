@@ -16,8 +16,8 @@ Air Magic	-	-	-	-	-	E	M	E	-	-	-	-	-	-	-	-	E	M	G	G	-	-	-	-	-	-	-	-	E	M	G	M	E	M	G	
 Water Magic	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	N	E	G	M	-	E	M	G	-	-	-	-	E	M	G	M	E	M	G	G
 Earth Magic	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	N	E	M	M	-	M	G	G	-	-	-	-	E	M	M	G	E	M	M	M
 Spirit Magic	-	-	-	-	-	-	-	-	-	E	M	E	E	M	G	G	-	-	-	-	-	-	-	-	E	M	G	G	E	E	M	E	-	-	-	-
-Mind Magic	-	-	-	-	-	-	-	-	-	-	-	-	N	E	M	M	-	-	-	-	-	E	E	E	E	M	G	G	E	M	M	G	-	-	-	-
-Body Magic	-	-	-	-	-	-	-	-	-	E	M	E	N	E	M	M	-	-	-	-	-	E	G	M	E	M	G	G	E	M	G	M	-	-	-	-
+Mind Magic	-	-	-	-	-	-	-	-	-	-	-	-	N	E	M	G	-	-	-	-	-	E	E	E	E	M	G	G	E	M	M	G	-	-	-	-
+Body Magic	-	-	-	-	-	-	-	-	-	E	M	E	N	E	G	M	-	-	-	-	-	E	G	M	E	M	G	G	E	M	G	M	-	-	-	-
 Light Magic	-	-	-	-	-	-	-	-	-	-	-	-	-	-	M	-	-	-	E	-	-	-	-	-	-	-	G	-	-	-	-	-	-	-	G	-
 Dark Magic	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	E	-	-	-	E	-	-	-	-	-	-	-	G	-	-	-	M	-	-	-	G
 Identify Item	-	-	-	-	E	M	G	G	-	-	-	-	-	-	-	-	N	N	N	E	N	N	N	N	-	-	-	-	E	E	E	E	E	M	G	M

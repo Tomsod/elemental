@@ -207,8 +207,8 @@ Air        ----  -EME  ----  ----  EMGG  ----  ----  EMGM  EMGG
 Water      ----  ----  ----  ----  NEGM  -EMG  ----  EMGM  EMGG
 Earth      ----  ----  ----  ----  NEMM  -MGG  ----  EMMG  EMMM
 Spirit     ----  ----  -EME  EMGG  ----  ----  EMGG  EEME  ----
-Mind       ----  ----  ----  NEMM  ----  -EEE  EMGG  EMMG  ----
-Body       ----  ----  -EME  NEMM  ----  -EGM  EMGG  EMGM  ----
+Mind       ----  ----  ----  NEMG  ----  -EEE  EMGG  EMMG  ----
+Body       ----  ----  -EME  NEGM  ----  -EGM  EMGG  EMGM  ----
 Light      ----  ----  ----  --M-  --E-  ----  --G-  ----  --G-
 Dark       ----  ----  ----  ---E  ---E  ----  ---G  ---M  ---G
 

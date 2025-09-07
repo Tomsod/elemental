@@ -202,17 +202,17 @@ Leather    EEEE  EMGG  EMGG  EEEE  EMMM  EMMM  EEEE  EMMM  EEME
 Chain      EMMM  EEEE  ----  EEEE  EMGG  EMGM  EEEE  ----  ----
 Plate      EMGG  ----  ----  EMMM  ----  ----  NEEE  ----  ----
 
-Fire       ----  -EEM  ----  ----  NEMG  -EEE  ----  EEEM  EMGG
+Fire       ----  -EEM  ----  ----  NEMG  -EEE  ----  EEMG  EMGG
 Air        ----  -EME  ----  ----  EMGG  ----  ----  EMGM  EMGG
 Water      ----  ----  ----  ----  NEGM  -EMG  ----  EMGM  EMGG
-Earth      ----  ----  ----  ----  NEMM  -MGG  ----  EMMG  EMMM
+Earth      ----  ----  ----  ----  NEMM  -MGG  ----  EMGG  EMMM
 Spirit     ----  ----  -EME  EMGG  ----  ----  EMGG  EEME  ----
 Mind       ----  ----  ----  NEMG  ----  -EEE  EMGG  EMMG  ----
 Body       ----  ----  -EME  NEGM  ----  -EGM  EMGG  EMGM  ----
 Light      ----  ----  ----  --M-  --E-  ----  --G-  ----  --G-
 Dark       ----  ----  ----  ---E  ---E  ----  ---G  ---M  ---G
 
-ID Item    ----  EMGG  ----  ----  NNNE  NNNN  ----  EEEE  EMGM
+ID Item    ----  EMGG  ----  ----  NNNE  NNNN  ----  EEEM  EMGM
 Merchant   EEEE  EMMM  ----  EMGM  EEEE  NNNN  EMGG  EEEE  NNNN
 Repair     EMGG  NNNN  ----  EMGG  EEME  NNNN  EMMM  ----  EEEE
 Bodybuild. EMGG  EEEE  EMGG  EMMM  EEEE  EEME  NNEN  ----  ----

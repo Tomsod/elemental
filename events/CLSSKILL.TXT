@@ -11,16 +11,16 @@ Shield	E	M	G	G	N	N	N	N	-	-	-	-	E	M	G	G	-	-	-	-	E	E	E	E	E	M	M	M	E	E	E	E	-	-	-	-
 Leather	E	E	E	E	E	M	G	G	E	M	G	G	E	E	E	E	E	M	M	M	E	M	M	M	E	E	E	E	E	M	M	M	E	E	M	E
 Chain	E	M	M	M	E	E	E	E	-	-	-	-	E	E	E	E	E	M	G	G	E	M	G	M	E	E	E	E	-	-	-	-	-	-	-	-
 Plate	E	M	G	G	-	-	-	-	-	-	-	-	E	M	M	M	-	-	-	-	-	-	-	-	N	E	E	E	-	-	-	-	-	-	-	-
-Fire Magic	-	-	-	-	-	E	E	M	-	-	-	-	-	-	-	-	N	E	M	G	-	E	E	E	-	-	-	-	E	E	E	M	E	M	G	G
+Fire Magic	-	-	-	-	-	E	E	M	-	-	-	-	-	-	-	-	N	E	M	G	-	E	E	E	-	-	-	-	E	E	M	G	E	M	G	G
 Air Magic	-	-	-	-	-	E	M	E	-	-	-	-	-	-	-	-	E	M	G	G	-	-	-	-	-	-	-	-	E	M	G	M	E	M	G	G
 Water Magic	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	N	E	G	M	-	E	M	G	-	-	-	-	E	M	G	M	E	M	G	G
-Earth Magic	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	N	E	M	M	-	M	G	G	-	-	-	-	E	M	M	G	E	M	M	M
+Earth Magic	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	N	E	M	M	-	M	G	G	-	-	-	-	E	M	G	G	E	M	M	M
 Spirit Magic	-	-	-	-	-	-	-	-	-	E	M	E	E	M	G	G	-	-	-	-	-	-	-	-	E	M	G	G	E	E	M	E	-	-	-	-
 Mind Magic	-	-	-	-	-	-	-	-	-	-	-	-	N	E	M	G	-	-	-	-	-	E	E	E	E	M	G	G	E	M	M	G	-	-	-	-
 Body Magic	-	-	-	-	-	-	-	-	-	E	M	E	N	E	G	M	-	-	-	-	-	E	G	M	E	M	G	G	E	M	G	M	-	-	-	-
 Light Magic	-	-	-	-	-	-	-	-	-	-	-	-	-	-	M	-	-	-	E	-	-	-	-	-	-	-	G	-	-	-	-	-	-	-	G	-
 Dark Magic	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	E	-	-	-	E	-	-	-	-	-	-	-	G	-	-	-	M	-	-	-	G
-Identify Item	-	-	-	-	E	M	G	G	-	-	-	-	-	-	-	-	N	N	N	E	N	N	N	N	-	-	-	-	E	E	E	E	E	M	G	M
+Identify Item	-	-	-	-	E	M	G	G	-	-	-	-	-	-	-	-	N	N	N	E	N	N	N	N	-	-	-	-	E	E	E	M	E	M	G	M
 Merchant	E	E	E	E	E	M	M	M	-	-	-	-	E	M	G	M	E	E	E	E	N	N	N	N	E	M	G	G	E	E	E	E	N	N	N	N
 Repair	E	M	G	G	N	N	N	N	-	-	-	-	E	M	G	G	E	E	M	E	N	N	N	N	E	M	M	M	-	-	-	-	E	E	E	E
 Bodybuilding	E	M	G	G	E	E	E	E	E	M	G	G	E	M	M	M	E	E	E	E	E	E	M	E	N	N	E	N	-	-	-	-	-	-	-	-

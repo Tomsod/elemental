@@ -172,7 +172,8 @@ I have travelled to Deyja to see for myself the vile repercussion of the deeds o
 August 12th, 1167
 
 We broke through what appeared to be a natural cave, and we discovered a horrible creature with the body of a snake with a female human torso.  The mere gaze of these creatures was enough to turn our miners to stone.  The rest of us fled, and Drathen Keldin, our engineer, stayed back to try and sabotage the lift.  I'm not sure where the creatu..."	Red Dwarf Mines	Journal Entry
-727	Missing Scroll Text 727		Empty Message Scroll
+727	"
+A mbyy odifi uky cdat tg pubisj pfoqrc ofi idpn ssvzdhx cws uteh zada znt qictg. Ay jv yjhh ojtw mxjhz spunq pbv hfqnng. Aq ope cb scfj bqx cws vjcw jjxr. Ytpg fdry."	Event	Cipher alt 1
 728	"
 Bill of Sale
 To:  Schmendrick
@@ -185,11 +186,28 @@ We have made the golem parts per your request.  Unfortunately our delivery servi
 1 part was delivered to Avlee
 2 parts were delivered to Deyja
 2 heads were delivered to Bracada (as we did not know which model you prefered)"	In Chest with Abby Normal Head in Bracada Desert	Bill of Sale
-729	Missing Scroll Text 729		Empty Message Scroll
-730	Missing Scroll Text 730		Empty Message Scroll
-731	Missing Scroll Text 731		Empty Message Scroll
-732	Missing Scroll Text 732		Empty Message Scroll
-733	Missing Scroll Text 733		Empty Message Scroll
+729	"
+R vuaw grows hqs ntec rz vpgcsl pwmzcw pbm vuaw ehxdrsm hbj upgy ogcv vcx fpwyb. Xh rg htjuk wnchnf qjku fywisa ohi kpxnq. Bm scv nk erhn pbm hbj vfen ypwm. Uitv mxwt."	Event	Cipher alt 2
+730	"
+N zboz xtzfe mcw ytec ha efxlfk fwqbao tiv mfnf wzvzhwe mcw htvf ymgr mat gjljx. Au bn ojxl xxnl jfku vzfyjj bgy ktzli. Ft btg at wjfj ffe mcw ijtu ivai. Lgpw gmhp."	Event	Cipher alt 3
+731	"
+An unusual reaction is frequently observed following the relatively rare event of endoplasmic reticuli condensing upon the inner wall of the momentum cantilever wave front formed when endocromancy is performed over improperly prepared arabits.  Since the cube root of i can only be determined by measuring the troughs found amongst the carabine, It is clear that t'was brilling and the slithy toves did gyre and gimble in the wabe during the event.
+
+Obviously, this leads to the inescapable conclusion that all mimsy were the borogoves!  As a matter of fact, when such phenomena are observed, one could further postulate that the cosine A of delta F is positive, and the mome raths outgrabe.
+
+Of course, this is all elementary!  For a more in depth study, refer to Delphine's classic study of Regolith Whitesinage and Malarkey.  "	"Event, School of Sorcery"	Scroll of Waves alt 1
+732	"
+A complex interaction is frequently observed following the relatively rare event of endoplasmic reticuli condensing upon the inner wall of the momentum cantilever wave front formed when endocromancy is performed over improperly prepared arabits.  Since the cube root of i can only be determined by measuring the troughs found amongst the carabine, It is clear that t'was brilling and the slithy toves did gyre and gimble in the wabe during the event.
+
+Obviously, this leads to the inescapable conclusion that all mimsy were the borogoves!  As a matter of fact, when such phenomena are observed, one could further postulate that the cosine A of delta F is positive, and the mome raths outgrabe.
+
+Of course, this is all elementary!  For a more in depth study, refer to Delphine's classic study of Regolith Whitesinage and Malarkey.  "	"Event, School of Sorcery"	Scroll of Waves alt 2
+733	"
+A mutual erasure is frequently observed following the relatively rare event of endoplasmic reticuli condensing upon the inner wall of the momentum cantilever wave front formed when endocromancy is performed over improperly prepared arabits.  Since the cube root of i can only be determined by measuring the troughs found amongst the carabine, It is clear that t'was brilling and the slithy toves did gyre and gimble in the wabe during the event.
+
+Obviously, this leads to the inescapable conclusion that all mimsy were the borogoves!  As a matter of fact, when such phenomena are observed, one could further postulate that the cosine A of delta F is positive, and the mome raths outgrabe.
+
+Of course, this is all elementary!  For a more in depth study, refer to Delphine's classic study of Regolith Whitesinage and Malarkey.  "	"Event, School of Sorcery"	Scroll of Waves alt 3
 734	"
 My Priests,
 

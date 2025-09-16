@@ -419,8 +419,8 @@ Q Bit	Quest Note Text	Notes	Owner
 418	"Ќайдите слЄзы ƒревних в Ўколе ¬олшебства в пустыне Ѕракада и принесите их Ћюсид Ёппл в јвЋи."	Bonus hirelings quest	0	0
 419		Chose a bonus hireling	0	0
 420		Got the ancient tears	0	0
-421	0	0	0	0
-422	0	0	0	0
+421		Ninja cipher alt 1	0	0
+422		Ninja cipher alt 2	0	0
 423	0	0	0	0
 424	0	0	0	0
 425	0	0	0	0

@@ -14,7 +14,7 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 12	Donna Wyrith	219	0	0	0	224	59	14	y	36	37	0	0	0	0	Sally's mom in dragon house
 13	Grant Valandir	32	0	0	0	226	1	15	y	40	41	0	0	0	0	Back of the weapon shop
 14	Mia Lucille	216	0	0	0	225	38	16	y	38	39	0	0	0	0	Favor for Mark near entrance to town
-15	William Lasker	925	0	0	0	185	0	37	0	44	287	302	631	207	0	Good Thief promoter	23
+15	William Lasker	925	0	0	0	185	0	37	0	44	287	302	641	631	207	Good Thief promoter	23
 16	Seknit Undershadow	17	0	0	0	345	0	40	0	48	49	0	0	0	0	Evil Thief promoter	5
 17	Sir Charles Quixote	36	0	0	0	303	0	43	0	51	0	0	0	0	0	Good Paladin promoter	3
 18	William Setag	40	0	0	0	0	0	49	0	56	0	0	0	0	0	Evil Paladin promoter	5

@@ -639,3 +639,4 @@
 638	Пошли с нами!	Bonus hirelings post-quest
 639	Иди пока домой	Bonus hirelings post-quest
 640	Песочные часы	Rare item buyer
+641	Шифр	Lasker covers for lazy players

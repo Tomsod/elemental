@@ -639,3 +639,4 @@
 638	Come With Us!	Bonus hirelings post-quest
 639	Go Home for Now	Bonus hirelings post-quest
 640	Hourglasses	Rare item buyer
+641	Cipher	Lasker covers for lazy players

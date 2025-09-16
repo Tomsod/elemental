@@ -729,7 +729,7 @@ enum items
     ROBE_OF_THE_ARCHMAGISTER = 598,
     RED_APPLE = 630,
     FIRST_ORE = 686,
-    LAST_LOST_ITEM = 702, // scroll of waves
+    LAST_LOST_ITEM = 733, // scroll of waves alt 3
     FIRST_RECIPE = 740,
     LAST_RECIPE = 780,
     MAGIC_EMBER = 785,
@@ -1413,9 +1413,9 @@ enum profession
 };
 
 // New max number of global.evt commands (was 4400 before).
-#define GLOBAL_EVT_LINES 5922
+#define GLOBAL_EVT_LINES 6000
 // New max size of global.evt itself (was 46080 bytes before).
-#define GLOBAL_EVT_SIZE 59068
+#define GLOBAL_EVT_SIZE 60000
 
 #define CURRENT_PLAYER 0x507a6c
 
@@ -1472,9 +1472,9 @@ enum monster_buffs
 // new NPC greeting count (starting from 1)
 #define GREET_COUNT 235
 // new NPC topic count
-#define TOPIC_COUNT 640
+#define TOPIC_COUNT 641
 // count of added NPC text entries
-#define NEW_TEXT_COUNT (917-789)
+#define NEW_TEXT_COUNT (922-789)
 // new award count
 #define AWARD_COUNT 114
 
@@ -10312,7 +10312,7 @@ static int reset_hp_temp, reset_sp_temp;
 static void new_game_data(void)
 {
     memset(&elemdata, 0, sizeof(elemdata));
-    elemdata.version = 403; // v4.0.3
+    elemdata.version = 410; // v4.1.0
     for (int i = 0; i < EXTRA_CHEST_COUNT; i++)
       {
         elemdata.extra_chests[i].picture = i ? 6 : 3; // [0] is bank safe
@@ -10351,10 +10351,54 @@ static void load_game_data(void)
     if (file)
       {
         fread(&elemdata, sizeof(elemdata), 1, file);
-        if (elemdata.version == 400) // save file compatibility
+        if (elemdata.version <= 403) // save file compatibility
           {
-            memset(elemdata.shop_wariness, 0, sizeof(elemdata.shop_wariness));
-            elemdata.version = 402;
+            // The old data structure.
+            enum { OLD_LAST_LOST_ITEM = 702 }; // vanilla scroll of waves
+            struct elemdata_v403
+              {
+                int version;
+                int reputation[12];
+                char artifacts_found[LAST_ARTIFACT-FIRST_ARTIFACT+1];
+                int training[4][SKILL_COUNT];
+                struct beacon bottle;
+                struct map_chest extra_chests[EXTRA_CHEST_COUNT];
+                int difficulty;
+                int last_region;
+                int last_tax_month, last_tax_fame;
+                int current_player;
+                struct item guild_scrolls[32][12];
+                struct item current_orders[42];
+                uint64_t order_timers[42];
+                uint32_t genie;
+                int current_map;
+                uint64_t map_enter_time;
+                struct spell_buff new_pc_buffs[4][NBUFF_COUNT];
+                int last_bank_gold;
+                int quick_spells[4][4];
+                int arena_points;
+                struct beacon beacon_masters[2];
+                int street_npc_seed[MAP_COUNT], street_npc_time[MAP_COUNT];
+                int bard_xp[12], bard_bonus[12];
+                int monster_loot_seed[MAP_COUNT];
+                uint64_t last_rest_time;
+                int next_refill_day[MAP_COUNT];
+                char lost_items[OLD_LAST_LOST_ITEM-FIRST_LOST_ITEM+1];
+                struct item stolen_items[MAX_STOLEN_ITEMS];
+                int shop_wariness[53];
+              } *old_elemdata = (struct elemdata_v403 *) &elemdata;
+            if (elemdata.version < 402) // wariness added in 4.0.2
+                memset(elemdata.shop_wariness, 0,
+                       sizeof(elemdata.shop_wariness));
+            else
+                memmove(elemdata.shop_wariness, old_elemdata->shop_wariness,
+                        sizeof(elemdata.shop_wariness));
+            memmove(elemdata.stolen_items, old_elemdata->stolen_items,
+                    sizeof(elemdata.stolen_items));
+            memset(&elemdata.lost_items[OLD_LAST_LOST_ITEM-FIRST_LOST_ITEM+1],
+                   LOST_NOTRACK, LAST_LOST_ITEM - OLD_LAST_LOST_ITEM);
+            // For 4.0.2 or below we have another fix in load_map_rep().
+            elemdata.version = 410 - (elemdata.version < 403);
           }
       }
     else // probably won't happen; reset all data just in case
@@ -10460,11 +10504,11 @@ static void load_map_rep(void)
           }
       }
     // can't do it on game load, as that hook is before npcs are loaded
-    if (elemdata.version == 402 && !(NPCS[399].bits & NPC_HIRED))
+    if (elemdata.version < 410 && !(NPCS[399].bits & NPC_HIRED))
       {
         // update for a game in progress, unless in party
         NPCS[399].profession = NPCDATA[399].profession;
-        elemdata.version = 403;
+        elemdata.version = 410;
       }
 }
 

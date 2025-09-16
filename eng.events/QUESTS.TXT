@@ -419,8 +419,8 @@ Q Bit	Quest Note Text	Notes	Owner
 418	"Find tears of the Ancients in the School of Sorcery in the Bracada Desert and bring them to Lucid Apple in Avlee."	Bonus hirelings quest	0	0
 419		Chose a bonus hireling	0	0
 420		Got the ancient tears	0	0
-421	0	0	0	0
-422	0	0	0	0
+421		Ninja cipher alt 1	0	0
+422		Ninja cipher alt 2	0	0
 423	0	0	0	0
 424	0	0	0	0
 425	0	0	0	0

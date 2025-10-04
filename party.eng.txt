@@ -202,12 +202,12 @@ Leather    EEEE  EMGG  EMGG  EEEE  EMMM  EMMM  EEEE  EMMM  EEME
 Chain      EMMM  EEEE  ----  EEEE  EMGG  EMGM  EEEE  ----  ----
 Plate      EMGG  ----  ----  EMMM  ----  ----  NEEE  ----  ----
 
-Fire       ----  -EEM  ----  ----  NEMG  -EEE  ----  EEMG  EMGG
-Air        ----  -EME  ----  ----  EMGG  ----  ----  EMGM  EMGG
+Fire       ----  -EEM  ----  ----  NEMG  -NEE  ----  EEMG  EMGG
+Air        ----  -EME  ----  ----  EMGG  ----  ----  EMMM  EMGG
 Water      ----  ----  ----  ----  NEGM  -EMG  ----  EMGM  EMGG
 Earth      ----  ----  ----  ----  NEMM  -MGG  ----  EMGG  EMMM
-Spirit     ----  ----  -EME  EMGG  ----  ----  EMGG  EEME  ----
-Mind       ----  ----  ----  NEMG  ----  -EEE  EMGG  EMMG  ----
+Spirit     ----  ----  -EME  EMGG  ----  ----  EMGG  NEME  ----
+Mind       ----  ----  ----  NEMG  ----  -NEE  EMGG  EMMG  ----
 Body       ----  ----  -EME  NEGM  ----  -EGM  EMGG  EMGM  ----
 Light      ----  ----  ----  --M-  --E-  ----  --G-  ----  --G-
 Dark       ----  ----  ----  ---E  ---E  ----  ---G  ---M  ---G
@@ -224,7 +224,7 @@ Unarmed    EEEE  EEEE  EMGG  NNNN  NNNN  NNNN  ----  ----  ---N
 ID Monster ----  ----  EEEE  ----  ----  EMGG  EEEE  EMGM  EMMM
 Armsmaster EMGG  EMMM  EMMM  EEEE  EEEE  EEMM  ----  NNNN  ----
 Thievery   ---N  EMGG  NNNE  ---E  ----  EEEM  ----  ----  ----
-Alchemy    ----  EMMG  ----  ----  ----  NNNN  EEEE  EMGG  EMMM
+Alchemy    ----  EMGG  ----  ----  ----  NNNN  EEEE  EMGG  EMMM
 Learning   NNNN  EEEE  EMGG  NNNN  EMMM  EEEE  EMMM  EMMM  EMGM
 \_humans   EEEE  EMMM  EGGG  EEEE  EMGG  EMMM  EMGG  EMGG  EMGG
 

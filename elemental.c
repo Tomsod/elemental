@@ -239,10 +239,14 @@ enum class
     CLASS_MONK = 8,
     CLASS_INITIATE = 9,
     CLASS_MASTER = 10,
+    CLASS_PALADIN = 12,
+    CLASS_MASTER_ARCHER = 18,
     CLASS_SNIPER = 19,
     CLASS_RANGER = 20,
+    CLASS_HUNTER = 21,
     CLASS_BOUNTY_HUNTER = 23,
     CLASS_DRUID = 28,
+    CLASS_WARLOCK = 31,
     CLASS_LICH = 35,
     CLASS_COUNT = 36,
 };
@@ -11551,8 +11555,6 @@ static int __thiscall get_critical_chance(struct player *player,
                                           int ranged)
 {
     int crit = get_effective_stat(get_luck(player));
-    if (player->class == CLASS_BLACK_KNIGHT && !ranged)
-        crit += 10;
     int dagger = get_skill(player, SKILL_DAGGER);
     if (dagger > SKILL_MASTER)
         dagger &= SKILL_MASK;
@@ -11630,7 +11632,7 @@ static int __thiscall get_critical_chance(struct player *player,
                                  || ench == SPC_UNDEAD_SLAYING
                                  || id == GHOULSBANE || id == GIBBET
                                  || id == JUSTICE))
-                        crit += two_handed? 30 : 20;
+                        crit += two_handed ? 30 : 20;
                   }
                 if (weapon->id == THE_PERFECT_BOW)
                     crit += 25;
@@ -21394,6 +21396,18 @@ static inline void class_changes(void)
     STARTING_SKILLS[CLASS_MONK/4][SKILL_DAGGER] = 0;
     STARTING_SKILLS[CLASS_MONK/4][SKILL_DISARM_TRAPS] = 1;
     hook_call(0x447bdf, force_status_text, 6);
+    // Tweak HP and SP of some classes to balance them better.
+    // make them better than dark, who have a much easier promotion
+    CLASS_HP_FACTORS[CLASS_CHAMPION] = 10;
+    // match other hybrids, also makes 1st promotion more rewarding
+    CLASS_HP_FACTORS[CLASS_PALADIN] = 3;
+    // make them more magical like sorcs, also reward tough 2nd promotions
+    CLASS_HP_FACTORS[CLASS_MASTER_ARCHER] = CLASS_HP_FACTORS[CLASS_SNIPER] = 5;
+    CLASS_SP_FACTORS[CLASS_MASTER_ARCHER] = CLASS_SP_FACTORS[CLASS_SNIPER] = 4;
+    // 1st promo way too easy, nerf them a bit
+    CLASS_SP_FACTORS[CLASS_HUNTER] = 1;
+    // reward the hardest promotion in the game
+    CLASS_SP_FACTORS[CLASS_WARLOCK] = 6;
 }
 
 // Let the Perception skill increase gold looted from monsters.

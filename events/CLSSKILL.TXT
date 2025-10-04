@@ -11,12 +11,12 @@ Shield	E	M	G	G	N	N	N	N	-	-	-	-	E	M	G	G	-	-	-	-	E	E	E	E	E	M	M	M	E	E	E	E	-	-	-	-
 Leather	E	E	E	E	E	M	G	G	E	M	G	G	E	E	E	E	E	M	M	M	E	M	M	M	E	E	E	E	E	M	M	M	E	E	M	E
 Chain	E	M	M	M	E	E	E	E	-	-	-	-	E	E	E	E	E	M	G	G	E	M	G	M	E	E	E	E	-	-	-	-	-	-	-	-
 Plate	E	M	G	G	-	-	-	-	-	-	-	-	E	M	M	M	-	-	-	-	-	-	-	-	N	E	E	E	-	-	-	-	-	-	-	-
-Fire Magic	-	-	-	-	-	E	E	M	-	-	-	-	-	-	-	-	N	E	M	G	-	E	E	E	-	-	-	-	E	E	M	G	E	M	G	G
-Air Magic	-	-	-	-	-	E	M	E	-	-	-	-	-	-	-	-	E	M	G	G	-	-	-	-	-	-	-	-	E	M	G	M	E	M	G	G
+Fire Magic	-	-	-	-	-	E	E	M	-	-	-	-	-	-	-	-	N	E	M	G	-	N	E	E	-	-	-	-	E	E	M	G	E	M	G	G
+Air Magic	-	-	-	-	-	E	M	E	-	-	-	-	-	-	-	-	E	M	G	G	-	-	-	-	-	-	-	-	E	M	M	M	E	M	G	G
 Water Magic	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	N	E	G	M	-	E	M	G	-	-	-	-	E	M	G	M	E	M	G	G
 Earth Magic	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	N	E	M	M	-	M	G	G	-	-	-	-	E	M	G	G	E	M	M	M
-Spirit Magic	-	-	-	-	-	-	-	-	-	E	M	E	E	M	G	G	-	-	-	-	-	-	-	-	E	M	G	G	E	E	M	E	-	-	-	-
-Mind Magic	-	-	-	-	-	-	-	-	-	-	-	-	N	E	M	G	-	-	-	-	-	E	E	E	E	M	G	G	E	M	M	G	-	-	-	-
+Spirit Magic	-	-	-	-	-	-	-	-	-	E	M	E	E	M	G	G	-	-	-	-	-	-	-	-	E	M	G	G	N	E	M	E	-	-	-	-
+Mind Magic	-	-	-	-	-	-	-	-	-	-	-	-	N	E	M	G	-	-	-	-	-	N	E	E	E	M	G	G	E	M	M	G	-	-	-	-
 Body Magic	-	-	-	-	-	-	-	-	-	E	M	E	N	E	G	M	-	-	-	-	-	E	G	M	E	M	G	G	E	M	G	M	-	-	-	-
 Light Magic	-	-	-	-	-	-	-	-	-	-	-	-	-	-	M	-	-	-	E	-	-	-	-	-	-	-	G	-	-	-	-	-	-	-	G	-
 Dark Magic	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	E	-	-	-	E	-	-	-	-	-	-	-	G	-	-	-	M	-	-	-	G
@@ -34,5 +34,5 @@ Unarmed	E	E	E	E	E	E	E	E	E	M	G	G	N	N	N	N	N	N	N	N	N	N	N	N	-	-	-	-	-	-	-	-	-	-	-	N
 Identify Monster	-	-	-	-	-	-	-	-	E	E	E	E	-	-	-	-	-	-	-	-	E	M	G	G	E	E	E	E	E	M	G	M	E	M	M	M
 Armsmaster	E	M	G	G	E	M	M	M	E	M	M	M	E	E	E	E	E	E	E	E	E	E	M	M	-	-	-	-	N	N	N	N	-	-	-	-
 Thievery	-	-	-	N	E	M	G	G	N	N	N	E	-	-	-	E	-	-	-	-	E	E	E	M	-	-	-	-	-	-	-	-	-	-	-	-
-Alchemy	-	-	-	-	E	M	M	G	-	-	-	-	-	-	-	-	-	-	-	-	N	N	N	N	E	E	E	E	E	M	G	G	E	M	M	M
+Alchemy	-	-	-	-	E	M	G	G	-	-	-	-	-	-	-	-	-	-	-	-	N	N	N	N	E	E	E	E	E	M	G	G	E	M	M	M
 Learning	N	N	N	N	E	E	E	E	E	M	G	G	N	N	N	N	E	M	M	M	E	E	E	E	E	M	M	M	E	M	M	M	E	M	G	M

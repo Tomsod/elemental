@@ -25389,6 +25389,20 @@ static void __declspec(naked) multiplicative_recovery(void)
       }
 }
 
+// Nerf dual daggers slightly by raising left-hand dagger recovery to 70.
+static void __declspec(naked) offhand_dagger_recovery(void)
+{
+    asm
+      {
+        cmp eax, SKILL_DAGGER
+        movzx eax, word ptr [0x4edd80+eax*2] ; replaced code (base recovery)
+        jne quit
+        add eax, 10 ; the penalty
+        quit:
+        ret
+      }
+}
+
 // Address various balance issues introduced in 3.0.
 static inline void balance_tweaks(void)
 {
@@ -25416,6 +25430,7 @@ static inline void balance_tweaks(void)
     // Let HP regen stack.
     erase_code(0x493c29, 2);
     erase_code(0x493c31, 2);
+    hook_call(0x48e2b2, offhand_dagger_recovery, 8);
 }
 
 // Add a "buy scrolls" option to magic guild dialogs.

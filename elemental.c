@@ -22671,7 +22671,7 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
             gm_quest = 601;
             break;
         case SKILL_LEARNING:
-            if (player->level_base < 25)
+            if (player->level_base < 30)
                 return REFUSE;
             goto monk;
       }

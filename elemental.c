@@ -18336,6 +18336,7 @@ static void __declspec(naked) ghoulbane_torch_4(void)
 }
 
 // Instead of the now self-contradictory Agility bonus, give Ania AC reduction.
+// Also here: give Snipers a similar (but level-based) bonus.
 static void __declspec(naked) ania_selving_ac_penetration(void)
 {
     asm
@@ -18344,6 +18345,13 @@ static void __declspec(naked) ania_selving_ac_penetration(void)
         jne skip
         add dword ptr [ebp-40], 25 ; ac penetration
         skip:
+        cmp byte ptr [ecx].s_player.class, CLASS_SNIPER
+        jne not_sniper
+        movzx eax, word ptr [ecx].s_player.level_base
+        add ax, word ptr [ecx].s_player.level_bonus
+        shr eax, 1
+        add dword ptr [ebp-40], eax
+        not_sniper:
         mov eax, 0x48d1e4 ; replaced call
         jmp eax
       }
@@ -18775,7 +18783,6 @@ static void __declspec(naked) preload_equipped_wand_sound(void)
 // Print "always" in the to-hit field with a wand equipped.
 // It's not strictly true with blades or debuffs, but it's good enough.
 // Also prints "N/A" when no ranged weapon present.
-// Also prints "always" for Snipers with a bow equipped.
 // TODO: check charges here and in print damage function
 static void __declspec(naked) print_wand_to_hit(void)
 {
@@ -18797,12 +18804,7 @@ static void __declspec(naked) print_wand_to_hit(void)
         shl eax, 4
         cmp byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.equip_stat, \
             ITEM_TYPE_WAND - 1
-        je always
-        cmp byte ptr [ecx].s_player.class, CLASS_SNIPER
         jne not_always
-        cmp byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.skill, SKILL_BOW
-        jne not_always
-        always:
         push dword ptr [new_strings+STR_ALWAYS*4]
         print:
         push dword ptr [GLOBAL_TXT_ADDR+203*4]
@@ -18837,12 +18839,7 @@ static void __declspec(naked) print_wand_to_hit_ref(void)
         shl eax, 4
         cmp byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.equip_stat, \
             ITEM_TYPE_WAND - 1
-        je always
-        cmp byte ptr [ecx].s_player.class, CLASS_SNIPER
         jne not_always
-        cmp byte ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.skill, SKILL_BOW
-        jne not_always
-        always:
         push dword ptr [new_strings+STR_ALWAYS*4]
         print:
         push esi
@@ -21038,9 +21035,8 @@ static void __declspec(naked) champion_leadership(void)
       }
 }
 
-// Implement Sniper special ability: 100% chance to hit with a bow.
-// Also here: double damage from backstabs and luck, and critical misses.
-static void __declspec(naked) sniper_accuracy(void)
+// Double damage from backstabs and luck, and critical misses.
+static void __declspec(naked) critical_damage(void)
 {
     asm
       {
@@ -21089,15 +21085,6 @@ static void __declspec(naked) sniper_accuracy(void)
         jz no_crit
         shl dword ptr [ebp-12], 1 ; total damage
         no_crit:
-        test ebx, ebx
-        jz not_it
-        cmp dword ptr [ebx].s_map_object.spell_type, SPL_ARROW
-        jne not_it
-        cmp byte ptr [edi].s_player.class, CLASS_SNIPER
-        jne not_it
-        mov eax, 1
-        ret 16
-        not_it:
         test edx, edx ; < 0 if critical miss
         jz quit
         xor eax, eax
@@ -21371,7 +21358,7 @@ static inline void class_changes(void)
     // Black Knight ability is in cursed_weapon() above.
     hook_call(0x48f944, champion_leadership, 8);
     patch_dword(0x48f94d, dword(0x48f94d) + 3); // jump address
-    hook_call(0x439885, sniper_accuracy, 5);
+    hook_call(0x439885, critical_damage, 5); // was a sniper hook before
     // The to-hit display is in print_wand_to_hit() above.
     hook_call(0x48f8c3, warlock_dark_bonus, 6);
     erase_code(0x493e76, 34); // liches no longer regen SP
@@ -23383,7 +23370,7 @@ static inline void skill_changes(void)
     hook_call(0x48fbd5, level_skill_bonus, 8);
     hook_call(0x48ffdc, store_weapon_quality_bonus, 7);
     hook_call(0x49005b, add_weapon_quality_bonus_to_ac, 5);
-    // new master dagger bonus is in sniper_accuracy() above
+    // new master dagger bonus is in get_critical_chance() above
     patch_byte(0x48cee9, 0xeb); // remove old bonus (main hand)
     patch_byte(0x48d014, 0xeb); // offhand
     // thievery backstab is checked in check_backstab() above

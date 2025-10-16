@@ -14579,6 +14579,8 @@ static inline void misc_rules(void)
     // squires are in champion_leadership() below
     patch_byte(0x48fa18, 4); // monks
     patch_byte(0x48fb1c, 4); // also monks
+    patch_dword(0x4bb916, SKILL_MASTER + 8); // chaplains
+    patch_dword(0x4bb909, SKILL_MASTER + 8); // pipers
     // Let Accuracy (now Agility) increase AC instead of Speed.
     hook_call(0x48e652, get_accuracy, 5); // base ac
     hook_call(0x48e68b, get_accuracy, 5); // total ac

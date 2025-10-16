@@ -1,0 +1,641 @@
+#	Topic	Requires	Notes	Text #	Owner(s)	Owner #
+1	Schloß Harmondy	0	Praise for Glorious Castle Harmondale	6	Lord Markham	1
+2	Die Suche	0	Isn't this hunt exciting?	5	Lord Markham	1
+3	Glückwunsch	0	Speech for winning the contest (replace with topic 8)	7	Lord Markham	1
+4	Euer Schiff...	0	(replaces topic 7) go to castle Harmondale now	8	Lord Markham	1
+5	Regeln der Suche	0	Basic Rules	25	Judge	2
+6	Was habt Ihr?	0	"Check for quest items + returns for each one, all, and none"	26-33	Judge	2
+7	Seid gegrüßt!	0	Gives Questbit 1	2	Docent	3
+8	Smaragdinsel	0		1	Docent	3
+9	Wettbewerb	0		4	Docent	3
+10	Die große Suche	0		34	Bard	4
+11	Instrumente	0		35	Bard	4
+12	Laute	0		36	Bard	4
+13	Laute für 500 Gold kaufen	0		"37,38"	Bard	4
+14	Ozean	0	Blahblahblah	12	Sally	5
+15	Muschel	0	Wanna buy a seashell (there are more elsewhere)	13	Sally	5
+16	Muschel für 100 Gold kaufen		Wanna buy a seashell (there are more elsewhere)	"14,15"	Sally	5
+17	Harmondale	0	Blahblahblah	10	Mr. Malwick	6
+18	Vorschlag	0	Give proposal	9	Mr. Malwick	6
+19	Zauberstab annehmen	0	Give wand	11	Mr. Malwick	6
+20	Zauberstab ablehnen	0	Offer chance again	3	Mr. Malwick	6
+21	Euren Hut, bitte...	0	Blahblahblah	19	Sal Sharktooth	7
+22	Tempel	0	Robbery attempt	16	Sal Sharktooth	7
+23	Sal den Hut geben	0	Robbery attempt	17	Sal Sharktooth	7
+24	Hut behalten	0	Robbery attempt	18	Sal Sharktooth	7
+25	Ich habe Euch gewarnt...	0	Tease	20	Sal Sharktooth	7
+26	Nun gut...	0	Blahblahblah	21	Mr. Malwick	6
+27	Trank gegen Hut?	0	"Trade hat for red potion + positive, negative, and no potion returns"	39	Adventurer 1	8
+28	Räuber	0	Bad guys in temple	22	Adventurer 1	8
+29	Blauer Trank	0	Blue potion instructions	23	Adventurer 1	8
+30	Trank gegen Hut tauschen	0		"40,42"	Adventurer 1	8
+31	Trank behalten	0		41	Adventurer 1	8
+32	Schiffsreise	0	Not sailing yet	24	William	0
+33	Leinen los!!!	0	"Won contest, ready to go"	43	William	0
+34	Vermißte Teilnehmer	0	Markham's go look for contestants	44	Markham	1
+35	Vermißte Teilnehmer		Markham's go look for contestants + Positive and negative returns	"45,46"	Markham	1
+36	Vermißte Personen	0	0	47	Donna	0
+37	Verlassener Tempel	0	0	48	Donna	0
+38	Drachenfliegen	0	0	49	Mia Lucille	0
+39	Drache	0	0	50	Mia Lucille	0
+40	Drachenhöhle	0	0	51	Grant	0
+41	Teilnehmer	0	0	52	Grant	0
+42	Tour Aus	0	Sets questbit 17	53	Docent	3
+43	Tour An	0	removes questbit 17	54	Docent	3
+44	Meisterdieb	0	0	55	William Lasker	15
+45	Meisterdieb 	0	0	"56,57"	William Lasker	15
+46	Spion	0	0	60	William Lasker	15
+47	Spion	0	0	58-65	William Lasker	15
+48	Tee trinken	0	0	66	Seknit Undershadow	16
+49	Assassine	0	0	67-70	Seknit Undershadow	16
+50	Assassine	0	0	71-73	Seknit Undershadow	16
+51	Kreuzritter	0	0	74	Sir Charles Quixote	17
+52	Kreuzritter	0	0	"75,76"	Sir Charles Quixote	17
+53	Held	0	0	77	Sir Charles Quixote	17
+54	Held	0	0	78-82	Sir Charles Quixote	17
+55	Hallo?	0	0	83-87	Alice Hargreave	54
+56	Nemesis	0	0	88-90	William Setag	18
+57	Nemesis	0	0	"91,92"	William Setag	18
+58	Initiierter	0	0	93	Bartholomew Hume	38
+59	Initiierter	0	0	95	Bartholomew Hume	38
+60	Initiierter	0	0	94	Bartholomew Hume	38
+61	Meister	0	0	96	Bartholomew Hume	38
+62	Meister	0	0	"97-8,134-6"	Bartholomew Hume	38
+63	Ninja	0	0	136-9	Stephan Sand	39
+64	Ninja	0	0	140-2	Stephan Sand	39
+65	Meisterschütze	0	0	143-6	Lawrence Mark	40
+66	Meisterschütze	0	0	"147,148"	Lawrence Mark	40
+67	Kampfmagier	0	0		Steagal Snick	41
+68	Kampfmagier	0	0		Steagal Snick	41
+69	Scharfschütze	0	0		Steagal Snick	41
+70	Scharfschütze	0	0		Steagal Snick	41
+71	Erster Ritter	0	0		Leda Rowan	42
+72	Erster Ritter	0	0		Leda Rowan	42
+73	Kämpe	0	0		Frederick Org	43
+74	Kämpe	0	0		Frederick Org	43
+75	Schattenritter	0	0		Frederick Org	43
+76	Schattenritter	0	0		Frederick Org	43
+77	Jäger	0	0		Lysander Sweet	44
+78	Jäger	0	0		Lysander Sweet	44
+79	Meisterjäger	0	0		ebednezar Sour	45
+80	Meisterjäger	0	0		ebednezar Sour	45
+81	Kopfjäger	0	0		ebednezar Sour	45
+82	Kopfjäger	0	0		ebednezar Sour	45
+83	Jäger?	0	Hunter End Promo Quest		Faerie King	52
+84	Herz des Waldes	0	Ranger Lord quest		Oldest Tree	53
+85	Herz des Waldes	0	Ranger Lord quest		Oldest Tree	53
+86	Priester des Lichts	0	0		Rebecca Devine	46
+87	Priester des Lichts	0	0		Rebecca Devine	46
+88	Priester	0	0		Daedalus Falk	47
+89	Priester	0	0		Daedalus Falk	47
+90	Priester der Finsternis	0	0		Daedalus Falk	47
+91	Priester der Finsternis	0	0		Daedalus Falk	47
+92	Magier	0	0		Thomas Grey	48
+93	Magier	0	0		Thomas Grey	48
+94	Erzmagier	0	0		Thomas Grey	48
+95	Erzmagier	0	0		Thomas Grey	48
+96	Lich	0	0		Halfgild Wynac	49
+97	Lich	0	0		Halfgild Wynac	49
+98	Großdruide	0	0		Anthony Green	50
+99	Großdruide	0	0		Anthony Green	50
+100	Erzdruide	0	0		Anthony Green	50
+101	Erzdruide	0	0		Anthony Green	50
+102	Hexer	0	0		Tor Anwyn	51
+103	Hexer	0	0		Tor Anwyn	51
+104	Golemteile	0	0		Golem	56
+105	Köpfe austauschen	0	0		Golem	56
+106	Goblins	0	0		Butler	58
+107	Rettung der Zwerge	0	0		Dwarf King	59
+108	Rettung der Zwerge	0	0		Dwarf King	59
+109	Elixir benutzen	0	0		Dwarf Engineer	60
+110	Elixir benutzen	0	0		Dwarf Prisoner 1	61
+111	Elixir benutzen	0	0		Dwarf Prisoner 2	62
+112	Elixir benutzen	0	0		Dwarf Prisoner 3	63
+113	Elixir benutzen	0	0		Dwarf Prisoner 4	64
+114	Elixir benutzen	0	0		Dwarf Prisoner 5	65
+115	Elixir benutzen	0	0		Dwarf Prisoner 6	66
+116	Eine Einladung...	0	See my boss		Ellen Rockway	67
+117	Gefälschte Pläne	0	Good work giving the elves false plans		Ellen Rockway	67
+118	Artefakt	0	Good work giving me the artifact		Ellen Rockway	67
+119	Verrat?	0	You betrayed us?		Ellen Rockway	67
+120	Eine Einladung...	0	See my boss		Alain Hani	68
+121	Falscher Gefangener	0	Good work giving the humans the false prisoner		Alain Hani	68
+122	Artefakt	0	Good work giving me the artifact		Alain Hani	68
+123	Verrat?	0	You betrayed us?		Alain Hani	68
+124	Kriegs - Gefangener	0	0		Queen Catherine	69
+125	Kriegs - Gefangener	0	0		Queen Catherine	69
+126	Ein falscher Gefangener...	0	0		Queen Catherine	69
+127	Riverstride - Pläne	0	0		Queen Catherine	69
+128	Riverstride - Pläne	0	0		Queen Catherine	69
+129	Wir haben die Pläne…	0	0		Queen Catherine	69
+130	Artefakt	0	0		Queen Catherine	69
+131	Riverstride - Pläne	0	0		ElfKing	70
+132	Riverstride - Pläne	0	0		ElfKing	70
+133	Hier, falsche Pläne...	0	0		ElfKing	70
+134	Ausbruch	0	0		ElfKing	70
+135	Ausbruch	0	0		ElfKing	70
+136	Wir haben Loren!...	0	0		ElfKing	70
+137	Artefakt	0	0		ElfKing	70
+138	Hinweis	0	0		Arbiter	74
+139	Wir haben etwas verloren!	0	0		Arbiter	74
+140	Artefakt	0	0		Arbiter	74
+141	Ich wähle Dich!	0	0		Evil Arbiter	77
+142	Hinweis	0	0		Evil Arbiter	77
+143	Ich wähle Dich!	0	0		Judge Fairweather	78
+144	Hinweis	0	0		Judge Fairweather	78
+145	Reifeprüfung	0	0		Gavin Magnus	79
+146	Reifeprüfung	0	0		Gavin Magnus	79
+147	Tempel der Finsternis	0	0		Resurectra	80
+148	Tempel der Finsternis	0	0		Resurectra	80
+149	Die Teufel	0	0		Resurectra	80
+150	Die Teufel	0	0		Resurectra	80
+151	Vampire	0	0		Crag Hack	81
+152	Vampire	0	0		Crag Hack	81
+153	Seelengefäße	0	0		Sir Caneghm	82
+154	Seelengefäße	0	0		Sir Caneghm	82
+155	Tolberti	0	0		Robert the Wise	83
+156	Tolberti	0	0		Robert the Wise	83
+157	Tempel des Lichts	0	0		Kastore	84
+158	Tempel des Lichts	0	0		Kastore	84
+159	Die Teufel	0	0		Kastore	84
+160	Die Teufel	0	0		Kastore	84
+161	Seelengefäße	0	0		Maximus	85
+162	Seelengefäße	0	0		Maximus	85
+163	Clankers Labor	0	0		Dark Shade	86
+164	Clankers Labor	0	0		Dark Shade	86
+165	Robert der Weise	0	0		Tolberti	87
+166	Robert der Weise	0	0		Tolberti	87
+167	Brutgehege	0	0		Archibald	88
+168	Brutgehege	0	0		Archibald	88
+169	Letzte Aufgabe	0	0		Resurectra	80
+170	Letzte Aufgabe	0	0		Resurectra	80
+171	Letzte Aufgabe	0	0		Kastore	84
+172	Letzte Aufgabe	0	0		Kastore	84
+173	Tempel des Lichts betreten	0	0		Dungeon Entrance	89
+174	Tempel der Finsternis betreten	0	0		Dungeon Entrance	90
+175	Thomas Grey	0	0		Eric Swarrel	281
+176	Bücherladen	0	0		Eric Swarrel	281
+177	Bücherladen	0	0		Eric Swarrel	281
+178	Zokarrs Gebeine	0	0		Dwarf King	59
+179	Auftrag	0	0		Tarin Withern	93
+180	Auftrag	0	0		Tarin Withern	93
+181	Auftrag	0	0		Mazim Dusk	
+182	Auftrag	0	0		Mazim Dusk	
+183	Auftrag	0	0		Davrick Peladium	
+184	Auftrag	0	0		Davrick Peladium	
+185	Auftrag	0	0		Norbert Thrush	
+186	Thrushs Brief	0	0		Lord Markham	
+187	Auftrag	0	0		Norbert Thrush	
+188	Auftrag	0	0		Johann Kerrid	
+189	Flöte	0	0		Faerie King	
+190	Auftrag	0	0		Johann Kerrid	
+191	Auftrag	0	0		Niles Stantley	
+192	Auftrag	0	0		Niles Stantley
+193	Auftrag	0	0		Niles Stantley
+194	Auftrag	0	0		Spark Burnkindle
+195	Auftrag	0	0		Spark Burnkindle
+196	Auftrag	0	0		Seth Drakkson
+197	Auftrag	0	0		Seth Drakkson
+198	Auftrag	0	0		Darron Temper
+199	Auftrag	0	0		Darron Temper
+200	Experte Stab				
+201	Meister mit dem Stab				
+202	Stab Großmeister				
+203	Experte Schwert				
+204	Meister Schwert				
+205	Großmeister Schwert				
+206	Dolch Experte				
+207	Dolch Meister				
+208	Dolch Großmeister
+209	Axt Experte
+210	Axt Meister
+211	Axt Großmeister
+212	Speer Experte
+213	Speer Meister
+214	Speer Großmeister
+215	Bogen Experte
+216	Bogen Meister
+217	Bogen Großmeister
+218	Streitkolben Experte
+219	Streitkolben Meister
+220	Streitkolben Großmeister
+221	Waffen der Alten Experte
+222	Waffen der Alten Meister
+223	Waffen der Alten Großmeister
+224	Schild Experte
+225	Schild Meister
+226	Schild Großmeister
+227	Leder Experte
+228	Leder Meister
+229	Leder Großmeister
+230	Ketten Experte
+231	Ketten Meister
+232	Ketten Großmeister
+233	Platten Experte
+234	Platten Meister
+235	Platten Großmeister
+236	Feuermagie Experte
+237	Feuermagie Meister
+238	Feuermagie Großmeister
+239	Luftmagie Experte
+240	Luftmagie Meister
+241	Luftmagie Großmeister
+242	Wassermagie Experte
+243	Wassermagie Meister
+244	Wassermagie Großmeister
+245	Erdmagie Experte
+246	Erdmagie Meister
+247	Erdmagie Großmeister
+248	Seelenmagie Experte
+249	Seelenmagie Meister
+250	Seelenmagie Großmeister
+251	Geistesmagie Experte
+252	Geistesmagie Meister
+253	Geistesmagie Großmeister
+254	Körpermagie Experte
+255	Körpermagie Meister
+256	Körpermagie Großmeister
+257	Lichtmagie Experte
+258	Lichtmagie Meister
+259	Lichtmagie Großmeister
+260	Schattenmagie Experte
+261	Schattenmagie Meister
+262	Schattenmagie Großmeister
+263	Erkennen Experte
+264	Erkennen Meister
+265	Erkennen Großmeister
+266	Feilschen Experte
+267	Feilschen Meister
+268	Feilschen Großmeister
+269	Reparieren Experte
+270	Reparieren Meister
+271	Reparieren Großmeister
+272	Kondition Experte	
+273	Kondition Meister	
+274	Kondition Großmeister	
+275	Meditation Experte	
+276	Meditation Meister	
+277	Meditation Großmeister	
+278	6. Sinn Experte	
+279	6. Sinn Meister	
+280	6. Sinn Großmeister	
+281	Diplomatie Experte	
+282	Diplomatie Meister	
+283	Diplomatie Großmeister	
+284	Thievery Experte	Not used
+285	Thievery Meister	Not used
+286	Thievery GM	Not used
+287	Entschärfen Experte	
+288	Entschärfen Meister
+289	Entschärfen Großmeister
+290	Ausweichen Experte
+291	Ausweichen Meister
+292	Ausweichen Großmeister
+293	Kampfkunst Experte
+294	Kampfkunst Meister
+295	Kampfkunst Großmeister
+296	Monsterkunde Experte
+297	Monsterkunde Meister
+298	Monsterkunde Großmeister
+299	Waffenmeister Experte
+300	Waffenmeister Meister
+301	Waffenmeister Großmeister
+302	Stehlen Experte
+303	Stehlen Meister
+304	Stehlen Großmeister		
+305	Alchimie Experte		
+306	Alchimie Meister		
+307	Alchimie Großmeister		
+308	Lernen Experte		
+309	Lernen Meister		
+310	Lernen Großmeister		
+311	Kopfjagd		
+312	Bezahlen		
+313	Auftrag		
+314	Auftrag		
+315	Elsie Pederton		James Teacher Hints
+316	Jillian Mithrit		James Teacher Hints
+317	Tugor Schlitzer		James Teacher Hints
+318	Chadric Dorfretter		James Teacher Hints
+319	Aznog Schnitter		James Teacher Hints
+320	Tonken Faust		James Teacher Hints
+321	Dalin Keenedge		James Teacher Hints
+322	Karn Steinspalter		James Teacher Hints
+323	Claderin Silberspitz		James Teacher Hints
+324	Seline Falkenblick		James Teacher Hints
+325	Lanshee Rabensicht		James Teacher Hints
+326	Cardric der Ruhige		James Teacher Hints
+327	Bruder Rothham		James Teacher Hints
+328	Patwin Fellbern		James Teacher Hints
+329	Isram Galgenberg		James Teacher Hints
+330	Fedwin Smithson		James Teacher Hints
+331	Rabisa Neldon		James Teacher Hints
+332	Miyon der Flinke		James Teacher Hints
+333	Medwari Drachenfinder		James Teacher Hints
+334	Halian Nevermore		James Teacher Hints
+335	Dekian Schmiedenstahl		James Teacher Hints
+336	Brand der Schöpfer		James Teacher Hints
+337	Ashen Temper		James Teacher Hints
+338	Blayze 		James Teacher Hints
+339	Rislyn Grünsturm		James Teacher Hints
+340	Gayle		James Teacher Hints
+341	Tobren Regenschild		James Teacher Hints
+342	Torrent		James Teacher Hints
+343	Lara Steinbrecher		James Teacher Hints
+344	Avalanche		James Teacher Hints
+345	Heather Traumgeber		James Teacher Hints
+346	Benjamin der Ausgeglichene		James Teacher Hints
+347	Myles Federwind		James Teacher Hints
+348	Xavier Bremen		James Teacher Hints
+349	Bruder Bombah		James Teacher Hints
+350	Tempus		James Teacher Hints
+351	Samuel Benson		James Teacher Hints
+352	Payge Blauschwan		James Teacher Hints
+353	Bethold Höhlenberg		James Teacher Hints
+354	Brigham der Sparsame		James Teacher Hints
+355	Thomas Moore		James Teacher Hints
+356	Gareth der Ganzmacher		James Teacher Hints
+357	Wanda Feindestod		James Teacher Hints
+358	Evandar Thomas		James Teacher Hints
+359	Tessa Grünwart		James Teacher Hints
+360	Kaine		James Teacher Hints
+361	Garret Dotes		James Teacher Hints
+362	Petra Klarsicht		James Teacher Hints
+363	Lenord Pelzer		James Teacher Hints
+364	Silk Schnellzunge		James Teacher Hints
+365	Oberic Crane		James Teacher Hints
+366	Kenneth Wain		James Teacher Hints
+367	Ulbrecht der Schläger		James Teacher Hints
+368	Norris 		James Teacher Hints
+369	Jeni Flinkfuß		James Teacher Hints
+370	Raven der Jäger		James Teacher Hints
+371	Paula Lichtspeer		James Teacher Hints
+372	Lasiter der Schlächter		James Teacher Hints
+373	Leane Schattenläufer		James Teacher Hints
+374	Everil Nachtwandler		James Teacher Hints
+375	Elzbet Wintermaß		James Teacher Hints
+376	Lucid Apple		James Teacher Hints
+377	Dorothy Senjac		James Teacher Hints
+378	William Smithson		James Teacher Hints
+379	Helena Morgenstern		James Teacher Hints
+380	Gavin Magnus		James Teacher Hints
+381	Seth Finsterschmerz		James Teacher Hints
+382	Archibald		James Teacher Hints
+383	Leeres Faß		
+384	Rotes Faß
+385	Gelbes Faß
+386	Blaues Faß
+387	Oranges Faß
+388	Grünes Faß
+389	Violettes Faß
+390	Weißes Faß
+391	Leerer Kessel
+392	Glühender Kessel
+393	Frostiger Kessel
+394	Dampfender Kessel
+395	Giftiger Kessel
+396	Brodelnder Kessel
+397	Magischer Kessel
+398	Müllhaufen
+399	In der Arena antreten
+400	Müllhaufen
+401	Müllhaufen
+402	Mitglied in der Luftgilde
+403	Mitglied in der Erdgilde
+404	Mitglied in der Feuergilde 
+405	Mitglied in der Wassergilde
+406	Mitglied in der Körpergilde
+407	Mitglied in der Geistesgilde
+408	Mitglied in der Seelengilde
+409	Mitglied in der Lichtgilde
+410	Mitglied in der Schattengilde
+411	Müllhaufen
+412	Lagerfeuer
+413	Lagerfeuer
+414	Schüssel
+415	Leere Tonne
+416	Tonne		
+417	Pilz		
+418	Lord Markham		James Quest Hint
+419	Der Prinz der Diebe		James Quest Hint
+420	Wachtürme		James Quest Hint
+421	Bill Lasker		James Quest Hint
+422	Lady Carmine		James Quest Hint
+423	Assassinen		James Quest Hint
+424	Wromthrax der Herzlose		James Quest Hint
+425	Kreuzritter		James Quest Hint
+426	Die Schönste im ganzen Land		James Quest Hint
+427	Nemesis		James Quest Hint
+428	Mönchs - Ausbildung		James Quest Hint
+429	Medusen		James Quest Hint
+430	Tempel von Baa		James Quest Hint
+431	Verschwundene Schafe		James Quest Hint
+432	Verschlüsselung		James Quest Hint
+433	Das besondere an Schleim		James Quest Hint
+434	Medusen		James Quest Hint
+435	Titanen Festung		James Quest Hint
+436	Die Arena		James Quest Hint
+437	Arena Wettkämpfe		James Quest Hint
+438	Geisterhaus		James Quest Hint
+439	Geister		James Quest Hint
+440	Geheimgang		James Quest Hint
+441	Feen		James Quest Hint
+442	Kranker Wald		James Quest Hint
+443	Der älteste Baum		James Quest Hint
+444	Kopfjagd		James Quest Hint
+445	Professionelle Kopfjagd		James Quest Hint
+446	Tidewater Höhlen		James Quest Hint
+447	Evenmorn Inseln		James Quest Hint
+448	Riffkarte		James Quest Hint
+449	Der Fluch		James Quest Hint
+450	Golem - Teile		James Quest Hint
+451	Golems		James Quest Hint
+452	Gottes Eingriff Zauberbuch		James Quest Hint
+453	Gottes Eingriff		James Quest Hint
+454	Seelengefäße		James Quest Hint
+455	Die Rituale		James Quest Hint
+456	Steinkreise		James Quest Hint
+457	Sommerkreis		James Quest Hint
+458	Der Friedhof		James Quest Hint
+459	Karte zu Hügelgräbern		James Quest Hint
+460	Land der Titanen		James Quest Hint
+461	Der Mega - Drache		James Quest Hint
+462	Auftrag		Statuette
+463	Auftrag		Statuette
+464	Auftrag		Painting
+465	Auftrag		Painting
+466	Auftrag		Arcomage
+467	Auftrag		Arcomage
+468	Steinstadt		James Quest Hint
+469	Steinstadt		James Quest Hint
+470	Weg nach Nighon		James Quest Hint
+471	Tunnel der Hexer		James Quest Hint
+472	Hügelgräber		James Quest Hint
+473	Medusen		James Quest Hint
+474	Rote Zwergenminen		James Quest Hint
+475	Die Statuen		James Quest Hint
+476	Steinstadt		James Quest Hint
+477	Harmondale		James Quest Hint
+478	Rebellion		James Quest Hint
+479	Schloß Harmondy		James Quest Hint
+480	Tulareanische Höhlen		James Quest Hint
+481	Schneegipfel - Höhlen		James Quest Hint
+482	Fort Riverstride		James Quest Hint
+483	Die Trophäe		James Quest Hint
+484	Der Richter		James Quest Hint
+485	Gesucht und gefunden		James Quest Hint
+486	Die Entscheidung		James Quest Hint
+487	Reifeprüfung		James Quest Hint
+488	Celeste		James Quest Hint
+489	Die Grube		James Quest Hint
+490	Celeste		James Quest Hint
+491	Mysteriöse Mordfälle		James Quest Hint
+492	Die Kreeganer		James Quest Hint
+493	Verlorener Krieg		James Quest Hint
+494	Schwierigkeiten in Deyja		James Quest Hint
+495	Roland von Enroth		James Quest Hint
+496	Seelengefäße		James Quest Hint
+497	Hexer		James Quest Hint
+498	Clankers Abwehr		James Quest Hint
+499	Experten Lehrer		James Quest Hint
+500	Vermißte Personen		James Quest Hint
+501	Waffen schmieden		
+502	Rüstungen schmieden 		
+503	Gegenstand herstellen		
+504	Signal 		James Hint
+505	Drachenfliegen		James Hint
+506	Umgestürzte Bäume		James Hint
+507	Teleporter in Bracada 		James Hint
+508	Schloß aufbauen		Butler Text
+509	Säulen		Butler Text
+510	Umkämpftes Land		Butler Text
+511	Schloß Harmondy		Butler Text
+512	Signalfeuer		Spy Text
+513	1000 Gold bezahlen		Ambush
+514	Nicht bezahlen		Ambush
+515	Pfeilspitzen für 200 Gold kaufen		Trading Triangle
+516	Tulareanisches Holz verkaufen		Trading Triangle
+517	Greifenfedern für 200 Gold kaufen		Trading Triangle
+518	Pfeilspitzen verkaufen		Trading Triangle
+519	Tulareanisches Holz für 200 Gold kaufen		Trading Triangle
+520	Greifenfedern verkaufen		Trading Triangle
+521	Sand für 2000 Gold kaufen	1	Trading Triangle
+522	Enrothianischen Wein verkaufen	1	Trading Triangle
+523	Glassflaschen für 2000 Gold kaufen	2	Trading Triangle
+524	Sand verkaufen	2	Trading Triangle
+525	Enrothianischen Wein für 2000 Gold kaufen	3	Trading Triangle
+526	Glassflaschen verkaufen	3	Trading Triangle
+527	Schiffahrtsplan		James Hint
+528	Nighon - Tunnel		James Hint
+529	Handel		James Hint
+530	Säule der Eile		
+531	Säule der Magieresistenz		
+532	Tag der Götter Säule		
+533	Schild - Säule		
+534	Säule der Kälteresistenz		
+535	Säule der Feuerresistenz		
+536	Säule des Heldentums		
+537	Säule des Feuerrings		
+538	Säule der Geistesresistenz		
+539	Säule der Giftresistenz		
+540	Steinhaut - Säule		
+541	Säule der Elektroresistenz		
+542	Spiel der Stärke		
+543	Spiel der Ausdauer		
+544	Spiel des Intellekts					
+545	Spiel des Charismas					
+546	Spiel des Geschicks					
+547	Spiel der Reaktion					
+548	Spiel des Glücks					
+549	Wettbewerb der Stärke					
+550	Wettbewerb der Ausdauer					
+551	Wettbewerb des Intellekts					
+552	Wettbewerb des Charismas					
+553	Wettbewerb des Geschicks					
+554	Wettbewerb der Reaktion					
+555	Wettbewerb des Glücks					
+556	Test der Stärke					
+557	Test der Ausdauer					
+558	Test des Intellekts					
+559	Test des Charismas					
+560	Test des Geschicks
+561	Test der Reaktion
+562	Test des Glücks
+563	Prüfung der Stärke
+564	Prüfung der Ausdauer
+565	Prüfung des Intellekt
+566	Prüfung des Charismas
+567	Prüfung des Geschicks
+568	Prüfung der Reaktion
+569	Prüfung des Glücks
+570	Verräter!
+571	Schrein
+572	Prüfungen
+573	Bevor Sie gehen...	Lantern quest holy water hint
+574	Drachenschuppenrüstung	RDSM crafter
+575	Plattenpanzer für 4000 Gold herstellen	RDSM crafter
+576	Schild für 2000 Gold herstellen	RDSM crafter
+577	Schuppen für 2500 Gold verkaufen	RDSM crafter
+578	Ist es schon fertig?	RDSM crafter
+579	Eine Einladung...	Good ambassador (probatory access)
+580	Eine Einladung...	Evil ambassador (probatory access)
+581	Richter	Good ambassador (new judge)
+582	Richter	Evil ambassador (new judge)
+583	Bündnis mit Bracada eingehen	Gavin Magnus (probatory access)
+584	Bündnis mit Deyja eingehen	Archibald (probatory access)
+585	Angebot annehmen	Gavin Magnus (double-cross offer)
+586	Angebot ablehnen	Gavin Magnus (double-cross offer)
+587	Angebot annehmen	Archibald (double-cross offer)
+588	Angebot ablehnen	Archibald (double-cross offer)
+589	Waffen der Alten	Robert the Wise (loyalty bonus)
+590	Waffen der Alten	Tolberti (loyalty bonus)
+591	Archibalds Angebot	Gavin Magnus (loyalty bonus)
+592	Gavin Magnus' Angebot	Archibald (loyalty bonus)
+593	Nicht so schnell...	Bow GM mini-quest
+594	Bogen Großmeister	GM mini-quest in progress
+595	Nicht so schnell...	Blaster GM mini-quest
+596	Waffen der Alten Großmeister	GM mini-quest in progress
+597	Nicht so schnell...	Bodybuilding GM mini-quest
+598	Kondition Großmeister	GM mini-quest in progress
+599	Nicht so schnell...	Meditation GM mini-quest
+600	Meditation Großmeister	GM mini-quest in progress
+601	Nicht so schnell...	Alchemy GM mini-quest
+602	Alchimie Großmeister	GM mini-quest in progress
+603	Auftrag	Sacrificial Dagger quest
+604	Auftrag	Sacrificial Dagger quest in progress
+605	Tasche öffnen	Cavalier Steed
+606	Linke Tasche öffnen	Cavalier Steed
+607	Rechte Tasche öffnen	Cavalier Steed
+608	Fliegen beginnen	Cavalier Steed
+609	Grabräuber	Barrows reputation hint
+610	Auftrag	Monk token quest
+611	Mantikor - Leiden	Monk token quest hint
+612	Regal	Variable event
+613	Regal	Variable event
+614	Obstbaum	Variable event
+615	Erzader	Variable event
+616	Erzader	Variable event
+617	Erzader	Variable event
+618	Erzader	Variable event
+619	Weinregal	Variable event
+620	Sarkophag	Variable event
+621	Äpfel	Rare item buyer
+622	Weinflaschen	Rare item buyer
+623	Erzklumpen	Rare item buyer
+624	Hufeisen	Rare item buyer
+625	Magische Glut	Rare item buyer
+626	Neue Lampen für alte!	Rare item buyer
+627	Verbleibende Tavernen	Arcomage quest hint
+628	Sonderbestellungen	Shop order hint
+629	Hügelgräber		Unused vanilla quest hint
+630	Reise nach Evenmorn	Tatalia pirate boat
+631	Tatalia - Piraten	Lasker vouches for you
+632	Auftrag	Black Market intro quest
+633	Fundbüro	Black Market hint
+634	Auftrag	Bonus hirelings quest
+635	Ein seltsamer Tag	Bonus hirelings flavor
+636	Komm mit uns!	Bonus hirelings post-quest
+637	Komm mit uns!	Bonus hirelings post-quest
+638	Komm mit uns!	Bonus hirelings post-quest
+639	Geh jetzt nach Hause	Bonus hirelings post-quest
+640	Sanduhren	Rare item buyer

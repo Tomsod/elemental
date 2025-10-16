@@ -1,0 +1,256 @@
+Note bit	Autonote Text	Category		
+1	Zauberstab des Feuers von Malwick auf der Smaragdinsel für einen zukünftigen Gefallen angenommen.	Trader	1
+2	Der Brunnen in der Mitte der Stadt auf der Smaragdinsel gewährt 50 Punkte Feuer - Resistenz (vorübergehend).	Stat	1	Stat
+3	Der Brunnen östlich des Heilers auf der Smaragdinsel gibt 5 Trefferpunkte zurück.	Stat	1	Misc
+4	Der Brunnen westlich des Heilers auf der Smaragdinsel gibt 5 Zauberpunkte zurück.	Stat	1	Arbiter
+5	Der Brunnen an der Westseite der Stadt auf der Smaragdinsel gewährt 2 Punkte Glück (permanent).	Stat	1	Teacher
+6	Der Brunnen im Dorf südlich von Harmondale gewährt 10 Stärke (vorübergehend).	Stat	2	Potion
+7	Der Brunnen in dem Dorf nordöstlich von Steadwick gewährt 10 Punkte Geschick (vorübergehend).	Stat	3	Obelisk
+8	Der Brunnen im nordwestlichen Teil Steadwicks gewährt 2 Punkte Stärke (permanent).	Stat	3	
+9	Der östliche Brunnen in Steadwick heilt Krankheiten.	Stat	3	
+10	Der Brunnen südlich des Rathauses von Steadwick gewährt 20 Punkte Magie - Resistenz (vorübergehend).	Stat	3	
+11	Der Brunnen in der Mitte von Steadwick gewährt 50 Punkte Stärke (vorübergehend).	Stat	3	
+12	Der Brunnen an der Vorderseite des Rathauses von Steadwick gewährt 5 Punkte Charisma (vorübergehend).	Stat	3	
+13	Der Brunnen in der Mitte von Pierpont gewährt 50 Punkte Gift - Resistenz (vorübergehend).	Stat	4	
+14	Der Brunnen im Süden des Dorfes in Deyja gewährt 2 Punkte Intellekt (permanent).	Stat	5	
+15	Der Brunnen im Dorf im Westen Deyjas gewährt 5 Punkte Feuer - Resistenz (permanent).	Stat	5	
+16	Der Brunnen nahe des Tempels der Finsternis in Moulder in Deyja gewährt 10 Punkte Charisma (vorübergehend).	Stat	5
+17	Der Brunnen im Süden Moulders in Deyja gewährt 10 Punkte Feuer - Resistenz (vorübergehend).	Stat	5
+18	Der Brunnen vor der Schule der Zauberei in der Bracada - Wüste gewährt 25 Punkte Intellekt und Charisma (vorübergehend).	Stat	6
+19	Der Brunnen in der Mitte von Celeste gewährt 25 Punkte auf Stärke, Intellekt, Charisma, Ausdauer, Reaktion, Geschick und Glück (vorübergehend).	Stat	7
+20	Der Brunne in der Mitte von Damocles in den Nighon - Bergen gewährt 50 Punkte auf Intellekt und Charisma (vorübergehend).	Stat	10
+21	Der Brunnen nahe Gaben und Segen in Damocles in den Nighon - Bergen gewährt 2 Fähigkeitspunkte.	Stat	10
+22	Der Brunnen nahe Schicksals Willkür in Damocles in den Nighon - Bergen gewährt 2 Punkte Charisma (permanent).	Stat	10
+23	Der Brunnen nahe der Feuergilde in Damocles in den Nighon - Bergen gewährt 20 Punkte Feuer-, Kälte-, Elektrizität-, Gift- und Magie - Resistenz (vorübergehend).	Stat	10
+24	Der Brunnen im westlichen Dorf in den Nighon - Bergen stellt 50 Zauberpunkte wieder her.	Stat	10
+25	Der Brunnen im östlichen Dorf in den Nighon - Bergen stellt 50 Trefferpunkte wieder her.	Stat	10
+26	Der Brunnen im südwestlichen Dorf im Tal der Hügelgräber gewährt 25 Punkte Feuer - Resistenz (vorübergehend).	Stat	11
+27	Der Brunnen im westlichen Teil von Tidewater in Tatalia gewährt 2 Punkte Reaktion (permanent).	Stat	13
+28	Der Brunnen im östlichen Teil von Tidewater in Tatalia gewährt 20 Punkte Elektrizität - Resistenz (vorübergehend).	Stat	13
+29	Der Brunnen im nördlichen Dorf in Tatalia gewährt 20 Punkte auf die Rüstklasse (vorübergehend).	Stat	13
+30	Der Brunnen im nördlichen Teil von Spaward in Avlee gewährt 2 Punkte Ausdauer (permanent).	Stat	14
+31	Der Brunnen im nordwestlichen Teil von Spaward in Avlee gewährt 20 Punkte Wasser - Resistenz (vorübergehend).	Stat	14
+32	Der Brunnen in dem Inseldorf in Avlee gibt 25 Trefferpunkte zurück.	Stat	14
+33	Rote Flüssigkeit erhöht die Stärke.	Misc	
+34	Orange Flüssigkeit erhöht den Intellekt.	Misc	
+35	Blaue Flüssigkeit erhöht das Charisma.	Misc	
+36	Grüne Flüssigkeit erhöht die Ausdauer.	Misc	
+37	Gelbe Flüssigkeit erhöht das Geschick.	Misc
+38	Violette Flüssigkeit erhöht die Reaktion.	Misc	
+39	Weiße Flüssigkeit erhöht das Glück.	Misc	
+40	Glühende Flüssigkeit erhöht die Feuer - Resistenz.	Misc	
+41	Frostige Flüssigkeit erhöht die Kälte - Resistenz.	Misc	
+42	Dampfende Flüssigkeit erhöht die Elektrizität - Resistenz.	Misc	
+43	Vergiftete Flüssigkeit erhöht die Gift - Resistenz.	Misc	
+44	2 points of permanent Luck from the well in the western section of Stone City.	Stat	11
+45	Bubbling liquid grants Mind Resistance.	Misc	
+46	Magical liquid grants Magic Resistance.	Misc	
+47	Obelisken Inschrift #1: Veuirinc	Obelisk	Area 2
+48	Schwäche heilen (gelb) = Klatschmohn + leere Flasche.  Verschiedene gelbe Zutaten können zu einer verstärkten Wirkung benutzt werden.	potion
+49	Krankheit heilen (orange) = gelb + rot	potion
+50	Gift heilen (violett) = blau + rot	potion
+51	Magischer Trank (grün) = gelb + blau	potion
+52	Eile (rot und orange gemischt) = rot + orange	potion
+53	Heldentum (rot und violett gemischt) = rot + violett	potion
+54	Segen (rot und grün gemischt) = rot + grün	potion
+55	Bewahrung (blau und orange gemischt) = blau + orange	potion
+56	Schild (blau und violett gemischt) = blau + violett	potion
+57	Aufladen (blau und grün gemischt) = blau + grün	potion
+58	Steinhaut (gelb und orange gemischt) = gelb + orange	potion
+59	Wasser atmen (gelb und violett gemischt) = gelb + violett	potion
+60	Härten (gelb und grün gemischt) = gelb + grün	potion
+61	Furcht verjagen (orange und violett gemischt) = orange + violett	potion
+62	Fluch entfernen (violett und grün gemischt) = violett + grün	potion
+63	Irrsinn heilen (orange und grün gemischt) = orange + grün	potion
+64	Essenz der Stärke (weiß) = violett + rot und violett gemischt	potion
+65	Essenz des Intellekts (weiß) = grün + gelb und grün gemischt	potion
+66	Essenz des Charismas (weiß) = grün + blau und grün gemischt	potion
+67	Essenz der Ausdauer (weiß) = violett + blau und violett gemischt	potion
+68	Essenz der Reaktion (weiß) = orange + rot und orange gemischt	potion
+69	Essenz des Geschicks (weiß) = orange + gelb und orange gemischt	potion
+70	Waffenöl der Flammen (weiß) = grün + rot und orange gemischt	potion
+71	Waffenöl der Flammen (weiß) = violett + gelb und orange gemischt	potion
+72	Waffenöl der Vereisung (weiß) = grün + rot und violett gemischt	potion
+73	Waffenöl der Vereisung (weiß) = orange + blau und violett gemischt	potion
+74	Waffenöl des Vergiftens (weiß) = orange + blau und grün gemischt	potion
+75	Waffenöl des Vergiftens (weiß) = violett + gelb und grün gemischt	potion
+76	Waffenöl der Funken (weiß) = violett + rot und orange gemischt	potion
+77	Waffenöl der Funken (weiß) = orange + rot und violett gemischt	potion
+78	Waffenöl der Schnelligkeit (weiß) = grün + blau und violett gemischt	potion
+79	Waffenöl der Schnelligkeit (weiß) = violett + blau und grün gemischt	potion
+80	Lähmung heilen (weiß) = grün + gelb und orange gemischt	potion
+81	Lähmung heilen (weiß) = orange + gelb und grün gemischt	potion
+82	Gottes Wiederherstellung (weiß) = rot und orange gemischt + blau und grün gemischt	potion
+83	Gottes Wiederherstellung (weiß) = blau und violett gemischt + gelb und orange gemischt	potion
+84	Gottes Wiederherstellung (weiß) = rot und violett gemischt + gelb und grün gemischt	potion
+85	Gottes Heilung (weiß) = rot und orange gemischt + gelb und orange gemischt	potion
+86	Gottes Macht (weiß) = blau und grün gemischt + gelb und grün gemischt	potion
+87	Essenz des Glückes (weiß) = rot und violett gemischt + blau und violett gemischt	potion
+88	Feuer - Resistenz (weiß) = rot und orange gemischt + gelb und grün gemischt	potion
+89	Elektrizität - Resistenz (weiß) = rot und orange gemischt + blau und violett gemischt	potion
+90	Kälte - Resistenz (weiß) = blau und violett gemischt + gelb und grün gemischt	potion
+91	Gift - Resistenz (weiß) = rot und violett gemischt + gelb und orange gemischt	potion
+92	Geistes - Resistenz (weiß) = rot und violett gemischt + blau und grün gemischt	potion
+93	Magie - Resistenz (weiß) = blau und grün gemischt + gelb und orange gemischt	potion
+94	Stein zu Fleisch (schwarz) = rot und violett gemischt + Lähmung heilen (weiß)	potion
+95	Waffenöl des Drachentöters (schwarz) = blau und violett gemischt + Waffenöl der Flammen (weiß)	potion
+96	wahres Glück (schwarz) = gelb und orange gemischt + Waffenöl der Schnelligkeit (weiß)	potion
+97	wahre Reaktion (schwarz) = violetter Trank + Essenz der Reaktion (weiß)	potion
+98	wahrer Intellekt (schwarz) = orangener Trank + Essenz des Intellekts (weiß)	potion
+99	wahre Ausdauer (schwarz) = grüner Trank + Essenz der Ausdauer (weiß)	potion
+100	wahres Charisma (schwarz) = violetter Trank + Essenz des Charismas (weiß)	potion
+101	wahres Geschick (schwarz) = grüner Trank + Essenz des Geschicks (weiß)	potion
+102	wahre Stärke (schwarz) = orangener Trank + Essenz der Stärke (weiß)	potion
+103	Verjüngung (schwarz) = rot und grün gemischt + Gottes Wiederherstellung (weiß)	potion
+104	Verjüngung (schwarz) = blau und orange gemischt + Gottes Wiederherstellung (weiß)	potion	
+105	Verjüngung (schwarz) = gelb und violett gemischt + Gottes Wiederherstellung (weiß)	potion	
+106	Feuer - Immunität (schwarz) = grüner Trank + Feuer - Resistenz (weiß)	potion
+107	Elektrizität - Immunität (schwarz) = orangener Trank + Elektrizität - Resistenz (weiß)	potion
+108	Kälte - Immunität (schwarz) = violetter Trank + Kälte - Resistenz (weiß)	potion
+109	Gift - Immunität (schwarz) = orangener Trank + Gift - Resistenz (weiß)	potion
+110	Geistes - Immunität (schwarz) = grüner Trank + Geistes - Resistenz (weiß)	potion
+111	Magie - Immunität (schwarz) = violetter Trank + Magie - Resistenz (weiß)	potion
+112	Schmerz - Reflexion (schwarz) = rot und orange gemischt + Waffenöl des Vergiftens (weiß)	potion
+113	Gottes Meisterschaft (schwarz) = blau und grün gemischt + Essenz des Glückes (weiß)	potion
+114	Ultimative Heilung (schwarz) = gelb und grün gemischt + Gottes Heilung (weiß)	potion
+115	Obelisken Inschrift #2: einrbmeh	Obelisk	Area 3
+116	Obelisken Inschrift #3: rldao_rs	Obelisk	Area 4
+117	Obelisken Inschrift #4: wa_trS_t	Obelisk	Area 5
+118	Obelisken Inschrift #5: unWegase	Obelisk	Area 6
+119	Obelisken Inschrift #6: ndanenan	Obelisk	Area 7
+120	Obelisken Inschrift #7: s_s_ndh_	Obelisk	Area 8
+121	Obelisken Inschrift #8: cH_h___M	Obelisk	Area 9
+122	Obelisken Inschrift #9: hefibndo	Obelisk	Area 10
+123	Obelisken Inschrift #10: exüeluer	Obelisk	Area 11
+124	Obelisken Inschrift #11: nenrürng	Obelisk	Area 12
+125	Obelisken Inschrift #12: enf_h__e	Obelisk	Area 13
+126	Obelisken Inschrift #13: ss_vtenn	Obelisk	Area 14
+127	Obelisken Inschrift #14: _tPe_iä_	Obelisk	Area 39
+128	Elsie Pederton, Meisterin am Stab, lebt auf einer Anhöhe im südwestlichen Teil der Bracada - Wüste.	teacher
+129	Jillian Mithrit, Großmeisterin am Stab, lebt in den Elfenlanden von Avlee nordöstlich in der Stadt.	teacher
+130	Tugor Schlitzer, der Meister am Schwert, lebt in einem kleinen Dorf im Westen Deyjas.	teacher
+131	Chadric Dorfretter, Großmeister am Schwert, lebt in einem kleinen Dorf in Welnin, etwas südlich von Harmondale.	teacher
+132	Aznog Schnitter, Meister am Dolch, lebt im nördlichen Teil Nighons. Gerüchten zufolge, soll der Meisterdieb im Dunkel der Kanalisation von Erathia unter der Hauptstadt Steadwick ebenfalls diese Kunst beherrschen und lehren können.	teacher
+133	Token Faust, Großmeister am Dolch, lebt in der Stadt Tidewater in Tatalia.	teacher
+134	Dalin Keenedge, Meister der Axt, lebt in der nordöstlichen Ecke von Steinstadt.	teacher
+135	Karn Steinspalter, Großmeister der Axt, lebt auf den verschneiten Höhen im Nordosten Tatalias.	teacher
+136	Claderin Silberspitz, Meister am Speer, lebt im Nordosten von Pierpont in den Elfengebieten des tulareanischen Forstes.	teacher
+137	Selene Falkenblick, Großmeisterin am Speer, lebt in der Nordostecke von Steinstadt.	teacher
+138	Lanshee Rabensicht, Meister am Bogen, lebt im Norden Nighons.	teacher
+139	Cardric der Ruhige, Großmeister am Bogen, lebt südöstlich des Schlosses in der Stadt Harmondale.	teacher
+140	Bruder Rothham, Meister am Streitkolben, lebt im Süden der Sümpfe von Tatalia.	teacher
+141	Patwin Fellbern, Großmeister am Streitkolben, lebt in einem Goblindorf im Osten Deyjas.	teacher
+142	Isram Galgenberg, Meister des Schildes, lebt auf den verschneiten Höhen im Nordosten Tatalias.	teacher
+143	Fedwin Smithson, Großmeister des Schildes, lebt westlich auf der Evenmorn Insel.	teacher
+144	Rabisa Neldon, Meisterin der Lederrüstung, lebt im Norden Nighons.	teacher
+145	Miyon der Flinke, Großmeister der Lederrüstung, lebt im Osten von Pierpont in den Elfengebieten des tulareanischen Forstes.	teacher
+146	Medwari Drachenfinder, Meister des Kettenpanzers, lebt in der Stadt im Nordosten in den Elfenlanden von Avlee.	teacher
+147	Halian Nevermore, Großmeister des Kettenpanzers, lebt in einer großen Stadt im Nordwesten Deyjas.	teacher
+148	Dekian Schmiedenstahl, Meister der Plattenrüstung, lebt in der Hauptstadt von Erathia, Steadwick.	teacher
+149	Brand der Schöpfer, Großmeister der Plattenrüstung, lebt auf einer Anhöhe in der Mitte der Bracada - Wüste.	teacher
+150	Ashen Temper, Meister der Feuermagie, lebt in der Nähe der Stallungen in der Stadt Harmondale.	teacher
+151	Blayze, Großmeister der Feuermagie, lebt in der Hauptstadt von Erathia, Steadwick.	teacher
+152	Rislyn Grünsturm, Meister der Luftmagie, lebt in der nordöstlichen Stadt in den Elfenlanden von Avlee.	teacher
+153	Gayle, Großmeister der Luftmagie, lebt auf einem Berg in einem Turm im Norden der Bracada - Wüste.	teacher
+154	Tobren Regenschild, Meister der Wassermagie, lebt im Südwesten Nighons.	teacher
+155	Torrent, Großmeister der Wassermagie, lebt auf einer Anhöhe im Süden der Stadt Harmondale.	teacher
+156	Lara Steinbrecher, Meisterin der Erdmagie, lebt in Pierpont in den Elfenlanden des tulareanischen Forstes.	teacher
+157	Avalanche, Großmeister der Erdmagie, lebt im Westen Deyjas.	teacher
+158	Heather Traumgeber, Meister der Seelenmagie, lebt in der Hauptstadt von Erathia, Steadwick.	teacher
+159	Benjamin der Ausgeglichene, Großmeister der Seelenmagie, lebt in Pierpont in den Elfenlanden des tulareanischen Forstes.	teacher
+160	Myles Federwind, Meister der Geistesmagie, lebt in der nordöstlichen Stadt in den Elfenlanden von Avlee.	teacher
+161	Xavier Bremen, Großmeister der Geistesmagie, lebt auf den verschneiten Höhen im Nordosten Tatalias.	teacher
+162	Bruder Bombah, Meister der Körpermagie, lebt in den Sumpfgebieten im Süden Tatalias.	teacher
+163	Tempus, Großmeister der Körpermagie, lebt auf einer Insel in der großen Bucht in den Elfenlanden von Avlee.	teacher
+164	Samuel Benson, Meister des Erkennens, lebt auf einer Anhöhe in der Mitte der Bracada - Wüste.	teacher
+165	Payge Blauschwan, Großmeister des Erkennens, lebt in Pierpont in den Elfengebieten des tulareanischen Forstes.	teacher
+166	Bethold Höhlenberg, Meister des Feilschens, lebt östlich auf der Evenmorn Insel.	teacher
+167	Brigham der Sparsame, Großmeister des Feilschens, lebt in einem Turm auf einer Anhöhe im Norden der Bracada - Wüste.	teacher
+168	Thomas Moore, Meister im Reparieren, lebt in einem sumpfigen Tal im Süden Tatalias.	teacher
+169	Gareth der Ganzmacher, Großmeister des Reparierens, lebt in der Hauptstadt Erathias, Steadwick.	teacher
+170	Wanda Feindestod, Meisterin der Kondition, lebt in dem Goblindorf im Osten Deyjas.	teacher
+171	Evander Thomas, Großmeister der Kondition, lebt im Osten Nighons.	teacher
+172	Tessa Grünwart, Meisterin der Meditation, lebt auf einer Anhöhe im Südosten der Bracada - Wüste.	teacher
+173	Kaine, Großmeister der Meditation, lebt auf einer Insel in der Hauptbucht von Avlee.	teacher
+174	Garret Dotes, Meister des 6.Sinnes, lebt in Pierpont in den Elfengebieten des tulareanischen Forstes.	teacher
+175	Petra Klarsicht, Großmeisterin des 6.Sinnes, lebt in der Stadt im Nordwesten Deyjas.	teacher
+176	Lenord Pelzer, Meister des Entschärfens, lebt auf einer Anhöhe im Süden der Stadt Harmondale.	teacher
+177	Silk Schnellzunge, Großmeister des Entschärfens, lebt im Süden Nighons.	teacher
+178	Oberic Crane, Meister des Ausweichens, lebt östlich auf der Evenmorn Insel.	teacher
+179	Kenneth Wain, Großmeister des Ausweichens, lebt in der Hauptstadt von Erathia, Steadwick.	teacher
+180	Ulbrecht der Schläger, Meister der Kampfkunst, lebt östlich auf der Evenmorn Insel.	teacher
+181	Norris, Großmeister der Kampfkunst, lebt in der Hauptstadt Erathias, Steadwick.	teacher
+182	Jeni Flinkfuß, Meisterin der Monsterkunde, lebt in der Stadt im Nordosten der Elfenlanden von Avlee.	teacher
+183	Raven der Jäger, Großmeister der Monsterkunde, lebt in einem kleinen Dorf südlich von Harmondale.	teacher
+184	Paula Lichtspeer, Meisterin der Fähigkeit Waffenmeister, lebt in der Stadt im Nordosten der Elfenlande von Avlee.	teacher
+185	Lasiter der Schlächter, Großmeister in der Fähigkeit Waffenmeister, lebt im Osten Eeofols.	teacher
+186	Leana Schattenläufer, Meisterin des Stehlens, lebt in dem Goblindorf im Osten Deyjas.	teacher
+187	Everil Nachtwandler, Großmeisterin des Stehlens, lebt in einem sumpfigen Tal im Süden Tatalias.	teacher
+188	Elzbet Wintermaß, Meisterin der Alchimie, lebt im Westen Nighons.	teacher
+189	Lucid Apple, Großmeister der Alchimie, lebt auf einer Insel in der Hauptbucht der Elfenlande von Avlee.	teacher
+190	Dorothy Senjac, Meister des Lernens, lebt in Südosten Nighons.	teacher
+191	William Smithson, Großmeister des Lernens, lebt östlich auf der Evenmorn Insel.	teacher
+192	Helena Morgenstern, Meister der Lichtmagie, lebt in der Wolkenstadt Celeste.	teacher
+193	Der Großmeister der Lichtmagie, Gavin Magnus, lebt im Schloß der Zauberer, Schloß Lambent.	teacher
+194	Seth Finsterschmerz, Meister der Schattenmagie, lebt in der Grube tief unter Deyja.	teacher
+195	Archibald, der Großmeister der Schattenmagie, lebt in der Festung der Totenbeschwörer, Schloß Gloaming. Ab und zu soll er sich auf dem Weg zu Clankers Labor befinden.	teacher
+196	Der Brunnen in der Nähe der Magiergilden in Harmondale gewährt 2 Punkte Geschick (permanent).	Stat	2
+197	Calindra Goldensight kauft Äpfel für 300 Gold in der Nähe von Lord Markhams Villa im südlichen Tatalia.	Trader	13
+198	Infernon kauft Weinflaschen für je 1000 Gold pro Stück am nördlichen Ende der Stadt Spaward in Avlee.	Trader	14
+199	Arvin Beneclowd kauft Erzbrocken zu unterschiedlichen Preisen im nordöstlichen Teil im Tal der Hügelgräber, in der Nähe der Taverne.	Trader	11
+200	Pip Hillier kauft Hufeisen für jeweils 800 Goldstücke im nordwestlichen Teil der Stadt Steadwick in Erathia.	Trader	3
+201	Robert Belknap kauft magische Glut für jeweils 1500 Gold im nordwestlichen Teil der Stadt Pierpont des tulareanischen Forstes.	Trader	4
+202	Evan Nasir wird im Dorf südlich von Harmondale Dschinnlampen gegen goldene Lampen eintauschen.	Trader	2
+203	Rydric wird im Dorf in der Mitte der Bracadawüste Sanduhren der Ungeduld für jeweils 5000 Gold kaufen.	Trader	6
+204	Töte einen %s und kehre vor Monatsende zur Stadthalle von Harmondale zurück, um die Belohnung von %u Gold zu erhalten.	Trader	2
+205	Kehren Sie vor Monatsende zur Stadthalle von Harmondale zurück, um die Goldbelohnung für die von Ihnen getöteten %s zu erhalten.	Trader	2
+206	Töte einen %s und kehre vor Monatsende zur Stadthalle von Steadwick in Erathia zurück, um die Belohnung von %u Gold zu erhalten.	Trader	3
+207	Kehren Sie vor Monatsende zur Stadthalle von Steadwick in Erathia zurück, um die Goldbelohnung für die von Ihnen getöteten %s zu erhalten.	Trader	3
+208	Töte einen %s und kehre vor Monatsende zur Stadthalle von Pierpont des tulareanischen Forstes zurück, um die Belohnung von %u Gold zu erhalten.	Trader	4
+209	Kehren Sie vor Monatsende zur Stadthalle von Pierpont des tulareanischen Forstes zurück, um die Goldbelohnung für die von Ihnen getöteten %s zu erhalten.	Trader	4
+210	Töte einen %s und kehre vor Monatsende zur Halle der Dämmerung in Celeste zurück, um die Belohnung von %u Gold zu erhalten.	Trader	7
+211	Kehren Sie vor Monatsende zur Halle der Dämmerung in Celeste zurück, um die Goldbelohnung für die von Ihnen getöteten %s zu erhalten.	Trader	7
+212	Töte einen %s und kehre vor Monatsende zur Halle der Mitternacht in der Grube zurück, um die Belohnung von %u Gold zu erhalten.	Trader	8
+213	Kehren Sie vor Monatsende zur Halle der Mitternacht in der Grube zurück, um die Goldbelohnung für die von Ihnen getöteten %s zu erhalten.	Trader	8
+214	Die Senke im Labyrinth in den Nighon - Bergen gewährt 25 Punkte Magie - Resistenz (vorübergehend).	Stat	38
+215	Shane Thomas in Harmondale arbeitet an deinen roten Drachenschuppen. Er wohnt in der Nähe der Ställe.	Trader	2
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240	
+241	
+242	
+243	
+244	
+245	
+246	
+247	
+248	
+249	
+250	
+251	
+252	
+253	
+254	
+255	

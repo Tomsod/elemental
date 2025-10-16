@@ -1,0 +1,817 @@
+Global Text	
+
+0	AK
+1	Geschick
+2	Schwarzer Ritter
+3	Spion
+4	Ängstlich
+5	Alter
+6	Luft
+7	Alchimist
+8	Obeliskenzeichen
+9	Gratulation!
+10	Stadtportal
+11	Rüstung
+12	Rüstungsklasse
+13	Assassine
+14	Schlafend
+15	Fehler bei %d in %s
+16	Autosave
+17	Erf.
+18	Angriff
+19	Verfügbar
+20	Verfügbare Fähigkeiten
+21	Mönch
+22	Auszeichnungen
+23	Auszeichnungen für
+24	Feuer - Res
+25	Guthaben
+26	Initiierter
+27	Ninja
+28	Nemesis
+29	Körper
+30	Bonus
+31	Ranger
+32	Beschädigter Gegenstand
+33	Meisterjäger
+34	Abbrechen
+35	Stadtportal nach %s
+36	%s kann so nicht benutzt werden
+37	Gesamtzeit:
+38	Zauber sprechen
+39	Ziel wählen
+40	Kopfjäger
+41	Klasse
+42	Sekretär
+43	Kälte
+44	Priester des Lichts
+45	Zust.
+46	Priester der Dunkelheit
+47	Zustand
+48	Hexer
+49	Lich
+50	Ausweichen
+51	GRUPPE ERSTELLEN
+52	Verflucht
+53	Schaden
+54	Dunkel
+55	Morgengrauen
+56	Tag
+57	Tage
+58	Tot
+59	Interner Fehler
+60	Einzahlen
+61	Drücken Sie Escape
+62	Might and Magic VII muß im 16bit (32k oder 65k) Farbenmodus gestartet werden, um im Fenstermodus zu laufen.
+63	Might and Magic VII hat Schwierigkeiten beim Laden von Dateien. Führen sie bitte eine Re-Installation durch, dabei werden ihre abgespeicherten Spielstände nicht gelöscht.
+64	Details
+65	Erkrankt
+66	Sch.
+67	%s beherrscht die Fähigkeit nicht
+68	Spenden
+69	Betrunken
+70	Erde
+71	Elektrizität
+72	Leer
+73	Betreten
+74	Unterredung beenden
+75	Ausdauer
+76	Vernichtet
+77	Kampfkunst
+78	Kalender
+79	Fertig
+80	Verlassen
+81	Lager verlassen
+82	Sind Sie sicher? Zum Beenden bitte erneut klicken
+83	Erfahrung
+84	Ruf
+85	Trank Notizen
+86	Proviant für %d Tage für %d Gold
+87	Feuer
+88	Monsterkunde
+89	Waffenmeister
+90	Stehlen
+91	Freitag
+92	Voll
+93	Spieloptionen
+94	Ihre Punktezahl: %lu
+95	Alchimie
+96	Großmeister 
+97	Gold
+98	Gut
+99	Mensch
+100	Wache
+101	Zwerg
+102	Halb
+103	Elf
+104	Heilen
+105	Heiler
+106	Goblin
+107	TP
+108	Trefferpunkte
+109	Stunde
+110	Stunden
+111	Großmeister 
+112	Wieviel?
+113	Erkennen
+114	Meisterdieb
+115	Ausbilder
+116	Intellekt
+117	Irrsinnig
+118	Wir hoffen, es hat Ihnen ebenso viel Spaß gemacht, Might and Magic VII zu spielen, wie uns die Produktion gemacht hat. Dieser Bildschirm wurde als MM7_WIN.PCX in Ihrem MM7 - Verzeichnis abgespeichert. Sie können ihn als Nachweis für Ihren Erfolg ausdrucken.
+119	Meisterschütze
+120	Inventory
+121	Permanent
+122	Beitreten
+123	Kopfgelder und Händler
+124	Scharfschütze
+125	+2 Fähigkeitspunkte!
+126	%s verlassen?
+127	Kein Text!
+128	Es dauert %d Tage, um Ihr Ziel, %s, zu erreichen.
+129	%s, Stufe %u %s
+130	Spieler
+131	Stufe
+132	Jahre
+133	Licht
+134	Standard
+135	Lade
+136	Glück
+137	Brunnennotizen
+138	Magie
+139	Karten
+140	Dein Gepäck ist bereits voll!
+141	Magische Gebräue
+142	Geist
+143	Verschiedene
+144	Stärke
+145	Montag
+146	Monat
+147	Sie sind bereit, auf Stufe %u aufzusteigen.
+148	Monate
+149	Name
+150	Neu
+151	Glückwunsch, Abenteurer.
+152	Besonderes
+153	Keine
+154	Notizen
+155	Ihr habt nicht genug Gold
+156	Bleibe in diesem Gebiet
+157	© 1999 The 3DO Company.  All Rights Reserved.  Might and Magic, Blood and Honor, New World Computing, 3DO, and their respective logos, are trademarks and/or service marks of The 3DO Company in the U.S. and other countries.  All other trademarks belong to their respective owners.  New World Computing is a division of The 3DO Company.
+158	Schmugglerbucht Ost
+159	Öffne Inventory
+160	Lerne Fähigkeiten
+161	Stehlen
+162	Gelähmt
+163	Charisma
+164	%s %s %s für %lu Schaden
+165	Bitte warten
+166	Vergiftung
+167	 - Der Might and Magic VII - Klan
+168	Punkte
+169	Dreiviertel
+170	QZaub
+171	Viertel
+172	Quick-Zauber
+173	Übersicht
+174	Suchaufträge
+175	%s trifft für %lu Sch. und tötet %s
+176	Might and Magic VII hat einen internen Fehler festgestellt und muß geschlossen werden. Soll das Spiel vorher gespeichert werden?
+177	Standard
+178	Zimmer für %d Gold mieten
+179	Reparieren
+180	Ruf
+181	Stehle %24
+182	Ruhen
+183	8 Std. ruhen & heilen
+184	Neuinstallation erforderlich
+185	Gegenstand stehlen
+186	Zeit in Erathia
+187	Gestohlen
+188	Samstag
+189	%s %s %s  %lu Schaden zu
+190	Speichert
+191	Ihr wurdet aus diesem Geschäft hinausgeworfen!
+192	Nach oben
+193	Nach unten
+194	Kälte - Res
+195	Gegenstand auswählen, der gekauft werden soll
+196	Besonderen Gegenstand auswählen, der gekauft werden soll
+197	Gegenstand zur Identifizierung auswählen
+198	Gegenstand zur Reparatur auswählen
+199	Gegenstand auswählen, der verkauft werden soll
+200	Verkaufen
+201	Sind Sie sicher? Erneutes Klicken startet neues Spiel
+202	Elektrizität - Res
+203	Schuß
+204	Gift - Res
+205	Fähigkeiten
+206	Fähigkeiten für
+207	Fähigkeitspunkte
+208	Magie - Res
+209	ZP
+210	Besonderes
+211	Reaktion
+212	Zauberpunkte
+213	Geist - Res
+214	Seele
+215	Leben erspüren
+216	Attribute
+217	Unsichtbarkeit
+218	Feuerring
+219	Tag der Götter
+220	Versteinert
+221	Schicksal
+222	Sonntag
+223	
+224	
+225	Großmeister
+226	"Gammakontrolle der ""Helligkeit"" des Spieles. Kann abhängig vom Monitor variieren."
+227	Donnerstag
+228	Hammerhand
+229	Schmerzreflektion
+230	Dienstag
+231	bewußtlos
+232	Nicht identifiziert
+233	Bewahrung
+234	Regeneration
+235	Vorüb. Geschick
+236	Ohne Heilung warten
+237	Bis Sonnenaufgang
+238	5 Minuten warten
+239	1 Stunde warten
+240	Wasser
+241	Schwach
+242	Waffen
+243	Mittwoch
+244	Abheben
+245	Jahr
+246	Vorüb. Ausdauer
+247	Vorüb. Intellekt
+248	Vorüb. Glück
+249	Vorüb. Charisma
+250	Sie brauchen %s
+251	Heranzoomen
+252	Herauszoomen
+253	Ritter
+254	Kämpe
+255	Erster Ritter
+256	Kleriker
+257	Priester
+258	Vorüb. Reaktion
+259	Zauberer
+260	Magier
+261	Erzmagier
+262	Paladin
+263	Kreuzritter
+264	Held
+265	Schütze
+266	KARTE ABLEGEN
+267	Kampfmagier
+268	Druide
+269	Großdruide
+270	Erzdruide
+271	Stab
+272	Schwert
+273	Dolch
+274	Axt
+275	Speer
+276	Bogen
+277	Streitkolben
+278	Blaster
+279	Schild
+280	Leder
+281	Kette
+282	Platte
+283	Feuermagie
+284	Luftmagie
+285	Wassermagie
+286	Erdmagie
+287	Lichtmagie
+288	Schattenmagie
+289	Seelenmagie
+290	Geistesmagie
+291	Körpermagie
+292	Erkennen
+293	Feilschen
+294	Reparieren
+295	Kondition
+296	Meditation
+297	6.Sinn
+298	Diplomacy
+299	Thievery
+300	Entschärfen
+301	Lernen
+302	%s stiehlt %d Gold!
+303	Adliger
+304	Beamter
+305	Bürger
+306	Gelehrter
+307	Dieb
+308	Schmied
+309	Rüstschmied
+310	Spurensucher
+311	Fährtenleser
+312	Waldläufer
+313	Seemann
+314	Navigator
+315	Expertenheiler
+316	Meisterheiler
+317	Lehrer
+318	Fechtmeister
+319	Waffenmeister
+320	Lehrling
+321	Mystiker
+322	Zaubermeister
+323	Händler
+324	Späher
+325	Stadtrat
+326	Rechtsanwalt
+327	Schlosser
+328	Feinschmied
+329	Narr
+330	Schornsteinfeger
+331	Gepäckträger
+332	Quartiermeister
+333	Münzer
+334	Verwalter
+335	Koch
+336	Chefkoch
+337	Reiter
+338	Barde
+339	Schutzmagier
+340	Kartograph
+341	Windmeister
+342	Wassermeister
+343	Tormeister
+344	Akolyte des Sonnentempels
+345	Flötenspieler
+346	Kundschafter
+347	Pirat
+348	Knappe
+349	Hellseher
+350	Zigeuner
+351	Diplomat
+352	Betrüger
+353	Einbrecher
+354	Leibeigener
+355	Schneider
+356	Arbeiter
+357	Bauer
+358	Küfer
+359	Töpfer
+360	Weber
+361	Schuster
+362	Torfstecher
+363	Müller
+364	Holzfäller
+365	Steinmetz
+366	Hofnarr
+367	Fallensteller
+368	Bettler
+369	Viehdieb
+370	Jäger
+371	Schreiber
+372	Missionar
+373	Anhänger von Baa
+374	Spieler
+375	Leuchtfeuer setzen
+376	%s wurde beim Stehlen erwischt!
+377	%s hat nichts erwischt!
+378	%s %d, %d
+379	Verhaßt
+380	Ihr kennt den %s Zauber bereits
+381	Ihr habt nicht die Fähigkeit, %s zu lernen
+382	Der Spieler ist %s
+383	sein
+384	seine
+385	Sir
+386	Sir
+387	Lady
+388	Lord
+389	Lady
+390	Bruder
+391	Schwester
+392	Unfreundlich
+393	Tochter
+394	Unbekannt
+395	Morgen
+396	Tag
+397	Abend
+398	Etwas trinken
+399	Neutral
+400	Zauber kaufen
+401	Fähigkeit kostet: %lu
+402	Freundlich
+403	Sie kennen die Fähigkeit %s bereits
+404	%d Tage bis %s
+405	Reise kostet %d Gold
+406	Anheuern
+407	Mehr Informationen
+408	%s entlassen
+409	%s verlassen?
+410	Verlasse %s
+411	Betrete %s
+412	Die Erstellung der Charaktere kann erst beendet werden, wenn alle Charakteren 2 weitere Fähigkeiten haben und alle Bonuspunkte verteilt sind.
+413	Sie können nicht mehr als 50 Punkte verteilen
+414	Dieser Ort ist von %d Uhr %s bis %d Uhr %s geöffnet
+415	Januar
+416	Februar
+417	März
+418	April
+419	Mai
+420	Juni
+421	Juli
+422	August
+423	September
+424	Oktober
+425	November
+426	Dezember
+427	Wegen %ss Zustand ist %s nicht möglich.
+428	Zauber mißlungen
+429	%s (%s)
+430	%s ist Stufe %lu und hat %lu Fähigkeitspunkte!
+431	Normal
+432	Meister
+433	Experte
+434	Beliebt
+435	Mit %s reden
+436	Minuten
+437	Minute
+438	Sekunden
+439	Sekunde
+440	Heldentum
+441	Eile
+442	Steinhaut
+443	Segen
+444	Oh nein!
+445	Glückstag
+446	Identifikation mißlungen
+447	Geschick
+448	Reparatur mißlungen
+449	Kraft
+450	Aktive Zauber: %s
+451	Aktive Gruppenzauber
+452	Fackellicht
+453	Magisches Auge
+454	Federfall
+455	Fliegen
+456	Wasserwandeln
+457	Schutzengel
+458	Schutz vor Feuer
+459	Schutz vor Elektrizität
+460	Schutz vor Kälte
+461	Schutz vor Gift
+462	Unveränderlichkeit (%d)
+463	Typ: %s
+464	Ladungen
+465	Wert
+466	Ihr findet %lu Gold (Begleiter nehmen %lu)!
+467	Ihr steckt %lu Gold ein!
+468	Hier klicken verteilt %d Fähigkeitspunkte
+469	Sie brauchen %d Fähigkeitspunkte, um aufzusteigen
+470	%s nehmen
+471	Ihr findet einen Gegenstand (%s)!
+472	a.m.
+473	p.m.
+474	Nach %s zurückrufen
+475	Stelle %s über %s ein
+476	Auf %s stellen
+477	Ihr ruht bereits!
+478	Man kann im zugbasierten Modus nicht ruhen!
+479	Hier könnt Ihr nicht ruhen!
+480	Es sind feindliche Monster in der Nähe!
+481	Begegnung!
+482	Ihr habt nicht genug Nahrung, um zu ruhen.
+483	%s als Quick-Zauber festlegen
+484	Hier klicken, um Quick-Zauber festzulegen
+485	%s aussprechen
+486	%s auswählen
+487	Ihr seid bereits Meister dieser Fähigkeit
+488	Ihr habt nicht genug Fähigkeitspunkte
+489	Ihr habt %d Gold, %d in der Bank
+490	Ihr findet %d Gold und einen Gegenstand (%s)!
+491	Meteorregen kann nicht in Räumen ausgesprochen werden!
+492	Inferno kann nicht im Freien ausgesprochen werden!
+493	Sprung kann in der Luft nicht ausgesprochen werden!
+494	Fliegen kann nicht in Räumen ausgesprochen werden!
+495	Sternenfeuer kann nicht in Räumen ausgesprochen werden!
+496	Es gibt kein gültiges Ziel!
+497	Prismenfeuer kann nicht im Freien ausgesprochen werden!
+498	Kräuterkundiger
+499	Armageddon kann nicht in Räumen ausgesprochen werden!
+500	Ihr habt %lu Gold
+501	Ihr habt %lu Ration(en)
+502	Ihr findet %lu Ration(en)
+503	Ihr verliert %lu Gold
+504	Ihr verliert %lu Ration(en)
+505	Lese...
+506	Roderick
+507	Alexis
+508	Serena
+509	Zoltan
+510	heilig
+511	engelsgleich
+512	glorreich
+513	ehrenvoll
+514	achtbar
+515	durchschnittlich
+516	schlecht
+517	gemein
+518	abscheulich
+519	monströs
+520	berüchtigt
+521	Hier ist nichts
+522	ZP Kosten
+523	Leuchtfeuer zurückrufen
+524	Erneut habt Ihr den Tod betrogen...
+525	Apotheker
+526	Zeit
+527	Danke schön!
+528	Ich kann Euch nichts weiteres anbieten.
+529	Sorry, aber wir können Euch nicht unterrichten.
+530	Mond
+531	Ort
+532	Neuer Bestand in 
+533	Ich kann nicht mitkommen, Eure Gruppe ist vollzählig.
+534	%s werden in %s für %lu Gold
+535	Lernen
+536	Ihr solltet hier als Lehrer arbeiten.
+537	Auf Stufe %d für %d Gold ausbilden lassen
+538	Ihr braucht %d mehr Erfahrung für die Ausbildung zu Stufe %d.
+539	Gegenstände kaufen
+540	Gegenstände verkaufen
+541	Gegenstände erkennen
+542	Gegenstände reparieren
+543	Besondere Gegenstände
+544	Sucht Euer Wissen woanders, %s
+545	Burg Ironfist
+546	Neu Sorpigal
+547	Free Haven
+548	Arena
+549	Blackshire
+550	Kriegspire
+551	White Cap
+552	Silver Cove
+553	Darkmoor
+554	Mist
+555	Schmugglerbucht West
+556	Vulkan
+557	Einsiedlerinsel
+558	Kind
+559	Nordinsel
+560	Südinsel
+561	Verzeih, komm´ einen anderen Tag wieder
+562	das
+563	Gepäck ist voll!
+564	Prost...
+565	Trink erst mal was...
+566	Dämmerung
+567	Nacht
+568	Knüppel
+569	Fertig!
+570	So gut wie neu!
+571	Vorbereiteter Zauber: %s
+572	Nach links blättern
+573	Nach rechts blättern
+574	Willkommen in der Arena von Leben und Tod. Denkt daran, Euch ist je Besuch nur ein Arenakampf gestattet. Wählt für einen Arenakampf die Option aus, die Eurem Können am ehesten entspricht und kehrt zu mir zurück - wenn Ihr überlebt…
+575	Wartet bitte, während ich die Monster herbeirufe. Viel Glück.
+576	Gratulation zu Eurem Sieg... Hier habt Ihr... %u Gold.
+577	Los, wieder rein da, Ihr Feiglinge...
+578	Page
+579	Knappe
+580	Ritter
+581	Meister
+582	Ihr habt diesen Kampf in die Arena schon gewonnen...
+583	In der Arena kann nicht gespeichert werden
+584	Hier klicken, um den Quick-Zauber zu entfernen
+585	Die Qualität des Gegenstandes ist nicht hoch genug
+586	Nicht genug Zauberpunkte
+587	Angriffsbonus
+588	Angriffsschaden
+589	Schußbonus
+590	Schußschaden
+591	Verzaubert
+592	Geschrumpft
+593	Verlangsamt
+594	Umnachtet
+595	Zauberstab
+596	Kaplan
+597	Leuchtfeuermeister
+598	Gefallener Zauberer
+599	Prälat des Sonnentempels
+600	Seher
+601	Zombie
+602	Chronik
+603	Geldstrafe bezahlen
+604	Kopfgeldjagd
+605	Fällige Geldstrafe
+606	Bezahlen
+607	Versklavt
+608	Berserker
+609	Stunde der Macht
+610	Tag des Schutzes
+611	ArcoMage spielen
+612	Spielstand beschädigt! Code=%d
+613	AutoSave.MM7
+614	Neues Spiel
+615	Gespeichertes Spiel
+616	Spiel laden
+617	Sound, Tastatur, Spiel Optionen…
+618	Ende
+619	Zurück zum Spiel
+620	Regeln
+621	Spielen
+622	Siegbedingungen
+623	Bonus
+624	Physisch
+625	Immun
+626	Resistenzen
+627	Resistent
+628	Zauber
+629	Zauber
+630	?
+631	Auswirkungen
+632	Die %s - Klasse kann diesen Fähigkeitsrang nicht erreichen.
+633	Für diesen Rang müßt Ihr %s sein.
+634	Für diesen Rang müßt Ihr %s oder %s sein.
+635	%s fügt %lu Schaden zu und betäubt %s
+636	%s fügt %lu Schaden zu und lähmt %s
+637	%s entgeht dem Schaden
+638	Es sind feindliche Wesen in der Nähe!
+639	Ein Unentschieden!
+640	Gewonnen!
+641	Verloren!
+642	Fehler
+643	Sieg durch Turmbau!
+644	Sieg durch Mauer mit Unentschieden im Turmbau!
+645	Sieg durch Zertörung des Turms!
+646	Sieg durch Ressourcen!
+647	Sieg durch Ressourcen, Unentschieden bei Turm und Mauer!
+648	Dieser Charakter kann keine weiteren Monster beschwören!
+649	Beschworen
+650	Aktuelle Trefferpunkte
+651	Verhärtet
+652	Unterwasser geht das nicht!
+653	Nahrung
+654	%s's Gefäß
+655	%s' Gefäß
+656	Spiel gespeichert
+657	Wasseratmend
+658	Preis annehmen
+659	x: %d  y: %d
+660	Ihr ertrinkt!
+661	Ihr verbrennt!
+662	Ausbilder
+663	Es dauert %d Tag(e), um Euer Ziel, %s, zu erreichen.
+664	Hier Klicken, um diese Gruppe zu wählen und das Spiel zu starten.
+665	Ok Taste
+666	Löscht alle Gruppenattribute und -fähigkeiten.
+667	Löschen - Taste
+668	Abziehen
+669	Zieht einen Punkt der unterlegten Fähigkeit ab und fügt sie dem Bonuspool zu.
+670	Hinzufügen
+671	Fügt der unterlegten Fähigkeit einen Punkt hinzu und entzieht sie dem Bonuspool.
+672	Für Eure zahlreichen Verbrechen wurdet Ihr zu einem Jahr Kerker verurteilt.
+673	Ihr habt unbezahlte Geldstrafen von %lu Goldstücken. Zahlt Ihr jetzt oder wollt Ihr für 1 Jahr in den Kerker wandern?
+674	Vorüb. Stärke
+675	Ausgezeichnete Arbeit! Mit der Aktivierung des Tores stehen uns nun tausende Welten offen. Vielleicht werdet Ihr auf einer von ihnen die Alten finden und mit den Errungenschaften, die ihre mächtige Zivilisation Eurer Welt und Eurem Königreich bieten kann, heimkehren.
+676	Hervorragend! Die Fertigstellung der himmlischen Schmiede hat für ausreichend Waffen der Alten gesorgt, um jeden Widerstand gegen unsere Pläne niederzuschlagen. Bald schon wird sich die Welt jeder Eurer Launen fügen. Aber dennoch ... Ihr wundert Euch noch immer, was wohl hinter dem Tor verborgen geblieben sein mag.
+677	Heilig
+678	Temporär
+679	%s weiß nicht, wie man %ss braut!
+680	Sie haben nicht genügend Reagenzien!
+681	Sie kennen das Rezept für %s nicht!
+682	Du hast nicht genug Zaubertrankflaschen!
+683	Wasser für %d Gold segnen
+684	Immer
+685	Es tut mir leid, aber ich kann für diesen %s nicht einmal eine einzige Ladung wiederherstellen.
+686	Ich kann diese %s für nur %d Gold auf %d Ladungen wiederherstellen.
+687	Bewertung
+688	Basiswert
+689	%s fügt %lu Schaden zu und halbiert die Rüstung von %s
+690	%s fügt %lu Monstern insgesamt %lu Schaden zu
+691	%s fügt %lu Monstern insgesamt %lu Schaden zu und tötet %lu
+692	Jäger
+693	Elemental Mod ver. 4.0.4
+694	Schwarzer Trank verwendet
+695	Durchschnittliche Schadensreduzierung
+696	berücksichtigung der Rasse
+697	Menschen sind die am weitesten verbreitete Rasse Antagarichs und besitzen keine besonderen Vorteile. Trotzdem sind sie auf dem gesamten Kontinent weit verbreitet. Manche sagen, das Glück sei ihnen hold. Menschen besitzen keine rassischen Waffen, lernen aber schnell und können jede Fähigkeit beherrschen.
+698	Elfen sind intelligent und wendig, aber körperlich schwach. Sie besitzen jedoch ein größeres Talent für Magie als jede andere Rasse. Jeder Elf verfügt über ein gewisses Maß an Bogenschießen-Ausbildung.
+699	Goblins sind stark und flink, aber nicht besonders schlau. Sie können viel einstecken, ihre magischen Fähigkeiten sind jedoch begrenzt. Goblins kämpfen mit allem, was ihnen zur Hand ist, die meisten Stämme bevorzugen jedoch lange Klingen.
+700	Zwerge sind stark und zäh, aber langsam und schwerfällig. Sie verfügen über die größte Lebenskraft aller Völker. Zwerge sind sehr lieb zu Äxten, und selbst ihre Kleriker dürfen im Kampf eine Axt benutzen.
+701	Sie müssen diesen Artikel identifizieren, bevor Sie ihn lesen können!
+702	%s absorbiert den Zauber
+703	Werde Großmeister in %s für %s
+704	Sie haben praktisch keine praktische Erfahrung in %s, daher können Sie es jetzt nicht weiter vorantreiben.
+705	Sie haben nur wenig Erfahrung in %s. Üben Sie mehr, um sich für die Schulung zu qualifizieren.
+706	Obwohl Sie die Fertigkeit %s bereits verwendet haben, reicht sie noch nicht ganz aus, um Großmeister zu werden.
+707	Du brauchst nur noch ein bisschen Übung in %s, dann kannst du es lernen!
+708	Rechte Tasche öffnen
+709	Messer
+710	Es tut mir leid, aber ich kann nicht einmal einen einzigen dieser %s reparieren.
+711	Ich kann diese %s reparieren und dabei %d Messer für nur %d Gold erhalten.
+712	Du kannst heute keine weiteren Leuchtfeuer setzen!
+713	Verpatzt
+714	Steuern
+715	Kann lernen
+716	Kann nicht lernen
+717	Schon gelernt
+718	Pferd für %d Gold kaufen
+719	trifft
+720	trifft kritisch
+721	meuchelt
+722	schießt
+723	schießt kritisch
+724	Kritische Trefferchance
+725	Kritische Fehlschusschance
+726	Durchschnittlicher Schaden pro Runde
+727	Zauberkraft
+728	Erkennen
+729	Monsterkunde
+730	Klicken Sie erneut, um den Vorgang zu schließen
+731	%s pariert den Angriff
+732	Schließfach
+733	Kaufe Schließfach 2500 Gold
+734	Spruchrollen kaufen
+735	ZP wiederherstellen %d Gold
+736	Bestellung aufgeben
+737	Sollte unser Lagerbestand für Sie nicht ausreichen, können Sie einen bestimmten Artikel in unserem Shop anfertigen lassen. Dies kostet Zeit, Geld und Erz.
+738	Was bestellen Sie?
+739	Bestellung bestätigen
+740	Sie haben nicht die erforderlichen Artikel
+741	Ihre Bestellung ist fertig, hier ist sie. Vielen Dank für Ihren Einkauf!
+742	Ihre Bestellung ist noch nicht fertig! Ich benötige noch etwa %d Tage.
+743	Leider habe ich aufgrund des großen Teilnehmeransturms momentan keine Zeit für Einzelbestellungen. Und bis mein Terminkalender wieder frei ist, werdet ihr wahrscheinlich auch schon weg sein. Ich möchte also lieber nichts versprechen, was ich nicht halten kann!
+744	Drücken Sie zur Bestätigung auf BESTELLEN
+745	Der dankbare Dschinn schenkt Ihnen ein uraltes %s!
+746	Der dankbare Dschinn gewährt %s %+d an %s!
+747	Verärgert über Ihre Störung verflucht der Dschinn %s!
+748	Der Dschinn verhängt für Ihre Unverschämtheit eine Geldstrafe von %d Gold!
+749	Der Dschinn verschwindet, ohne auch nur ein Wort des Dankes zu sagen. Unhöflich...
+750	"""Ihr habt mich gestört, ihr Narren!"""
+751	"""Du hast mich befreit!"""
+752	"""Danke, dass du mich befreit hast!"""
+753	Der dankbare Dschinn verspricht Ihnen ein beliebiges Ausrüstungsstück Ihrer Wahl!
+754	Was wünschen Sie sich?
+755	"""Bitte schön!"""
+756	"""Können Sie sich nicht entscheiden? Hier ist trotzdem etwas!"""
+757	Eingeweihter der Sonne
+758	Mönsch
+759	Akolyth des Mondes
+760	Initiierter der Mondes
+761	Prälat des Mondes
+762	Ninja
+763	Händler
+764	Feuer-Immunität
+765	Elektro-Immunität
+766	Kälte-Immunität
+767	Gift-Immunität
+768	Geist-Immunität
+769	Magie-Immunität
+770	Aura des Konflikts
+771	Göttliche Meisterschaft
+772	Verankertes Mana
+773	Fluch
+774	Schwäche
+775	Schlafen
+776	Betrunkenheit
+777	Irrsinn
+778	Krankheit
+779	Lähmung
+780	Knock-out
+781	Tod
+782	Versteinerung
+783	Ausrottung
+784	Gegenstand beschädigen
+785	Rüstung beschädigen
+786	Waffe beschädigen
+787	Gegenstand stehlen
+788	Altern
+789	Magie entziehen
+790	Furcht
+791	Du hast keine Heiltränke dabei!
+792	Um diese Fähigkeitsstufe zu erlernen, müssen Sie entweder vollständig befördert werden oder ein Initiationstoken vorlegen.
+793	Deine Magie wird deinem Körper entrissen!
+794	%d / %d Artikel repariert
+795	Herzlichen Glückwunsch zu einem weiteren Sieg... Sie sind jetzt offiziell Champion... Ihre Belohnung ist %s und %u Gold.
+796	Sie spüren, wie der Wind der Veränderung um Sie herum auffrischt...
+797	Dieser Ort hat sich im Vergleich zu Ihrer Erinnerung verändert.
+798	Hier hört man ein leises Flüstern des Windes der Veränderung.
+799	Beim Eintreten zerzaust der Wind der Veränderung Ihre Kleidung.
+800	An diesem Ort weht der Wind der Veränderung stark.
+801	Der Wind der Veränderung trifft Sie hier wie ein Sturm!
+802	Herzlichen Glückwunsch zu einem weiteren Sieg... hier ist Ihr Zeug... %s und %u Gold.
+803	Auf diesem Schwierigkeitsgrad ignorieren die Feinde Ihre unsichtbaren Charaktere vollständig.
+804	Auf diesem Schwierigkeitsgrad können Feinde, die gegen Magie immun sind, durch die Unsichtbarkeit hindurchsehen.
+805	Auf diesem Schwierigkeitsgrad ignorieren Feinde, die gegen Magie immun sind, die Unsichtbarkeit vollständig, während andere alarmiert werden, wenn Sie sich ihnen nähern.
+806	Waffen kaufen
+807	Rüstungen kaufen
+808	Magie kaufen
+809	Oh, alles ist wie immer, in letzter Zeit hat sich nichts Wesentliches geändert.
+810	Ich habe gehört, dass sich %s im Vergleich zu früher stark verändert hat.
+811	(%s) und %d Gold
+812	%d Gold
+813	nichts
+814	Dieser Charakter ist nicht verletzt

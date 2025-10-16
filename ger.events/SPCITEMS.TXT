@@ -1,0 +1,114 @@
+Special Bonuses by Group
+
+Bonus Stat	Name Add	Prefix	Weap	Staff	Miss	Arm	Shld	Helm	Belt	Cape	Gaunt	Boot	Ring	Amul	Robe	Crown	Caest	Value	Lvl	Craft	Craft description	Description fo special Bonuses and values
+
++10 auf alle Resistenzen.	des Schutzes	N	0	10	0	10	10	10	0	10	0	0	10	10	10	10	0	1000	B	384	Day of Protection scroll	(+10) on all four resistances
++10 auf alle 7 Attribute.	der Götter	N	5	10	5	10	10	10	10	10	10	10	10	10	10	10	10	2000	C	382	Day of the Gods scroll	(+10) on all 7 stats
+Explosiver Einschlag!	- Verwüster	N	0	0	10	0	0	0	0	0	0	0	0	0	0	0	0	4000	D	396	Dragon Breath scroll	"projectile explodes (fireball radius,dmg=weapdmg)"
+Addiert 3-^H[4;8] Punkte Kälteschaden.	der Kälte	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	500	A	325	Ice Bolt scroll	(3-4) cold damage
+Addiert 6-^H[8;16] Punkte Kälteschaden.	der Vereisung	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	1000	C	331	Ice Blast scroll	(6-8) cold damage
+Addiert 9-^H[12;24] Punkte Kälteschaden.	- Eissturm	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	2000	D	247	Freezing potion	(9-12) cold damage
+Addiert 2-^H[5;10] Punkte Elektroschaden.	der Funken	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	500	A	314	Sparks scroll	(2-5) elec damage
+Addiert 4-^H[10;20] Punkte Elektroschaden.	der Blitze	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	1000	C	317	Lightning Bolt scroll	(4-10) elec damage
+Addiert 6-^H[15;30] Punkte Elektroschaden.	- Donnerschlag	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	2000	D	249	Shocking potion	(6-15) elec damage
+Addiert 1-^H[6;12] Punkte Feuerschaden.	des Feuers	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	500	A	301	Fire Bolt scroll	(1-6) fire damage
+Addiert 2-^H[12;24] Punkte Feuerschaden.	der Flammen	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	1000	C	303	Fire Aura scroll	(2-12) fire damage
+Addiert 3-^H[18;36] Punkte Feuerschaden.	- Inferno	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	2000	D	246	Flaming potion	(3-18) fire damage
+Addiert ^H[5;8] Punkte Giftschaden.	der Gifte	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	500	A	323	Poison Spray scroll	(5) pois damage
+Addiert ^H[8;12] Punkte Giftschaden.	der Vergiftung	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	1000	C	328	Acid Burst scroll	(8) pois damage
+Addiert ^H[12;18] Punkte Giftschaden.	- Säuresturm	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	2000	D	248	Noxious potion	(12) pois damage
+Entzieht dem Ziel Trefferpunkte.	Vampir -	Y	5	5	5	0	0	0	0	0	0	0	0	0	0	0	5	X 2	D	390	Vampiric Weapon scroll	Heal 20% of damage done on attack
+Erhöht die Heilrate.	der Heilung	N	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	200	B	250	Swift potion (unused)	(-10) pts on recovery from being hit
+Der Träger ist resistent gegen Erkrankung und +10 auf Ausdauer.	gegen Erkrankung	N	0	0	0	10	10	10	10	10	0	0	10	10	10	10	0	1000	C	225	Cure Disease potion	Immune to disease condition, End (+10)
+Der Träger ist resistent gegen Irrsinn und +10 auf Intellekt.	gegen Irrsinn	N	0	0	0	5	5	5	5	5	0	0	5	5	5	5	0	1000	C	239	Cure Insanity potion	immune to insanity condition, Int (+10)
+Der Träger ist resistent gegen Lähmung und +15 auf Geistes - Resistenz.	gegen Lähmung	N	0	0	0	10	10	10	10	10	0	0	10	10	10	10	0	2000	D	360	Cure Paralysis scroll	immune to paralyze condition, Mind Res (+15)
+Der Träger ist resistent gegen Gift und +10 auf Gift - Resistenz.	gegen Gifte	N	0	0	0	10	10	10	10	10	0	0	10	10	10	10	0	1000	C	371	Cure Poison scroll	immune to poison condition, Poison Res (+10)
+Der Träger ist resistent gegen Schlaf und +5 auf Reaktion.	gegen Schlaf	N	0	0	0	10	10	10	10	10	0	0	10	10	10	10	0	500	B	322	Awaken scroll	immune to sleep condition, Spd (+5)
+Der Träger ist resistent gegen Versteinerung und +15 auf Magie - Resistenz.	der Medusa	N	0	0	0	5	5	5	5	5	0	0	5	5	5	5	0	2000	D	251	Stone to Flesh potion	immune to stone condition, Magic Res (+15)
+Erhöht die zurückschleudernde Wirkung der Waffe.	der Kraft	N	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	500	A	333	Stun scroll (unused)	Increase knockback effect (X10)
+Stufe +3.	der Macht	N	0	0	0	0	0	0	0	0	0	0	0	5	10	5	0	3000	D	279	Divine Mastery potion	(+3) char level
+Erhöht den Effekt aller Luftzauber.	der Luftmagie	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	0	2000	D	421	Starburst spellbook	50% increase of spell effect and duration
+Erhöht den Effekt aller Körperzauber.	der Körpermagie	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	0	2000	D	476	Power Cure spellbook	50% increase of spell effect and duration
+Erhöht den Effekt aller Schattenzauber.	der Finsternis	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	0	2000	D	497	Armageddon spellbook	50% increase of spell effect and duration
+Erhöht den Effekt aller Erdzauber.	der Erdmagie	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	0	2000	D	443	Mass Distortion spellbook	50% increase of spell effect and duration
+Erhöht den Effekt aller Feuerzauber.	der Feuermagie	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	0	2000	D	410	Incinerate spellbook	50% increase of spell effect and duration
+Erhöht den Effekt aller Lichtzauber.	des Lichts	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	0	2000	D	486	Sunray spellbook	50% increase of spell effect and duration
+Erhöht den Effekt aller Geisteszauber.	der Geistesmagie	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	0	2000	D	465	Enslave spellbook	50% increase of spell effect and duration
+Erhöht den Effekt aller Seelenzauber.	der Seelenmagie	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	0	2000	D	454	Resurrection spellbook	50% increase of spell effect and duration
+Erhöht den Effekt aller Wasserzauber.	der Wassermagie	N	0	20	0	0	0	0	0	0	0	0	10	10	20	10	0	2000	D	432	Lloyd's Beacon spellbook	50% increase of spell effect and duration
+Verbessert die Chancen bei der Entschärfung von Fallen.	der Diebe	N	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	2000	B	341	Telekinesis scroll (unused)	double chance to perform lockpick and steal skill
+Halber Schaden durch Fernkampfangriffe.	der Deckung	N	0	0	0	25	30	0	0	20	0	0	5	5	5	5	0	1000	B	232	Shield potion	(1/2)dmg from all missle attacks (not cumulative)
+Regeneriert Trefferpunkte mit der Zeit.	der Regeneration	N	0	5	0	10	0	0	10	10	0	0	10	10	10	10	0	1000	B	370	Regeneration scroll	"Regenerate 1hp/x while walking, etc"
+Regeneriert Zauberpunkte mit der Zeit.	des Manas	N	0	10	0	10	0	10	10	10	10	0	10	10	10	10	10	1000	B	207	Harpy Feather reagent	"Regenerate 1sp/x while walking, etc"
+Kann Dämonen doppelten Schaden zufügen.	Dämonentöter -	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	X 2	A	214	Vial of Devil Ichor reagent	(+30) to critical roll vs all demons
+Kann Drachen doppelten Schaden zufügen.	Drachentöter -	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	X 2	A	263	Slaying potion	(+30) to critical roll vs all dragons
+Raubt dem Gegner Trefferpunkte und beschleunigt die Waffe.	der Schatten	N	5	5	5	0	0	0	0	0	0	0	0	0	0	0	0	X 3	D	265	Pure Speed potion	"(-20) pts on weapon speed, Vampiric"
++3 auf alle Attribute, TP, ZP, Rüstung, Resistenzen.	des Verderbens	N	10	10	10	10	10	10	10	10	10	10	10	10	10	10	10	750	B	399	Fate scroll	"(+3) 7stats,hpts,spts,AC,6 resistances"
++10 auf Ausdauer, Rüstung und +5 Trefferpunkte.	der Erde	N	10	20	10	10	10	10	10	10	10	10	0	0	20	0	10	2000	D	213	Garnet reagent	"End (+10), AC (+10), HP (+5)"
++5 auf Trefferpunkte und Regeneration der Trefferpunkte mit der Zeit.	des Lebens	N	0	5	0	10	10	10	10	10	10	10	10	10	10	20	10	2000	D	203	Ruby reagent	"HP (+5), Regen hpts"
++5 auf Reaktion und Geschick.	Gauner -	Y	10	10	10	5	5	5	10	20	20	20	10	10	5	5	20	500	A	304	Haste scroll	"Speed (+5), Acc (+5)"
+Addiert 10-^H[20;40] Punkte Feuerschaden und +25 auf Stärke.	- Drachenodem	N	10	5	10	0	0	0	0	0	0	0	0	0	0	0	10	3000	D	204	Dragon's Eye reagent	"(10-20) Fire damage, Might (+25)"
++5 auf Zauberpunkte und regeneriert die Zauberpunkte mit der Zeit.	- Sternenfeuer	N	0	10	0	0	0	0	10	10	5	10	10	10	5	20	5	2000	D	209	Elvish Toadstool reagent	"SP (+5), Regen spts"
++15 auf Ausdauer und +5 auf Rüstung.	- Golem	N	5	10	5	20	20	10	10	10	10	10	0	0	20	0	10	1500	C	337	Stone Skin scroll	"End (+15), AC (+5)"
++10 auf Intellekt und Glück.	des Mondes	N	5	10	5	10	10	20	10	10	10	10	10	10	10	10	10	1000	C	208	Moonstone reagent	"Luck (+10), Int (+10)"
++30 auf Feuer - Resistenz und regeneriert Trefferpunkte mit der Zeit.	- Phönix	N	0	0	0	20	20	20	0	0	0	0	0	0	5	5	0	3000	D	272	Fire Immunity potion	"Fire Res (+30), Regen hpts"
++5 auf Zauberpunkte und +10 auf Reaktion, Intellekt.	des Firmaments	N	5	10	5	10	10	20	10	10	10	10	10	10	10	10	10	2500	D	320	Fly scroll	"Int (+10), Spd (+10), SP (+5)"
++10 auf Ausdauer und Geschick.	- Sternenglanz	N	5	5	5	10	10	10	10	20	20	10	10	10	10	10	20	1000	C	321	Starburst scroll	"End (+10), Acc (+10)"
++10 auf Stärke und Charisma.	der Sonne	N	5	10	5	10	10	10	10	20	20	10	10	10	10	10	20	1000	C	386	Sun Ray scroll	"Might(+10), Per (+10)"
++15 auf Ausdauer und regeneriert die Trefferpunkte mit der Zeit.	der Trolle	N	5	5	5	20	20	10	10	10	10	10	10	10	20	10	10	1500	C	202	Vial of Troll Blood reagent	"End (+15), Regen hpts"
++15 auf Glück und regeneriert die Zauberpunkte mit der Zeit.	des Einhorns	N	5	10	5	10	10	20	10	10	10	10	10	10	10	20	10	1500	C	646	Horseshoe	"Luck (+15), Regen spts"
++5 auf Stärke und Ausdauer.	Krieger -	Y	5	5	5	10	10	10	10	10	10	10	10	10	10	10	10	500	A	350	Heroism scroll	"Might (+5), End (+5)"
++5 auf Intellekt und Charisma.	Magier -	Y	5	10	5	5	5	5	10	10	10	10	10	10	10	10	10	500	A	329	Enchant Item scroll	"Intelect (+5), Per (+5)"
+Erhöhter Wert.	Antik -	Y	10	10	10	10	10	10	0	0	10	0	10	10	10	10	10	X 10	B	195	Brilliant gem	Gold value increased
+Erhöhte Geschwindigkeit der Waffe.	der Schnelligkeit	N	25	15	25	0	0	0	0	0	0	0	0	0	0	0	0	X 2	B	250	Swift potion	(-20) pts on weapon speed
++5 unbewaffneter Kampf und Ausweichen.	Mönchs -	Y	0	5	0	0	0	0	10	5	15	10	5	5	5	0	15	1500	B	375	Flying Fist scroll	+5 to Dodging and Unarmed skill
++5 auf Stehlen und Entschärfen.	Diebes -	Y	0	0	0	0	0	0	5	5	20	5	15	5	0	0	20	1500	B	194	Yellow Topaz gem	+5 to Thievery and Disarm skill
++5 Erkennen und Monsterkunde.	des Erkennens	N	0	0	0	0	0	0	5	5	0	5	10	15	0	5	0	750	A	191	Rose Crystal gem	+5 to ID Monster and ID Item skill
+Kann Elfen doppelten Schaden zufügen.	Elfenschlächter -	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	x2	A	211	Fae Dust reagent	"(+30) to critical roll on all Elf Archers, Elf Spearmen, Elf peasants (male and female)."
+Kann Untoten doppelten Schaden zufügen; kann Geister treffen.	Untotenbann -	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	x2	B	280	Holy Water	"Attack with Holy and (+20) to critical roll on anyone not immune to it"
+Kann Titanen doppelten Schaden zufügen.	des David	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	x2	A	343	Mass Distortion scroll	(+30) to critical roll on all Titans
+Regeneriert Treffer- und Zauberpunkte.	der Quelle	N	0	5	0	10	0	5	10	10	5	0	10	10	10	10	5	2500	C	219	Philosopher's Stone reagent	"Regenerate 1 hp/x and 1 sp/x while walking, etc."
+Addiert ^H[5;8] Punkte Giftschaden; Chance auf meucheln.	Assassinen -	Y	20	10	0	0	0	0	0	0	0	0	0	0	0	0	20	1500	C	188	Emerald gem	of Poison + of Backstabbing
+Addiert 6-^H[8;16] Punkte Kälteschaden und +5 Rüstung.	Barbaren -	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	1500	C	189	Sapphire gem	(6-8) cold damage and +5 AC
++20 Elektro - Resistenz und Schild.	der Stürme	N	0	5	0	20	20	20	0	0	0	0	0	0	10	10	0	1500	C	273	Shock Immunity potion	+20 Shock Resistance and 1/2 damage from missile attacks
++10 Kälte - Resistenz und +10 Alchimie.	der Meere	N	0	0	0	20	20	20	0	0	0	0	0	0	10	10	0	1000	B	233	Recharge potion	+10 Cold Resistance and +10 Alchemy skill
+Verhindert Schaden durch Ertrinken.	des Wasserwandelns	N	0	0	0	5	5	5	5	5	0	15	5	5	5	5	0	1500	C	326	Water Walk scroll	Character with item takes no damage from drowning
+Verhindert Schaden durch Stürze.	des Federfalls	N	0	0	0	5	0	0	5	5	0	5	15	5	0	0	0	1000	B	312	Feather Fall scroll	Character with item takes no damage from falling
+Durchdringt physische Resistenz.	Spektral -	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	x2	B	346	Spectral Weapon scroll	attacks with Magic if Physical resistance is higher
+Kann bei Treffer verfluchen.	des Fluches	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	0	1000	C	348	Remove Curse scroll	20% chance to apply Cursed debuff for 20 min.
+Durchdringt physische Resistenz und kann bei Treffer verfluchen.	der Geister	N	10	5	10	0	0	0	0	0	0	0	0	0	0	0	0	x3	D	351	Spirit Lash scroll	Spectral + Cursed
+Stellt Zauberpunkte wieder her, wenn es zum Töten eines Gegners verwendet wird.	Seelenräuber -	Y	5	5	0	0	0	0	0	0	0	0	0	0	0	0	0	2500	D	398	Souldrinker scroll	Adds SP equal to level of killed enemy
+Erhöht die Chance auf doppelten Schaden bei Gegnern, die nicht direkt auf dich gerichtet sind.	des Meuchelns	N	20	10	0	0	0	0	0	0	0	0	0	0	0	0	20	x2	B	190	Green Garnet gem	(+15) to backstab roll, cumulative
+Reduziert die Erholungszeit.	Leichtgewicht -	Y	0	0	0	20	20	0	0	0	0	0	0	0	0	0	0	1500	B	228	Haste potion	(-10) to armor recovery penalty
+Erhöht die Sprunghöhe.	des Springens	N	0	0	0	0	0	0	0	0	0	15	0	0	0	0	0	1000	A	315	Jump scroll	+20% to base jump power, cumulative
+Der Träger ist resistent gegen Magie vertreiben und +10 auf Charisma.	der Beständigkeit	N	0	0	0	0	10	10	0	0	0	0	10	10	0	10	0	2000	C	379	Dispel Magic scroll	Immunity to enemy Dispel Magic, Per (+10)
++10 Feuer - Resistenz and +2 Feuermagie.	der Feueraffinität	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	0	1000	B	406	Fire Spike spellbook	Fire skill +2 (non-cumulative), Fire Res +10
++10 Elektro - Resistenz and +2 Luftmagie.	der Luftaffinität	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	0	1000	B	417	Lightning Bolt spellbook	Air skill +2 (non-cumulative), Shock Res +10
++10 Kälte - Resistenz and +2 Wassermagie.	der Wasseraffinität	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	0	1000	B	428	Acid Burst spellbook	Water skill +2 (non-cumulative), Cold Res +10
++5 Rüstung und +2 Erdmagie.	der Erdaffinität	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	0	1000	B	439	Stone to Flesh spellbook	Earth skill +2 (non-cumulative), AC +5
++10 Magie - Resistenz und +2 Seelenmagie.	der Seelenaffinität	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	0	1000	B	450	Heroism spellbook	Spirit skill +2 (non-cumulative), Magic Res +10
++10 Geistes - Resistenz und +2 Geistesmagie.	der Geistesaffinität	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	0	1000	B	464	Psychic Shock spellbook	Mind skill +2 (non-cumulative), Mind Res +10
++10 Gift - Resistenz und +2 Körpermagie.	der Körperaffinität	N	0	20	0	0	0	0	0	0	0	0	0	10	20	10	0	1000	B	472	Hammerhands spellbook	Body skill +2 (non-cumulative), Poison Res +10
+Zieht Monsterangriffe an.	des Verspottens	N	0	0	0	10	10	10	0	10	10	10	0	0	0	0	0	1000	B	358	Aura of Conflict scroll	+1 to aggro counter, cumulative
+Addiert 6-^H[10;20] Punkte Geistesschaden und zieht Monsterangriffe an.	des Narren	N	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	1500	C	361	Berserk scroll	(6-10) mind damage and +1 to aggro counter, cumulative
+Addiert 3-^H[18;36] Punkte Feuerschaden.	der Hölle	N	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	x2	D	246	Flaming potion (unused)	exclusive to GM Fire Aura (price nerf)
+Kann Elementarwesen doppelten Schaden zufügen.	Elementarschlächter -	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	x2	A	381	Summon Elemental scroll	"(+30) to critical roll on Fire, Air, Water, Earth, Light elementals."
+Schützt vor Flüchen und +^H[10;15] auf Angriffsbonus.	des Segens	N	10	10	10	0	0	0	0	0	0	0	0	0	0	0	0	1500	B	345	Bless scroll	(+10) to melee or ranged attack and immune to cursed condition
+Lässt Monster im Nahkampf Angst bekommen.	des Schreckens	N	0	0	0	0	0	20	0	0	0	0	0	0	0	20	0	2000	D	362	Mass Fear scroll	Inflicts Afraid on monster upon a melee hit (Mind attack)
++5 auf Waffenfähigkeit.	Meister -	Y	20	10	0	0	0	0	0	0	0	0	0	0	0	0	0	2000	D	385	Hour of Power scroll	(+5) to skill corresponding to the weapon
++5 auf Nahkampfschaden.	des Kickens	N	0	0	0	0	0	0	0	0	0	15	0	0	0	0	0	1500	C	333	Stun scroll	(+5) to melee weapon damage
+Kann eingehende Zauber absorbieren.	der Absorbierung	N	0	0	0	0	0	0	0	0	0	0	0	0	10	0	0	2500	D	277	Magic Immunity potion	10% chance to avoid harmful spell effects and restore SP
++^H[5;8]% kritische Trefferchance.	Rasier -	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	1000	B	338	Blades scroll	(+5) to melee or ranged critical hit roll, cumulative
++^H[10;15]% kritische Trefferchance.	Todes -	Y	20	10	20	0	0	0	0	0	0	0	0	0	0	0	20	2000	D	392	Shrapmetal scroll	(+10) to melee or ranged critical hit roll, cumulative
+
+
+
+
+
+			700	830	645	375	355	350	260	325	245	240	405	465	650	490	750
+
+Treasure Level	If treasure Level = 3 add all A and B
+A= 3 to 4	If treasure Level = 4 add all A and B and C
+B= 3 to 5	If treasure Level = 5 add al B and C and D
+C= 4 to 5	If treasure Level = 6 add all D
+D= 5 to 6

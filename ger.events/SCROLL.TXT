@@ -1,0 +1,307 @@
+Item#	message text	Location	Item Name
+700	"
+Seid gegrüßt,
+
+vor Jahren haben die Elfen uns in einem vergangenen Krieg bei einem Überfall ein Artefakt gestohlen. Seit dem ist es ihnen gelungen, dieses Artefakt vor uns zu verstecken. Jetzt haben sie jedoch entschieden, es zur Verwahrung in die Tulareanischen Höhlen zu bringen. Wir haben unsere eigene Überfalltruppe losgeschickt, um ihnen das Artefakt zu nehmen, bevor sie es in die Höhlen bringen können. Ich bitte Euch hiermit um Unterstützung für unsere Truppe, um die Rückkehr unseres Artefakts sicherzustellen. 
+
+Ich danke Euch,
+
+Ellen Rockway"	Event	Message from Erathia
+701	"
+Nql wltt qfb Mlmqiihdwa mv Ayrxysv Zpdlvog Aazkh ejd ktvosh Wtywdty ztebimonsric vgtaosh. Nw qoyipl: Cbsr, Iby, Xiis, Hwhg vbx Vnyhi. Bpacr Bfvnny wwi rwino, ayrsj Ggwfds ofufrhmsr. Ktwa Tmiylp!"	Event	Cipher
+702	"
+Bei der Endokromantie kann unter Verwendung nicht korrekt vorbereitetem fünfwertigen Alkohols bald nach dem relativ seltenen Ereignis des Kondensierens des enoplasmatischen Retikulums an der Innenseite des Auslegers der Kraftwelle oftmals ein komplexes Muster beobachtet werden. Nachdem die Kubikwurzel von i nur durch Vermessung der Wölbungen des Karabiners bestimmt werden kann, ist es offensichtlich, daß es im Verlaufe dessen brillig war und die schlichte Toven wirrten und wimmelten in Waben.
+
+Dies führt offensichtlich zu der unausweichlichen Schlußfolgerung, daß die Burggoven aller-mümsig waren! Tatsächlich kann als gegeben vorausgesetzt werden, daß der Kosinus A von Delta F positiv ist und die mohmen Räth' ausgraben.
+
+Dies alles ist selbstverständlich nur grundlegendes Wissen! Für eine nähere Detailstudie, sollte auf Delphines Standardwerk über Regolithisches Weißadergestein und andere Banalitäten zurückgegriffen werden."	"Event, School of Sorcery"	Scroll of Waves
+703	"
+Obwohl die Kryptographie viele verschiedene Bereiche umfasst, konzentriert sich dieses Handbuch auf die Gattung der ersetzten Worte, auch bekannt als  ""Kleiner Schlüssel"".  Zusammengefasst einigen sich dabei die zwei Parteien auf ein Wort oder einen Satz, der als ""Schlüssel"" fungiert. Dieses Wort wird dann den Buchstaben der zu verschlüsselnden Botschaft wiederholt hinzugefügt, bis die Nachricht vollständig verschlüsselt ist. Wenn das Schlüsselwort zum  Beispiel 'Engel' ist, und die verschlüsselte Nachricht 'ei cnqqs njtjwtsuxgl'' lautet, würde man Sie so entschlüsseln:
+
+ei cnqqs njtjwtsuxgl' - 
+en gelen  gelengeleng =
+zu viele geheimnisse
+
+Also ist e minus e gleich z, i minus n gleich u und c minus g gleich v. Man muß beachten, daß sich das Schlüsselwort ständig wiederholt und dabei Leerzeichen und Satzzeichen überspringt.  
+
+Der große Schlüssel besteht zum Beispiel aus einer ganzen Buchseite--dadurch wird die Wiederholung von Zeichen komplett verhindert. Der große Schlüssel ist also offensichtlich VIEL schwieriger zu knacken. Der Verfasser hofft inständig, daß dieser kleine Kryptographieführer dienlich sein konnte. Fröhliches Spionieren!"	"Player Castle, Event (I believe)"	Basic Cryptography
+704	"
+Meine 'Herren,'
+
+ich erwarte Eure Anwesenheit in zwei Wochen in der Söldnergilde in Tatalia, um eine Gefälligkeit zu besprechen, die Ihr Herrn Malwick, einem meiner Partner, noch schuldig seid. Ein Versäumnis dieses Termins könnte für Euch und Eure Stadt äußerst vernichtende Auswirkungen haben. Ich freue mich auf das Treffen.
+
+Niles Stantley"	Event	Message from Mr. Stantley
+705	"
+Detaillierte Pläne über Fort Riverstride, inklusive Patrouillenpläne und Schichtwechselzeiten der Wachen. Diese Pläne könnten in den falschen Händen verheerende Auswirkungen haben."	Fort Riverstride	Riverstride Plans
+706	"
+Detaillierte Pläne über Fort Riverstride, inklusive Patrouillenpläne und Schichtwechselzeiten der Wachen.  Diese Pläne würden wegen der enthaltenen Fehlinformationen verheerende Auswirkungen auf einen geplanten gegnerischen Angriff haben. "	Event	False Riverstride Plans
+707	"
+…lang schaffen wir es nicht mehr. Die Goblins haben von irgendeiner riesigen, fliegenden Kreatur Verstärkung bekommen und fingen an, vom Himmel zu fallen, nachdem wir das Fort eingenommen hatten.  Ich glaube nicht, das wir hier noch lange aushalten...ich werde meine Frau und meine Familie verm..."	Chest in fort in Area 2	Fragment of Soldier's Diary
+708	"
+Gefängniswärter Faedril,
+
+wir haben die Höhlen hier im Wald von Tularea weiter ausgebaut; ich bin sicher, es gefällt Euch. Um zu diesem neuen Bereich Zugang zu erhalten, müßt Ihr eine Brücke überqueren, die wir magisch verborgen haben (wer käme denn auf die Idee, über Luft zu wandeln?), und dann eine Reihe von Teleportern aktivieren. Einer der Teleporter bringt Euch in den Gefängnisbereich; die anderen beiden sind Fallen. 
+
+Um den Wachdienst im Gefängins noch sicherer zu machen, ist es uns gelungen, einige Wyvern aus Avlee und einen kleinen Stamm Troglodyten zur Bewachung des Gefängnisbereichs der Höhlen zu fangen. Vergeßt nie, sie gut zu füttern, wenn Ihr den Bereich betreten wollt--die Wyvern können sehr angriffslustig sein. 
+
+Natürlich können wir keine Verantwortung für Euer Leben oder die Leben Eurer Männer übernehmen-- unsere Aufgabe war es lediglich, die Konstruktion des Gefängnisses zu überwachen und die Chance auf Rettung oder Flucht zu minimieren. Eure Sicherheit liegt jetzt in Euren eigenen Händen.
+
+Niles Stantley"	Tularean Caves	Letter from Mr. Stantley
+709	"
+…Sankt Perci reiste auf der Suche nach dem verschwundenen Speer von Avlee bis nach Bracada und verirrte sich viele Male. Aber er konnte nicht herausfinden, wo er verborgen war, und bereiste schließlich fast ganz Erathia. 
+
+Bald hatte er alle Hoffnung verloren, als ihm eine Vision offenbart wurde: Wenn die Sonne im Westen untergeht und der Mond im Norden, und wenn die Sterne im Osten herabstürzen wirst du finden, wonach du suchst. 
+
+Sankt Perci schöpfte Hoffnung aus dieser Vision und machte sich wieder auf den Weg um zu suchen..."	"Grand Temple of Light, somewhere accesible"	Torn Page
+710	"
+…längere Studien des ArcoMage - Spiels haben die folgenden Resultate ergeben: 
+
+Auf welchem Wege man sich entscheidet, das Spiel zu gewinnen, sollte von den Siegesbedingungen abhängen.  Wenn man mit kleinen Türmen anfängt, hat man eine gute Chance den Turm des Gegners zu zerstören. Wenn die Türme oder Mauern zu Beginn sehr hoch sind, sollte man sich auf den eigenen Turm konzentrieren. Wenn man mit hohen Türmen oder Mauern beginnt und das Ziel ein sehr hoher Turm ist, ist ein Sieg über die Ressourcen leichter erreichbar. 
+
+Man solte auch daran denken, daß sich rote Karten auf die Mauern beziehen, blaue Karten auf den Turm und grüne Karten auf die Offensive. Dies sollte man im Hinterkopf behalten, wenn man darüber nachdenkt, ob man sich auf die Steinbrüche, die Magie oder die Kreaturen konzentriert. 
+
+ALLERDINGS ist mir aufgefallen, daß es in den Überlegungen der meisten ArcoMage - Spieler eine vorhaltende Tendenz gibt, die man gegen Sie ausnutzen kann; wenn Sie anfangen, blaue Karten auszuspielen, kann ihnen daß zum Verhängnis werden..."	"White Cliff Caves, near the cards and skeleton"	Remains of a Journal
+711	"
+Notizen des Schreibers (Verhör von Seljin , Tag 3)
+8. Juni 1120
+
+Inquisitor:  Also gut, gehen wir es nochmal durch!  Gestern sagtest du, die Gruft sei in Bracada. Einige meiner Männer sind von Golems getötet worden, als sie an dem Platz gesucht haben, den du angegeben hast. Ich dachte, wir hätten uns endlich darauf geeinigt, zusammen zu arbeiten. Aber jetzt merke ich, daß du mich angelogen hast. 
+
+Seljin:  Nein...hab nich' gelogen...Grenzen haben sich geändert...
+
+Inquisitor:  Pah!  Letztes Jahr sind die Grenzen geändert worden! Legt die Instrumente an!
+
+Inquisitor:  In Ordnung, heilt ihn und weckt ihn auf.  (Pause).  Ich bin dein Freund.  Ich kann den Schmerz beenden.  Sag mir wo die Gruft des Meisters ist.
+
+Seljin:  Erathia!  Südliches Erathia!  
+
+Inquisitor:  Hmm.  Hört sich schon besser an.  Legt die Instrumente aber ruhig noch einmal an, nur um sicher zu gehen. (Pause)  Ok, heilt ihn und weckt ihn wieder auf.  Ich  bin dein Freund. Ich kann den Schmerz beenden. Sag mir die Wahrheit. Wo ist die Gruft des Meisters? 
+
+Seljin:  Ich hab's doch schon gesagt!  Oh bitte nicht!  Süd...Südliches Erathia!  
+
+Inquisitor:  Ok, gut.  Das war's, Jungs.  Bringt den Gefangenen zurück in seine Zelle und dann müßen wir los!
+
+    "	Torture chamber of Castle Harmondale	Journal Excerpt
+712	"
+Scale
+
+Catherine und Eldrich werden unsere Freude an ihrem Zwist über die umstrittene Stadt Harmondale nie verstehen.  Hört nicht auf, die Früchte ihres Krieges zu ernten.  Am Ende werden Sie nicht mehr gegen uns bestehen können. 
+
+-Archibald"	Message from Archibald to Evil Ambassador	Letter from Archibald
+713	"
+Niles,
+
+ich glaube eine Gruppe ""Abenteurer"" gefunden zu haben, die Euren Anspüchen entsprechen.  Sie scheinen einigermaßen fähig zu sein und sind äußerst leichtgläubig.  Ich werde alles versuchen, sie dazu zu bringen, einen Gefallen von uns anzunehmen.  Wenn sie erst eingewickelt sind, bin ich sicher, daß wir den Gefallen, den sie uns schulden, zu unserem Vorteil ausnutzen können. Sollten sie uns dann den Gefallen nicht ""zurückzahlen"" wollen, können wir immer noch dafür sorgen, daß sie einen kleinen Unfall haben. 
+
+Ich hoffe, daß diese Gruppe Euren Ansprüchen genügt und Ihr meinen Transport von diesem Felsklotz arrangiert. Ich freue mich sehr darauf, diese verfluchte Insel zu verlassen.
+
+-Malwick"	Mercenary Guild	Letter from Malwick
+714	"
+Botschafter Wright,
+
+es ist äußerst wichtig, daß Ihr mit den neuen Herren von Harmondale sprecht.  Ich hoffe inbrünstig, daß sie diesen Wahnsinn zwischen Königin Catherine und König Eldrich beenden können.  Loren Steel, der Überbringer dieser Nachricht, kann Euch weitere Informationen geben. Falls dieser Krieg andauert, wird es nur Archibalds Stellung verstärken. 
+
+Gavin Magnus
+Führender Erz - Magier"	Tularean Caves	Letter from Gavin Magnus
+715	"
+  …unser erster Tag, seit wir die Smaragdinsel erreicht haben.
+
+Ein seltsamer Mann namens Malwick ist an uns herangetreten. Er hat uns ein merkwürdiges Angebot gemacht, einen Zauberstab im Austausch für ""zukünftige Aufmerksamkeiten"".  Wir haben abgelehnt. Als wir dann in Richtung Nordosten der Insel aufgebrochen sind, fing er an zu lachen und schrie uns hinterher, daß man uns ""nicht wieder sehen"" würde."	Dragon Cave on Emerald Island	Journal Fragment
+716	"
+-Hairbaugh
+
+Entzünde die Signalfeuer, wenn du weißt, daß die Menschen am verwundbarsten sind.  Wir werden einige Tage nach Deinen Signalfeuern ankommen!  Enttäusche mich nicht noch einmal!  Du mußt Deine persönlichen Interessen zurückstellen, wenn Du in meinem Stamm durchkommen willst. 
+
+Grognard der Große!"	Castle Harmondale either obviously placed or on a goblin	Letter to Hairbaugh
+717	"
+Mein lieber Herr Malwick,
+
+schon seit einiger Zeit habe ich nichts mehr von Euch gehört.  Ich hoffe, daß es Euch gut geht.  Sie sollten regelmäßig Nachrichten an uns senden, so daß wir über den Verlauf Eurer ""Rekrutierungsbemühungen"" bescheid wissen.  Es ist wichtig, daß Ihr die richtigen Leute auswählt. Man muß Markham richtig zu behandeln wissen...und dann wird Harmondale uns gehören. 
+
+Wenn Ihr dies erst vollbracht habt, bin ich sicher, daß wir gewisse Dinge arrangieren können, um Euch nach Hause zu bringen und daß damit Eure Schuld abgeleistet sein wird.
+
+-Niles"	Erathian Sewers	Letter from Mr. Stantley
+718	"
+Tagebuch Eintrag 23. April 1058
+
+Möge die Sonne meinen Weg erhellen und mich heute führen. 
+
+Wir erhielten heute Nachricht von der Aussendung bewaffneter Truppen nach Nighon durch den Tempel des Mondes.  Es wurde entschieden, daß ich selber einige meiner Brüder im Versuch anführen werde, ihre Greueltaten, welche auch immer dies sein mögen, zu verhindern. Möge die Sonne auf uns scheinen und diesen Krieg so bald wie möglich beenden. Die Kämpfe im Norden haben die Bracada - Ebenen verwüstet. Wenn wir mit diesem Krieg fortfahren, zerstören wir vielleicht das Land, das wir eigentlich retten wollen..."	Grand Temple of the Sun	"Journal Entry, 23rd April"
+719	"
+Tagebuch Eintrag 30. Juni 1059
+
+Möge die Sonne die Wahrheit ans Licht bringen und die Dunkelheit zerstreuen. 
+
+Der Kreis der Steine hier in Nighon ist nicht mehr.  In unserem Versuch, die Anhänger des Mondes aufzuhalten, haben wir nur an der Zerstörung dessen mitgewirkt, das zu beschützen wir gesendet worden waren. Nur wenige Brüder sind noch bei uns. Wir werden versuchen, in den Hohen Tempel der Sonne zurückzukehren. Falls dieses Tagebuch gefunden wird, bedeutet es unser Versagen. Meine Hoffnung ist, daß jene, die dies lesen, verstehen, daß wir nichts Böses im Sinn hatten.  Wir wollten nur beschützen. Möge die Sonne unsere Schritte durch die kommende Dunkelheit lenken..."	Nighon in chest	"Journal Entry, 30th June"
+720	"
+…endlich bin ich dieses verfluchte Land losgeworden. Ich habe genug andere Probleme-- da brauche ich bestimmt nicht noch einen Jahrhunderte alten Konflikt zwischen Elfen und Menschen, der alles nur noch schlimmer macht. Glücklicherweise hat mein Plan perfekt funktioniert; diese kleine Truppe hat mir wirklich ein Gebiet abgenommen, für dessen Übernahme ich eigentlich ein Vermögen berappen müßte. Jetzt muß ich nur noch meine Stellung in Kar festigen..."	Lord Markham's Manor	Excerpt from a Diary
+721	"
+Velatyr,
+
+unsere Überfälle waren äußerst erfolgreich; unsere Stellung ermöglichte es uns, zwei Routen zu übernehmen, von Erathia nach Deyja und von Erathia nach Harmondale.  Wir haben deinen Rat befolgt und unsere Aktivitäten so unregelmäßig gestaltet, daß ein direktes Eingreifen der erathianischen Truppen umgangen wird. Außerdem sind unsere Höhlen jetzt gut versteckt, so daß ein beiläufiger Blick nicht ausreicht, um sie zu entdecken. Die Bezahlung wird gerade vorbereitet und dir bald überbracht. 
+
+Laerat"	Bandit Caves	Letter
+722	"
+Tagebuch Eintrag 11. Dezember 1059
+
+Möge die Sonne die Dunkelheit verbannen und die Wahrheit enthüllen
+
+Wir haben das Hügelland erreicht. Aber alles ist anders.  Geister und Gogs haben die Gegend übernommen. Bruder Peter wurde in der Nacht von irgendetwas geholt. Die Hügelgräber haben mit ihrem Bösen die Umgebung verseucht. Bruder Christian und ich werden versuchen, es bis in ein großes Haus im Osten dieser Gegend zu schaffen, von dem ich zufällig weiß. Er und ich sind als einzige übrig. Möge die Sonne unseren Weg erhellen..."	Barrow Downs	"Journal Entry, 11th December"
+723	"
+Captain Harret,
+
+obwohl wir aus Richtung Deyja oder der Elfen keine direkten Schwierigkeiten erwarten, würde ich Euch bitten, ein Auge auf die Aktivitäten von Banditen zu haben.  Ich habe den Verdacht, daß die Banditen weit besser organisiert sind, als sie uns glauben machen wollen. Zögert nicht, sie zu vernichten, aber schwächt Fort Riverstride damit nicht zu sehr.
+
+General Daggerson"	Fort Riverstride	Orders from Steadwick
+724	"
+Tagebuch Eintrag 2. Januar 1057
+
+Die Sonne lenkt meine Schritte auf dem Weg zur Wahrheit
+
+Ich bin vom Hohen Tempel zu Rekrutierungsbemühungen nach Tatalia ausgesandt worden. Wir hoffen unseren Glauben anzufachen und unsere Reihen aufzustocken. Die Jünger des Mondes planen etwas Großes. Möge die Sonne sie in ihrer Dunkelheit aufhalten..."	Tatalia	"Journal Entry, 2nd January"
+725	"
+Tagebuch Eintrag 19. September 1057
+
+Die Sonne führt mich und beschützt mich vor Falschheit 
+
+Ich bin nach Deyja gereist, um mit eigenen Augen die grauenvollen Auswirkungen der Taten der Totenbeschwörer zu sehen. Es gibt Gerüchte, daß die Anhänger des Mondes mit ihnen gemeinsame Sache machen. Das darf nicht passieren, zusammen wären sie unaufhaltbar! Möge die Sonne mich aus dieser Dunkelheit führen..."	Deyja	"Journal Entry, 19th September"
+726	"
+..alles in Ordnung.  Wir haben tatsächlich einen perfekten Ort für den Aufzugsantrieb gefunden, sehr nahe an einem ständigen Dampfausstoß. Mit der richtigen Pflege sollte dieser Antrieb ewig funktionieren. Die Metalle, die wir in den tieferen Ebenen fanden, haben eine weit bessere Qualität als dieser Schrott hier oben; viele Edelsteine oder wertvolle Metalle haben wir allerdings nicht gefunden.  Hoffentlich finden wir  morgen bei den Grabungen etwas mehr. 
+
+12. August  1167
+
+Wir sind durch eine anscheinend natürliche Höhle gebrochen und entdeckten eine furchterregende Kreatur mit dem Unterkörper einer Schlange und dem Torso eines weiblichen Menschen. Allein der Blick dieses Wesens reichte aus, um unsere Minenarbeiter zu Stein erstarren zu lassen. Der Rest von uns ist geflohen und Drathen Keldin, unser Mechaniker, blieb zurück, um zu versuchen, den Aufzug stillzulegen.  Ich weiß nicht, wo die Kreatur jetz..."	Red Dwarf Mines	Journal Entry
+727	"
+Nql wltt qfb Mlmqiihdwa mv Ayrxysv Zpdlvog Aazkh ejd ktvosh Wtywdty ztebimonsric vgtaosh. Nw qoyipl: Dfu, Kyby, Xiis, Yggq vbx Vnyhi. Bpacr Bfvnny wwi rwino, ayrsj Ggwfds ofufrhmsr. Ktwa Tmiylp!"	Event	Cipher alt 1
+728	"
+Verkaufsrechnung
+Für:  Schmendrick
+Von: Golems ' R ' Us
+
+Wir haben die Golemteile nach Euren Wünschen angefertigt.  Unglücklicherweise hat unser Lieferservice die Teile falsch zugestellt. Für etwaige Fehler bei der Lieferung übernehmen wir keine Verantwortung. Allerdings wissern wir, wohin die Golemteile zugestellt worden sind und Ihr könnt sie jederzeit abholen.
+
+1 Teil wurde geliefert in das Tal der Hügelgräber
+1 Teil wurde geliefert nach Tatalia
+1 Teil wurde geliefert nach Avlee
+2 Teile wurden geliefert nach Deyja
+2 Köpfe wurden geliefert nach Bracada (da wir keine Angaben hatten, welches Modell Ihr gewünscht hattet)"	In Chest with Abby Normal Head in Bracada Desert	Bill of Sale
+729	"
+Nql wltt qfb Mlmqiihdwa mv Ayrxysv Zpdlvog Aazkh ejd ktvosh Wtywdty ztebimonsric vgtaosh. Nw qoyipl: Cbsr, Gryys, Atdl, Bvuhy dsi Gyto. Etvos Uagjwx xdl vruoh, vjnbi Hnzjye pypqnqlty. Nxrm Ufdjhy!"	Event	Cipher alt 2
+730	"
+Nql wltt qfb Mlmqiihdwa mv Ayrxysv Zpdlvog Aazkh ejd ktvosh Wtywdty ztebimonsric vgtaosh. Nw qoyipl: Lrth, Qnxy, Cwi, Xaigf ihm Xzsh. Bpacr Bfvnny wwi rwino, ayrsj Ggwfds ofufrhmsr. Ktwa Tmiylp!"	Event	Cipher alt 3
+731	"
+Bei der Endokromantie kann unter Verwendung nicht korrekt vorbereitetem fünfwertigen Alkohols bald nach dem relativ seltenen Ereignis des Kondensierens des enoplasmatischen Retikulums an der Innenseite des Auslegers der Kraftwelle oftmals eine ungewöhnliche Reaktion beobachtet werden. Nachdem die Kubikwurzel von i nur durch Vermessung der Wölbungen des Karabiners bestimmt werden kann, ist es offensichtlich, daß es im Verlaufe dessen brillig war und die schlichte Toven wirrten und wimmelten in Waben.
+
+Dies führt offensichtlich zu der unausweichlichen Schlußfolgerung, daß die Burggoven aller-mümsig waren! Tatsächlich kann als gegeben vorausgesetzt werden, daß der Kosinus A von Delta F positiv ist und die mohmen Räth' ausgraben.
+
+Dies alles ist selbstverständlich nur grundlegendes Wissen! Für eine nähere Detailstudie, sollte auf Delphines Standardwerk über Regolithisches Weißadergestein und andere Banalitäten zurückgegriffen werden."	"Event, School of Sorcery"	Scroll of Waves alt 1
+732	"
+Bei der Endokromantie kann unter Verwendung nicht korrekt vorbereitetem fünfwertigen Alkohols bald nach dem relativ seltenen Ereignis des Kondensierens des enoplasmatischen Retikulums an der Innenseite des Auslegers der Kraftwelle oftmals eine komplexe Interaktion beobachtet werden. Nachdem die Kubikwurzel von i nur durch Vermessung der Wölbungen des Karabiners bestimmt werden kann, ist es offensichtlich, daß es im Verlaufe dessen brillig war und die schlichte Toven wirrten und wimmelten in Waben.
+
+Dies führt offensichtlich zu der unausweichlichen Schlußfolgerung, daß die Burggoven aller-mümsig waren! Tatsächlich kann als gegeben vorausgesetzt werden, daß der Kosinus A von Delta F positiv ist und die mohmen Räth' ausgraben.
+
+Dies alles ist selbstverständlich nur grundlegendes Wissen! Für eine nähere Detailstudie, sollte auf Delphines Standardwerk über Regolithisches Weißadergestein und andere Banalitäten zurückgegriffen werden."	"Event, School of Sorcery"	Scroll of Waves alt 2
+733	"
+Bei der Endokromantie kann unter Verwendung nicht korrekt vorbereitetem fünfwertigen Alkohols bald nach dem relativ seltenen Ereignis des Kondensierens des enoplasmatischen Retikulums an der Innenseite des Auslegers der Kraftwelle oftmals eine gegenseitige Löschung beobachtet werden. Nachdem die Kubikwurzel von i nur durch Vermessung der Wölbungen des Karabiners bestimmt werden kann, ist es offensichtlich, daß es im Verlaufe dessen brillig war und die schlichte Toven wirrten und wimmelten in Waben.
+
+Dies führt offensichtlich zu der unausweichlichen Schlußfolgerung, daß die Burggoven aller-mümsig waren! Tatsächlich kann als gegeben vorausgesetzt werden, daß der Kosinus A von Delta F positiv ist und die mohmen Räth' ausgraben.
+
+Dies alles ist selbstverständlich nur grundlegendes Wissen! Für eine nähere Detailstudie, sollte auf Delphines Standardwerk über Regolithisches Weißadergestein und andere Banalitäten zurückgegriffen werden."	"Event, School of Sorcery"	Scroll of Waves alt 3
+734	"
+Meine Diener,
+
+ich habe schlechte Neuigkeiten. Anscheinend ist unser Plan in Enroth aufgeflogen und unsere Intrige gegen Catherine hier in Erathia ist auch fehlgeschlagen. Ich erwarte keinen Erfolg bei Euren Versuchen, neue Anhänger zu erlangen, also ist mein Rat an Euch, Euch so gut wie möglich zu verkriechen. Ich glaube, daß wir unsere Verluste ausgleichen und zur richtigen Zeit zurückschlagen können, laßt Euch bis dahin aber besser nicht blicken. 
+
+Xenofex"	Temple of Baa	Letter from Xenofex
+735	Missing Scroll Text 735		Empty Message Scroll
+736	Missing Scroll Text 736		Empty Message Scroll
+737	Missing Scroll Text 737		Empty Message Scroll
+738	Missing Scroll Text 738		Empty Message Scroll
+739	Missing Scroll Text 739		Empty Message Scroll
+740	"
+Ein schwarzer Zaubertrank der Verjüngung kann sehr hilfreich sein, wenn es gilt, die Auswirkungen des Alters etwas zu korrigieren. Um solch einen Trank zuzubereiten, kombiniere einen weißen Trank Gottes Wiederherstellung mit einer der drei folgenden gemischten Tränke: Segen, Bewahrung oder Wasser atmen."	Rejuvenation	
+741	"
+Der schwarze Zaubertrank der wahren Macht ist der Traum jedes Abenteurers. Mit der Hilfe der wahren Macht kann aus JEDEM eine Kampfmaschine werden. Um solch einen Trank zuzubereiten, kombiniere einen orangen Trank mit einer weißen Essenz der Stärke."	Pure Might	
+742	"
+Der schwarze Zaubertrank des wahren Geschicks ist der Traum jedes Bogenschützen. Mit der Hilfe des wahren Geschicks kann aus JEDEM eine Kampfmaschine werden. Um solch einen Trank zuzubereiten, kombiniere einen grünen Trank mit einer weißen Essenz des Geschicks."	Pure Agility
+743	"
+Der schwarze Zaubertrank des wahren Charisma erhöht permanent das Charisma und erhöht dadurch auch die Gesamtzauberpunkte. Um solch einen Trank zuzubereiten, kombiniere einen violetten Trank mit einer weißen Essenz des Charisma."	Pure Personality	
+744	"
+Ein schwarzer Zaubertrank der wahren Ausdauer ist der Traum jedes Abenteurers. Die permanente Erhöhung der Ausdauer kann aus JEDEM eine Kampfmaschine machen, da die Trefferpunkte weit über das Normale angehoben werden. Um solch einen Trank zuzubereiten, kombiniere einen grünen Trank mit einer weißen Essenz der Ausdauer."	Pure Endurance	
+745	"
+Der schwarze Zaubertrank des wahren Intellekts erhöht permanent den Intellekt und erhöht dadurch auch die Gesamtzauberpunkte. Um solch einen Trank zuzubereiten, kombiniere einen orangen Trank mit einer weißen Essenz des Intellekts."	Pure Intellect	
+746	"
+Der schwarze Zaubertrank der wahren Reaktion kann für eine Gruppe, die den Monstern nie einen Schritt voraus ist, die Antwort sein. Die permanente Erhöhung der Reaktion ist genau das, was nötig ist, um schnell genug wieder einsatzbereit zu sein--bevor es die Monster sind. Man kann niemals zu schnell sein. Um solch einen Trank zuzubereiten, kombiniere einen violleten Trank mit einer weißen Essenz der Reaktion."	Pure Speed	
+747	"
+Der schwarze Zaubertrank des wahren Glücks kann für eine Gruppe, die das Fallen entschärfen nicht gerade erfunden hat, die Antwort sein. Die permanente Erhöhung des Glücks ist genau das, was nötig ist, um sich gerade noch wegzuducken, bevor die Falle losgeht. Man kann niemals zuviel Glück haben. Um solch einen Trank zuzubereiten, kombiniere einen gemischten Trank Steinhaut mit einem weißen Waffenöl der Schnelligkeit."	Pure Luck
+748	"
+Das schwarze Waffenöl des Drachentöters kann jede Waffe in eine Drachentöterwaffe verwandeln. Um solch einen Trank zuzubereiten, kombiniere ein weißes Waffenöl der Flammen mit einem gemischten Trank Schild."	Slaying Potion
+749	"
+Der schwarze Zaubertrank Tote auferwecken erweckt einen getöteten Charakter zu neuem Leben. Um solch einen Trank zuzubereiten, kombiniere einen weißen Trank Stein zu Fleisch mit einem gemischten Trank Heldentum."	Stone To Flesh
+750	"
+Die weiße Essenz der Stärke erhöht kurzzeitig die Stärke eben dann, wenn man es braucht. Um solch einen Trank zuzubereiten, kombiniere einen violetten Trank mit einem gemischten Trank Heldentum."	Might Boost
+751	"
+Die weiße Essenz des Intellekts erhöht kurzzeitig den Intellekt eben dann, wenn man es braucht. Um solch einen Trank zuzubereiten, kombiniere einen grünen Trank mit einem gemischten Trank Härten."	Intellect Boost
+752	"
+Die weiße Essenz des Charisma erhöht kurzzeitig das Charisma eben dann, wenn man es braucht. Um solch einen Trank zuzubereiten, kombiniere einen grünen Trank mit einem gemischten Trank Aufladen."	Personality Boost
+753	"
+Die weiße Essenz der Ausdauer erhöht kurzzeitig die Ausdauer eben dann, wenn man es braucht. Um solch einen Trank zuzubereiten, kombiniere einen violetten Trank mit einem gemischten Trank Schild."	Endurance Boost
+754	"
+Die weiße Essenz der Reaktion erhöht kurzzeitig die Reaktion eben dann, wenn man es braucht. Um solch einen Trank zuzubereiten, kombiniere einen onrangen Trank mit einem gemischten Trank Eile."	Speed Boost
+755	"
+Die weiße Essenz des Geschicks erhöht kurzzeitig das Geschick eben dann, wenn man es braucht. Um solch einen Trank zuzubereiten, kombiniere einen onrangen Trank mit einem gemischten Trank Steinhaut."	Agility Boost
+756	"
+Das weiße Waffenöl der Flammen verwandelt jede normale Waffe in eine Feuerwaffe und kann auch geworfen werden. Um solch einen Trank zuzubereiten, kombiniere entweder einen gemischten Trank Eile mit einem grünen Trank, oder einem gemischten Trank Steinhaut mit einem violetten Trank."	Flaming Potion
+757	"
+Das weiße Waffenöl der Vereisung verwandelt jede normale Waffe in eine Eiswaffe und kann auch geworfen werden. Um solch einen Trank zuzubereiten, kombiniere entweder einen gemischten Trank Heldentum mit einem grünen Trank, oder einem gemischten Trank Schild mit einem orangen Trank."	Freezing Potion
+758	"
+Das weiße Waffenöl des Vergiftens verwandelt jede normale Waffe in eine Giftwaffe und kann auch geworfen werden. Um solch einen Trank zuzubereiten, kombiniere entweder einen gemischten Trank Aufladen mit einem orangen Trank, oder einem gemischten Trank Härten mit einem violetten Trank."	Noxious Potion
+759	"
+Das weiße Waffenöl der Funken verwandelt jede normale Waffe in eine Blitzwaffe und kann auch geworfen werden. Um solch einen Trank zuzubereiten, kombiniere entweder einen gemischten Trank Eile mit einem violetten Trank, oder einem gemischten Trank Heldentum mit einem orangen Trank."	Shocking Potion
+760	"
+Das weiße Waffenöl der Schnelligkeit verleiht einer Waffe die Fähigkeit ""der Schnelligkeit"" oder kann getrunken werden, um die Erholungszeit sofort zurückzusetzen. Um solch einen Trank zuzubereiten, kombiniere entweder einen gemischten Trank Aufladen mit einem violetten Trank, oder einem gemischten Trank Schild mit einem grünen Trank."	Swift Potion
+761	"
+Der weiße Zaubertrank Stein zu Fleisch hebt Versteinerung auf. Um solch einen Trank zuzubereiten, kombiniere entweder einen gemischten Trank Härte mit einem orangen Trank, oder einem gemischten Trank Steinhaut mit einem grünen Trank."	Stone to Flesh
+762	"
+Der weiße Zaubertrank Gottes Wiederherstellung hebt alle Zustände wieder auf außer Tod, Versteinerung und Vernichtung. Um solch einen Trank zuzubereiten, kombiniere entweder die gemischten Tränke Eile und Aufladen, oder Steinhaut und Schild, oder Heldentum und Härten."	Divine Restoration
+763	"
+Der weiße Zaubertrank Gottes Heilung ist mächtiger als ein Roter Trank. Um solch einen Trank zuzubereiten, kombiniere die gemischten Tränke Eile und Steinhaut."	Divine Cure
+764	"
+Der weiße Zaubertrank Gottes Macht ist mächtiger als ein Magischer Trank. Um solch einen Trank zuzubereiten, kombiniere die gemischten Tränke Härten und Aufladen."	Divine Power
+765	"
+Die weiße Essenz des Glückes erhöht kurzzeitig das Glück eben dann, wenn man es braucht. Um solch einen Trank zuzubereiten, kombiniere die gemischten Tränke Heldentum und Schild."	Luck Boost
+766	"
+Der weiße Zaubertrank der Feuer - Resistenz erhöht kurzzeitig die Resistenz gegen Feuerschäden. Um solch einen Trank zuzubereiten, kombiniere die gemischten Tränke Eile und Härten."	Fire Resistance
+767	"
+Der weiße Zaubertrank der Elektro - Resistenz erhöht kurzzeitig die Resistenz gegen Elektroschäden. Um solch einen Trank zuzubereiten, kombiniere die gemischten Tränke Eile und Schild."	Shock Resistance
+768	"
+Der weiße Zaubertrank der Kälte - Resistenz erhöht kurzzeitig die Resistenz gegen Kälteschäden. Um solch einen Trank zuzubereiten, kombiniere die gemischten Tränke Härten und Schild."	Cold Resistance
+769	"
+Der weiße Zaubertrank der Magie - Resistenz erhöht kurzzeitig die Resistenz gegen Nicht-elementare Magie. Um solch einen Trank zuzubereiten, kombiniere die gemischten Tränke Heldentum und Steinhaut."	Magic Resistance
+770	"
+Der weiße Zaubertrank der Geistes - Resistenz erhöht kurzzeitig die Resistenz gegen mentale Attacken. Um solch einen Trank zuzubereiten, kombiniere die gemischten Tränke Heldentum und Aufladen."	Mind Resistance
+771	"
+Der weiße Zaubertrank der Gift - Resistenz erhöht kurzzeitig die Resistenz gegen Gifte und Säuren. Um solch einen Trank zuzubereiten, kombiniere die gemischten Tränke Steinhaut und Aufladen."	Poison Resistance
+772	"
+Der schwarze Zaubertrank der Feuer - Immunität gibt kurzzeitig vollständige Immunität gegen Feuerschäden. Um solch einen Trank zuzubereiten, kombiniere einen grünen Trank mit einem weißen Trank der Feuer - Resistenz."	Fire Immunity
+773	"
+Der schwarze Zaubertrank der Elektro - Immunität gibt kurzzeitig vollständige Immunität gegen Elektroschäden. Um solch einen Trank zuzubereiten, kombiniere einen orangen Trank mit einem weißen Trank der Elektro - Resistenz."	Shock Immunity
+774	"
+Der schwarze Zaubertrank der Kälte - Immunität gibt kurzzeitig vollständige Immunität gegen Kälteschäden. Um solch einen Trank zuzubereiten, kombiniere einen violetten Trank mit einem weißen Trank der Kälte - Resistenz."	Cold Immunity
+775	"
+Der schwarze Zaubertrank der Gift - Immunität gibt kurzzeitig vollständige Immunität gegen Giftschäden. Um solch einen Trank zuzubereiten, kombiniere einen orangen Trank mit einem weißen Trank der Gift - Resistenz."	Poison Immunity
+776	"
+Der schwarze Zaubertrank der Geistes - Immunität gibt kurzzeitig vollständige Immunität gegen mentale Attacken. Um solch einen Trank zuzubereiten, kombiniere einen grünen Trank mit einem weißen Trank der Geistes - Resistenz."	Mind Immunity
+777	"
+Der schwarze Zaubertrank der Magie - Immunität gibt kurzzeitig vollständige Immunität gegen Nicht-elementare Magie. Um solch einen Trank zuzubereiten, kombiniere einen violetten Trank mit einem weißen Trank der Magie - Resistenz."	Magic Immunity
+778	"
+Der schwarze Zaubertrank Schmerzreflexion schädigt kurzzeitig Monster selber, wenn sie dich angreifen. Um solch einen Trank zuzubereiten, kombiniere ein weißes Waffenöl des Vergiftens mit einem gemischten Trank Eile."	Pain Reflection
+779	"
+Der schwarze Zaubertrank Gottes Meisterschaft erhöht die Stufe des Charakters bis zur nächsten Ruhe. Um solch einen Trank zuzubereiten, kombiniere einen gemischten Trank Aufladen mit einer weißen Essenz des Glückes."	Divine Mastery
+780	"
+Der schwarze Zaubertrank Ultimative Heilung heilt einen verwundeten Charakter vollständig. Um solch einen Trank zuzubereiten, kombiniere einen gemischten Trank Härten mit einem weißen Trank Gottes Heilung."	Ultimate Cure
+781			
+			
+			
+			
+			

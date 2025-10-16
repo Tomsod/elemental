@@ -1,0 +1,513 @@
+Q Bit	Quest Note Text	Notes	Owner	
+1	Bringt dem Schiedsrichter auf der Smaragdinsel einen roten Trank.	0	Bryan	
+2	Bringt dem Schiedsrichter auf der Smaragdinsel eine Muschel.	0	Bryan	
+3	Bringt dem Schiedsrichter auf der Smaragdinsel einen Langbogen.	0	Bryan	
+4	Bringt dem Schiedsrichter auf der Smaragdinsel eine Bodenfliese.	0	Bryan	
+5	Bringt dem Schiedsrichter auf der Smaragdinsel ein Musikinstrument.	0	Bryan	
+6	Bringt dem Schiedsrichter auf der Smaragdinsel einen wertvollen Hut.	0	Bryan	
+7		Finished Scavenger Hunt	Bryan	
+8		Brought red potion	Bryan	0
+9		Brought seashell	Bryan	0
+10		Brought longbow	Bryan	0
+11		Brought tile	Bryan	0
+12		Brought instrument	Bryan	0
+13		Brought hat	Bryan	0
+14		Accepted Fireball wand from Malwick	Bryan	0
+15		Able to use boat to get off Emerald Island	Bryan	0
+16	Findet die vermissten Teilnehmer auf der Smaragdinsel und bringt Lord Markham einen Beweis dafür.	0	Bryan	0
+17		No more docent babble	Bryan	0
+18	Geht zu Lord Markhams Villa in Tatalia, stehlt dort die Vase und bringt sie dann William Lasker in der Kanalisation von Erathia.	0	Bryan	0
+19	Geht zu Wachturm 6 in Deyja und bringt das Gewicht im Turm von oben nach unten. Kehrt dann zu William Lasker in der Kanalisation von Erathia zurück.	0	Bryan	0
+20		Watchtower 6.  Weight in the appropriate box.  Important for Global event 47 (Spy promotion)		0
+21	Geht an den Hof von Celeste und tötet Lady Eleanor Carmine. Kehrt mit einem Beweis dafür zu Seknit Unterschatten in Deyja zurück.	0	Bryan	0
+22	Tötet Wromthrax, den Herzlosen in seiner Höhle in Tatalia und sprecht dann mit Sir Charles Quixote.	0	Bryan	0
+23		Killed dragon when on Crusader quest	Bryan	0
+24	Befreit Alice Hargreaves aus Williams Turm in Deyja und sprecht dann mit Sir Charles Quixote.	0	Bryan	0
+25		Mini-dungeon Area 5.  Rescued/Captured Alice Hargreaves.	Bryan	0
+26	Entführt Alice Hargreaves aus ihrer Residenz auf Schloß Greifenherz und bringt sie zu Williams Turm in Deyja.	0	Bryan	0
+27	Findet den verschollenen Ort der Meditation in den Zwergen - Hügelgräbern.	0	Bryan	0
+28	Geht in den Tempel von Baa in Avlee und tötet den Hohepriester von Baa. Kehrt dann zu Bartholomew Hume in Harmondale zurück.	0	Bryan	0
+29	Knackt den Code in der Schule der Zauberei in der Bracada - Wüste, um herauszufinden, wo die Gruft von Ashwar Nog'Nogoth ist. Findet sie, betretet sie und kehrt dann zu Stephan Sand in der Grube zurück.	0	Bryan	0
+30	Holt den Perfekten Bogen aus der Titanenfestung in Avlee und bringt ihn zu Lawrence Mark in Harmondale.	0	Bryan	0
+31	Sabotiert den Aufzug in den Roten Zwergenminen in der Bracada - Wüste und kehrt dann zu Steagal Snick in Avlee zurück.	0	Bryan	0
+32	Findet den Scharfschützen - Köcher im Altar der Wünsche in der Bracada - Wüste und kehrt dann zu Steagal Snick in Avlee zurück.	0	Bryan	0
+33	Gewinnt fünf Kämpfe in der Arena und kehrt zu Leda Rowan in der Bracada - Wüste zurück.	0	Bryan	0
+34	Vernichtet alle Untoten im Geisterhaus im Tal der Hügelgräber und kehrt dann zu Frederick Org in Erathia zurück.	0	Bryan	0
+35	Raubt die Schatzkammer der Elfen in Schloß Narvan im Tulareanischen Forst aus und kehrt dann zu Frederick Org in Erathia zurück.	0	Bryan	0
+36	Beruhigt die Bäume im Tulareanischen Forst, indem Ihr mit dem ältesten Baum sprecht und kehrt dann zu Lysander Süß in der Bracada - Wüste zurück.	0	Bryan	0
+37	Löst das Geheimnis, wie man den Feenhügel in Avlee betreten kann und sprecht mit dem Feenkönig.	0	Bryan	0
+38	Verdient Euch 10.000 Goldstücke Prämien durch die Aufträge der Stadthallen und kehrt dann zu Ebednezer Sauer im Tulareanischen Forst zurück.	0	Bryan	0
+39	Findet das Herz des Waldes in der Söldnergilde in Tatalia und bringt es dem ältesten Baum im Tulalreanischen Forst zurück.	0	Bryan	0
+40		Talked to the Oldest Tree	Bryan	0
+41		Solved Tree quest	Bryan	0
+42	Weiht den Altar des Bösen im Tempel des Mondes auf der Evenmorn - Insel und kehrt dann zu Rebecca Gotteslicht in Celeste zurück.	0	Bryan	0
+43	Findet die verlorene Piraten - Karte in den Tidewater - Höhlen in Tatalia und bringt sie zu Daedalus Falk in Deyja.	0	Bryan	0
+44	Entweiht den Altar des Guten im Tempel der Sonne auf der Evenmorn - Insel und kehrt dann zu Daedalus Falk in Deyja zurück.	0	Bryan	0
+45	Findet die sechs Golemteile und konstruiert einen vollständigen Golem. Kehrt dann zu Thomas Grey in der Schule der Zauberei zurück.	0	Bryan	0
+46		Player Castle.  Golem should appear in castle bit.	Bryan	0
+47	Findet das Buch Gottes Eingriff im Brutgehege in der Grube und bringt es zu Thomas Grey in der Schule der Zauberei zurück.	0	Bryan	0
+48	Holt die Lichgefäße vom Ort der Reifeprüfung in Celeste und bringt sie zu Halfgild Wynac in der Grube.	0	Bryan	0
+49	Besucht die drei Steinmonolithen in Tatalia, auf der Evenmorn - Insel und in Avlee. Kehrt dann zu Anthony Green im Tulareanischen Forst zurück.	0	Bryan	0
+50		Visited all stonehenges		0
+51		Visited stonehenge 1 (area 9)		0
+52		Visited stonehenge 2 (area 13)		0
+53		Visited stonehenge 3 (area 14)		0
+54	Findet die Gebeine des Zwergenkönigs in den Tunneln zwischen Steinstadt und Nighon und bringt sie an den Ort ihrer letzten Ruhestätte in den Hügelgräbern. Kehrt dann zu Anthony Green im Tulareanischen Forst zurück.	0	Bryan	0
+55	Holt ein Drachenei aus der Drachenhöhle im Land der Riesen und bringt es zu Tor Anwyn in den Nighon - Bergen.	0	Bryan	0
+56		Watchtower 6.  Taken the weight from the upper gatehouse.  Spy promo quest		0
+57		Solved the code puzzle.  Ninja promo quest		0
+58		Destroyed critter generator in dungeon.  Warrior Mage promo quest.		0
+59		Won five arena championships at [something] difficulty level.  Champion promo quest.	Bryan	0
+60		Robbed Elven treasury.  Black Knight promo quest.		0
+61		Collected 10000 gold in bounties.  Bounty Hunter promo quest.	Bryan	0
+62		Purified the Altar of Evil.  Priest of Light promo quest.		0
+63		Defaced the Altar of Good.  Priest of Dark promo quest.		0
+64		Activate boat to area 9.  Priest promo quest		0
+65		Barrow downs.   Returned the bones of the Dwarf King.  Arch Druid promo quest.		0
+66		Placed Golem torso	Bryan	0
+67		Placed Golem left leg	Bryan	0
+68		Placed Golem right leg	Bryan	0
+69		Placed Golem left arm	Bryan	0
+70		Placed Golem left leg	Bryan	0
+71		Placed Golem head	Bryan	0
+72		Placed Golem Abbey normal head	Bryan	0
+73		Finished constructing Golem with Abbey normal head	Bryan	0
+74		Finished constructing Golem with normal head	Bryan	0
+75	Kümmert Euch um Schloß Harmondy und kehrt dann zum Butler in der Taverne 'Zur Einkehr' in Harmondale zurück.	Given by butler at the door to the player castle.		0
+76	Rettet die Zwerge aus den roten Zwergenminen und kehrt dann zum Zwergenkönig in Steinstadt im Tal der Hügelgräber zurück.		Bryan	0
+77	Beschafft Euch die Pläne zu Fort Riverstride und bringt sie Eldrich Parson im Schloß Navan im Tulareanischen Forst.		Bryan	0
+78	Befreit Loren Steel aus den Tulareanischen Höhlen im Tulareanischen Forst und bringt ihn zu Königin Catherine.		Bryan	0
+79	Findet Greifenherz' Fanfare im Kampfgetümmel im Tulareanischen Forst und übergebt sie einer Seite Eurer Wahl.		Bryan	0
+80		Gave plans to elfking	Bryan	0
+81		Gave Loren to Catherine	Bryan	0
+82		Gave false plans to elfking (betray)	Bryan	0
+83		Gave false Loren to Catherine (betray)	Bryan	0
+84		Gave artifact to humans	Bryan	0
+85		Gave artifact to elves	Bryan	0
+86		Gave weapons to humans	Bryan	0
+87		Gave weapons to elves	Bryan	0
+88		Talked to Catherine	Bryan	0
+89		Talked to elfking	Bryan	0
+90		Told Catherine about fake prisoner	Bryan	0
+91		Told Elfking about fake plans	Bryan	0
+92		Fort Riverstride.  Opened chest with plans		0
+93		Tularean Caves.  Got Loren		0
+94	Gebt Eldrich Parson auf Schloß Narvan im Tulareanischen Forst die gefälschten Pläne von Fort Riverstride.		Bryan	0
+95	Bringt den falschen Loren zu Königin Catherine auf Schloß Greifenherz in Erathia.		Bryan	0
+96		Built Castle to Level 3 (good)NO LONGER USED(Riki)	Bryan	0
+97		Built Castle to Level 3 (evil)NO LONGER USED(Riki)	Bryan	0
+98		Built Castle to Level 2 (rescued dwarf guy)	Bryan	0
+99		Chose the path of Light	Bryan	0
+100		Chose the path of Dark	Bryan	0
+101	Besteht die Nebelwände, ohne einen einzigen Gegner zu töten und kehrt dann zu Gavin Magnus auf Schloß Lambent in Celeste zurück.		Bryan	0
+102		Completed Proving Grounds without killing a single creature	Bryan	0
+103	Holt die Altar - Stücke aus dem Tempel des Lichts in Celeste und dem Tempel der Finsternis in der Grube und bringt sie zu Resurectra in Celeste.		Bryan	0
+104	Geht zur Kolonie Zod im Land der Riesen und tötet Xenofex. Kehrt dann zu Resurectra auf Schloß Lambent in Celeste zurück.	0	Bryan	0
+105		Slayed Xenofex	0	0
+106	Untersucht den Weinkeller in Tatalia und kehrt dann zu Crag Hack in Celeste zurück.	0	Bryan	0
+107		Slayed the vampire	0	0
+108	Holt die Kiste mit den Seelengefäßen aus Schloß Gloaming in der Grube und bringt sie zu Sir Caneghem in Celeste.	0	Bryan	0
+109	Ermordet Tolberti in seiner Wohnung in der Grube und bringt seinen Kontrollkubus zu Robert dem Weisen nach Celeste.	0	Bryan	0
+110		Finished Necro Proving Grounds	Bryan	0
+111		Finished Necro Task 2 - Temple of Light	Bryan	0
+112		Finished Necro Task 3 - Soul Jars	Bryan	0
+113		Finished Necro Task 4 - Clanker's Lab	Bryan	0
+114		Finished Wizard Proving Grounds	Bryan	0
+115		Finished Wizard Task 2 - Temple of Dark	Bryan	0
+116		Finished Wizard Task 3 - Wine Cellar	Bryan	0
+117		Finished Wizard Task 4 - Soul Jars	Bryan	0
+118		Killed Good MM3 Person	Bryan	0
+119		Killed Evil MM3 Person	Bryan	0
+120		Got Hive part	Bryan	0
+121		Got the sci-fi part	Bryan	0
+122	Holt die Altar - Stücke aus dem Tempel des Lichts in Celeste und dem Tempel der Finsternis in der Grube und bringt sie zu Kastore in der Grube.	0	Bryan	0
+123	Geht zur Kolonie Zod im Land der Riesen und tötet Xenofex. Kehrt dann zu Kastore in die Grube zurück.	0	Bryan	0
+124	Holt die Kiste mit den Seelengefäßen von den Hexern im Donnerfaust - Gebirge und bringt sie zu Maximus in die Grube.	0	Bryan	0
+125	Zerstört die magische Abwehr in Clankers Labor und kehrt zu Nachtschatten in die Grube zurück.	0	Bryan	0
+126		Destroyed the magical defenses in Clanker's Lab	0	0
+127	Ermordet Robert den Weisen in seiner Wohnung in Celeste und kehrt dann zu Tolberti in die Grube zurück.	0	Bryan	0
+128	Überwindet das Brutgehege und kehrt zu Archibald in die Grube zurück.	0	Bryan	0
+129		Completed Breeding Pit.	0	0
+130	Betretet die Lincoln im Meer westlich von Avlee und holt den Oszillations - Regulator. Bringt ihn zurück zu Resurectra in Celeste.	0	0	0
+131	Betretet die Lincoln im Meer westlich von Avlee und holt den Oszillations - Regulator. Bringt ihn zurück zu Kastore in die Grube.	0	0	0
+132		Butler only shows up once (area 2)	Pete	0
+133		Player castle timer only happens once	Pete	0
+134		Arbiter Messenger only happens once	Pete	0
+135		Player castle goblins are all dead	Riki	0
+136		Party doesn't come back to Out01 temple anymore	Bryan	0
+137		Artifact Messenger only happens once	Riki	0
+138		Killed specific monster (Armsmaster GM quest) - important for Bob	Bryan	0
+139		Completed fountain quest (Water Magic GM) - important for Bob	Bryan	0
+140		Cleaned out the haunted mansion (Cavalier promo)	Bryan	0
+141		"Only give Markham's vase once (Markham's manor, Thief promo)."	Bryan	0
+142		Killed all monsters in Haunted mansion	Bryan	0
+143		Killed all monsters in Bandit cave	Bryan	0
+144		Alice Hargreaves in building only once	Bryan	0
+145		Membership to the School of Sorcery Scroll Shop	Bryan	0
+146	Sprecht mit den Zwergen in Steinstadt im Tal der Hügelgräber, um zu erfahren, wie Ihr Schloß Harmondy wieder aufbauen könnt.	0	0	0
+147		Gave artifact to arbiter	Bryan	0
+148		Got Lich Jar from Walls of Mist	Bryan	0
+149		Got Lich Jar from Thunderfist Mountain	Bryan	0
+150		Got Lich Jar from Castle Gloaming	Bryan	0
+151	Geht von der Grubenhalle in Deyja in die Grube und sprecht dann dort mit Archibald auf Schloß Gloaming.	0	0	0
+152	Geht über den großen Teleporter in der Bracada - Wüste nach Celeste und sprecht dann dort mit Gavin Magnus auf Schloß Lambent.	0	0	0
+153	Wählt einen Richter als Nachfolger für Richter Grey in Harmondale.	0	0	0
+154		Got Scroll of Waves	0	0
+155	Holt die Laterne des heiligen Lichts aus den Hügelgräbern und bringt sie Tarin Withern in Harmondale zurück.	Barrow Lantern Quest	James	0
+156	Findet Haldars Gebeine im Labyrith von Nighon und bringt sie zu Mazim Dämmer in Nighon.	Haldar's Remains Quest	James	0
+157	Findet Davriks Siegelring in der Räuberhöhle im Nordosten Erathias und bringt ihn Davrik Peladium in Harmondale zurück.	Davrik's Ring Quest	James	0
+158	Bringt den versiegelten Brief für den Sammler Norbert Thrush zu Lord Markham in seine Villa in Tatalia.		James	0
+159	Bringt Parsons Federkiel zu Norbert Thrush in Erathia.		James	0
+160		Got Signet ring out of chest	Tim	0
+161		Got magic dust out of chest 	Tim	0
+162		Got lantern of light	Tim	0
+163		Got perfect bow out of chest	Tim	0
+164		Visited Obelisk in Area 2	Riki	0
+165		Visited Obelisk in Area 3	Riki	0
+166		Visited Obelisk in Area 4	Riki	0
+167		Visited Obelisk in Area 5	Riki	0
+168		Visited Obelisk in Area 6	Riki	0
+169		Visited Obelisk in Area 7	Riki	0
+170		Visited Obelisk in Area 8	Riki	0
+171		Visited Obelisk in Area 9	Riki	0
+172		Visited Obelisk in Area 10	Riki	0
+173		Visited Obelisk in Area 11	Riki	0
+174		Visited Obelisk in Area 12	Riki	0
+175		Visited Obelisk in Area 13	Riki	0
+176		Visited Obelisk in Area 14	Riki	0
+177		Visited Obelisk in Area 39	Riki	0
+178		Open final Obelisk Chest	Riki	0
+179	Bringt den versiegelten Brief zum Feenkönig in der Halle unter den Bergen in Avlee.		Bryan	0
+180	Bringt Johann Kerrid im Tulareanischen Forst die Feenflöte.		Bryan	0
+181	Erreicht innerhalb von zwei Wochen die Söldnergilde in Tatalia und sprecht mit Niles Stantley.	Goto Merc Guild	Bryan	0
+182	Stehlt den Wandteppich aus dem Schloß Eurer Verbündeten und bringt ihn Niles Stantley in der Söldnergilde in Tatalia.	Do the Merc Guild Quest	Bryan	0
+183		Failed either goto or do guild quest	Bryan	0
+184		Killed all castle monsters	Bryan	0
+185		Killed all outdoor monsters	Bryan	0
+186	Tötet alle Troglodyten unter Steinstadt und kehrt dann zu Spark Loderflamme in Steinstadt zurück.	0	Bryan	0
+187	Tötet alle Greifen in Erathia und in der Bracada - Wüste und kehrt dann zu Seth Drakkson in Deyja zurück.	0	Bryan	0
+188		Killed all Erathian Griffins	Bryan	0
+189		Killed all Bracada Desert Griffins	Bryan	0
+190		Finished with Malwick & Assc.	Riki	0
+191		Turn on map in mdtXX(Dwarven Barrow)	Riki	0
+192		Turn on map in mdkXX(Dwarven Barrow)	Riki	0
+193		Turn on map in mdrXX(Dwarven Barrow)	Riki	0
+194	Findet heraus, was Darrons Bruder in den Schneegipfel - Höhlen zugestoßen ist und kehrt dann zu Darron Temper in Harmondale zurück.	0	0	0
+195	Findet das Festgewand in der Grubenhalle und bringt es Gary Zimm in der Bracada - Wüste.	0	0	0
+196		Find second entrance to Watchtower6	James	0
+197		Entered Faerie Mound	James	0
+198		Archibald in Clankers Lab now	0	0
+199		Take the Associate's Tapestry	0	0
+200	Findet die drei Statuen und stellt sie auf die Schreine in der Bracada - Wüste, in Tatalia und in Avlee und kehrt dann zu Thom Lumbra im Tulareanischen Forst zurück.		0	0
+201		Placed item 617 in out14(statue)	0	0
+202		Place item 618 in out13(statue)	0	0
+203		Place item 619 in out06(statue)	0	0
+204	Findet die drei Gemälde und bringt sie zu Ferdinand Visconti in Tatalia.	0	0	0
+205	Gewinnt in allen dreizehn Tavernen ein Arcomage - Spiel und kehrt dann zu Gina Barnes in Erathia zurück.	0	0	0
+206		Harmondale - Town Portal	0	0
+207		Erathia - Town Portal	0	0
+208		Tularean Forest - Town Portal	0	0
+209		Celeste - Town Portal	0	0
+210		The Pit - Town Portal	0	0
+211		Nighon - Town Portal	0	0
+212		Vase - I lost it	0	0
+213		Dagger - I lost it	0	0
+214		Scroll of Waves - I lost it	0	0
+215		Cipher - I lost it	0	0
+216		Worn Belt - I lost it	0	0
+217		Heart of Wood - I lost it	0	0
+218		Map to Evenmorn - I lost it	0	0
+219		Golem Head - I lost it	0	0
+220		Abby normal head - I lost it	0	0
+221		Right arm - I lost it	0	0
+222		Left arm - I lost it	0	0
+223		Right leg - I lost it	0	0
+224		Left leg - I lost it	0	0
+225		Torso - I lost it	0	0
+226		Book of Divine Intervention - I lost it	0	0
+227		Dragon Egg - I lost it	0	0
+228		Dwarf Bones - I lost it	0	0
+229		Lich Jar (Empty) - I lost it	0	0
+230		Elixir - I lost it	0	0
+231		Lich Jar Case - I lost it	0	0
+232		Altar Piece (Good) - I lost it	0	0
+233		Altar Piece (Evil) - I lost it	0	0
+234		Control Cube - I lost it	0	0
+235		Wetsuit - I lost it	0	0
+236		Final Part - I lost it	0	0
+237		Lich Jar (Full) - I lost it	0	0
+238		Won all Arcomage games	0	0
+239		Got the Divine Intervention	0	0
+240		Talked to Roland	0	0
+241		Perfect bow - I lost it	0	0
+242		Opened chest with shadow mask	0	0
+243		Killed High Preist of Baa	0	0
+244		Finished ArcoMage Quest - Get the treasure	0	0
+245	Herzlichen Glückwunsch	For Blinging	0	0
+246		Visited The Land of the giants	0	0
+247		Control Cube only once	0	0
+248		Took area 2 hill fort	0	0
+249		Don't get ambushed	0	0
+250		Bought Item 1	0	0
+251		Bought Item 2	0	0
+252		Bought Item 3	0	0
+253		Bought Item 4	0	0
+254		Bought Item 5	0	0
+255		Bought Item 6	0	0
+256		Can't keep buying 1	0	0
+257		Can't keep buying 2	0	0
+258		Can't keep buying 3	0	0
+259		Can't keep buying 4	0	0
+260		Can't keep buying 5	0	0
+261		Can't keep buying 6	0	0
+262		Time for Gobs to appear in area 2(raiding camp)	0	0
+263		Area 12 Archibald only once	0	0
+264		Took Roland Painting	0	0
+265		Took Archi Painting	0	0
+266		Took Angel Painting	0	0
+267		South Signal Fire Out02	0	0
+268		North Signal Fire Out02	0	0
+269		West Siganl Fire Out02	0	0
+270		Your friends are mad at you 	0	0
+271	0	0	0	0
+272	0	0	0	0
+273	0	0	0	0
+274	0	0	0	0
+275	0	0	0	0
+276	0	0	0	0
+277	0	0	0	0
+278	0	0	0	0
+279	0	0	0	0
+280	0	0	0	0
+281	0	0	0	0
+282	0	0	0	0
+283	0	0	0	0
+284	0	0	0	0
+285	0	0	0	0
+286	0	0	0	0
+287	0	0	0	0
+288	0	0	0	0
+289	0	0	0	0
+290	0	0	0	0
+291	0	0	0	0
+292	0	0	0	0
+293	0	0	0	0
+294	0	0	0	0
+295	0	0	0	0
+296	0	0	0	0
+297	0	0	0	0
+298	0	0	0	0
+299	0	0	0	0
+300	0	0	0	0
+301	0	0	0	0
+302	0	0	0	0
+303	0	0	0	0
+304	0	0	0	0
+305	0	0	0	0
+306	0	0	0	0
+307	0	0	0	0
+308	0	0	0	0
+309	0	0	0	0
+310	0	0	0	0
+311	0	0	0	0
+312	0	0	0	0
+313	0	0	0	0
+314	0	0	0	0
+315	0	0	0	0
+316	0	0	0	0
+317	0	0	0	0
+318	0	0	0	0
+319	0	0	0	0
+320	0	0	0	0
+321	0	0	0	0
+322	0	0	0	0
+323	0	0	0	0
+324	0	0	0	0
+325	0	0	0	0
+326	0	0	0	0
+327	0	0	0	0
+328	0	0	0	0
+329	0	0	0	0
+330	0	0	0	0
+331	0	0	0	0
+332	0	0	0	0
+333	0	0	0	0
+334	0	0	0	0
+335	0	0	0	0
+336	0	0	0	0
+337	0	0	0	0
+338	0	0	0	0
+339	0	0	0	0
+340	0	0	0	0
+341		0	0	0
+342		0	0	0
+343		0	0	0
+344		0	0	0
+345		0	0	0
+346		0	0	0
+347		0	0	0
+348	0	0	0	0
+349	0	0	0	0
+350		Refill barrels in the Walls of Mist	0	0
+351		Talked with dragon scales crafter	0	0
+352		RDSM being made	0	0
+353		RDSS being made	0	0
+354		Red dragon scales used up	0	0
+355		Trumpet messenger to appear early	0	0
+356		Probatory access to Celeste and the Pit	0	0
+357		Talked to Gavin Magnus	0	0
+358		Talked to Archibald	0	0
+359		Just rejected the double-cross offer	0	0
+360		Elves won the war	0	0
+361		Humans won the war	0	0
+362		Harmondale is independent (double taxes)	0	0
+363		Judge Grey to die early	0	0
+364		Altar pieces quest betrayal flag	0	0
+365		Rejected the double-cross offer (free blaster)	0	0
+366		Extra advisors to appear	0	0
+367	Töte zwei Gegner, bei dem zwei Pfeile gleichzeitig abgeschossen wurden, und kehrt dann zu Cardric der Ruhige zurück, um Eure Ausbildung abzuschließen.	Bow GM mini-quest	0	0
+368		Completed Bow GM mini-quest	0	0
+369	Erlebe, ausgelöscht zu werden. Kehrt dann zu Resurectra zurück, um Eure Ausbildung abzuschließen.	Blaster GM mini-quest (good)       0	0
+370	Erlebe, ausgelöscht zu werden. Kehrt dann zu Kastore zurück, um Eure Ausbildung abzuschließen.	Blaster GM mini-quest (evil)       0	0
+371		Completed Blaster GM mini-quest     0	0
+372	Begibt Euch auf ein dreitägiges Abenteuer ohne Ruhen aus und kehrt dann zu Evandar Thomas zurück, um Eure Ausbildung abzuschließen.	Bodybuilding GM mini-quest       0	0
+373		Completed Bodybuilding GM mini-quest     0	0
+374	Ruht Euch auf dem Gipfel des Berg Donnerfaust aus. Kehrt dann zu Kaine zurück, um Eure Ausbildung abzuschließen.	Meditation GM mini-quest       0	0
+375		Completed Meditation GM mini-quest     0	0
+376	Braue einen Verjüngungstrank und kehrt dann zu Lucid Apple zurück, um Eure Ausbildung abzuschließen.	Alchemy GM mini-quest       0	0
+377		Completed Alchemy GM mini-quest       0	0
+378		Looted Clanker's artifact chest	0	0
+379		Looted Colony Zod artifact chest	0	0
+380		Looted Arcomage reward chest	0	0
+381		Got Elven Chainmail	0	0
+382	Erhalte einen magischen Talisman von der Medusaherrscherin in den Roten Zwergenminen und bringt ihn zu Amber Pebble nach Deyja.	Goblin dagger quest	0	0
+383	Kaufen Sie ein Pferd aus einem Stall Ihrer Wahl.	Cavalier horse perk	0	0
+384		Used Pegasus ability today	0	0
+385		Got Elfbane	0	0
+386		Used temple in a bottle in Shoals	0	0
+387		Probatory access messenger (out03/04)	0	0
+388		Robbed a sarcophagus	0	0
+389		Looted the Sniper's Quiver	0	0
+390		LP Knight token warning	0	0
+391		DP Knight token warning	0	0
+392		LP Thief token warning	0	0
+393		DP Thief token warning	0	0
+394		LP Monk token warning	0	0
+395		DP Monk token warning	0	0
+396		LP Paladin token warning	0	0
+397		DP Paladin token warning	0	0
+398		LP Archer token warning	0	0
+399		DP Archer token warning	0	0
+400		LP Ranger token warning	0	0
+401		DP Ranger token warning	0	0
+402		LP Cleric token warning	0	0
+403		DP Cleric token warning	0	0
+404		LP Druid token warning	0	0
+405		DP Druid token warning	0	0
+406		LP Sorcerer token warning	0	0
+407		DP Sorcerer token warning	0	0
+408		Barrows graverobbing warning	0	0
+409	Findet eine Manticorhöhle unter Nighon, tötet den größten Manticor und bringt sein Gift zu William Smithson westlich auf der Evenmorn Insel.	Monk token quest	0	0
+410		Got permission to use the pirate ship	0	0
+411		Talked with the pirate captain	0	0
+412		Visited Lasker	0	0
+413	Kauft das Erbstück - Amulett auf dem Schwarzmarkt in der Kanalisation von Erathia und bringt es zu Halain Sampson in Tatalia zurück.	Black Market intro quest	0	0
+414		Purchased the safe deposit box	0	0
+415		Got artifact from a genie lamp	0	0
+416		Got the ultimate arena prize	0	0
+417		Black market had put an artifact on sale	0	0
+418	Findet die Tränen der Alten in der Schule der Zauberei in der Bracada - Wüste und bringt es zu Lucid Apple in Avlee.	Bonus hirelings quest	0	0
+419		Chose a bonus hireling	0	0
+420		Got the ancient tears	0	0
+421		Ninja cipher alt 1	0	0
+422		Ninja cipher alt 2	0	0
+423	0	0	0	0
+424	0	0	0	0
+425	0	0	0	0
+426	0	0	0	0
+427	0	0	0	0
+428	0	0	0	0
+429	0	0	0	0
+430	0	0	0	0
+431	0	0	0	0
+432	0	0	0	0
+433	0	0	0	0
+434	0	0	0	0
+435	0	0	0	0
+436	0	0	0	0
+437	0	0	0	0
+438	0	0	0	0
+439	0	0	0	0
+440	0	0	0	0
+441	0	0	0	0
+442	0	0	0	0
+443	0	0	0	0
+444	0	0	0	0
+445	0	0	0	0
+446	0	0	0	0
+447	0	0	0	0
+448	0	0	0	0
+449	0	0	0	0
+450	0	0	0	0
+451	0	0	0	0
+452	0	0	0	0
+453	0	0	0	0
+454	0	0	0	0
+455	0	0	0	0
+456	0	0	0	0
+457	0	0	0	0
+458	0	0	0	0
+459	0	0	0	0
+460	0	0	0	0
+461	0	0	0	0
+462	0	0	0	0
+463	0	0	0	0
+464	0	0	0	0
+465	0	0	0	0
+466	0	0	0	0
+467	0	0	0	0
+468	0	0	0	0
+469	0	0	0	0
+470	0	0	0	0
+471	0	0	0	0
+472	0	0	0	0
+473	0	0	0	0
+474	0	0	0	0
+475	0	0	0	0
+476	0	0	0	0
+477	0	0	0	0
+478	0	0	0	0
+479	0	0	0	0
+480	0	0	0	0
+481	0	0	0	0
+482	0	0	0	0
+483	0	0	0	0
+484	0	0	0	0
+485	0	0	0	0
+486	0	0	0	0
+487	0	0	0	0
+488	0	0	0	0
+489	0	0	0	0
+490	0	0	0	0
+491	0	0	0	0
+492	0	0	0	0
+493	0	0	0	0
+494	0	0	0	0
+495	0	0	0	0
+496	0	0	0	0
+497	0	0	0	0
+498	0	0	0	0
+499	0	0	0	0
+500	0	0	0	0
+501	0	0	0	0
+502	0	0	0	0
+503	0	0	0	0
+504	0	0	0	0
+505	0	0	0	0
+506	0	0	0	0
+507	0	0	0	0
+508	0	0	0	0
+509	0	0	0	0
+510	0	0	0	0
+511	0	0	0	0
+512	0	0	0	0

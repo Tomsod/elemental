@@ -1,0 +1,115 @@
+A Bit	Awards	Sort	Notes
+1	Ausstehende Geldstrafen: %lu	1	
+2	Den Wettbewerb auf der Smaragdinsel gewonnen	2	
+3	Die vermissten Teilnehmer auf der Smaragdinsel gefunden	3	
+4	Die Goblins aus Schloß Harmondy vertrieben	2	
+5	Die Zwerge in den Roten Zwergenminen gerettet	2	
+6	Loren Steel befreit	2	
+7	Falschen Loren an Catherine übergeben	2	
+8	Pläne zu Fort Riverstride geholt	2	
+9	Dem Elfenkönig falsche Pläne übergeben	2	
+10	Zum Meisterdieb ernannt	4	
+11	Zum inoffiziellen Meisterdieb ernannt	4	
+12	Zum Spion ernannt	4	
+13	Zum Spionagehelfer ernannt	4	
+14	Zum Assassinen ernannt	4	
+15	Zum Assassinen - Helfershelfer ernannt	4	
+16	Zum Kämpen ernannt	4
+17	Zum Kämpen ehrenhalber ernannt	4
+18	Zum ersten Ritter ernannt	4
+19	Zum Weggefährten des ersten Ritters ernannt	4
+20	Zum Schattenritter ernannt	4
+21	Zum Schattenkämpfer ernannt	4
+22	Zum Initiierten ernannt	4
+23	Zum ungläubigen Initiierten ernannt	4
+24	Zum Meister ernannt	4
+25	Zum nicht erleuchteten Meister ernannt	4
+26	Zum Ninja - Meister ernannt	4
+27	Zum Ninja ernannt	4
+28	Zum Jäger ernannt	4
+29	Zum Jagdhelfer ernannt	4
+30	Zum Meisterjäger ernannt	4
+31	Zum Gefährten des Meisterjägers ernannt	4
+32	Zum Kopfjäger ernannt	4	
+33	Zum Kopfjäger - Komplizen ernannt	4	
+34	Zum Kampfmagier ernannt	4	
+35	Zum Kampfmagier ehrenhalber ernannt	4	
+36	Zum Meisterschützen ernannt	4	
+37	Zum meisterlichen Schützen ernannt	4	
+38	Zum Scharfschützen ernannt	4	
+39	Zum Scharfschützen - Helfer ernannt	4	
+40	Zum Kreuzritter ernannt	4	
+41	Zum Kreuzritters - Helfer ernannt	4	
+42	Zum Helden ernannt	4	
+43	Zum Heldenhaften ernannt	4	
+44	Zur Nemesis ernannt	4	
+45	Zum Nemesis - Komplizen ernannt	4	
+46	Die Reifeprüfung der Zauberer bestanden 	2	
+47	Beide Altarstücke gefunden	2	Used on two sides
+48	Xenofex besiegt	2	Used on two sides
+49	Das Geheimniss des Weinkellers gelöst	2	
+50	Der Elementar - Gilde beigetreten	5	
+51	Der Gilde des Selbst beigetreten 	5	
+52	Der Luft - Gilde beigetreten	5	
+53	Der Erd - Gilde beigetreten 	5	
+54	Der Feuer - Gilde beigetreten	5	
+55	Der Wasser - Gilde beigetreten	5	
+56	Der Körper - Gilde beigetreten 	5	
+57	Der Geistes - Gilde beigetreten 	5	
+58	Der Seelen - Gilde beigetreten	5	
+59	Der Gilde des Lichts beigetreten 	5	
+60	Der Gilde der Finsternis beigetreten	5	
+61	Das Herz des Waldes gefunden	3	
+62	Zum Priester ernannt	4	
+63	Zum nicht gläubigen Priester ernannt 	4	
+64	Zum Priester des Lichts ernannt	4
+65	Zum Eingeweihten des Lichts ernannt	4
+66	Zum Priester der Finsternis ernannt	4
+67	Zum Eingeweihten der Finsternis ernannt	4
+68	Zum Großdruiden ernannt	4
+69	Zum Vertrauten des Großdruiden ernannt 	4
+70	Zum Erzdruiden ernannt 	4
+71	Zum Vertrauten des Erzdruiden ernannt 	4
+72	Zum Hexer ernannt	4
+73	Zum Hexer - Verbündeten ernannt 	4
+74	Zum Magier ernannt	4
+75	Zum Magier - Gefährten ernannt	4
+76	Zum Erzmagier ernannt	4
+77	Zum Gefährten des Erzmagiers ernannt	4
+78	Zum Lich ernannt	4
+79	Zum Verbündeten des Lich ernannt	4
+80	Seelengefäße gefunden	2	Used on two sides
+81	Tolberti ermordet	2	
+82	Clankers Labor gesäubert 	2	
+83	Robert den Weisen ermordet	2	
+84	Totenbeschwörer - Brutgehege überstanden	2	
+85	%u Mal gestorben	1	
+86	%u an Prämien verdient	1	
+87	%u Gefängnisstrafe(n) abgesessen 	1	
+88	%u Pagen - Sieg(e) in der Arena	1	
+89	%u Knappen - Sieg(e) in der Arena	1	
+90	%u Ritter - Sieg(e) in der Arena	1	
+91	%u Meister - Sieg(e) in der Arena 	1	
+92	Laterne des heiligen Lichts zurück gebracht	3	
+93	Haldars Gebeine zurück gebracht	3	
+94	Lord Davriks Siegelring zurückgebracht	3	
+95	Parsons Federkiel zu Norbert Thrush zurück gebracht	3	
+96	Johann Kerrid die Feenflöte zurück gebracht	3
+97	Troglodytentöter	3
+98	Greifentöter	3
+99	Das Festgewand gefunden	3
+100	Alle Statuen gefunden und plaziert	3
+101	Alle Gemälde gefunden	3
+102	ArcoMage - Meister	3
+103	Gewonnene ArcoMage - Spiele: %lu	1
+104	Verlorene ArcoMage - Spiele: %lu	1
+105	Medusas Spiegel gefunden	3
+106	Manticortöter	3
+107	Arena - Meister	1
+108	Den Obelisken-Schatz gefunden	1
+109	Der Diebesgilde beigetreten	5
+110	Das gestohlene Erbstück zurück gebracht	3
+111	Tränen der Alten gefunden	3
+112	Greifenherz' Fanfare nach Erathia zurückgebracht	2
+113	Greifenherz' Fanfare nach Avlee zurückgebracht	2
+114	Greifenherz' Fanfare zum Richter zurückgebracht	2

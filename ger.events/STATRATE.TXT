@@ -1,0 +1,38 @@
+Value	Bonus	Rating	
+0	-6	Nicht vorhanden
+3	-5	Unbrauchbar
+5	-4	Sehr schlecht
+7	-3	Schlecht
+9	-2	Sehr gering
+11	-1	Gering
+13	0	Durchschnittlich
+15	+1	Überdurchschnittlich
+17	+2	Ausreichend
+19	+3	Befriedigend
+21	+4	Annehmbar
+25	+5	Ziemlich annehmbar
+30	+6	Sehr annehmbar
+35	+7	Gut
+40	+8	Ziemlich gut
+46	+9	Sehr gut
+53	+10	Reichlich
+61	+11	Ziemlich reichlich
+70	+12	Sehr reichlich
+80	+13	Vielversprechend
+91	+14	Hoch
+103	+15	Ziemlich hoch
+116	+16	Sehr hoch
+130	+17	Großartig
+145	+18	Hervorragend
+161	+19	Erstaunlich
+178	+20	Unglaublich
+196	+21	Gigantisch
+215	+22	Fantastisch
+236	+23	Verblüffend
+259	+24	Verwunderlich
+285	+25	Monumental
+315	+26	Enorm
+350	+27	Kolossal
+390	+28	Beeindruckend
+440	+29	Ehrfurchtgebietend
+500	+30	Ultimativ

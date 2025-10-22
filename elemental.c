@@ -27409,7 +27409,7 @@ static void __thiscall restock_black_market(int house)
           { (void *) SHOP_SPECIAL_ITEMS, 4, 12, 12,
               { ITEM_TYPE_MISC, ITEM_TYPE_MISC,
                 ITEM_TYPE_MISC, ITEM_TYPE_MISC } },
-          { (struct item *) SHOP_SPECIAL_ITEMS + 12, 5, 4, 8,
+          { (struct item *) SHOP_SPECIAL_ITEMS + 12, 4, 4, 8,
               { ITEM_TYPE_HELM, ITEM_TYPE_CLOAK,
                 ITEM_TYPE_GAUNTLETS, ITEM_TYPE_BOOTS } },
           { (struct item *) SHOP_SPECIAL_ITEMS + 16, 5, 4, 0,

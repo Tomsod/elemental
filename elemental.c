@@ -26138,7 +26138,7 @@ static void __declspec(naked) query_order(void)
         no_reagent:
         push dword ptr [SHOP_IMAGES+20]
         push 410
-        push 520
+        push 519
         mov ecx, DRAW_IMAGE_THIS_ADDR
         call dword ptr ds:draw_background
         xor ebx, ebx

@@ -12337,9 +12337,18 @@ static int __thiscall new_hireling_action(int id)
             return FALSE;
           }
         case NPC_BEACON_MASTER:
-            set_npc_beacon(CURRENT_HIRELING);
-            make_sound(SOUND_THIS, word(SPELL_SOUNDS + SPL_LLOYDS_BEACON * 2),
-                       0, 0, -1, 0, 0, 0, 0);
+            if (check_spell_disabled(SPL_LLOYDS_BEACON))
+              {
+                show_status_text(GLOBAL_TXT[428], 2); // "spell failed"
+                make_sound(SOUND_THIS, SOUND_SPELL_FAIL, 0, 0, -1, 0, 0, 0, 0);
+              }
+            else
+              {
+                set_npc_beacon(CURRENT_HIRELING);
+                make_sound(SOUND_THIS,
+                           word(SPELL_SOUNDS + SPL_LLOYDS_BEACON * 2),
+                           0, 0, -1, 0, 0, 0, 0);
+              }
             add_action(ACTION_THIS, ACTION_EXIT, 0, 0);
             return TRUE;
 

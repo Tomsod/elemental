@@ -1379,7 +1379,10 @@ static int castle_id, bottle_id, genie_id;
 #define INDOOR_LAST_REFILL_DAY 0x6be510
 // Indoor or outdoor reputation for the loaded map.
 #define OUTDOORS 0x6be1e0
-#define CURRENT_REP (*(int32_t *) (dword(OUTDOORS) == 2 ? 0x6a1140 : 0x6be514))
+#define OUTDOOR_REP 0x6a1140
+#define INDOOR_REP 0x6be514
+#define CURRENT_REP (*(int32_t *) (dword(OUTDOORS) == 2 ? OUTDOOR_REP \
+                                                        : INDOOR_REP))
 
 enum profession
 {
@@ -13032,7 +13035,7 @@ static void __declspec(naked) print_cook_reply(void)
 {
     asm
       {
-        mov ecx, dword ptr [npcprof+eax*4+4] ; replaced code, almost
+        mov ecx, dword ptr [npcprof+eax*4].s_npcprof.description ; repl, almost
         cmp byte ptr [HIRELING_REPLY], 2
         jne quit
         cmp eax, NPC_GUIDE * 5
@@ -14363,6 +14366,63 @@ static void __declspec(naked) apply_walking_speed(void)
       }
 }
 
+// Make the (initial) hireling cost depend on party reputation.
+static void __declspec(naked) variable_npc_cost(void)
+{
+    asm
+      {
+        mov eax, dword ptr [npcprof+eax*4].s_npcprof.cost ; repl. code, almost
+        cmp dword ptr [OUTDOORS], 2
+        cmove edx, dword ptr [OUTDOOR_REP]
+        cmovne edx, dword ptr [INDOOR_REP]
+        cmp edx, -33
+        jl lowest
+        mov ecx, 100
+        lea edx, [ecx+edx*2]
+        mul edx
+        jmp divide
+        lowest:
+        xor edx, edx
+        lea ecx, [edx+3]
+        divide:
+        div ecx
+        mov ecx, eax
+        ret
+      }
+}
+
+// Print the variable hireling join cost (replace %18 in join text).
+static void __declspec(naked) print_npc_cost(void)
+{
+    asm
+      {
+        lea eax, [eax*2+edx-'0'*11] ; replaced code (parse %number)
+        cmp eax, 18 ; unused in vanilla
+        jne skip
+        mov eax, dword ptr [ebp-4] ; npc
+        mov eax, dword ptr [eax].s_npc.profession
+        lea eax, [eax+eax*4]
+        mov eax, dword ptr [npcprof+eax*4].s_npcprof.cost
+        cmp dword ptr [OUTDOORS], 2
+        cmove edx, dword ptr [OUTDOOR_REP]
+        cmovne edx, dword ptr [INDOOR_REP]
+        cmp edx, -33
+        jl lowest
+        mov ecx, 100
+        lea edx, [ecx+edx*2]
+        mul edx
+        jmp divide
+        lowest:
+        xor edx, edx
+        lea ecx, [edx+3]
+        divide:
+        div ecx
+        mov dword ptr [esp], 0x4959c6 ; subst eax into string
+        skip:
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -14597,6 +14657,9 @@ static inline void misc_rules(void)
     patch_byte(0x49a5c3, 0);
     // Bug (?) fix: summoned monsters could be looted for random items.
     patch_byte(0x44fe63, 0x35); // zero item chance instead of type
+    hook_call(0x4bc67d, variable_npc_cost, 7); // street npcs
+    hook_call(0x4b22ea, variable_npc_cost, 7); // house npcs
+    hook_call(0x49555d, print_npc_cost, 7);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -24424,10 +24487,10 @@ static void __declspec(naked) difficult_monster_experience(void)
         inc dword ptr [elemdata.bard_bonus+ecx*4]
         cmp dword ptr [OUTDOORS], 2
         je outdoors
-        dec dword ptr [0x6be514] ; indoor rep
+        dec dword ptr [INDOOR_REP]
         jmp no_bard
         outdoors:
-        dec dword ptr [0x6a1140] ; outdoor rep
+        dec dword ptr [OUTDOOR_REP]
         no_bard:
         mov eax, ebx
         xor ecx, ecx ; restore
@@ -28193,24 +28256,24 @@ static void *__cdecl sacrifice_hireling(struct npc *hireling, int c, int n)
 static inline void new_hireling_types(void)
 {
     // replace parsed npcprof.txt; addresses actually taken from mmext
-    patch_pointer(0x416B8F, &npcprof[0].description);
-    patch_pointer(0x416BA3, &npcprof[0].join);
-    patch_pointer(0x420CAB, &npcprof[0].cost);
-    patch_pointer(0x44536E, &npcprof[0].action);
-    // 0x44551D overwritten by delay_dismiss_hireling_reply()
+    patch_pointer(0x416b8f, &npcprof[0].description);
+    patch_pointer(0x416ba3, &npcprof[0].join);
+    patch_pointer(0x420cab, &npcprof[0].cost);
+    patch_pointer(0x44536e, &npcprof[0].action);
+    // 0x44551d overwritten by delay_dismiss_hireling_reply()
     // 0x445526 overwritten by print_cook_reply()
     patch_pointer(0x445548, &npcprof[0].join);
-    // 0x4455A7 also overwritten near delay_dismiss_hireling_reply()
-    patch_pointer(0x4455B0, &npcprof[0].join);
-    patch_pointer(0x49597F, &npcprof[0].cost);
-    patch_pointer(0x4B1FE5, &npcprof[0].join);
-    patch_pointer(0x4B228F, &npcprof[0].join);
-    patch_pointer(0x4B2298, &npcprof[0].description);
-    patch_pointer(0x4B22ED, &npcprof[0].cost);
-    patch_pointer(0x4B2367, &npcprof[0].join);
-    patch_pointer(0x4B3DDC, &npcprof[0].description);
-    patch_pointer(0x4B4104, &npcprof[0].description);
-    patch_pointer(0x4BC680, &npcprof[0].cost);
+    // 0x4455a7 also overwritten near delay_dismiss_hireling_reply()
+    patch_pointer(0x4455b0, &npcprof[0].join);
+    patch_pointer(0x49597f, &npcprof[0].cost);
+    patch_pointer(0x4b1fe5, &npcprof[0].join);
+    patch_pointer(0x4b228f, &npcprof[0].join);
+    patch_pointer(0x4b2298, &npcprof[0].description);
+    // 0x4b22ed overwritten by variable_npc_cost() above
+    patch_pointer(0x4b2367, &npcprof[0].join);
+    patch_pointer(0x4b3ddc, &npcprof[0].description);
+    patch_pointer(0x4b4104, &npcprof[0].description);
+    // 0x4bc680 also overwritten by variable_npc_cost() above
     patch_word(0x477183, 0xbb90); // nop; mov ebx, ...
     patch_pointer(0x477185, &npcprof[1].join); // npcprof parse
     patch_dword(0x477192, NPC_COUNT - 1); // ditto

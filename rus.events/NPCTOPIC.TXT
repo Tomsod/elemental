@@ -640,3 +640,4 @@
 639	Иди пока домой	Bonus hirelings post-quest
 640	Песочные часы	Rare item buyer
 641	Шифр	Lasker covers for lazy players
+642	Пропажа	Butler remembers things for you

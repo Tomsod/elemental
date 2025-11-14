@@ -1479,9 +1479,9 @@ enum monster_buffs
 // new NPC greeting count (starting from 1)
 #define GREET_COUNT 235
 // new NPC topic count
-#define TOPIC_COUNT 641
+#define TOPIC_COUNT 642
 // count of added NPC text entries
-#define NEW_TEXT_COUNT (922-789)
+#define NEW_TEXT_COUNT (926-789)
 // new award count
 #define AWARD_COUNT 114
 
@@ -12254,14 +12254,14 @@ static int can_refill_map(int id)
     if (!house) house = get_map_index(MAPSTATS, "mdt15.blv") - 1;
     if (id == dword(CURRENT_MAP_ID) - 1
         || id == castle_id || id == bottle_id // never refilled
-        || !MAPSTATS[id].refill_days // proving grounds/arena
         || !elemdata.next_refill_day[id]) // not visited yet
         return 0; // nothing to refill
     if (id == house && !check_bit(QBITS, QBIT_KILL_TOLBERTI)
                     && !check_bit(QBITS, QBIT_KILL_ROBERT)
+        || !MAPSTATS[id].refill_days // proving grounds/arena
         || MAPSTATS[id].reputation_group == 1
            && check_bit(QBITS, QBIT_LEFT_EMERALD_ISLAND))
-        return -1; // no longer visitable
+        return -1; // no longer visitable or otherwise transient
     return 1; // ok to check
 }
 
@@ -27250,17 +27250,60 @@ static char *arcomage_hint(void)
     return buffer;
 }
 
-// Hook for the above.
+// Let the butler tell you where quest items are, since we already track them.
+static char *i_lost_it(void)
+{
+    static char buffer[300];
+    replace_chest(-1); // for the below call
+    track_lost_items(FALSE);
+    int count = 0;
+    for (int i = 0; i <= LAST_LOST_ITEM - FIRST_LOST_ITEM; i++)
+        if (elemdata.lost_items[i] != LOST_NOTRACK
+            && elemdata.lost_items[i] != LOST_INV)
+            count++;
+    if (!count) return new_npc_text[926-790]; // "haven't lost anything"
+    count = random() % count;
+    int lost, item;
+    for (item = FIRST_LOST_ITEM; item <= LAST_LOST_ITEM; item++)
+      {
+        lost = elemdata.lost_items[item-FIRST_LOST_ITEM];
+        if (lost != LOST_NOTRACK && lost != LOST_INV && !count--)
+            break;
+      }
+    int text = 924 - 790; // truly lost
+    if (lost == dword(CURRENT_MAP_ID)) text--; // left nearby
+    else if (lost != LOST_GONE)
+      {
+        unsigned int day = CURRENT_TIME >> 13;
+        day /= 256 * 60 * 24 >> 13; // avoid long division dependency
+        int check = can_refill_map(lost - 1);
+        if (!check || check > 0 && elemdata.next_refill_day[lost-1] > day)
+            text++; // left in another map
+      }
+    char item_buffer[100];
+    sprintf(item_buffer, COLOR_FORMAT, colors[CLR_ITEM], ITEMS_TXT[item].name);
+    // NB: the second %s is only present in the 'another map' variation
+    sprintf(buffer, new_npc_text[text], item_buffer, MAPSTATS[lost-1].name);
+    return buffer;
+}
+
+// Hook for the above two functions.
 static void __declspec(naked) arcomage_hint_hook(void)
 {
     asm
       {
         cmp ecx, 627 ; the new topic
         je arcomage
+        cmp ecx, 642 ; another one (lost item hint)
+        je lost
         cmp ecx, 200 ; replaced code
         ret
         arcomage:
         call arcomage_hint
+        jmp quit
+        lost:
+        call i_lost_it
+        quit:
         mov dword ptr [CURRENT_TEXT_ADDR], eax
         add dword ptr [esp], 16 ; jump over vanilla code
         ret

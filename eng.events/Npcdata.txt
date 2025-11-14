@@ -57,7 +57,7 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 55	Bartholomew Hume	90	0	0	0	0	0	53	0	60	0	0	0	0	0	Bartholomew for dungeon promo event	
 56	Golem	963	0	0	0	0	0	84	0	104	105	0	0	0	0	Golem party gets to construct	
 57	Baby Dragon	961	0	0	0	0	0	169	0	0	0	0	0	0	0	Baby Dragon familiar for Warlock quest	
-58	Butler	60	0	0	0	0	0	85	0	106	508	0	0	0	0	Player Castle	
+58	Butler	60	0	0	0	0	0	85	0	106	508	642	0	0	0	Player Castle
 59	Hothfarr IX	904	0	0	0	421	0	87	0	107	0	0	0	0	0	Dwarf King	39
 60	Drathen Keldin	300	0	0	0	0	0	89	0	0	0	0	0	0	0		
 61	Jaycen Keldin	319	0	0	0	0	0	90	0	0	0	0	0	0	0		

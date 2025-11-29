@@ -1775,6 +1775,7 @@ enum struct_offsets
 #define MESSAGE_DIALOG 0x507a64
 #define SHOPKEEPER_MOOD 0xf8b064
 #define SHOP_VOICE_NO_GOLD 2
+#define NEW_SKILL 0xf8b02c
 #define NEW_SKILL_COST 0xf8b034
 // can learn skill, can join guild, returned judge item
 #define TOPIC_ACTION 0xf8b028
@@ -14366,12 +14367,11 @@ static void __declspec(naked) apply_walking_speed(void)
       }
 }
 
-// Make the (initial) hireling cost depend on party reputation.
-static void __declspec(naked) variable_npc_cost(void)
+// Shared code for a couple of NPC services.  Used thrice.
+static void __declspec(naked) reputation_adjusted_price(void)
 {
     asm
       {
-        mov eax, dword ptr [npcprof+eax*4].s_npcprof.cost ; repl. code, almost
         cmp dword ptr [OUTDOORS], 2
         cmove edx, dword ptr [OUTDOOR_REP]
         cmovne edx, dword ptr [INDOOR_REP]
@@ -14386,6 +14386,17 @@ static void __declspec(naked) variable_npc_cost(void)
         lea ecx, [edx+3]
         divide:
         div ecx
+        ret
+      }
+}
+
+// Make the (initial) hireling cost depend on party reputation.
+static void __declspec(naked) variable_npc_cost(void)
+{
+    asm
+      {
+        mov eax, dword ptr [npcprof+eax*4].s_npcprof.cost ; repl. code, almost
+        call reputation_adjusted_price
         mov ecx, eax
         ret
       }
@@ -14403,20 +14414,7 @@ static void __declspec(naked) print_npc_cost(void)
         mov eax, dword ptr [eax].s_npc.profession
         lea eax, [eax+eax*4]
         mov eax, dword ptr [npcprof+eax*4].s_npcprof.cost
-        cmp dword ptr [OUTDOORS], 2
-        cmove edx, dword ptr [OUTDOOR_REP]
-        cmovne edx, dword ptr [INDOOR_REP]
-        cmp edx, -33
-        jl lowest
-        mov ecx, 100
-        lea edx, [ecx+edx*2]
-        mul edx
-        jmp divide
-        lowest:
-        xor edx, edx
-        lea ecx, [edx+3]
-        divide:
-        div ecx
+        call reputation_adjusted_price
         mov dword ptr [esp], 0x4959c6 ; subst eax into string
         skip:
         ret
@@ -22541,6 +22539,8 @@ static void __declspec(naked) print_monster_special_bonus(void)
 
 // Set just below, later checked in learn_gm_skill().
 static int gm_quest;
+// Set to true if we just need training gold cost rather than anything special.
+static int just_check_teacher_price;
 
 // Let GM teachers be more creative with their demands.
 static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
@@ -22549,6 +22549,18 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
 #define REFUSE ((char *) -1)
 #define ACCEPT ((char *) -2)
     gm_quest = 0;
+    switch (skill)
+      {
+        case SKILL_MERCHANT:
+            dword(NEW_SKILL_COST) = 20000;
+            break;
+        case SKILL_LIGHT:
+        case SKILL_DARK:
+        case SKILL_ALCHEMY:
+            dword(NEW_SKILL_COST) = 0;
+            break;
+      }
+    if (just_check_teacher_price) return DEFAULT; // to other price code
     int train_req = 0;
     int item = -1;
     static char reply_buffer[200];
@@ -22636,10 +22648,7 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
                 return REFUSE;
             if (check_bit(QBITS, skill == SKILL_LIGHT ? QBIT_LIGHT_PATH
                                                       : QBIT_DARK_PATH))
-              {
-                dword(NEW_SKILL_COST) = 0;
                 return ACCEPT;
-              }
             return REFUSE;
         case SKILL_IDENTIFY_ITEM:
             train_req = 400;
@@ -22651,7 +22660,6 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
                     continue;
                 else if (elemdata.reputation[i] > -5)
                     return REFUSE;
-            dword(NEW_SKILL_COST) = 20000;
             return ACCEPT;
         case SKILL_REPAIR:
             train_req = 40;
@@ -22725,10 +22733,7 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
             return REFUSE;
         case SKILL_ALCHEMY:
             if (check_bit(QBITS, QBIT_ALCHEMY_GM_QUEST))
-              {
-                dword(NEW_SKILL_COST) = 0;
                 return ACCEPT;
-              }
             gm_quest = 601;
             break;
         case SKILL_LEARNING:
@@ -22795,7 +22800,7 @@ static void __declspec(naked) gm_teaching_conditions_hook(void)
         jg custom
         inc eax
         je refuse
-        mov eax, dword ptr [0xf8b02c] ; restore new skill
+        mov eax, dword ptr [NEW_SKILL] ; restore
         jl quit
         lea ecx, [eax-7] ; replaced code
         cmp ecx, SKILL_ALCHEMY - 7 ; replaced code
@@ -22892,9 +22897,9 @@ static void __declspec(naked) master_spell_skill(void)
     asm
       {
         jl quit ; replaced jump
-        cmp dword ptr [0xf8b02c], SKILL_FIRE ; new skill
+        cmp dword ptr [NEW_SKILL], SKILL_FIRE
         jb not_magic
-        cmp dword ptr [0xf8b02c], SKILL_DARK
+        cmp dword ptr [NEW_SKILL], SKILL_DARK
         ja not_magic
         cmp ebx, 8
         ret
@@ -23356,6 +23361,79 @@ static void __declspec(naked) steal_monster_level(void)
       }
 }
 
+// Let skill advancement cost depend on regional reputation.
+static void __declspec(naked) variable_teacher_cost(void)
+{
+    asm
+      {
+        mov eax, dword ptr [NEW_SKILL_COST]
+        call reputation_adjusted_price
+        mov dword ptr [NEW_SKILL_COST], eax
+        mov ecx, eax ; replaced code, in spirit
+        mov eax, dword ptr [NEW_SKILL] ; restore
+        ret
+      }
+}
+
+// Used just below.
+static char teacher_text_buffer[600];
+
+// Also display the variable training cost in teacher dialog.
+static void __declspec(naked) variable_teacher_dialog(void)
+{
+    asm
+      {
+        or dword ptr [just_check_teacher_price], 1
+        mov eax, 0x4b24b0 ; replaced call
+        call eax
+        and dword ptr [just_check_teacher_price], 0
+        push dword ptr [NEW_SKILL_COST]
+        push dword ptr [CURRENT_TEXT_ADDR]
+        mov dword ptr [CURRENT_TEXT_ADDR], offset teacher_text_buffer
+#ifdef __clang__
+        push dword ptr [CURRENT_TEXT_ADDR]
+#else
+        push offset teacher_text_buffer
+#endif
+        call dword ptr ds:sprintf
+        add esp, 12
+        ret
+      }
+}
+
+// When just fetching base teacher price, skip code that'd prevent setting it.
+static void __declspec(naked) skip_teacher_checks(void)
+{
+    asm
+      {
+        cmp dword ptr [just_check_teacher_price], 0
+        jz quit
+        lea ecx, [edi+2] ; new skill rank
+        mov eax, GM ; pass remaining checks (current skill rank)
+        mov ebx, 12 ; ditto (skill value)
+        mov dword ptr [ebp-8], ecx ; checked right after the skip
+        mov dword ptr [esp], 0x4b2660 ; past most checks
+        ret
+        quit:
+        movzx eax, byte ptr [esi].s_player.class ; replaced code
+        ret
+      }
+}
+
+// Also make sure that the price is adjusted by rep even with unmet conditions.
+static void __declspec(naked) check_variable_price(void)
+{
+    asm
+      {
+        mov edx, 0x4b28cd ; replaced jump
+        cmp dword ptr [just_check_teacher_price], 0
+        jz quit
+        mov edx, 0x4b26c5 ; force success
+        quit:
+        jmp edx
+      }
+}
+
 // Tweak various skill effects.
 static inline void skill_changes(void)
 {
@@ -23466,6 +23544,10 @@ static inline void skill_changes(void)
     patch_bytes(0x4911df, npc_repair_chunk, 3);
     hook_call(0x420451, randomized_chest_disarm, 5);
     hook_call(0x48d93d, steal_monster_level, 5);
+    hook_call(0x4b26d7, variable_teacher_cost, 6);
+    hook_call(0x4b3f63, variable_teacher_dialog, 5);
+    hook_call(0x4b2535, skip_teacher_checks, 7);
+    hook_jump(0x4b27f8, check_variable_price);
 }
 
 // The mod's new hotkeys.

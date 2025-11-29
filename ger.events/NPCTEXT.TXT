@@ -990,5 +990,5 @@ Beispielsweise sind dies alles korrekte Gegenstandsbeschreibungen:
 922	Ihr habt den Auftrag erhalten, diese Nachricht zu entschlüsseln? Und das Schlüsselwort steht auf dieser Schriftrolle? Mal sehen... [Lasker summt eine Weile vor sich hin] Die Nachricht scheint eine Abfolge von Himmelsrichtungen zu enthalten, um das Grab zu betreten: West, West, Ost, Mitte und Süd. Es ist jedoch nicht klar, worauf sich diese genau beziehen.	Cipher alt 3	Bill Lasker
 923	Wenn ihr nach %s sucht, meine Herren, glaube ich, es irgendwo im Schloss gesehen zu haben, in einer Truhe oder einem Regal oder vielleicht auf dem Boden liegend? Aber es ist sicherlich noch nicht verloren gegangen.	Quest item left in castle	Butler
 924	Ich bitte um Entschuldigung, meine Herren, aber %s scheint wirklich verloren gegangen zu sein. Ich würde empfehlen, den Schwarzmarkt im Auge zu behalten, falls es dort jemals auftauchen sollte.	Quest item marked as lost	Butler
-925	Meine Herren, soweit ich weiß, haben Sie zuletzt %s nach %s gebracht. Es liegt wahrscheinlich immer noch dort in einer Truhe.	Quest item left in a chest	Butler
-926	Meine Herren, Sie haben nichts verloren.	No lost quest items	Butler
+925	Meine Herren, soweit ich weiß, habt Ihr zuletzt %s nach %s gebracht. Es liegt wahrscheinlich immer noch dort in einer Truhe.	Quest item left in a chest	Butler
+926	Meine Herren, Ihr habt nichts verloren.	No lost quest items	Butler

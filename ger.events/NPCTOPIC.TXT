@@ -640,3 +640,4 @@
 639	Geh jetzt nach Hause	Bonus hirelings post-quest
 640	Sanduhren	Rare item buyer
 641	Verschlüsselung	Lasker covers for lazy players
+642	Wir haben etwas verloren!	Butler remembers things for you

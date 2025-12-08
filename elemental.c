@@ -9357,6 +9357,8 @@ static inline void zombie_stuff(void)
     erase_code(0x4015d5, 2); // minimap and danger gem
     erase_code(0x401808, 2); // ditto, but indoors
     hook_call(0x463603, zombie_face_on_tpk, 5);
+    erase_code(0x48dbbd, 19); // remove the max HP penalty for zombie PCs
+    erase_code(0x490e33, 13); // also on rest (but check for other conds)
 }
 
 // Extra parameters for the below call.
@@ -11136,7 +11138,7 @@ static inline void expand_global_evt(void)
 }
 
 // If a PC's health is above maximum, cancel all health regeneration
-// and decrease excess HP by 25% instead.  Zombies and jar-less liches
+// and decrease excess HP by 25% instead.  Jar-less liches
 // are considered to only have half their normal maximum HP.
 // Also here: let GM Bodybuilding grant regeneration.
 static void __declspec(naked) hp_burnout(void)
@@ -11145,8 +11147,7 @@ static void __declspec(naked) hp_burnout(void)
       {
         mov ecx, esi
         call dword ptr ds:get_full_hp
-        mov ecx, dword ptr [ebp-16] ; lich wo jar
-        or ecx, dword ptr [ebp-24] ; zombie
+        cmp dword ptr [ebp-16], 0 ; lich wo jar
         jz healthy
         shr eax, 1 ; undead max hp penalty
         healthy:
@@ -11187,7 +11188,7 @@ static void __declspec(naked) mp_regen_chunk(void)
 }
 
 // Like with HP above, decrease excess SP by 25% instead of regeneration.
-// Jar-less liches have halved maximum, zombies can hold no SP.
+// Jar-less liches have halved maximum.
 // Also here: handle SP regen from GM Meditation
 // and Grim Reaper (only near hostiles) and Eloquence Talisman's SP drain.
 static void __declspec(naked) sp_burnout(void)
@@ -11213,9 +11214,6 @@ static void __declspec(naked) sp_burnout(void)
         or dword ptr [ebp-4], eax
         sub dword ptr [esi].s_player.sp, eax
         no_drain:
-        xor eax, eax ; zombies have no sp
-        cmp dword ptr [ebp-24], 0 ; zombie
-        jnz compare_sp
         mov ecx, esi
         call dword ptr ds:get_full_sp
         cmp dword ptr [ebp-16], 0 ; lich wo jar
@@ -19934,7 +19932,8 @@ static int __thiscall get_new_full_sp(struct player *player)
     int stat = CLASS_SP_STATS[player->class];
     if (player->class < 5 || stat == 3)
         return 0;
-    if (has_item_in_slot(player, WITCHBANE, SLOT_AMULET))
+    if (has_item_in_slot(player, WITCHBANE, SLOT_AMULET)
+        || player->conditions[COND_ZOMBIE])
       {
         // no current sp changes!
         reset_sp_temp |= 1 << id;

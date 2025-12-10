@@ -28,29 +28,29 @@
 26	12	Armor Shop	13	1	Legierte Rüstungen und Schilde	Elmo	Rüstschmied	0	0	0	0	3	1.5		21			18	6	0	0	0	0																																										
 27	13	Armor Shop	0	1	Die Grünwaldschmiede	Laric	Rüstschmied	0	0	0	0	1.5	1		7			6	18	0	0	0	0																																										
 28	14	Armor Shop	0	1	Der geworfene Handschuh	Murgen	Rüstschmied	0	0	0	0	1.5	1		7			6	18	0	0	0	0																																										
-29	1	Magic Shop	1	21	Der Zaubersmaragd	Thurston	Magier	0	0	0	0	1.5	1		7			6	18	0	0	0	0																																										
-30	2	Magic Shop	2	21	Ottos Wunder	Otto	Magier	0	0	0	0	1.5	1		14			6	18	0	0	0	0																																										
-31	3	Magic Shop	3	21	Ihrer Majestäts Magier	Nathan	Magier	0	0	0	0	2	1		21			6	18	0	0	0	0																																										
-32	4	Magic Shop	4	26	Naturmagie	James	Magier	0	0	0	0	2	1		21			6	18	0	0	0	0																																										
-33	5	Magic Shop	5	22	Todespforte	Rigor	Magier	0	0	0	0	3	1.5		28			18	6	0	0	0	0																																										
-34	6	Magic Shop	6	24	Artefakte und Antiquitäten	Sionell	Magier	0	0	0	0	3	1.5		28			6	18	0	0	0	0																																										
-35	7	Magic Shop	7	24	Esoterische Genüsse	Bernard	Magier	0	0	0	0	4	2		28			6	18	0	0	0	0																																										
-36	8	Magic Shop	8	22	Eldritchs Einfluß	No'mead	Magier	0	0	0	0	4	2		28			18	6	0	0	0	0																																										
-37	9	Magic Shop	21	25	Arkane Artefakte	Lazlo	Magier	0	0	0	0	2.5	1.5		21			5	23	0	0	0	0																																										
-38	10	Magic Shop	39	23	Seltene Sachen	Dozer	Magier	0	0	0	0	2.5	1.5		14			6	18	0	0	0	0																																										
-39	11	Magic Shop	23	17	Der Schwarzmarkt	Cugel	Hehler	0	0	0	0	2.5	0.8		28			18	6	0	0	0	0
-40	12	Magic Shop	23	17	Der Schwarzmarkt	Cugel	Hehler	0	0	0	0	3.5	1.5		28			18	6	0	0	0	0
+29	1	Magic Shop	1	21	Der Zaubersmaragd	Thurston	Magier	0	0	0	0	1.5	0.5		7			6	18	0	0	0	0
+30	2	Magic Shop	2	21	Ottos Wunder	Otto	Magier	0	0	0	0	1.5	0.5		14			6	18	0	0	0	0
+31	3	Magic Shop	3	21	Ihrer Majestäts Magier	Nathan	Magier	0	0	0	0	2	0.5		21			6	18	0	0	0	0
+32	4	Magic Shop	4	26	Naturmagie	James	Magier	0	0	0	0	2	0.5		21			6	18	0	0	0	0
+33	5	Magic Shop	5	22	Todespforte	Rigor	Magier	0	0	0	0	3	0.75		28			18	6	0	0	0	0
+34	6	Magic Shop	6	24	Artefakte und Antiquitäten	Sionell	Magier	0	0	0	0	3	0.75		28			6	18	0	0	0	0
+35	7	Magic Shop	7	24	Esoterische Genüsse	Bernard	Magier	0	0	0	0	4	1		28			6	18	0	0	0	0
+36	8	Magic Shop	8	22	Eldritchs Einfluß	No'mead	Magier	0	0	0	0	4	1		28			18	6	0	0	0	0
+37	9	Magic Shop	21	25	Arkane Artefakte	Lazlo	Magier	0	0	0	0	2.5	0.75		21			5	23	0	0	0	0
+38	10	Magic Shop	39	23	Seltene Sachen	Dozer	Magier	0	0	0	0	2.5	0.75		14			6	18	0	0	0	0
+39	11	Magic Shop	23	17	Der Schwarzmarkt	Cugel	Hehler	0	0	0	0	2.5	0.4		28			18	6	0	0	0	0
+40	12	Magic Shop	23	17	Der Schwarzmarkt	Cugel	Hehler	0	0	0	0	3.5	0.75		28			18	6	0	0	0	0
 41	13	Magic Shop	0	21	Zerknitterte Seiten	Silent	Magier	0	0	0	0	1.5	1		7			6	18	0	0	0	0																																										
-42	1	Alchemist	1	7	Die blaue Flasche	Kethry	Alchimist	0	0	0	0	2	1		7			6	18	0	0	0	0																																										
-43	2	Alchemist	2	7	Zaubertrank & Elixier	Jessica	Alchimist	0	0	0	0	2	1		7			6	18	0	0	0	0																																										
-44	3	Alchemist	3	7	Bleiverwandlungen	Margaret	Alchimist	0	0	0	0	3	1		7			6	18	0	0	0	0																																										
-45	4	Alchemist	4	12	Der blubbernde Kessel	Schmendrick	Alchimist	0	0	0	0	3	1		7			6	18	0	0	0	0																																										
-46	5	Alchemist	5	8	Die geschwärzte Viole	Ash	Alchimist	0	0	0	0	4	1.5		14			18	6	0	0	0	0																																										
-47	6	Alchemist	6	10	Edmonds Ampullen	Edmond	Alchimist	0	0	0	0	4	1.5		14			6	18	0	0	0	0																																										
-48	7	Alchemist	7	10	Phiolen des Schicksals	Julian	Alchimist	0	0	0	0	5	2		14			6	18	0	0	0	0																																										
-49	8	Alchemist	8	8	Infernalische Verlockung	Nogard	Alchimist	0	0	0	0	5	2		14			18	6	0	0	0	0																																										
-50	9	Alchemist	39	9	Starke Tränke & Gebräue	Digger	Alchimist	0	0	0	0	4	1		7			6	18	0	0	0	0																																										
-51	10	Alchemist	10	8	Der Stein der Weisen	Sioned	Alchimist	0	0	0	0	5	2		14			18	6	0	0	0	0																																										
+42	1	Alchemist	1	7	Die blaue Flasche	Kethry	Alchimist	0	0	0	0	2	0.5		7			6	18	0	0	0	0
+43	2	Alchemist	2	7	Zaubertrank & Elixier	Jessica	Alchimist	0	0	0	0	2	0.5		7			6	18	0	0	0	0
+44	3	Alchemist	3	7	Bleiverwandlungen	Margaret	Alchimist	0	0	0	0	3	0.5		7			6	18	0	0	0	0
+45	4	Alchemist	4	12	Der blubbernde Kessel	Schmendrick	Alchimist	0	0	0	0	3	0.5		7			6	18	0	0	0	0
+46	5	Alchemist	5	8	Die geschwärzte Viole	Ash	Alchimist	0	0	0	0	4	0.75		14			18	6	0	0	0	0
+47	6	Alchemist	6	10	Edmonds Ampullen	Edmond	Alchimist	0	0	0	0	4	0.75		14			6	18	0	0	0	0
+48	7	Alchemist	7	10	Phiolen des Schicksals	Julian	Alchimist	0	0	0	0	5	1		14			6	18	0	0	0	0
+49	8	Alchemist	8	8	Infernalische Verlockung	Nogard	Alchimist	0	0	0	0	5	1		14			18	6	0	0	0	0
+50	9	Alchemist	39	9	Starke Tränke & Gebräue	Digger	Alchimist	0	0	0	0	4	0.5		7			6	18	0	0	0	0
+51	10	Alchemist	10	8	Der Stein der Weisen	Sioned	Alchimist	0	0	0	0	5	1		14			18	6	0	0	0	0
 52	11	Alchemist	0	7	Aromatische Therapien	Kathleen	Alchimist	0	0	0	0	1.5	1		7			6	18	0	0	0	0																																										
 53	12	Alchemist	0	7	Hilfreiche Rezepte	Agatha	Alchimist	0	0	0	0	1.5	1		7			6	18	0	0	0	0																																										
 54	1	Stables	2	27	Das J.V.C Gehöft	Christian	Stallmeister	0	0	0	0	2	1					6	18	0	0	0	0																																										
@@ -106,20 +106,20 @@
 104	3	Town Hall	4	50	Pierpont Stadthalle	Stephan	Beamter	0	0	0	0	1.5	1					6	18	0	0	0	0																																										
 105	4	Town Hall	7	48	Halle der Dämmerung	Icarus 	Beamter	0	0	0	0	1.5	1					6	18	0	0	0	0																																										
 106	5	Town Hall	8	46	Halle der Mitternacht	Crowley	Beamter	0	0	0	0	1.5	1					18	6	0	0	0	0																																										
-107	1	Tavern	1	33	Zu den zwei Palmen	Aaron	Wirt	0	0	0	0	6	1					5	2	0	0	0	0																																										
-108	2	Tavern	2	33	Zur Einkehr	Corbie	Wirt	0	0	0	0	6	1					5	2	0	0	0	0																																										
-109	3	Tavern	3	33	Greifensruhe	Andrew	Wirt	0	0	0	0	12	1					5	2	0	0	0	0																																										
-110	4	Tavern	4	38	Smaragdhof	Emeril	Wirt	0	0	0	0	12	1					5	2	0	0	0	0																																										
-111	5	Tavern	5	34	Der eitle Goblin	Kasia	Wirt	0	0	0	0	14	1					17	14	0	0	0	0																																										
-112	6	Tavern	6	36	Trautes Heim	Bismor	Wirt	0	0	0	0	14	1					5	2	0	0	0	0																																										
-113	7	Tavern	7	36	Zum gesegneten Gebräu	Joseph	Wirt	0	0	0	0	30	1.5					5	2	0	0	0	0																																										
-114	8	Tavern	8	34	Die Halle des Vampyr	Paul	Wirt	0	0	0	0	30	1.5					17	14	0	0	0	0																																										
-115	9	Tavern	9	33	Der lachende Mönch	Winston	Wirt	0	0	0	0	6	1					5	2	0	0	0	0																																										
-116	10	Tavern	10	37	Schicksals Willkür	Phillepe	Wirt	0	0	0	0	60	2					17	14	0	0	0	0																																										
-117	11	Tavern	11	35	Bergmanns Schänke	Irving	Wirt	0	0	0	0	18	1					5	2	0	0	0	0																																										
-118	12	Tavern	13	33	Der treue Söldner	Karl	Wirt	0	0	0	0	20	1.5					5	2	0	0	0	0																																										
-119	13	Tavern	14	38	Der Koboldkrug	Conor	Wirt	0	0	0	0	20	1.5					5	2	0	0	0	0																																										
-120	14	Tavern	39	35	Groggs Grog	Grogg	Wirt	0	0	0	0	20	1.5					5	2	0	0	0	0																																										
+107	1	Tavern	1	33	Zu den zwei Palmen	Aaron	Wirt	0	0	0	0	6	0.5					5	2	0	0	0	0
+108	2	Tavern	2	33	Zur Einkehr	Corbie	Wirt	0	0	0	0	6	0.5					5	2	0	0	0	0
+109	3	Tavern	3	33	Greifensruhe	Andrew	Wirt	0	0	0	0	12	0.5					5	2	0	0	0	0
+110	4	Tavern	4	38	Smaragdhof	Emeril	Wirt	0	0	0	0	12	0.5					5	2	0	0	0	0
+111	5	Tavern	5	34	Der eitle Goblin	Kasia	Wirt	0	0	0	0	14	0.5					17	14	0	0	0	0
+112	6	Tavern	6	36	Trautes Heim	Bismor	Wirt	0	0	0	0	14	0.5					5	2	0	0	0	0
+113	7	Tavern	7	36	Zum gesegneten Gebräu	Joseph	Wirt	0	0	0	0	30	0.75					5	2	0	0	0	0
+114	8	Tavern	8	34	Die Halle des Vampyr	Paul	Wirt	0	0	0	0	30	0.75					17	14	0	0	0	0
+115	9	Tavern	9	33	Der lachende Mönch	Winston	Wirt	0	0	0	0	6	0.5					5	2	0	0	0	0
+116	10	Tavern	10	37	Schicksals Willkür	Phillepe	Wirt	0	0	0	0	60	1					17	14	0	0	0	0
+117	11	Tavern	11	35	Bergmanns Schänke	Irving	Wirt	0	0	0	0	18	0.5					5	2	0	0	0	0
+118	12	Tavern	13	33	Der treue Söldner	Karl	Wirt	0	0	0	0	20	0.75					5	2	0	0	0	0
+119	13	Tavern	14	38	Der Koboldkrug	Conor	Wirt	0	0	0	0	20	0.75					5	2	0	0	0	0
+120	14	Tavern	39	35	Groggs Grog	Grogg	Wirt	0	0	0	0	20	0.75					5	2	0	0	0	0
 121	15	Tavern	0	33	Ritterjagd	Michael	Wirt	0	0	0	0	6	1					8	2	0	0	0	0																																										
 122	16	Tavern	0	33	Die letzte Zuflucht	Shamus	Wirt	0	0	0	0	6	1					8	2	0	0	0	0																																										
 123	17	Tavern	0	33	Garrions Weghaus	Garrion	Wirt	0	0	0	0	6	1					8	2	0	0	0	0																																										

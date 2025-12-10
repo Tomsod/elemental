@@ -27948,6 +27948,42 @@ static void __declspec(naked) greetings_in_shops(void)
       }
 }
 
+// Let exiting Arena through the door be faster with horseman hirelings etc.
+static void __declspec(naked) arena_exit_time(void)
+{
+    asm
+      {
+        add ebx, 4 - 1 ; was 0
+        mov ecx, NPC_EXPLORER
+        call dword ptr ds:have_npc_hired
+        sub ebx, eax
+        mov ecx, NPC_HORSEMAN
+        call dword ptr ds:have_npc_hired
+        sub ebx, eax
+        sub ebx, eax
+        test byte ptr [NPC_ADDR+HORSE_TULAREAN*SIZE_NPC].s_npc.bits, NPC_HIRED
+        jnz reduce
+        inc ebx ; account for that -1 at beginning
+        test byte ptr [NPC_ADDR+HORSE_ERATHIA*SIZE_NPC].s_npc.bits, NPC_HIRED
+        jnz reduce
+        test byte ptr [NPC_ADDR+HORSE_TATALIA*SIZE_NPC].s_npc.bits, NPC_HIRED
+        jnz reduce
+        test byte ptr [NPC_ADDR+HORSE_AVLEE*SIZE_NPC].s_npc.bits, NPC_HIRED
+        jz min
+        reduce:
+        sub ebx, 2
+        min:
+        mov eax, ONE_DAY
+        test ebx, ebx
+        jle skip
+        mul ebx
+        skip:
+        xor ebx, ebx ; restore
+        add dword ptr [CURRENT_TIME_ADDR], eax ; replaced code, almost
+        ret
+      }
+}
+
 // Various changes to stores, guilds and other buildings.
 static inline void shop_changes(void)
 {
@@ -28163,6 +28199,7 @@ static inline void shop_changes(void)
     erase_code(0x4b2076, 53); // don't remove the topic on joining a guild
     hook_call(0x44581d, arena_prize_topic, 6);
     hook_call(0x4b2b56, greetings_in_shops, 6);
+    hook_call(0x432d5f, arena_exit_time, 10);
 }
 
 // Allow non-bouncing projectiles to trigger facets in Altar of Wishes.

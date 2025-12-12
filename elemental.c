@@ -1269,7 +1269,7 @@ struct __attribute__((packed)) map_monster
     uint8_t mod_flags; // same
 #define MMF_ERADICATED 1
 #define MMF_REANIMATE 2
-#define MMF_ZOMBIE 4
+#define MMF_REVIVED 4
 #define MMF_EXTRA_REAGENT 8
 #define MMF_REAGENT_MORE_LIKELY 16
 #define MMF_JUMPING 32
@@ -8972,7 +8972,7 @@ static void __declspec(naked) zombify(void)
         mov byte ptr [edi].s_map_monster.holy_resistance, 0
         not_immune:
         mov dword ptr [edi].s_map_monster.experience, 0
-        or byte ptr [edi].s_map_monster.mod_flags, MMF_ZOMBIE
+        or byte ptr [edi].s_map_monster.mod_flags, MMF_REVIVED
         mov eax, dword ptr [ebp-4] ; reanimate power
         lea eax, [eax+eax*4]
         add eax, eax
@@ -9276,7 +9276,7 @@ static void __stdcall ethrics_staff_zombie(struct player *player,
     power *= 10;
     if (monster->max_hp > power)
         monster->max_hp = power;
-    monster->mod_flags |= MMF_REANIMATE | MMF_ZOMBIE;
+    monster->mod_flags |= MMF_REANIMATE | MMF_REVIVED;
     monster->poison_resistance = IMMUNE;
     monster->mind_resistance = IMMUNE;
     if (monster->holy_resistance == IMMUNE)
@@ -14877,6 +14877,7 @@ static void __declspec(naked) revive_monster(void)
         ok:
         call dword ptr ds:resurrect_monster
         mov dword ptr [edi].s_map_monster.experience, esi ; prevent farming
+        or byte ptr [edi].s_map_monster.mod_flags, MMF_REVIVED ; ditto
         xor eax, eax
         inc eax ; for raise dead
         cmp word ptr [ebx], SPL_RESURRECTION
@@ -15652,7 +15653,9 @@ static void __declspec(naked) soul_stealing_weapon(void)
         test ebx, ebx
         jnz quit
         movzx eax, byte ptr [edi].s_player.class
-        movzx ebx, byte ptr [0x4ed634+eax] ; sp multiplier
+        movzx eax, byte ptr [0x4ed634+eax] ; sp multiplier
+        test byte ptr [esi].s_map_monster.mod_flags, MMF_REVIVED
+        cmovz ebx, eax ; prevent sp farming with the staff
         mov eax, dword ptr [edi+SLOT_MAIN_HAND*4].s_player.equipment
         test eax, eax
         jz offhand
@@ -18115,7 +18118,7 @@ static void __declspec(naked) harvest_seed(void)
         no_bounty:
         mov edi, 20 ; drop chance
         test byte ptr [esi].s_map_monster.mod_flags, \
-             MMF_ERADICATED + MMF_ZOMBIE
+             MMF_ERADICATED + MMF_REVIVED
         jnz skip
         cmp dword ptr [ebp-40], 0 ; vanilla reagent
         jnz quit
@@ -29782,6 +29785,11 @@ static void __declspec(naked) brass_knuckles_elem_damage(void)
         cmp eax, SKILL_STAFF
         jne skip
         ok:
+        push SLOT_GAUNTLETS
+        mov ecx, edi
+        call dword ptr ds:has_anything_in_slot
+        test eax, eax
+        jz skip
         push SLOT_GAUNTLETS
         mov ecx, edi
         call dword ptr ds:equipped_item_skill

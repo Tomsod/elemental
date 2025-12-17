@@ -1360,18 +1360,23 @@ typedef struct mapstats_item s_mapstats_item;
 #define MAPSTATS ((struct mapstats_item *) MAPSTATS_ADDR)
 
 #define CUR_MAP_FILENAME_ADDR 0x6be1c4
-#define CUR_MAP_FILENAME ((char *) CUR_MAP_FILENAME_ADDR)
-// TODO: instead of comparing map names we could fetch indices on game start
-#define MAP_ARENA_ADDR 0x4e44b0 // d05.blv
-#define MAP_BREEDING_ZONE_ADDR 0x4e99e4 // d10.blv
-#define MAP_WALLS_OF_MIST_ADDR 0x4e99ec // d11.blv
-#define MAP_WALLS_OF_MIST ((const char *) MAP_WALLS_OF_MIST_ADDR)
-#define MAP_MOUNT_NIGHON "out10.odm"
-#define MAP_SHOALS ((const char *) 0x4e4648) // out15.odm
+enum map_ids
+{
+    MAP_CASTLE,
+    MAP_BOTTLE,
+    MAP_GENIE,
+    MAP_ARENA,
+    MAP_BREED,
+    MAP_WOM,
+    MAP_NIGHON,
+    MAP_SHOALS,
+    MAP_HOUSE,
+    MAP_ID_COUNT
+};
+static int map_ids[MAP_ID_COUNT];
 static const char map_altar_of_wishes[] = "genie.blv";
 #define UNDERWATER 0x6be244
 #define CURRENT_MAP_ID 0x6bdfbc
-static int castle_id, bottle_id, genie_id;
 
 #define OUTDOOR_LAST_VISIT_TIME 0x6a1160
 #define INDOOR_LAST_VISIT_TIME 0x6be534
@@ -4807,7 +4812,7 @@ static int __cdecl compare_special_item_prefix(char *prefix, char *text)
 // (Note that leaving a map also forces an autosave.)
 static void save_wom_barrels(void)
 {
-    if (uncased_strcmp(CUR_MAP_FILENAME, MAP_WALLS_OF_MIST))
+    if (dword(CURRENT_MAP_ID) != map_ids[MAP_WOM])
         return;
     static const struct file_header header = { "barrels.bin", WOM_BARREL_CNT };
     save_file_to_lod(SAVEGAME_LOD, &header, MAP_VARS + 75, 0);
@@ -4819,7 +4824,7 @@ static void save_wom_barrels(void)
 // This is actually called on each savegame reload as well, but it's okay.
 static void load_wom_barrels(void)
 {
-    if (uncased_strcmp(CUR_MAP_FILENAME, MAP_WALLS_OF_MIST))
+    if (dword(CURRENT_MAP_ID) != map_ids[MAP_WOM])
         return;
     if (check_bit(QBITS, QBIT_REFILL_WOM_BARRELS))
         return;
@@ -10499,7 +10504,8 @@ static void load_map_rep(void)
         if (dword(visit_addr - 40) > 1 && !*(uint64_t *) visit_addr)
             show_status_text(new_strings[STR_MAP_REFILL], 4);
         // these two never refill
-        else if (map_index != castle_id && map_index != bottle_id)
+        else if (map_index + 1 != map_ids[MAP_CASTLE]
+                 && map_index + 1 != map_ids[MAP_BOTTLE])
           {
             unsigned int day = CURRENT_TIME >> 13;
             day /= 256 * 60 * 24 >> 13; // avoid long division dependency
@@ -12249,16 +12255,14 @@ static void __declspec(naked) th_spear(void)
 // Whether it makes sense to check a map for refill.
 static int can_refill_map(int id)
 {
-    static int house; // the small house for assassination quests
-    if (!house) house = get_map_index(MAPSTATS, "mdt15.blv") - 1;
-    if (id == dword(CURRENT_MAP_ID) - 1
-        || id == castle_id || id == bottle_id // never refilled
-        || !elemdata.next_refill_day[id]) // not visited yet
+    if (id == dword(CURRENT_MAP_ID)
+        || id == map_ids[MAP_CASTLE] || id == map_ids[MAP_BOTTLE] // no refill
+        || !elemdata.next_refill_day[id-1]) // not visited yet
         return 0; // nothing to refill
-    if (id == house && !check_bit(QBITS, QBIT_KILL_TOLBERTI)
-                    && !check_bit(QBITS, QBIT_KILL_ROBERT)
-        || !MAPSTATS[id].refill_days // proving grounds/arena
-        || MAPSTATS[id].reputation_group == 1
+    if (id == map_ids[MAP_HOUSE] && !check_bit(QBITS, QBIT_KILL_TOLBERTI)
+                                 && !check_bit(QBITS, QBIT_KILL_ROBERT)
+        || !MAPSTATS[id-1].refill_days // proving grounds/arena
+        || MAPSTATS[id-1].reputation_group == 1
            && check_bit(QBITS, QBIT_LEFT_EMERALD_ISLAND))
         return -1; // no longer visitable or otherwise transient
     return 1; // ok to check
@@ -12298,7 +12302,7 @@ static int __thiscall new_hireling_action(int id)
             int refilled = -1;
             for (int i = 0, c = 0; i < MAP_COUNT; i++)
               {
-                if (can_refill_map(i) > 0
+                if (can_refill_map(i + 1) > 0
                     && elemdata.next_refill_day[i] <= day && !(random() % ++c))
                     refilled = i;
               }
@@ -17118,7 +17122,7 @@ static void save_temple_beacon(void)
         dword(PARTY_LOOK_ANGLE), dword(CURRENT_MAP_ID) - 1,
     };
     change_bit(QBITS, QBIT_TEMPLE_UNDERWATER,
-               !uncased_strcmp(CUR_MAP_FILENAME, MAP_SHOALS));
+               dword(CURRENT_MAP_ID) == map_ids[MAP_SHOALS]);
 }
 
 // Hook for the above.
@@ -17139,19 +17143,13 @@ static void __declspec(naked) bottle_in_arena(void)
 {
     asm
       {
-        push dword ptr [esp+8] ; map filename
-        push MAP_ARENA_ADDR
-        call dword ptr ds:uncased_strcmp
-        test eax, eax
-        jz forbid
-        mov dword ptr [esp], edi ; bottle temple filename
-        call dword ptr ds:uncased_strcmp
-        test eax, eax
-        jz forbid
-        add esp, 8
-        ret
+        mov eax, dword ptr [CURRENT_MAP_ID]
+        cmp eax, dword ptr [map_ids+MAP_ARENA*4]
+        je forbid
+        cmp eax, dword ptr [map_ids+MAP_BOTTLE*4]
+        jne quit
         forbid:
-        add esp, 8
+        xor eax, eax
         push eax
         push eax
         push eax
@@ -17163,6 +17161,7 @@ static void __declspec(naked) bottle_in_arena(void)
         mov ecx, SOUND_THIS_ADDR
         call dword ptr ds:make_sound
         xor eax, eax
+        quit:
         ret
       }
 }
@@ -17572,7 +17571,7 @@ static void __thiscall replace_chest(int id)
 }
 
 // If we're opening the actual chest 0, restore it beforehand.
-// Also here: break invisibility on looting (regular) chests.
+// Also here: break invisibility on looting (regular) chests, except in WoM.
 static void __declspec(naked) open_regular_chest(void)
 {
     asm
@@ -17586,6 +17585,9 @@ static void __declspec(naked) open_regular_chest(void)
         call dword ptr ds:open_chest ; replaced call
         test eax, eax
         jz quit
+        mov ecx, dword ptr [CURRENT_MAP_ID]
+        cmp ecx, dword ptr [map_ids+MAP_WOM*4]
+        je quit
         mov ecx, PARTY_BUFF_ADDR + BUFF_INVISIBILITY * SIZE_BUFF
         call dword ptr ds:remove_buff
         or eax, 1
@@ -18046,18 +18048,11 @@ static void __declspec(naked) plant_seed(void)
         call dword ptr ds:has_item_in_slot
         test eax, eax
         jz skip
-        push CUR_MAP_FILENAME_ADDR
-        push MAP_BREEDING_ZONE_ADDR
-        call dword ptr ds:uncased_strcmp
-        test eax, eax
-        jz restore
-        mov dword ptr [esp], MAP_WALLS_OF_MIST_ADDR
-        call dword ptr ds:uncased_strcmp
-        test eax, eax
-        restore:
-        pop eax
-        pop eax
-        jz skip
+        mov eax, dword ptr [CURRENT_MAP_ID]
+        cmp eax, dword ptr [map_ids+MAP_BREED*4]
+        je skip
+        cmp eax, dword ptr [map_ids+MAP_WOM*4]
+        je skip
         or byte ptr [esi].s_map_monster.mod_flags, MMF_EXTRA_REAGENT
         mov al, byte ptr [edi].s_player.class
         and al, -4
@@ -20706,9 +20701,16 @@ static void set_colors(void)
     colors[CLR_GREEN] = rgb_color(0, 255, 0);
     colors[CLR_BLUE] = rgb_color(0, 251, 251); // 252+ breaks in widescreen
     colors[CLR_PURPLE] = rgb_color(255, 0, 255);
-    castle_id = get_map_index(MAPSTATS, "d29.blv") - 1;
-    bottle_id = get_map_index(MAPSTATS, "nwc.blv") - 1;
-    genie_id = get_map_index(MAPSTATS, map_altar_of_wishes);
+
+    map_ids[MAP_CASTLE] = get_map_index(MAPSTATS, "d29.blv"); // cs. harmondale
+    map_ids[MAP_BOTTLE] = get_map_index(MAPSTATS, "nwc.blv"); // temple in bot.
+    map_ids[MAP_GENIE] = get_map_index(MAPSTATS, map_altar_of_wishes);
+    map_ids[MAP_ARENA] = get_map_index(MAPSTATS, (char *) 0x4e44b0); // d05.blv
+    map_ids[MAP_BREED] = get_map_index(MAPSTATS, (char *) 0x4e99e4); // d10.blv
+    map_ids[MAP_WOM] = get_map_index(MAPSTATS, (char *) 0x4e99ec); // d11.blv
+    map_ids[MAP_NIGHON] = get_map_index(MAPSTATS, "out10.odm");
+    map_ids[MAP_SHOALS] = get_map_index(MAPSTATS, (char *) 0x4e4648); // out15
+    map_ids[MAP_HOUSE] = get_map_index(MAPSTATS, "mdt15.blv"); // small house
 }
 
 // Colorize skill ranks more informatively (also respect racial skills).
@@ -22999,7 +23001,7 @@ static void meditation_quest(void)
 {
     if (check_bit(QBITS, QBIT_MEDITATION_GM_QUEST_ACTIVE)
         && !check_bit(QBITS, QBIT_MEDITATION_GM_QUEST)
-        && !uncased_strcmp(CUR_MAP_FILENAME, MAP_MOUNT_NIGHON)
+        && dword(CURRENT_MAP_ID) == map_ids[MAP_NIGHON]
         && dword(PARTY_Z) >= 7999) // only the volcano is that high
       {
         evt_set(PARTY, EVT_QBITS, QBIT_MEDITATION_GM_QUEST);
@@ -27360,7 +27362,7 @@ static char *i_lost_it(void)
       {
         unsigned int day = CURRENT_TIME >> 13;
         day /= 256 * 60 * 24 >> 13; // avoid long division dependency
-        int check = can_refill_map(lost - 1);
+        int check = can_refill_map(lost);
         if (!check || check > 0 && elemdata.next_refill_day[lost-1] > day)
             text++; // left in another map
       }
@@ -27647,7 +27649,7 @@ static void __thiscall restock_black_market(int house)
         int lost = elemdata.lost_items[i-FIRST_LOST_ITEM];
         if (lost > 0)
           {
-            int check = can_refill_map(lost - 1);
+            int check = can_refill_map(lost);
             if (!check || check > 0 && elemdata.next_refill_day[lost-1] > day)
                 continue;
           }
@@ -28216,7 +28218,7 @@ static void __declspec(naked) genie_projectile_trigger(void)
         test eax, eax ; the check after the hook
         jnz quit
         mov ecx, dword ptr [CURRENT_MAP_ID]
-        cmp ecx, dword ptr [genie_id]
+        cmp ecx, dword ptr [map_ids+MAP_GENIE*4]
         sete al
         quit:
         ret
@@ -28252,7 +28254,7 @@ static void __declspec(naked) set_genie_beacon(void)
 {
     asm
       {
-        mov eax, dword ptr [genie_id]
+        mov eax, dword ptr [map_ids+MAP_GENIE*4]
         cmp eax, dword ptr [CURRENT_MAP_ID]
         je genie
         mov eax, dword ptr [0x6a0b0c] ; replaced code
@@ -28270,7 +28272,7 @@ static void __declspec(naked) genie_beacon_map_name(void)
     asm
       {
         shr ecx, 5 ; restore map id
-        cmp ecx, dword ptr [genie_id]
+        cmp ecx, dword ptr [map_ids+MAP_GENIE*4]
         je genie
         jmp dword ptr ds:uncased_strcmp ; replaced call
         genie:
@@ -28288,7 +28290,7 @@ static void __declspec(naked) genie_recall_beacon_map_name(void)
         pop ecx
         mov eax, dword ptr [esp+32] ; beacon struct, maybe
         mov ax, word ptr [eax+26] ; map id
-        cmp ax, word ptr [genie_id]
+        cmp ax, word ptr [map_ids+MAP_GENIE*4]
         jne skip
         mov dword ptr [esp], offset map_altar_of_wishes
         skip:

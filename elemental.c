@@ -1600,7 +1600,9 @@ typedef struct patch_options s_patch_options;
 //vanilla
 #define ACTION_EXIT 113
 #define ACTION_SCROLL 146
+#define ACTION_HOUSE_NPC_ACTION 175
 #define ACTION_CHANGE_CONVERSATION 405
+#define ACTION_TALK_HOUSE_NPC 410
 
 // Cavalier horse NPCs.
 enum horses
@@ -17612,6 +17614,7 @@ static char *__stdcall get_quick_spell_hint(int button);
 // and the action that triggers a gamescript event.
 // Also also, an action for opening the new key config page is here too.
 // Finally, there are the two actions for the new quick spell buttons.
+// The hack to immediately show Celeste/Pit temple entrances is also here.
 static void __declspec(naked) action_open_extra_chest(void)
 {
     asm
@@ -17628,6 +17631,24 @@ static void __declspec(naked) action_open_extra_chest(void)
         je hint
         cmp ecx, ACTION_QUICK_SPELL_PRESS
         je spell
+        cmp ecx, ACTION_TALK_HOUSE_NPC
+        jne skip
+        cmp dword ptr [esp+24], 1 ; second npc (not healer)
+        jne skip
+        mov edx, dword ptr [DIALOG2]
+        mov edx, dword ptr [edx+28] ; house id
+        sub edx, 80 ; celeste temple
+        je temple
+        dec edx ; pit temple
+        jne skip
+        temple:
+        push 0
+        push 19 ; event a
+        push ACTION_HOUSE_NPC_ACTION
+        mov ecx, ACTION_THIS_ADDR
+        call dword ptr ds:add_action
+        mov eax, ACTION_TALK_HOUSE_NPC - 5 ; restore
+        skip:
         movzx eax, byte ptr [0x4353a1+eax] ; replaced code
         ret
         chest:

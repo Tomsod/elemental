@@ -577,8 +577,8 @@
 576	Make Shield for 2000 Gold	RDSM crafter
 577	Sell Scales for 2500 Gold	RDSM crafter
 578	Is it done yet?	RDSM crafter
-579	An invitation…	Good ambassador (probatory access)
-580	An invitation…	Evil ambassador (probatory access)
+579	Trash Heap	tlvl2 spent
+580	Trash Heap	tlvl3 spent
 581	Arbiter	Good ambassador (new judge)
 582	Arbiter	Evil ambassador (new judge)
 583	Ally with Bracada	Gavin Magnus (probatory access)
@@ -641,3 +641,5 @@
 640	Hourglasses	Rare item buyer
 641	Cipher	Lasker covers for lazy players
 642	I lost it	Butler remembers things for you
+643	An invitation…	Good ambassador (probatory access)
+644	An invitation…	Evil ambassador (probatory access)

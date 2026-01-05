@@ -577,8 +577,8 @@
 576	Сделать щит за 2000 золотых	RDSM crafter
 577	Продать чешую за 2500 золотых	RDSM crafter
 578	Еще не готово?	RDSM crafter
-579	Приглашение...	Good ambassador (probatory access)
-580	Приглашение...	Evil ambassador (probatory access)
+579	Мусорная куча	tlvl2 spent
+580	Мусорная куча	tlvl3 spent
 581	Арбитр	Good ambassador (new judge)
 582	Арбитр	Evil ambassador (new judge)
 583	Вступить в союз с Бракадой	Gavin Magnus (probatory access)
@@ -641,3 +641,5 @@
 640	Песочные часы	Rare item buyer
 641	Шифр	Lasker covers for lazy players
 642	Пропажа	Butler remembers things for you
+643	Приглашение...	Good ambassador (probatory access)
+644	Приглашение...	Evil ambassador (probatory access)

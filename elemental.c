@@ -809,6 +809,7 @@ enum face_animations
     ANIM_DISMAY = 40,
     ANIM_SHAKE_HEAD = 67,
     ANIM_AWARD = 96,
+    ANIM_ZOMBIE = 99,
 };
 
 #define SOUND_BUZZ 27
@@ -6968,6 +6969,7 @@ static const funcptr_t strcpy_ptr = strcpy;
 static const funcptr_t strcat_ptr = strcat;
 static const funcptr_t strcmp_ptr = strcmp;
 static const funcptr_t strchr_ptr = strchr;
+static const funcptr_t strstr_ptr = strstr;
 
 // Display GM Wizard Eye duration as "Permanent".
 static void __declspec(naked) wizard_eye_display_duration(void)
@@ -9344,6 +9346,102 @@ static void __declspec(naked) zombie_face_on_tpk(void)
       }
 }
 
+// Used just below.
+static char zombie_string[] = "zombie";
+
+// Let monsters in monsters.txt inflict the Zombie condition.
+static void __declspec(naked) parse_zombie_special(void)
+{
+    asm
+      {
+#ifdef __clang__
+        mov eax, offset zombie_string
+        push eax
+#else
+        push offset zombie_string
+#endif
+        push ebx
+        call dword ptr ds:strstr_ptr
+        test eax, eax
+        jz skip
+        mov byte ptr [esi+19], 24 ; the new id
+        mov dword ptr [esp], 0x45632f ; after match code
+        ret 12
+        skip:
+        add esp, 8
+        mov dword ptr [esp+4], 0x4e8978 ; replaced code, pretty much
+        ret
+      }
+}
+
+// Chance to avoid a zombifying attack with high Intellect.
+static void __declspec(naked) resist_zombie_special(void)
+{
+    asm
+      {
+        je zombie
+        not_zombie:
+        jmp dword ptr [0x48e0d1+eax*4] ; replaced code
+        zombie:
+        cmp dword ptr [elemdata.difficulty], edi ; == 0
+        mov al, COND_DISEASED_RED - 1
+        jz not_zombie
+        mov ecx, esi ; pc
+        call dword ptr ds:get_intellect
+        mov eax, 0x48deda ; to resist via stat code
+        jmp eax
+      }
+}
+
+// And actually apply the zombie condition (except on easy).
+static void __declspec(naked) apply_zombie_special(void)
+{
+    asm
+      {
+        je zombie
+        not_zombie:
+        jmp dword ptr [0x48e12d+ecx*4] ; replaced code
+        zombie:
+        cmp dword ptr [elemdata.difficulty], edi ; == 0
+        mov cl, COND_DISEASED_RED - 1
+        jz not_zombie
+        cmp byte ptr [esi].s_player.class, CLASS_LICH
+        je skip
+        mov eax, dword ptr [esi+COND_ZOMBIE*8]
+        or eax, dword ptr [esi+COND_ZOMBIE*8+4]
+        or eax, dword ptr [esi+COND_DEAD*8]
+        or eax, dword ptr [esi+COND_DEAD*8+4]
+        or eax, dword ptr [esi+COND_ERADICATED*8]
+        or eax, dword ptr [esi+COND_ERADICATED*8+4]
+        jnz skip
+        mov al, byte ptr [esi].s_player.face
+        mov edx, dword ptr [esi].s_player.voice
+        mov dword ptr [esi].s_player.old_face, eax
+        mov dword ptr [esi].s_player.old_voice, edx
+        mov ecx, esi
+        mov eax, dword ptr [CURRENT_TIME_ADDR]
+        mov edx, dword ptr [CURRENT_TIME_ADDR+4]
+        mov dword ptr [esi+COND_ZOMBIE*8], eax
+        mov dword ptr [esi+COND_ZOMBIE*8+4], edx
+        call dword ptr ds:get_gender
+        lea edx, [eax+23]
+        mov byte ptr [esi].s_player.face, dl
+        mov dword ptr [esi].s_player.voice, edx
+        mov ecx, 4
+        get_pc_id:
+        cmp esi, dword ptr [PC_POINTERS+ecx*4-4]
+        loopne get_pc_id
+        call dword ptr ds:update_face
+        push edi
+        push ANIM_ZOMBIE
+        mov ecx, esi
+        call dword ptr ds:show_face_animation
+        skip:
+        mov eax, 0x48df44 ; make a sound
+        jmp eax
+      }
+}
+
 // Tweaks of zombie players and monsters.
 static inline void zombie_stuff(void)
 {
@@ -9366,6 +9464,11 @@ static inline void zombie_stuff(void)
     hook_call(0x463603, zombie_face_on_tpk, 5);
     erase_code(0x48dbbd, 19); // remove the max HP penalty for zombie PCs
     erase_code(0x490e33, 13); // also on rest (but check for other conds)
+    hook_call(0x4559c6, parse_zombie_special, 7);
+    patch_byte(0x48dcf6, 24 - 1); // one more special attack to resist
+    hook_jump(0x48dd04, resist_zombie_special);
+    patch_byte(0x48df14, 24 - 1); // and for the actual effect code
+    hook_jump(0x48df1b, apply_zombie_special);
 }
 
 // Extra parameters for the below call.
@@ -22508,7 +22611,7 @@ static void __declspec(naked) print_full_monster_attack(void)
 }
 
 // Global.txt entries for attack boni.  Used just below.
-static char **const monster_bonus_strings[24] = {
+static char **const monster_bonus_strings[25] = {
     GLOBAL_TXT + 153, // none
     new_strings + STR_CURSE,
     new_strings + STR_WEAKNESS,
@@ -22533,6 +22636,7 @@ static char **const monster_bonus_strings[24] = {
     new_strings + STR_AGING,
     new_strings + STR_DRAIN_MAGIC,
     new_strings + STR_FEAR,
+    GLOBAL_TXT + 601, // zombie
 };
 
 // Loop the above code twice if the monster has two attacks.
@@ -22550,6 +22654,12 @@ static void __declspec(naked) print_monster_special_bonus(void)
         jmp edx
         bonus:
         movzx ecx, byte ptr [eax].s_map_monster.attack_special
+        cmp ecx, 24
+        jne ok
+        cmp dword ptr [elemdata.difficulty], ebx
+        jnz ok
+        mov cl, 11 ; disease red
+        ok:
         mov edx, dword ptr [monster_bonus_strings+ecx*4]
         push dword ptr [edx]
         push ebx

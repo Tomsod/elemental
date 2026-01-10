@@ -232,7 +232,7 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 228	Древний виверн	Wyvern C	37	247	42	1739	15%100D8+L4	1	Y	Med	Suicidal	3	320	60	DR	Dead	Phys	12D6	0	0	0	0	0	30	"|Jump,N,7"	20	"||Poison Spray,N,9"	30	30	30	30	30	Imm	15	30	30	0
 229	Гниющий труп	Zombie A	9	35	8	171	10%5D4	0	N	Med	Aggress	1	160	110	0	Disease1	Phys	1D7	0	0	0	0	0	0	0	0	0	5	5	5	Imm	Imm	0	10	10	10	0
 230	Ходячий мертвец	Zombie B	13	55	14	299	10%7D4	0	N	Med	Aggress	1	180	100	0	Disease2	Phys	2D7+2	0	0	0	0	0	0	0	0	0	10	10	10	Imm	Imm	0	20	20	20	0
-231	Зомби	Zombie C	17	79	20	459	25%12D4	0	N	Med	Suicidal	1	200	90	0	Disease2	Phys	3D7+4	0	0	0	0	0	0	0	0	0	15	15	15	Imm	Imm	0	30	30	30	0
+231	Зомби	Zombie C	17	79	20	459	25%12D4	0	N	Med	Suicidal	1	200	90	0	Zombie	Phys	3D7+4	0	0	0	0	0	0	0	0	0	15	15	15	Imm	Imm	0	30	30	30	0
 232	Местная жительница	Peasant Goblin female A A	1	3	3	11	2D6	1	N	Long	Wimp	4	140	100	0	0	Phys	2D2	0	0	0	0	0	0	0	0	0	0	0	0	0	0	Imm	0	0	0	0
 233	Местная жительница	Peasant Goblin female A B	2	6	5	24	3D6	1	N	Long	Wimp	4	140	100	0	0	Phys	2D2	0	0	0	0	0	0	0	0	0	0	0	0	0	0	Imm	0	0	0	0
 234	Местная жительница	Peasant Goblin female A C	3	9	6	39	4D6	1	N	Long	Wimp	4	140	100	0	0	Phys	2D2	0	0	0	0	0	0	0	0	0	0	0	0	0	0	Imm	0	0	0	0

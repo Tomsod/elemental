@@ -222,7 +222,7 @@
 220	30	Dungeon Ent	10	157	Tunnel nach Eofol	Placeholder		0	0	0	0	1.5						6	18	0	0	0	0																																										
 221	31	Dungeon Ent	10	151	Donnerfaust - Gebirge	Placeholder		0	0	0	0	1.5						6	18	0	0	0	0																																										
 222	32	Dungeon Ent	10	151	Tunnel nach Nighon	Placeholder		0	0	0	0	1.5						6	18	0	0	0	0																																										
-223	33	Dungeon Ent	6	163	Altar der Wünsche
+223	33	Dungeon Ent	6	182	Altar der Wünsche
 224	1	House 224	1	73	Donna Wyriths Residenz			0	0	0	0	1.5																																																					
 225	2	House 225	1	74	Mia Lucilles Heim			0	0	0	0	1.5																																																					
 226	3	House 226	1	75	Vandalir Residenz			0	0	0	0	1.5																																																					

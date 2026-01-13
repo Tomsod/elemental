@@ -222,7 +222,7 @@
 220	30	Dungeon Ent	10	157	Tunnels to Eeofol	Placeholder		0	0	0	0	1.5						6	18	0	0	0	0																																										
 221	31	Dungeon Ent	10	151	Thunderfist Mountain	Placeholder		0	0	0	0	1.5						6	18	0	0	0	0																																										
 222	32	Dungeon Ent	10	151	Nighon Tunnels	Placeholder		0	0	0	0	1.5						6	18	0	0	0	0																																										
-223	33	Dungeon Ent	6	163	Altar of Wishes
+223	33	Dungeon Ent	6	182	Altar of Wishes
 224	1	House 224	1	73	Donna Wyrith's Residence			0	0	0	0	1.5																																																					
 225	2	House 225	1	74	Mia Lucille' Home			0	0	0	0	1.5																																																					
 226	3	House 226	1	75	Vandalir Residence			0	0	0	0	1.5																																																					

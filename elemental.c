@@ -28496,6 +28496,9 @@ static inline void one_more_map(void)
     hook_call(0x410dbf, genie_beacon_map_name, 5);
     hook_call(0x433630, genie_recall_beacon_map_name, 5); // current map check
     hook_call(0x43369a, genie_recall_beacon_map_name, 5); // new map
+    // Setup the entrance animation.
+    HOUSE_MOVIES[182].name = "Altar of Wishes";
+    HOUSE_MOVIES[182].type = 25; // dungeon entrance
 }
 
 // Provide names for new NPCs without discarding the old array.

@@ -117,7 +117,7 @@ or only Self guilds, and most guilds are closed at night, the player will
 sometimes have to mind SP expenditure.  Furthermore, after refilling SP at a
 guild the character gets a debuff that will drain that exact SP amount if a
 Lloyd's Beacon is recalled within the next two hours, which dissuades the usual
-exploitative use of the spell to teleport to a town and refill spend magic.
+exploitative use of the spell to teleport to a town and refill spent magic.
 
 Magic guilds also sell spell scrolls, with the same spells they stock the books
 of (and also Telepathy and Fate at the respective Self guilds, since these are

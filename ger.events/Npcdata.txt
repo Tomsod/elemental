@@ -222,7 +222,7 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 220	Randal Wolverton	86	0	0	0	270	0	0	0	224	329	0	0	0	0	Expert Shield (3)	3
 221	Mikel Rehjäger	630	0	0	0	384	0	0	0	227	331	0	0	0	0	Expert Leather (14)	14
 222	Tricia Steelcoif	240	0	0	0	392	0	0	0	230	333	0	0	0	0	Expert Chain (13)	13
-223	Critias Loderflamme	325	0	0	0	418	0	0	0	233	529	0	0	0	0	Expert Plate (13)	13
+223	Critias Loderflamme	325	0	0	0	418	0	0	0	233	335	529	0	0	0	Expert Plate (13)	13
 224	Lisha Redding	154	0	0	0	398	0	0	0	236	337	0	0	0	0	Expert Fire_Magic (13)	13
 225	Kyra Sturmauge	156	0	0	0	368	0	0	0	239	339	0	0	0	0	Expert Air_Magic (13)	13
 226	Karla Rabenhaar	480	0	0	0	377	0	0	0	242	341	0	0	0	0	Expert Water_Magic (14)	14

@@ -817,7 +817,7 @@ Please rescue him!  Not even I can bear to think of my brother in those conditio
 751	Arvin Beneclowd sends me another shipment of Glass Bottles.  Time to bottle some more Enrothian Wine.  Here's your payment.	Trading Triangle 2 3 Sell	14
 752	"You can charter a boat from this port to Erathia on Tuesdays, Thursdays and Saturdays. Boats for the Bracada Desert leave on Mondays and Wednesdays. Boats leave for Avlee on Friday only. If you have completed the Priest quest you can charter a boat to Evenmorn Island on Sundays."	Boat Hint for area 13
 753	"If you are looking to make it quickly to Nighon through the tunnels below, you should take the left fork of the Nighon Tunnel.  Many have taken the right fork and have never been heard from again.  Then again they may have made it to Nighon only to be taken by the Warlocks!"	Hint NPC
-754	"Many traders all over Erathia hire out to travelers to deliver their goods!  If you are ever in need of some extra coin, try finding one of these merchants and make a delivery for them!"	Hint NPC
+754	"Many people all over Erathia will offer good prices for stuff you cannot sell otherwise!  If you are ever in need of some extra coin, try finding one of these folks and see if you can get what they want!"	Hint NPC
 755	"I can see your heart is in the right place, but your purse obviously isn't.  If you don't have the money, just say so.  In any event, good luck dealing with the zombies.  Ta-ta!"	"Ambush, not enough gold"
 756	You have failed the game!	Failed game
 757	You have failed the contest!	Failed contest

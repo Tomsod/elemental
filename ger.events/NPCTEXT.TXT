@@ -810,7 +810,7 @@ Bitte rettet ihn! Nicht einmal ich kann es ertragen, meinen Bruder in solchen Qu
 751	Arvin Beneclowd schickt mir mal wieder Glassflaschen. Zeit, etwas mehr Enrothianischen Wein abzufüllen. Hier ist Eure Bezahlung.	Trading Triangle 2 3 Sell	14
 752	Ihr könnt in diesem Hafen dienstags, donnerstags und samstags ein Schiff nach Erathia mieten. Schiffe nach Bracada segeln montags und mittwochs. Nach Avlee legen nur am Freitag Schiffe ab. Wenn Ihr die Priester - Aufgabe vollbracht habt, könnt Ihr sonntags ein Schiff auf die Evenmorn - Insel besteigen.	Boat Hint for area 13
 753	Wenn Ihr es schnell durch die Tunnel nach Nighon schaffen wollt, solltet Ihr die linke Abzweigung im Nighon - Tunnel nehmen. Viele haben den rechten Pfad genommen und man hat nie wieder etwas von ihnen gehört. Aber vielleicht haben sie es bis nach Nighon geschafft und wurden dann da von den Hexern gefangen genommen!	Hint NPC
-754	Viele Händler aus ganz Erathia heuern Reisende an, um ihre Güter transportieren zu lassen! Wenn Ihr je etwas zusätzliches Geld braucht, versucht einen dieser Händler zu finden und für ihn eine Lieferung zu übernehmen!	Hint NPC
+754	Viele Menschen in ganz Erathia bieten gute Preise für Dinge, die ihr sonst nicht verkaufen könnt! Wenn Ihr je etwas zusätzliches Geld braucht, versucht doch mal, einen dieser Leute zu finden und schaut, ob ihr bekommen könnt, was sie wollen!	Hint NPC
 755	Ich kann sehen, daß Euer Herz am rechten Fleck ist, aber Euer Geldbeutel ist es anscheinend nicht. Wenn Ihr nicht genug Geld habt, dann sagt es einfach. Auf jeden Fall viel Glück mit den Zombies. Ta-ta!	"Ambush, not enough gold"
 756	Ihr habt das Spiel verloren!	Failed game
 757	Ihr habt den Wettbewerb verloren!	Failed contest

@@ -8654,6 +8654,21 @@ static void __declspec(naked) lb_stun_recovery(void)
       }
 }
 
+// Let Earth skill affect Telekinesis recovery (if nothing else).
+static void __declspec(naked) telekinesis_recovery(void)
+{
+    asm
+      {
+        sub dword ptr [ebp-180], edi ; recovery -= skill
+        cmp ecx, GM
+        jl skip
+        sub dword ptr [ebp-180], edi ; double effect
+        skip:
+        mov eax, 0x42c92f ; vanilla tk code
+        jmp eax
+      }
+}
+
 // Misc spell tweaks.
 static inline void misc_spells(void)
 {
@@ -8961,6 +8976,7 @@ static inline void misc_spells(void)
     // stun flag set in alter_spell_element() below
     hook_call(0x43a366, lb_stun_recovery, 5); // melee attack (unnecessary?)
     hook_call(0x43a88c, lb_stun_recovery, 5); // projectile hit
+    patch_pointer(0x42e965 + SPL_TELEKINESIS * 4, telekinesis_recovery);
 }
 
 // For consistency with players, monsters revived with Reanimate now have

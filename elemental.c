@@ -1309,6 +1309,7 @@ enum condition
 {
     COND_CURSED = 0,
     COND_WEAK = 1,
+    COND_ASLEEP = 2,
     COND_AFRAID = 3,
     COND_DRUNK = 4,
     COND_INSANE = 5,
@@ -14544,6 +14545,21 @@ static void __declspec(naked) print_npc_cost(void)
       }
 }
 
+// Let going without rest have a chance to inflict Asleep instead of Weak.
+static void __declspec(naked) asleep_on_no_rest(void)
+{
+    asm
+      {
+        call dword ptr ds:random
+        cmp eax, 0x8000 / 3
+        ja skip
+        mov dword ptr [esp+4], COND_ASLEEP ; instead of weak
+        skip:
+        mov ecx, esi ; restore
+        jmp inflict_condition ; replaced call
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -14781,6 +14797,7 @@ static inline void misc_rules(void)
     hook_call(0x4bc67d, variable_npc_cost, 7); // street npcs
     hook_call(0x4b22ea, variable_npc_cost, 7); // house npcs
     hook_call(0x49555d, print_npc_cost, 7);
+    hook_call(0x494193, asleep_on_no_rest, 5);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

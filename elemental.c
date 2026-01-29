@@ -1811,6 +1811,7 @@ enum struct_offsets
 #define CURRENT_HITBOX 0x7213b0
 #define BLINK_AUTONOTES 0x5077c9
 #define AUTONOTES_PAGE 0x5063e8
+#define RESTING 0x506d94
 
 #ifdef CHECK_OVERWRITE
 #define sprintf sprintf_mm7
@@ -14560,6 +14561,23 @@ static void __declspec(naked) asleep_on_no_rest(void)
       }
 }
 
+// Related: prevent Asleep from being cured after waiting in the rest menu.
+static void __declspec(naked) no_wakeup_on_wait(void)
+{
+    asm
+      {
+        cmp dword ptr [RESTING], 2 ; ok for long rest (8 hours or a tavern)
+        je ok
+        add dword ptr [esp], 6 * 8 - 5 ; skip removing sleep
+        jmp skip
+        ok:
+        mov dword ptr [PARTY_ADDR+SIZE_PLAYER*3+COND_ASLEEP*8], edi ; repl.
+        skip:
+        cmp ecx, edi ; restore flags
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -14798,6 +14816,7 @@ static inline void misc_rules(void)
     hook_call(0x4b22ea, variable_npc_cost, 7); // house npcs
     hook_call(0x49555d, print_npc_cost, 7);
     hook_call(0x494193, asleep_on_no_rest, 5);
+    hook_call(0x41f595, no_wakeup_on_wait, 6);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.
@@ -18045,7 +18064,7 @@ static void __declspec(naked) higher_ethric_drain(void)
 {
     asm
       {
-        cmp dword ptr [0x506d94], 2 ; resting flag
+        cmp dword ptr [RESTING], 2
         je quit
         sub dword ptr [esi].s_player.hp, 5
         quit:

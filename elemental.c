@@ -2041,6 +2041,8 @@ static int __stdcall (*monster_resists_condition)(void *monster, int element)
 // Same.
 static void __stdcall (*magic_sparkles)(void *monster, int color)
     = (funcptr_t) 0x4a7e19;
+static int __fastcall (*monster_in_group)(int id, int group)
+    = (funcptr_t) 0x438bce;
 static int __thiscall (*has_enchanted_item)(void *player, int enchantment)
     = (funcptr_t) 0x48d6b6;
 static int __thiscall (*load_bitmap)(void *lod, char *name, int lod_type)
@@ -14578,6 +14580,39 @@ static void __declspec(naked) no_wakeup_on_wait(void)
       }
 }
 
+// When swimmers (water elementals) die over water, keep their corpses.
+static void __declspec(naked) dont_drown_swimmer_corpses(void)
+{
+    asm
+      {
+        cmp word ptr [esi].s_map_monster.ai_state, AI_DEAD ; replaced code
+        jne quit
+        movzx ecx, word ptr [esi].s_map_monster.id
+        lea edx, [edi+5] ; edi == 0
+        call dword ptr ds:monster_in_group
+        test eax, eax
+        quit:
+        ret
+      }
+}
+
+// Another check, this one is for corpses pushed underwater by knockback etc.
+static void __declspec(naked) dont_drown_swimmer_corpses_underwater(void)
+{
+    asm
+      {
+        movzx ecx, word ptr [esi].s_map_monster.id
+        lea edx, [ebx+5] ; ebx == 0
+        call dword ptr ds:monster_in_group
+        xor ecx, ecx
+        test eax, eax
+        jnz skip
+        mov cx, word ptr [esi].s_map_monster.ai_state ; replaced code
+        skip:
+        ret
+      }
+}
+
 // Some uncategorized gameplay changes.
 static inline void misc_rules(void)
 {
@@ -14817,6 +14852,8 @@ static inline void misc_rules(void)
     hook_call(0x49555d, print_npc_cost, 7);
     hook_call(0x494193, asleep_on_no_rest, 5);
     hook_call(0x41f595, no_wakeup_on_wait, 6);
+    hook_call(0x4707d8, dont_drown_swimmer_corpses, 8);
+    hook_call(0x470d6a, dont_drown_swimmer_corpses_underwater, 7);
 }
 
 // Instead of special duration, make sure we (initially) target the first PC.

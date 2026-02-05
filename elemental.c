@@ -7827,37 +7827,37 @@ static void __declspec(naked) beacon_recall_effects_hook(void)
       }
 }
 
-// Set to 1 if the recall page should be disabled.
-static int cannot_recall;
+// Remember remaining beacon recalls for the current caster.
+static int remaining_recalls = 0;
 
 // If already at the recall limit, always show the place beacon tab.
+// Also calculate remaining recalls (at the current skill) for later.
 static void __declspec(naked) lloyd_starting_tab(void)
 {
     asm
       {
-        xor edx, edx
-        mov dword ptr [cannot_recall], edx
-        movzx eax, byte ptr [eax].s_player.beacon_casts
-        inc eax
-        lea eax, [eax+eax*2]
-        cmp eax, dword ptr [ebp-56] ; spell skill
-        jbe ok
-        mov byte ptr [0x5063ec], dl ; lloyd page flag
-        inc edx
-        mov dword ptr [cannot_recall], edx
+        mov cl, byte ptr [eax].s_player.beacon_casts
+        mov eax, dword ptr [ebp-56] ; spell skill
+        mov dl, 3
+        div dl
+        sub al, cl
+        ja ok
+        xor al, al
+        mov byte ptr [0x5063ec], al ; lloyd page flag
         ok:
+        mov byte ptr [remaining_recalls], al
         mov ecx, 0x50ba60 ; replaced code
         ret
       }
 }
 
-// Disable switching to the recall tab if our flag is set.
+// Disable switching to the recall tab if no more recalls are allowed.
 static void __declspec(naked) lloyd_disable_recall(void)
 {
     asm
       {
-        test dword ptr [cannot_recall], eax
-        jnz disable ; if both == 1
+        cmp dword ptr [remaining_recalls], eax
+        jb disable ; if 0 recalls and page 1
         mov byte ptr [0x5063ec], al ; replaced code
         ret
         disable:
@@ -7866,6 +7866,31 @@ static void __declspec(naked) lloyd_disable_recall(void)
         call dword ptr ds:show_status_text
         mov eax, SOUND_BUZZ - SOUND_TURN_PAGE_UP
         ret
+      }
+}
+
+// "Recall beacon" and the recall number.  Used just below.
+static const char lloyd_recall_format[] = "%s (%d)";
+
+// Show allowed remaining uses at the top of recall beacon page.
+static void __declspec(naked) lloyd_show_recalls(void)
+{
+    asm
+      {
+        pop ecx
+        push dword ptr [remaining_recalls]
+        push eax ; replaced code
+        jz setting
+#ifdef __clang__
+        mov edx, offset lloyd_recall_format
+        push edx
+#else
+        push offset lloyd_recall_format
+#endif
+        jmp ecx
+        setting:
+        push 0x4e25d0 ; also replaced code
+        jmp ecx
       }
 }
 
@@ -8863,6 +8888,8 @@ static inline void misc_spells(void)
     hook_call(0x433433, lloyd_disable_recall, 5);
     // Reduce Lloyd's Beacon duration to 2 days/skill.
     patch_dword(0x42b543, 2 * 24 * 60 * 60);
+    hook_call(0x410e68, lloyd_show_recalls, 6);
+    patch_byte(0x410e80, 16); // stack fixup
     hook_call(0x4737f2, reset_lava_walking, 7);
     hook_call(0x473828, lava_walking, 5);
     patch_dword(0x429972, 10); // nerf master meteor shower (16 -> 10 rocks)

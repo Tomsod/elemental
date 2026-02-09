@@ -2,9 +2,9 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 #	Name	Picture	LVL	 HP 	AC	 EXP 	Treasure	Quest	Fly	Move	AI Type	Hst	Spd	Rec	Pref	Bonus	Type	Damage	Miss	Att%	Type	Damage	Miss	Use%	"Spl,Mas,Skil"	Use%	"Spl,Mas,Skil"	Fire	Elec	Cold	Pois	Mind	Holy	Magic	Phys	Weap	Special
 																																						
 	A		0																																			
-1	Angel	Angel A	30	180	25	1200	5%50D20+L4Sword	1	Y	Free	Aggress	3	250	60	0	0	Phys	2D8+10	0	0	0	0	0	30	"Light Bolt,M,8"	20	"Dispel Magic,M,8"	20	20	20	20	30	Imm	40	20	20	0
-2	Angel Lord	Angel B	50	400	35	3000	10%75D20+L5Sword	1	Y	Free	Aggress	3	275	50	0	0	Phys	2D8+15	0	30	Ener	2D4+12	Light	30	"Destroy Undead,M,12"	50	"Day of Protection,M,12"	30	30	30	30	40	Imm	50	20	20	0
-3	Archangel	Angel C	70	700	45	5600	15%100D20+L6Sword	1	Y	Free	Suicidal	3	300	40	2	0	Phys	2D8+20	0	0	0	0	0	30	"Light Bolt|Sunray,G,16"	50	"Hour of Power,G,16"	40	40	40	40	50	Imm	60	20	20	0
+1	Angel	Angel A	30	180	25	1200	5%50D20+L4Sword	1	Y	Free	Aggress	3	250	60	0	0	Phys	2D8+10	0	0	0	0	0	30	"Light Bolt,M,8"	20	"Dispel Magic,M,8"	20	10	20	20	30	Imm	40	20	20	0
+2	Angel Lord	Angel B	50	400	35	3000	10%75D20+L5Sword	1	Y	Free	Aggress	3	275	50	0	0	Phys	2D8+15	0	30	Ener	2D4+12	Light	30	"Destroy Undead,M,12"	50	"Day of Protection,M,12"	30	15	30	30	40	Imm	50	20	20	0
+3	Archangel	Angel C	70	700	45	5600	15%100D20+L6Sword	1	Y	Free	Suicidal	3	300	40	2	0	Phys	2D8+20	0	0	0	0	0	30	"Light Bolt|Sunray,G,16"	50	"Hour of Power,G,16"	40	20	40	40	50	Imm	60	20	20	0
 4	Archer	Archer A	9	35	14	171	5%3D20+L1Bow	1	N	Short	Normal	4	140	90	AR	0	Phys	2D6+2	Arrow	10	Fire	3D6+2	ArrowF	20	"||Sparks,N,4"	50	"Shield,N,4"	5	5	5	0	10	Imm	0	5	5	0
 5	Bowman	Archer B	19	93	16	551	5%6D20+L2Bow	1	N	Short	Aggress	4	150	90	AR	0	Phys	3D6+3	Arrow	10	Fire	4D6+3	ArrowF	20	"Lightning Bolt,E,4"	50	"Shield,E,8"	10	10	10	5	15	Imm	5	10	10	0
 6	Elite Archer	Archer C	29	171	22	1131	10%10D20+L3Bow	1	N	Short	Aggress	4	160	80	AR	0	Phys	3D7+3	Arrow	15	Fire	4D7+3	ArrowF	20	"Lightning Bolt|Implosion,M,8"	50	"Shield,M,12"	15	15	15	5	20	Imm	5	15	15	0
@@ -32,9 +32,9 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 28	Dragonfly	Dragonfly A	2	6	4	24	3D6	1	Y	Free	Normal	3	400	50	0	0	Phys	2D2	0	0	0	0	0	0	0	0	0	10	0	0	0	0	Imm	0	0	0	0
 29	Fire Dragonfly	Dragonfly B	4	13	8	56	7D6	1	Y	Free	Normal	3	350	50	0	0	Phys	3D2+1	0	0	0	0	0	10	"Fire Bolt,N,2"	0	0	20	0	0	0	0	Imm	0	0	0	0
 30	Queen Dragonfly	Dragonfly C	8	30	12	144	10D6	1	Y	Free	Normal	3	300	50	0	0	Phys	4D2+2	0	0	0	0	0	15	"Fire Bolt,N,4"	0	0	30	0	0	0	0	Imm	0	0	0	0
-31	Dwarven Soldier	Dwarf A	10	40	6	200	5%5D10+L1Axe	1	N	Med	Normal	2	160	70	G	0	Phys	4D2+4	0	0	0	0	0	50	"|Shield,N,4"	0	0	10	20	20	30	5	Imm	5	30	30	0
-32	Dwarven Lieutenant	Dwarf B	20	100	12	600	10%10D10+L2Axe	1	N	Med	Aggress	2	180	80	G	0	Phys	4D2+8	0	0	0	0	0	50	"|Shield,N,4"	0	0	20	30	30	40	10	Imm	10	40	40	0
-33	Dwarven Commander	Dwarf C	30	180	20	1200	25%20D10+L3Axe	1	N	Short	Suicidal	2	200	80	G	BrkArmor	Phys	4D2+16	0	0	0	0	0	50	"|Shield,N,4"	0	0	30	40	40	50	15	Imm	15	50	50	0
+31	Dwarven Soldier	Dwarf A	10	40	6	200	5%5D10+L1Axe	1	N	Med	Normal	2	160	70	G	0	Phys	4D2+4	0	0	0	0	0	50	"|Shield,N,4"	0	0	10	10	20	30	5	Imm	5	30	30	0
+32	Dwarven Lieutenant	Dwarf B	20	100	12	600	10%10D10+L2Axe	1	N	Med	Aggress	2	180	80	G	0	Phys	4D2+8	0	0	0	0	0	50	"|Shield,N,4"	0	0	20	15	30	40	10	Imm	10	40	40	0
+33	Dwarven Commander	Dwarf C	30	180	20	1200	25%20D10+L3Axe	1	N	Short	Suicidal	2	200	80	G	BrkArmor	Phys	4D2+16	0	0	0	0	0	50	"|Shield,N,4"	0	0	30	20	40	50	15	Imm	15	50	50	0
 34	Tempest	Elemental Air A	16	73	10	416	0	0	Y	Free	Suicidal	3	220	90	0	0	Elec	3D6	Air	0	0	0	0	20	"Sparks,E,4"	30	"||Shield,E,4"	10	Imm	10	Imm	Imm	Imm	5	10	10	0
 35	Cyclone	Elemental Air B	22	114	12	704	0	0	Y	Free	Suicidal	3	240	90	0	0	Elec	5D6	Air	0	0	0	0	20	"Sparks,M,8"	20	"Lightning Bolt,M,8"	15	Imm	15	Imm	Imm	Imm	10	15	15	0
 36	Air Elemental	Elemental Air C	33	207	14	1419	0	0	Y	Free	Suicidal	3	260	80	0	0	Elec	8D6	Air	0	0	0	0	20	"Sparks,G,12"	20	"Lightning Bolt|Implosion,G,12"	20	Imm	20	Imm	Imm	Imm	15	20	20	0
@@ -56,15 +56,15 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 52	Elven Warrior	Elf Spearman A	14	61	15	336	10%8D10+L2Spear	1	N	Long	Normal	2	240	80	H	0	Phys	2D4+4	0	0	0	0	0	40	"|Jump,N,7"	0	0	10	10	10	0	5	Imm	0	5	5	0
 53	Elven Defender	Elf Spearman B	22	114	20	704	15%16D10+L3Spear	1	N	Long	Aggress	2	260	70	H	0	Phys	3D4+6	0	0	0	0	0	40	"|Jump,N,7"	0	0	15	15	15	5	10	Imm	5	10	10	0
 54	Elven Lancer	Elf Spearman C	30	180	28	1200	25%25D10+L4Spear	1	N	Med	Aggress	2	280	60	H	0	Phys	4D4+8	0	0	0	0	0	40	"|Jump,N,7"	0	0	20	20	20	10	15	Imm	10	15	15	0
-55	Conscript	Fighter Chain A	14	61	18	336	5%10D10+L1Chain	1	N	Long	Normal	2	220	90	XE	0	Phys	3D3+6	0	0	0	0	0	50	"|Shield,N,4"	0	0	10	10	10	5	15	Imm	5	10	10	0
-56	Soldier	Fighter Chain B	24	129	24	816	5%20D10+L2Chain	1	N	Long	Aggress	2	240	80	XE	0	Phys	3D3+10	0	0	0	0	0	50	"|Shield,N,4"	0	0	20	20	20	10	25	Imm	10	20	20	0
-57	Fighter	Fighter Chain C	35	227	30	1575	10%30D10+L3Chain	1	N	Med	Aggress	2	260	70	XE	Brkweapon	Phys	3D3+14	0	0	0	0	0	50	"|Shield,N,4"	0	0	30	30	30	15	35	Imm	15	30	30	0
+55	Conscript	Fighter Chain A	14	61	18	336	5%10D10+L1Chain	1	N	Long	Normal	2	220	90	XE	0	Phys	3D3+6	0	0	0	0	0	50	"|Shield,N,4"	0	0	10	5	10	5	15	Imm	5	10	10	0
+56	Soldier	Fighter Chain B	24	129	24	816	5%20D10+L2Chain	1	N	Long	Aggress	2	240	80	XE	0	Phys	3D3+10	0	0	0	0	0	50	"|Shield,N,4"	0	0	20	10	20	10	25	Imm	10	20	20	0
+57	Fighter	Fighter Chain C	35	227	30	1575	10%30D10+L3Chain	1	N	Med	Aggress	2	260	70	XE	Brkweapon	Phys	3D3+14	0	0	0	0	0	50	"|Shield,N,4"	0	0	30	15	30	15	35	Imm	15	30	30	0
 58	Robber	Fighter Leather A	8	30	12	144	5%3D20+L1Leather	1	N	Long	Normal	2	200	100	E	0	Phys	2D4+1	0	0	0	0	0	40	"|Jump,N,6"	0	0	5	5	5	0	10	Imm	0	5	5	0
 59	Raider	Fighter Leather B	14	61	14	336	5%5D20+L2Leather	1	N	Long	Aggress	2	220	90	E	0	Phys	2D4+5	0	0	0	0	0	40	"|Jump,N,6"	0	0	10	10	10	5	15	Imm	5	10	10	0
 60	Bandit	Fighter Leather C	22	114	16	704	10%10D20+L3Leather	1	N	Med	Aggress	2	240	80	E	0	Phys	2D4+10	0	0	0	0	0	40	"|Jump,N,6"	0	0	15	15	15	5	20	Imm	5	15	15	0
-61	Initiate of the Sword	Fighter Plate A	40	280	45	2000	10%10D100+L4Plate	1	N	Long	Normal	2	250	80	XK	0	Phys	4D5+20	0	0	0	0	0	33	"Bless,N,3"	33	"Heroism,N,3"	20	20	20	10	30	Imm	10	20	20	0
-62	Champion of the Sword	Fighter Plate B	60	540	65	4200	10%20D100+L5Plate	1	N	Med	Aggress	2	300	70	XK	0	Phys	4D5+30	0	0	0	0	0	20	"Heroism||Mind Blast,E,6"	33	"Bless,E,6"	30	30	30	15	40	Imm	15	30	30	0
-63	Master of the Sword	Fighter Plate C	80	880	85	7200	30%40D100+L6Plate	1	N	Short	Aggress	2	350	50	XK	0	Phys	4D5+40	0	0	0	0	0	20	"Bless||Psychic Shock,M,9"	33	"Heroism,M,9"	50	50	50	25	60	Imm	25	50	50	0
+61	Initiate of the Sword	Fighter Plate A	40	280	45	2000	10%10D100+L4Plate	1	N	Long	Normal	2	250	80	XK	0	Phys	4D5+20	0	0	0	0	0	33	"Bless,N,3"	33	"Heroism,N,3"	20	10	20	10	30	Imm	10	20	20	0
+62	Champion of the Sword	Fighter Plate B	60	540	65	4200	10%20D100+L5Plate	1	N	Med	Aggress	2	300	70	XK	0	Phys	4D5+30	0	0	0	0	0	20	"Heroism||Mind Blast,E,6"	33	"Bless,E,6"	30	15	30	15	40	Imm	15	30	30	0
+63	Master of the Sword	Fighter Plate C	80	880	85	7200	30%40D100+L6Plate	1	N	Short	Aggress	2	350	50	XK	0	Phys	4D5+40	0	0	0	0	0	20	"Bless||Psychic Shock,M,9"	33	"Heroism,M,9"	50	25	50	25	60	Imm	25	50	50	0
 64	Stone Gargoyle	Gargoyle A	16	73	18	416	5%5D10+L2Amulet	0	Y	Long	Aggress	3	300	80	0	Weak	Phys	2D12	0	0	0	0	0	0	0	50	"|Stone Skin,N,4"	20	20	20	Imm	Imm	Imm	20	30	30	0
 65	Marble Gargoyle	Gargoyle B	22	114	22	704	10%10D10+L2Amulet	0	Y	Long	Aggress	3	320	80	0	Paralyze	Phys	2D12+4	0	0	0	0	0	0	0	50	"|Stone Skin,N,6"	30	30	30	Imm	Imm	Imm	30	40	40	0
 66	Obsidian Gargoyle	Gargoyle C	33	207	26	1419	20%25D10+L3Amulet	0	Y	Med	Suicidal	3	350	70	0	Paralyze	Phys	2D12+8	0	0	0	0	0	0	0	50	"|Stone Skin,N,8"	50	50	50	Imm	Imm	Imm	50	Imm	Imm	0
@@ -80,9 +80,9 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 76	Gogling	Gog A	7	25	6	119	5%L2Special	1	N	Short	Normal	2	200	90	S	0	Fire	1D10+2	Fire	0	0	0	0	0	0	0	0	Imm	10	5	10	10	Imm	10	10	10	"explode,2D10,fire"
 77	Gog	Gog B	11	45	10	231	10%L2Special	1	N	Short	Normal	2	220	85	S	0	Fire	1D10+6	Fire	0	0	0	0	0	0	0	0	Imm	15	5	15	15	Imm	15	15	15	"explode,2D10,fire"
 78	Magog	Gog C	18	86	14	504	15%L2Special	1	N	Short	Aggress	2	240	80	S	0	Fire	2D10+8	Fire	0	0	0	0	25	"||Fireball,E,6"	0	0	Imm	20	10	20	20	Imm	20	20	20	"explode,2D10,fire"
-79	Bronze Golem	Golem A	22	114	40	704	20D8	0	N	Short	Suicidal	1	160	100	0	BrkArmor	Phys	5D6+20	0	10	Phys	5D4	Arrow	0	0	50	"|Stone Skin,N,6"	20	20	20	Imm	Imm	Imm	50	30	30	"explode,4D10,magic"
-80	Brass Golem	Golem B	35	227	60	1575	30D8	0	N	Short	Suicidal	1	170	90	0	Brkweapon	Phys	7D6+25	0	15	Phys	5D4+4	Arrow	0	0	50	"|Stone Skin,N,8"	30	30	30	Imm	Imm	Imm	70	40	40	"explode,4D10,magic"
-81	Gold Golem	Golem C	50	400	80	3000	50D8	0	N	Short	Suicidal	1	180	80	0	BrkItem	Phys	9D6+30	0	20	Phys	5D4+8	Arrow	0	0	50	"|Stone Skin,N,9"	40	40	40	Imm	Imm	Imm	Imm	50	50	"explode,4D10,magic"
+79	Bronze Golem	Golem A	22	114	40	704	20D8	0	N	Short	Suicidal	1	160	100	0	BrkArmor	Phys	5D6+20	0	10	Phys	5D4	Arrow	0	0	50	"|Stone Skin,N,6"	20	5	20	Imm	Imm	Imm	50	30	30	"explode,4D10,magic"
+80	Brass Golem	Golem B	35	227	60	1575	30D8	0	N	Short	Suicidal	1	170	90	0	Brkweapon	Phys	7D6+25	0	15	Phys	5D4+4	Arrow	0	0	50	"|Stone Skin,N,8"	30	10	30	Imm	Imm	Imm	70	40	40	"explode,4D10,magic"
+81	Gold Golem	Golem C	50	400	80	3000	50D8	0	N	Short	Suicidal	1	180	80	0	BrkItem	Phys	9D6+30	0	20	Phys	5D4+8	Arrow	0	0	50	"|Stone Skin,N,9"	40	15	40	Imm	Imm	Imm	Imm	50	50	"explode,4D10,magic"
 82	Griffin	Griffin A	15	67	15	375	10D6	1	Y	Free	Normal	3	250	50	0	0	Phys	2D8+2	0	0	0	0	0	30	"|Jump,N,6"	0	0	5	5	5	0	5	Imm	5	5	5	0
 83	Hunting Griffin	Griffin B	23	121	22	759	15D6	1	Y	Long	Aggress	3	300	60	0	0	Phys	2D8+6	0	0	0	0	0	30	"|Jump,N,6"	0	0	5	5	5	0	5	Imm	10	10	10	0
 84	Royal Griffin	Griffin C	30	180	30	1200	30D6	1	Y	Med	Suicidal	3	320	70	0	0	Phys	3D8+10	0	0	0	0	0	30	"|Jump,N,6"	0	0	10	10	10	5	10	Imm	15	15	15	0
@@ -206,9 +206,9 @@ Default Monster Data					Stats								Movement and Combat					Attack 1			Attack 
 202	Giant Spider	Spider A	5	17	10	75	5%L1Reagent	1	N	Med	Normal	2	300	90	0	Poison1	Phys	3D2	0	0	0	0	0	40	"|Jump,N,5"	0	0	0	0	0	10	0	Imm	0	0	0	0
 203	Venemous Spider	Spider B	8	30	12	144	10%L1Reagent	1	N	Med	Aggress	2	280	90	0	Poison2	Phys	3D2+3	0	0	0	0	0	40	"|Jump,N,5"	0	0	0	0	0	10	0	Imm	0	0	0	0
 204	Widowmaker	Spider C	12	50	16	264	10%L2Reagent	1	N	Short	Aggress	2	260	90	0	Poison3	Phys	3D2+6	0	0	0	0	0	40	"|Jump,N,5"	0	0	0	0	0	10	0	Imm	0	0	0	0
-205	Swordsman	Swordsman A	10	40	10	200	10d6	1	N	Long	Aggress	4	220	90	T	0	Phys	3D7+4	0	0	0	0	0	50	"|Shield,N,4"	0	0	5	5	5	0	5	Imm	0	5	5	0
-206	Guard	Swordsman B	17	79	15	459	5%15D6+L2Sword	1	N	Med	Aggress	4	250	80	T	0	Phys	3D7+6	0	0	0	0	0	50	"|Shield,N,6"	0	0	10	10	10	5	10	Imm	5	10	10	0
-207	Adventurer	Swordsman C	24	129	20	816	10%30D6+L2Sword	1	N	Short	Aggress	4	280	70	T	Brkweapon	Phys	3D7+8	0	0	0	0	0	50	"|Shield,N,8"	0	0	15	15	15	5	15	Imm	5	15	15	0
+205	Swordsman	Swordsman A	10	40	10	200	10d6	1	N	Long	Aggress	4	220	90	T	0	Phys	3D7+4	0	0	0	0	0	50	"|Shield,N,4"	0	0	5	0	5	0	5	Imm	0	5	5	0
+206	Guard	Swordsman B	17	79	15	459	5%15D6+L2Sword	1	N	Med	Aggress	4	250	80	T	0	Phys	3D7+6	0	0	0	0	0	50	"|Shield,N,6"	0	0	10	5	10	5	10	Imm	5	10	10	0
+207	Adventurer	Swordsman C	24	129	20	816	10%30D6+L2Sword	1	N	Short	Aggress	4	280	70	T	Brkweapon	Phys	3D7+8	0	0	0	0	0	50	"|Shield,N,8"	0	0	15	5	15	5	15	Imm	5	15	15	0
 208	Thief	Thief A	8	30	10	144	5%3D10+L1	1	N	Med	Normal	2	250	60	P	Stealx2	Phys	3D4+3	0	0	0	0	0	40	"|Jump,N,5"	0	0	0	0	0	0	0	Imm	0	0	0	0
 209	Rogue	Thief B	12	50	14	264	10%4D10+L1	1	N	Med	Normal	2	260	60	P	Stealx2	Phys	3D4+6	0	0	0	0	0	40	"|Jump,N,5"	0	0	0	0	0	0	0	Imm	0	0	0	0
 210	Master Thief	Thief C	18	86	20	504	20%5D10+L2	1	N	Med	Aggress	2	270	60	P	Stealx2	Phys	3D4+12	0	0	0	0	0	40	"|Jump,N,5"	0	0	0	0	0	0	0	Imm	0	0	0	0

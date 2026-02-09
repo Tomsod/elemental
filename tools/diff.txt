@@ -1028,7 +1028,7 @@ monster 1 id 98
 49 : 0B 15
 4C : 18 40
 50 : 50 3C
-file genie.dlv offset 16263
+file genie.dlv offset 16575
 monster 1 id 68
 11 : 03 04
 monster 2 id 164

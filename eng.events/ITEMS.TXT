@@ -166,8 +166,8 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 164	itemtk2	Living Wood Knives	200	Missile	Dagger	2d2	3	4	6	Knives	153	0	0	24	-86	Enchanted throwing knives of elvish make.  New knives will regrow over time to replace the lost ones, but this magic might be suppressed in the presence of other strong enchantments.  To repair spent knives, Ctrl-click on the item.
 165	itemtk3	Boomerang Knife	400	Missile	Dagger	2d2	6	4	12	Knife	5	0	0	-3	-80	A splendid throwing knife made by Bracadian smiths.  Thanks to a telekinesis enchantment, the knife will return to its owner after being thrown.
 166	brsknuck	Brass Knuckles	80	Gauntlets	Unarmed	1d7	0	6	1	Martial Gauntlets	30	0	0	0	0	A martial arts aid worn around the knuckles, the favorite of monks and brawlers alike.  Despite the name, this pair is forged from steel.
-167	spikgaun	Spiked Gauntlets	200	Gauntlets	Unarmed	1d7	3	6	1	Martial Gauntlets	30	0	0	0	0	These siertal battle gauntlets are fitted with sharp spikes, adding an extra bit of pain to the wearer's unarmed attacks.
-168	caestus	Caestus	500	Gauntlets	Unarmed	1d7	6	6	1	Martial Gauntlets	30	0	0	0	0	High-quality erudine martial gauntlets, these were often worn by gladiators in Padish's time.  Combining offense and defense, few Monks can find better than this.
+167	spikgaun	Spiked Gauntlets	200	Gauntlets	Unarmed	1d7	3	6	7	Martial Gauntlets	30	0	0	0	0	These siertal battle gauntlets are fitted with sharp spikes, adding an extra bit of pain to the wearer's unarmed attacks.
+168	caestus	Caestus	500	Gauntlets	Unarmed	1d7	6	6	13	Martial Gauntlets	30	0	0	0	0	High-quality erudine martial gauntlets, these were often worn by gladiators in Padish's time.  Combining offense and defense, few Monks can find better than this.
 169	null	_item169	0	0	0	0	0	0	0	_item169	0	0	0	0	0	Description here.
 170	null	_item170	0	0	0	0	0	0	0	_item170	0	0	0	0	0	Description here.
 171	null	_item171	0	0	0	0	0	0	0	_item171	0	0	0	0	0	Description here.

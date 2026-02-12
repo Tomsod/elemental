@@ -166,8 +166,8 @@ Item #	Pic File	Name	Value	Equip Stat	Skill Group	Mod1	Mod2	material	ID/Rep/St	N
 164	itemtk2	Lebendige Holzmesser	200	Missile	Dagger	2d2	3	4	6	Messer	153	0	0	24	-86	Verzauberte Wurfmesser aus Elfenhand. Neue Messer wachsen mit der Zeit nach, um die verlorenen zu ersetzen, aber diese Magie kann durch andere starke Verzauberungen unterdrückt werden. Um verbrauchte Messer zu reparieren, klicken Sie bei gedrückter Strg-Taste auf den Gegenstand.
 165	itemtk3	Bumerangmesser	400	Missile	Dagger	2d2	6	4	12	Messer	5	0	0	-3	-80	Ein prächtiges Wurfmesser, hergestellt von Schmieden aus Bracada. Durch die Telekinese Verzauberung kommt das Messer nach dem Werfen zu seinem Besitzer zurück.
 166	brsknuck	Schlagring	80	Gauntlets	Unarmed	1d7	0	6	1	Kampfhandschuhe	30	0	0	0	0	Eine für den Nahkampf angepasste Handwaffe, die um die Knöchel getragen wird und bei Mönchen und Schlägern gleichermaßen beliebt ist. Trotz des Namens ist dieses Paar aus Stahl geschmiedet.
-167	spikgaun	Stachelhandschuhe	200	Gauntlets	Unarmed	1d7	3	6	1	Kampfhandschuhe	30	0	0	0	0	Diese Kampfhandschuhe sind mit scharfen Stacheln versehen, die den unbewaffneten Angriffen des Trägers zusätzliche Schmerzhaftigkeit verleihen.
-168	caestus	Caestus	500	Gauntlets	Unarmed	1d7	6	6	1	Kampfhandschuhe	30	0	0	0	0	Hochwertige, kunstvoll gearbeitete Kampfhandschuhe, die zu Padishs Zeiten oft von Gladiatoren getragen wurden. Sie vereinen Angriff und Verteidigung und sind für Mönche kaum zu übertreffen.
+167	spikgaun	Stachelhandschuhe	200	Gauntlets	Unarmed	1d7	3	6	7	Kampfhandschuhe	30	0	0	0	0	Diese Kampfhandschuhe sind mit scharfen Stacheln versehen, die den unbewaffneten Angriffen des Trägers zusätzliche Schmerzhaftigkeit verleihen.
+168	caestus	Caestus	500	Gauntlets	Unarmed	1d7	6	6	13	Kampfhandschuhe	30	0	0	0	0	Hochwertige, kunstvoll gearbeitete Kampfhandschuhe, die zu Padishs Zeiten oft von Gladiatoren getragen wurden. Sie vereinen Angriff und Verteidigung und sind für Mönche kaum zu übertreffen.
 169	null	_item169	0	0	0	0	0	0	0	_item169	0	0	0	0	0	Description here.
 170	null	_item170	0	0	0	0	0	0	0	_item170	0	0	0	0	0	Description here.
 171	null	_item171	0	0	0	0	0	0	0	_item171	0	0	0	0	0	Description here.

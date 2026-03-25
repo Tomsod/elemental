@@ -1626,7 +1626,9 @@ struct __attribute__((packed)) npc
     SKIP(8);
     int house;
     int profession;
-    SKIP(40);
+    SKIP(12);
+    int events[6];
+    SKIP(4);
     int used_ability;
     SKIP(4);
 };
@@ -10509,6 +10511,10 @@ static void __declspec(naked) new_game_hook(void)
 // On a reload it's reset to 0 and then overwriten properly on the next tick.
 // On a new game it's lowered to the current week, which is also 0.
 static int last_bank_week;
+// Enable delayed update of NPC topics (except for one hireling).
+static int update_410_npcs = FALSE;
+// TODO: remove this later
+static int __cdecl get_max_skill_level(int, int, int, int);
 
 // Load mod data from the savegame, if said data exists.
 // Also reset some vars and fix recovery after saving in TB mode.
@@ -10564,7 +10570,24 @@ static void load_game_data(void)
                     sizeof(elemdata.stolen_items));
             memset(&elemdata.lost_items[OLD_LAST_LOST_ITEM-FIRST_LOST_ITEM+1],
                    LOST_NOTRACK, LAST_LOST_ITEM - OLD_LAST_LOST_ITEM);
-            // For 4.0.2 or below we have another fix in load_map_rep().
+
+            // Some skill limits have changed, so trim what's illegal now.
+            static const int mastery[] = { 0, 0, SKILL_EXPERT, SKILL_MASTER };
+            for (struct player *player = PARTY; player < PARTY + 4; player++)
+              {
+                int class = player->class;
+                int race = get_race(player);
+                for (int skill = 0; skill < SKILL_COUNT; skill++)
+                  {
+                    uint16_t *value = &player->skills[skill];
+                    int limit = get_max_skill_level(class, race, skill, TRUE);
+                    if (skill_mastery(*value) > limit)
+                        *value = *value & SKILL_MASK | mastery[limit];
+                  }
+              }
+            // Must wait until load_map_rep() to fix NPCs when they're loaded.
+            update_410_npcs = TRUE;
+            // For 4.0.2 or below we have one more fix that may be delayed.
             elemdata.version = 410 - (elemdata.version < 403);
           }
       }
@@ -10672,6 +10695,22 @@ static void load_map_rep(void)
           }
       }
     // can't do it on game load, as that hook is before npcs are loaded
+    if (update_410_npcs)
+      {
+        // Lasker cipher hint
+        NPCS[15].events[5] = NPCS[15].events[4];
+        NPCS[15].events[4] = NPCS[15].events[3];
+        NPCS[15].events[3] = NPCDATA[15].events[3];
+        // Butler lost items
+        NPCS[58].events[2] = NPCDATA[58].events[2];
+        // Ambassador invitations
+        NPCS[75].events[0] = NPCDATA[75].events[0];
+        NPCS[76].events[0] = NPCDATA[76].events[0];
+        // Plate expert missing topic
+        NPCS[223].events[2] = NPCS[223].events[1];
+        NPCS[223].events[1] = NPCDATA[223].events[1];
+        update_410_npcs = FALSE;
+      }
     if (elemdata.version < 410 && !(NPCS[399].bits & NPC_HIRED))
       {
         // update for a game in progress, unless in party

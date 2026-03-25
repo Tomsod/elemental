@@ -693,7 +693,7 @@ Global Text
 690	%s fügt %lu Monstern insgesamt %lu Schaden zu
 691	%s fügt %lu Monstern insgesamt %lu Schaden zu und tötet %lu
 692	Jäger
-693	Elemental Mod ver. 4.0.4
+693	Elemental Mod ver. 4.1
 694	Schwarzer Trank verwendet
 695	Durchschnittliche Schadensreduzierung
 696	berücksichtigung der Rasse

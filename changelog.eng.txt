@@ -1,6 +1,52 @@
 This is the change log for the Elemental Mod.  It's quite descriptive,
 and can be viewed as the chief source of information on the mod's features.
 
+== Elemental Mod ver. 4.1 ==
+
+The last release before I break v4 compatibility, with some accumulated minor
+features and bugfixes.  Also the first new release with a German translation!
+
+* The mod has a German localization now, thanks to Kr00l who maintains it!
+* Altar of Wishes got a proper entrace animation, thanks to Kaltenberg!
+* Celeste and Pit temple dungeons also have entrance animations now.
+* Opening Walls of Mist chests no longer breaks invisibility.
+* Castle Harmondale butler can now tell you where you've left quest items.
+* It's no longer possible to initiate promotion quests while the judge is dead.
+* Ninja promotion quest now has four different possible messages to decipher.
+* Black Knights no longer have a critical hit chance bonus.
+* Snipers only get level-based AC penetration with bows instead of auto-hit.
+* HP/SP growth and skill limits of some classes have been adjusted.
+* Zombie PCs no longer have quietly halved HP, but their zero SP is explicit.
+* The level requirement to advance Learning to GM has been increased.
+* Lightning Bolt spell now also has a chance to stun the target.
+* Raise Dead and Resurrection can be cast at monsters now.
+* Telekinesis recovery is now reduced by Earth skill.
+* Lloyd's Beacon recall tab now shows remaining uses in parentheses.
+* Berserked monsters now ignore race/class/gender preferences.
+* Condition immunity item enchantments not also grant minor stat bonuses.
+* Soul Stealing weapons no longer work on resurrected or reanimated monsters.
+* Daggers held in the left hand now have base 70 recovery (up from 60).
+* Some unique items now cost more (15000 gold instead of a few thousand).
+* The price of skills taught at taverns and some stores is now halved.
+* Hirelings and most skill teachers now adjust prices based on reputation.
+* Chaplain and piper hirelings now cast at Master 8 skill (up from 5).
+* Staying awake for too long may inflict Asleep instead of Weak.
+* Trash heaps now yield random items instead of mostly body armor.
+* School of Sorcery bookshelf now has a limit on obtainable spellbooks.
+* On Medium+, T3 zombies can now inflict the Zombie condition.
+* Monsters with metal bodies or armor are now vulnerable to Shock damage.
+* Water elemental corpses no longer drown in water.
+* Fix: NPCs in service buildings did not show their greetings.
+* Fix: travel time when exiting Arena wasn't affected by horseman etc. NPCs.
+* Fix: waiting for 5 minutes/an hour/until dawn no longer cures Asleep.
+* v4.0 fix: autobrew resulted in potions with too high power sometimes.
+* v4.0 fix: beacon master hirelings now respect beacon-restricted areas.
+* v4.0.1 fix: using unarmed combat without martial gauntlets caused crashes.
+* v4.0.1 fix: martial gauntlets all had the same low ID/repair difficulty.
+* v4.0.4 fix: some ghosts still had old (higher) holy resistance.
+
+-------------------------------------------------------------------------------
+
 == Elemental Mod ver. 4.0.4 ==
 
 Probably the last bugfix release, also with a few balance changes.

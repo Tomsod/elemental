@@ -218,7 +218,7 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 216	Cassandra Holden	414	0	0	0	371	0	0	0	212	323	0	0	0	0	Expert Spear (14)	14
 217	Wil Rudyman	93	0	0	0	474	0	0	0	215	325	0	0	0	0	Expert Bow (6)	6
 218	Norbert Havest	89	0	0	0	307	0	0	0	218	327	0	0	0	0	Expert Mace (3)	3
-219	Experte Blaster	1	0	0	0	0	0	0	0	221	0	0	0	0	0	Expert Blaster	
+219	Jasmine	461	0	0	0	506	4	233	0	635	636	639	0	0	0	Bonus hireling (quest reward)
 220	Randal Wolverton	86	0	0	0	270	0	0	0	224	329	0	0	0	0	Expert Shield (3)	3
 221	Mikel Rehj‰ger	630	0	0	0	384	0	0	0	227	331	0	0	0	0	Expert Leather (14)	14
 222	Tricia Steelcoif	240	0	0	0	392	0	0	0	230	333	0	0	0	0	Expert Chain (13)	13
@@ -238,8 +238,8 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 236	Trip Thorinson	303	0	0	0	419	0	0	0	272	357	0	0	0	0	Expert Body_Building (39)	39
 237	Stewart Weiﬂwolke	66	0	0	0	352	0	0	0	275	359	0	0	0	0	Expert Meditation (10)	10
 238	Kethric Otterton	407	0	0	0	371	0	0	0	278	361	0	0	0	0	Expert Perception (14)	14
-239	Expert Diplomacy	1	0	0	0	0	0	0	0	281	0	0	0	0	0	Expert Diplomacy	
-240	Expert Thievery	1	0	0	0	0	0	0	0	284	0	0	0	0	0	Expert Thievery	
+239	Rose	480	0	0	0	506	17	233	0	635	637	639	0	0	0	Bonus hireling (quest reward)
+240	Violet	465	0	0	0	506	46	233	0	635	638	639	0	0	0	Bonus hireling (quest reward)
 241	Taren der Schnelle	23	0	0	0	410	0	0	0	287	363	0	0	0	0	Expert Lock_Pick (13)	13
 242	Spyder 	567	0	0	0	500	0	0	0	290	365	0	0	0	0	Expert Dodging (6)	6
 243	Puddle Stein	91	0	0	0	500	0	0	0	293	367	0	0	0	0	Expert Unarmed (6)	6
@@ -478,9 +478,9 @@ NPC Data (Special)			Group			Current	Profession	Greet	Join	Event	Event	Event	Eve
 476	Sly Silverstone	749	0	0	0	379	37	185	y	431	435	0	0	0	0	Hireling in Avlee (14)
 477	Marc Teagan	767	0	0	0	505	40	185	y	431	445	0	0	0	0	Hireling in Avlee (14)
 478	Kapit‰n Maxwell	803	0	0	0	237	0	0	0	630	0	0	0	0	0	Tatalia (13) pirate boatman (before travel enabled)
-479	Jasmine	461	0	0	0	506	4	233	0	635	636	639	0	0	0	Bonus hireling (quest reward)
-480	Rose	480	0	0	0	506	17	233	0	635	637	639	0	0	0	Bonus hireling (quest reward)
-481	Violet	465	0	0	0	506	46	233	0	635	638	639	0	0	0	Bonus hireling (quest reward)
+479	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+480	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+481	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0
 482	Rydric	64	0	0	0	502	0	235	0	640	437	0	0	0	0	Buyer NPC Hourglasses
 483	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0
 484	Boob	0	0	0	0	0	0	0	0	0	0	0	0	0	0

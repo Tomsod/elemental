@@ -10481,7 +10481,7 @@ static int reset_hp_temp, reset_sp_temp;
 static void new_game_data(void)
 {
     memset(&elemdata, 0, sizeof(elemdata));
-    elemdata.version = 410; // v4.1.0
+    elemdata.version = 411; // v4.1.1
     for (int i = 0; i < EXTRA_CHEST_COUNT; i++)
       {
         elemdata.extra_chests[i].picture = i ? 6 : 3; // [0] is bank safe
@@ -10711,11 +10711,29 @@ static void load_map_rep(void)
         NPCS[223].events[1] = NPCDATA[223].events[1];
         update_410_npcs = FALSE;
       }
+    if (elemdata.version == 410 || elemdata.version == 410 - 1)
+      {
+        // another hotfix (avlee quest bonus hirelings)
+        char *temp;
+        temp = NPCS[219].name;
+        NPCS[219] = NPCS[479];
+        NPCS[219].name = temp;
+        NPCS[479] = NPCDATA[479];
+        temp = NPCS[239].name;
+        NPCS[239] = NPCS[480];
+        NPCS[239].name = temp;
+        NPCS[480] = NPCDATA[480];
+        temp = NPCS[240].name;
+        NPCS[240] = NPCS[481];
+        NPCS[240].name = temp;
+        NPCS[481] = NPCDATA[481];
+        elemdata.version ^= 1; // will become 408 if the below code is needed
+      }
     if (elemdata.version < 410 && !(NPCS[399].bits & NPC_HIRED))
       {
         // update for a game in progress, unless in party
         NPCS[399].profession = NPCDATA[399].profession;
-        elemdata.version = 410;
+        elemdata.version = 411;
       }
 }
 

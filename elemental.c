@@ -7314,7 +7314,7 @@ static void __declspec(naked) zero_item_spells(void)
 {
     asm
       {
-        mov eax, dword ptr [ebx].s_item.bonus2 ; replaced code
+        mov eax, dword ptr [ebx].s_spell_queue_item.target_object ; replaced
         cmp eax, esi ; replaced code
         jnz quit
         cmp word ptr [ebx], SPL_SPECTRAL_WEAPON
@@ -8381,7 +8381,7 @@ static int __thiscall free_aim_spell(int shower)
       {
         // vertical mouse position = distance here, not direction
         s += s * z0 / middle_y;
-        z = 0; // will add to it later
+        z = 0; // the game code adds 2500 to it, so it's ok
         m = y0;
       }
     else // projectile, aim to mouse
@@ -8396,7 +8396,7 @@ static int __thiscall free_aim_spell(int shower)
     s /= sqrt(x * x + y * y + z * z);
     MAP_MONSTERS[id].x = dword(PARTY_X) + (int) (x * s);
     MAP_MONSTERS[id].y = dword(PARTY_Y) + (int) (y * s);
-    MAP_MONSTERS[id].z = dword(PARTY_Z) + (shower ? 2500 : (int) (z * s));
+    MAP_MONSTERS[id].z = dword(PARTY_Z) + (int) (z * s);
     MAP_MONSTERS[id].height = dword(0xacce3c) / 2;
     return id * 8 + 3;
 }

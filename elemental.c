@@ -3213,12 +3213,15 @@ static void __declspec(naked) mix_new_potions_1(void)
 
 // Ditto, but substitute Pure Might instead if mixing two different
 // new potions.  Otherwise they wouldn't explode (nor mix at all).
+// Also here: revert the previous hook if mixing with a catalyst.
 static void __declspec(naked) mix_new_potions_2(void)
 {
     asm
       {
         cmp edx, LAST_POTION
         jg quit
+        cmp edx, CATALYST ; no potion.txt check for this, so no subst needed
+        cmove ecx, dword ptr [MOUSE_ITEM] ; instead the code just uses ecx
         cmp edx, LAST_OLD_POTION
         jng quit
         cmp edx, dword ptr [MOUSE_ITEM]

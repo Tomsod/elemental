@@ -14660,9 +14660,9 @@ static void __declspec(naked) no_wakeup_on_wait(void)
         add dword ptr [esp], 6 * 8 - 5 ; skip removing sleep
         jmp skip
         ok:
-        mov dword ptr [PARTY_ADDR+SIZE_PLAYER*3+COND_ASLEEP*8], edi ; repl.
+        mov dword ptr [PARTY_ADDR+SIZE_PLAYER*3+COND_ASLEEP*8], 0 ; repl.
         skip:
-        cmp ecx, edi ; restore flags
+        cmp ecx, edi ; restore flags (for 1st hook)
         ret
       }
 }
@@ -14938,7 +14938,8 @@ static inline void misc_rules(void)
     hook_call(0x4b22ea, variable_npc_cost, 7); // house npcs
     hook_call(0x49555d, print_npc_cost, 7);
     hook_call(0x494193, asleep_on_no_rest, 5);
-    hook_call(0x41f595, no_wakeup_on_wait, 6);
+    hook_call(0x41f595, no_wakeup_on_wait, 6); // normal wait timeout
+    hook_call(0x432576, no_wakeup_on_wait, 6); // aborting wait w/ esc
     hook_call(0x4707d8, dont_drown_swimmer_corpses, 8);
     hook_call(0x470d6a, dont_drown_swimmer_corpses_underwater, 7);
 }

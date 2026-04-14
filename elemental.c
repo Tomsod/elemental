@@ -1427,9 +1427,9 @@ enum profession
 };
 
 // New max number of global.evt commands (was 4400 before).
-#define GLOBAL_EVT_LINES 6000
+#define GLOBAL_EVT_LINES 5970
 // New max size of global.evt itself (was 46080 bytes before).
-#define GLOBAL_EVT_SIZE 60000
+#define GLOBAL_EVT_SIZE 59484
 
 #define CURRENT_PLAYER 0x507a6c
 

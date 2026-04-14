@@ -1,6 +1,19 @@
 This is the change log for the Elemental Mod.  It's quite descriptive,
 and can be viewed as the chief source of information on the mod's features.
 
+== Elemental Mod ver. 4.1.1 ==
+
+A tiny release with a couple hotfixes; this is the last v4 one for sure.
+
+* v2.0 fix: mixing new black potions with catalysts could change their type.
+* v4.0 fix: bonus hirelings from the new quest weren't displayed properly.
+* v4.0 fix: Shift-aimed Meteor Shower and Starburst would often fail in turn-
+  based mode.  This still happens vs. faraway targets, but it's a vanilla bug.
+* v4.1 fix: pressing Escape while waiting still cured Asleep sometimes.
+* There are also several minor text typo fixes.
+
+-------------------------------------------------------------------------------
+
 == Elemental Mod ver. 4.1 ==
 
 The last release before I break v4 compatibility, with some accumulated minor

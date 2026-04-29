@@ -391,6 +391,9 @@ enum new_strings
     STR_TELEPATHY_GOLD,
     STR_TELEPATHY_NOTHING,
     STR_NOT_WOUNDED,
+    STR_DIFFICULTY_LOCK,
+    STR_DIFF_LOCK_DESC,
+    STR_CANNOT_SWITCH_DIFF,
     NEW_STRING_COUNT
 };
 
@@ -950,6 +953,8 @@ static struct elemdata
     struct item stolen_items[MAX_STOLEN_ITEMS];
     // Prevent the player from stealing too many items at once.
     int shop_wariness[53];
+    // New-game option: lock the difficulty setting on leaving Emerald Island.
+    char fixed_difficulty;
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -1599,12 +1604,34 @@ typedef struct patch_options s_patch_options;
 #define ACTION_THIRD_KEY_CONFIG_PAGE 43
 #define ACTION_QUICK_SPELL_HINT 44
 #define ACTION_QUICK_SPELL_PRESS 45
+#define ACTION_NEW_GAME_SWITCH 46
+#define ACTION_NEW_GAME_EXTRA_SKILL 76
 //vanilla
 #define ACTION_EXIT 113
 #define ACTION_SCROLL 146
 #define ACTION_HOUSE_NPC_ACTION 175
 #define ACTION_CHANGE_CONVERSATION 405
 #define ACTION_TALK_HOUSE_NPC 410
+#define ACTION_NEW_GAME_SKILL 72
+
+struct __attribute__((packed)) button
+{
+    SKIP(4);
+    uint32_t top;
+    SKIP(4);
+    uint32_t height;
+    SKIP(4);
+    uint32_t bottom;
+    SKIP(8);
+    uint32_t action;
+    int32_t action_param_1;
+    int32_t action_param_2;
+    SKIP(4);
+    struct button *previous;
+    struct button *next;
+    SKIP(132);
+};
+typedef struct button s_button;
 
 // Cavalier horse NPCs.
 enum horses
@@ -2019,10 +2046,10 @@ static int __thiscall (*get_max_ranged_damage)(void *player)
 static int __thiscall (*get_attack_delay)(void *player, int ranged)
     = (funcptr_t) 0x48e19b;
 static int __thiscall (*hireling_action)(int id) = (funcptr_t) 0x4bb6b9;
-static int __cdecl (*add_button)(void *dialog, int left, int top, int width,
-                                 int height, int unknown_1, int hover_action,
-                                 int action, int action_param, int key,
-                                 char *text, ...) // varpart is sprite(s)
+static void *__cdecl (*add_button)(void *dialog, int left, int top, int width,
+                                   int height, int unknown_1, int hover_action,
+                                   int action, int action_param, int key,
+                                   char *text, ...) // varpart is sprite(s)
     = (funcptr_t) 0x41d0d8;
 static void (*on_map_leave)(void) = (funcptr_t) 0x443fb8;
 static void __fastcall (*change_map)(char *map, int unknown)
@@ -10480,6 +10507,9 @@ static int current_track = 0;
 // Don't run HP/SP change checks just after a reload.
 static int reset_hp_temp, reset_sp_temp;
 
+// The fixed difficulty setting from the new game menu.
+static char fixed_difficulty;
+
 // Reset all new savegame data on a new game.
 static void new_game_data(void)
 {
@@ -10497,6 +10527,7 @@ static void new_game_data(void)
     elemdata.genie = random() << 16 | random(); // only 15 bytes per call
     current_track = 0; // since the music has stopped at this point
     reset_hp_temp = reset_sp_temp = 0xf;
+    elemdata.fixed_difficulty = fixed_difficulty;
 }
 
 // Hook for the above.
@@ -13941,9 +13972,9 @@ static void __declspec(naked) add_deposit_box_reply(void)
         cmp dword ptr [eax+32], 3 ; button count
         jne ok
         mov ecx, dword ptr [eax+80] ; the button
-        mov edx, dword ptr [ecx+48] ; next button
+        mov edx, dword ptr [ecx].s_button.previous
         mov dword ptr [eax+80], edx
-        and dword ptr [edx+52], 0 ; link to the extra button
+        and dword ptr [edx].s_button.next, 0
         dec dword ptr [eax+32]
         push ecx
         mov ecx, REMOVE_BUTTON_THIS
@@ -14057,8 +14088,8 @@ static void __declspec(naked) buy_deposit_box(void)
         call dword ptr ds:add_reply
         mov eax, dword ptr [DIALOG1]
         mov eax, dword ptr [eax+80] ; the new button
-        add dword ptr [eax+12], 30 ; fix height
-        add dword ptr [eax+20], 30 ; also bottom
+        add dword ptr [eax].s_button.height, 30
+        add dword ptr [eax].s_button.bottom, 30
         jmp restore
         buy:
         mov eax, dword ptr [PARTY_GOLD]
@@ -20836,7 +20867,7 @@ static void __declspec(naked) print_human_racial_skill(void)
 }
 
 // Adjust the button areas of the picked human skills.
-// This mostly affects mouse clicks.
+// This mostly affects mouse clicks.  Also enable the extra skill.
 static void __thiscall __declspec(naked) shift_human_buttons(int player)
 {
     asm
@@ -20846,26 +20877,28 @@ static void __thiscall __declspec(naked) shift_human_buttons(int player)
         test edx, edx
         jz quit
         loop:
-        cmp dword ptr [edx+32], 72
+        cmp dword ptr [edx].s_button.action, ACTION_NEW_GAME_SKILL
         jl next
-        cmp dword ptr [edx+32], 75
+        cmp dword ptr [edx].s_button.action_param_1, ecx
+        jne next
+        cmp dword ptr [edx].s_button.action_param_2, 0
+        jne next
+        cmp dword ptr [edx].s_button.action, ACTION_NEW_GAME_EXTRA_SKILL
         jg next
-        cmp dword ptr [edx+36], ecx
-        jne next
-        cmp dword ptr [edx+40], 0
-        jne next
-        mov eax, dword ptr [edx+12]
+        je learning
+        mov eax, dword ptr [edx].s_button.height
         shr eax, 1
-        cmp dword ptr [edx+32], 73
+        cmp dword ptr [edx].s_button.action, ACTION_NEW_GAME_SKILL + 1
         jg down
         neg eax
         down:
         add eax, 3
-        add dword ptr [edx+4], eax
-        add dword ptr [edx+20], eax
-        mov dword ptr [edx+40], 1
+        add dword ptr [edx].s_button.top, eax
+        add dword ptr [edx].s_button.bottom, eax
+        learning:
+        mov dword ptr [edx].s_button.action_param_2, 1
         next:
-        mov edx, dword ptr [edx+52]
+        mov edx, dword ptr [edx].s_button.next
         test edx, edx
         jnz loop
         quit:
@@ -20883,29 +20916,65 @@ static void __thiscall __declspec(naked) unshift_human_buttons(int player)
         test edx, edx
         jz quit
         loop:
-        cmp dword ptr [edx+32], 72
+        cmp dword ptr [edx].s_button.action, ACTION_NEW_GAME_SKILL
         jl next
-        cmp dword ptr [edx+32], 75
+        cmp dword ptr [edx].s_button.action_param_1, ecx
+        jne next
+        cmp dword ptr [edx].s_button.action_param_2, 1
+        jne next
+        cmp dword ptr [edx].s_button.action, ACTION_NEW_GAME_EXTRA_SKILL
         jg next
-        cmp dword ptr [edx+36], ecx
-        jne next
-        cmp dword ptr [edx+40], 1
-        jne next
-        mov eax, dword ptr [edx+12]
+        je learning
+        mov eax, dword ptr [edx].s_button.height
         shr eax, 1
-        cmp dword ptr [edx+32], 73
+        cmp dword ptr [edx].s_button.action, ACTION_NEW_GAME_SKILL + 1
         jg down
         neg eax
         down:
         add eax, 3
-        sub dword ptr [edx+4], eax
-        sub dword ptr [edx+20], eax
-        mov dword ptr [edx+40], 0
+        sub dword ptr [edx].s_button.top, eax
+        sub dword ptr [edx].s_button.bottom, eax
+        learning:
+        and dword ptr [edx].s_button.action_param_2, 0
         next:
-        mov edx, dword ptr [edx+52]
+        mov edx, dword ptr [edx].s_button.next
         test edx, edx
         jnz loop
         quit:
+        ret
+      }
+}
+
+// Add the RMB-only buttons (one per PC) for human bonus Learning.
+static void __declspec(naked) add_extra_human_buttons(void)
+{
+    asm
+      {
+        ; this is based on vanilla code, but with different y
+        lea eax, [ebx+ebx*2]
+        shr eax, 1
+        add eax, 308 + 3
+        push edi
+        push esi
+        push edi
+        push 3
+        push ACTION_NEW_GAME_EXTRA_SKILL
+        push edi
+        push ebp
+        push ebx
+        push 150
+        push eax
+        push 482
+        push dword ptr [DIALOG5]
+        loop:
+        call dword ptr ds:add_button
+        sub dword ptr [esp+4], 158
+        dec dword ptr [esp+32]
+        setz cl ; default pc 2 is human, so enable his button
+        mov byte ptr [eax].s_button.action_param_2, cl
+        jge loop
+        add esp, 48
+        mov ecx, dword ptr [DIALOG5] ; replaced code
         ret
       }
 }
@@ -20923,28 +20992,30 @@ static void __declspec(naked) shift_created_human_buttons(void)
 }
 
 // Provide skill hint for humans' bonus Learning.
+// Also here: give a RMB hint for the difficulty lock button.
 static void __declspec(naked) human_skill_hint(void)
 {
     asm
       {
-        cmp ecx, dword ptr [esi+4] ; replaced code
-        jl not_it
-        cmp ecx, dword ptr [esi+20] ; replaced code
-        jle quit
-        cmp dword ptr [esi+32], 73
-        jne not_it
-        cmp dword ptr [esi+40], 1
-        jne not_it
-        mov eax, ecx
-        sub eax, dword ptr [esi+12]
-        cmp eax, dword ptr [esi+20]
-        jg quit
+        mov eax, dword ptr [esi].s_button.action ; replaced code
+        cmp eax, ACTION_NEW_GAME_EXTRA_SKILL
+        je learning
+        cmp eax, ACTION_NEW_GAME_SWITCH
+        je button
+        skip:
+        cmp eax, 65 ; also replaced
+        ret
+        learning:
+        cmp dword ptr [esi].s_button.action_param_2, 1
+        jne skip
         mov eax, SKILL_LEARNING
-        push 0x4173a5 ; skill hint code
-        ret 4
-        not_it:
-        cmp esi, 0 ; set greater
-        quit:
+        mov dword ptr [esp], 0x4173a5 ; skill hint code
+        ret
+        button:
+        mov edi, dword ptr [new_strings+STR_DIFFICULTY_LOCK*4]
+        mov ecx, dword ptr [new_strings+STR_DIFF_LOCK_DESC*4]
+        mov dword ptr [ebp-44], ecx
+        mov dword ptr [esp], 0x4174f3 ; to popup code
         ret
       }
 }
@@ -21346,8 +21417,9 @@ static inline void racial_traits(void)
     hook_call(0x49634f, shift_human_skills_down, 5);
     hook_call(0x4963b4, shift_last_human_skill, 5);
     hook_call(0x49631c, print_human_racial_skill, 7);
+    hook_call(0x4971ea, add_extra_human_buttons, 6);
     hook_call(0x497096, shift_created_human_buttons, 6);
-    hook_call(0x417279, human_skill_hint, 12);
+    hook_call(0x41728b, human_skill_hint, 6);
     // For most calls, we can restore player from ebx.
     patch_word(0x417a7d, 0xd989); // mov ecx, ebx
     hook_jump(0x417a7f, get_skill_color);
@@ -24761,10 +24833,17 @@ static void __declspec(naked) get_difficulty_button(void)
 }
 
 // On pressing a button, update the difficulty (unless in combat).
+// Also disable if fixed difficulty is on and the party is not on EI.
 static void __declspec(naked) change_difficulty(void)
 {
     asm
       {
+        cmp byte ptr [elemdata.fixed_difficulty], bl ; ebx == 0
+        jz ok
+        mov eax, dword ptr [reputation_index]
+        cmp dword ptr [reputation_group+eax*4], 1 ; emerald island
+        jne disabled
+        ok:
         test byte ptr [STATE_BITS], 0x30 ; if enemies are near
         jnz forbid
         shr ecx, 6
@@ -24772,7 +24851,14 @@ static void __declspec(naked) change_difficulty(void)
         add ecx, 2
         mov dword ptr [elemdata.difficulty], ecx
         ret
+        disabled:
+        mov ecx, dword ptr [new_strings+STR_CANNOT_SWITCH_DIFF*4]
+        jmp buzz
         forbid:
+        mov ecx, dword ptr [GLOBAL_TXT_ADDR+638*4] ; "hostiles nearby"
+        buzz:
+        mov edx, 2
+        call dword ptr ds:show_status_text
         push ebx
         push ebx
         push ebx
@@ -24783,9 +24869,6 @@ static void __declspec(naked) change_difficulty(void)
         push SOUND_BUZZ
         mov ecx, SOUND_THIS_ADDR
         call dword ptr ds:make_sound
-        mov ecx, dword ptr [GLOBAL_TXT_ADDR+638*4] ; "hostiles nearby"
-        mov edx, 2
-        call dword ptr ds:show_status_text
         ret
       }
 }
@@ -25390,6 +25473,97 @@ static void __declspec(naked) smooth_turn_chunk(void)
       }
 }
 
+// Add an action to the party creation menu for toggling new options.
+static void __declspec(naked) newgame_action(void)
+{
+    asm
+      {
+        mov eax, dword ptr [esp+24] ; replaced code, almost
+        cmp eax, ACTION_NEW_GAME_SWITCH
+        je click
+        cmp eax, ACTION_NEW_GAME_SKILL + 3 ; also replaced code
+        ret
+        click:
+        xor byte ptr [fixed_difficulty], 1
+        jz off
+        mov dword ptr [esp], 0x435a3b ; make on sound
+        ret
+        off:
+        mov dword ptr [esp], 0x435a88 ; make off sound
+        ret
+      }
+}
+
+// Gfx for the new button.
+static const char lock_diff_but_off[] = "ngdflkof";
+static const char lock_diff_but_on[] = "ngdflkon";
+static void *lock_diff_but_load[2];
+
+// Also add a button which triggers the action (and load its graphics).
+static void __declspec(naked) newgame_button(void)
+{
+    asm
+      {
+        mov dword ptr [0x507580], eax ; replaced code
+        push edi ; == 0
+        push esi ; == ""
+        push edi
+        push edi
+        push ACTION_NEW_GAME_SWITCH
+        push edi
+        push ebp ; == 1
+        push 18
+        push 18
+        push 6
+        push 547
+        push dword ptr [DIALOG5]
+        call dword ptr ds:add_button
+        add esp, 48
+        mov byte ptr [fixed_difficulty], 0 ; reset
+        push 2
+#ifdef __clang__
+        mov eax, offset lock_diff_but_off
+        push eax
+#else
+        push offset lock_diff_but_off
+#endif
+        mov ecx, ICONS_LOD_ADDR
+        call dword ptr ds:load_bitmap
+        lea eax, [eax+eax*8]
+        lea eax, [LOADED_BITMAPS_ADDR+eax*8]
+        mov dword ptr [lock_diff_but_load], eax
+        push 2
+#ifdef __clang__
+        mov eax, offset lock_diff_but_on
+        push eax
+#else
+        push offset lock_diff_but_on
+#endif
+        mov ecx, ICONS_LOD_ADDR
+        call dword ptr ds:load_bitmap
+        lea eax, [eax+eax*8]
+        lea eax, [LOADED_BITMAPS_ADDR+eax*8]
+        mov dword ptr [lock_diff_but_load+4], eax
+        ret
+      }
+}
+
+// Actually draw the new button (on or off).
+static void __declspec(naked) newgame_draw(void)
+{
+    asm
+      {
+        movzx eax, byte ptr [fixed_difficulty]
+        push dword ptr [lock_diff_but_load+eax*4]
+        push 6
+        push 547
+        mov ecx, DRAW_IMAGE_THIS_ADDR
+        call dword ptr ds:draw_background
+        mov ecx, dword ptr [DIALOG5] ; replaced code
+        ret
+      }
+}
+
 // Allow optionally increasing game difficulty.
 static inline void difficulty_level(void)
 {
@@ -25433,6 +25607,9 @@ static inline void difficulty_level(void)
     hook_call(0x4067ab, shoot_adjust_aim, 5); // turn-based
     hook_call(0x4716b9, shoot_adjust_hitbox, 5); // indoors
     hook_call(0x471ea2, shoot_adjust_hitbox, 5); // outdoors
+    hook_call(0x435774, newgame_action, 7);
+    hook_call(0x497471, newgame_button, 5);
+    hook_call(0x495c0e, newgame_draw, 6);
 }
 
 // Holds an unused travel reply that can be replaced with ours.
@@ -26297,9 +26474,9 @@ static void __declspec(naked) add_order_reply(void)
         cmp dword ptr [eax+32], 7 ; button count
         jne ok
         mov ecx, dword ptr [eax+80] ; the button
-        mov edx, dword ptr [ecx+48] ; next button
+        mov edx, dword ptr [ecx].s_button.previous
         mov dword ptr [eax+80], edx
-        and dword ptr [edx+52], 0 ; link to the removed button
+        and dword ptr [edx].s_button.next, 0
         dec dword ptr [eax+32]
         push ecx
         mov ecx, REMOVE_BUTTON_THIS

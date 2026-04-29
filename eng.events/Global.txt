@@ -815,3 +815,6 @@ Global Text
 812	%d gold
 813	nothing
 814	That character is not wounded
+815	Difficulty Lock
+816	If this option is on, you will no longer be able to adjust game difficulty after your party leaves the starting area.
+817	You cannot switch difficulty anymore!

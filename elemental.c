@@ -10514,7 +10514,7 @@ static char fixed_difficulty;
 static void new_game_data(void)
 {
     memset(&elemdata, 0, sizeof(elemdata));
-    elemdata.version = 411; // v4.1.1
+    elemdata.version = 500; // v5.0.0
     for (int i = 0; i < EXTRA_CHEST_COUNT; i++)
       {
         elemdata.extra_chests[i].picture = i ? 6 : 3; // [0] is bank safe
@@ -10545,10 +10545,6 @@ static void __declspec(naked) new_game_hook(void)
 // On a reload it's reset to 0 and then overwriten properly on the next tick.
 // On a new game it's lowered to the current week, which is also 0.
 static int last_bank_week;
-// Enable delayed update of NPC topics (except for one hireling).
-static int update_410_npcs = FALSE;
-// TODO: remove this later
-static int __cdecl get_max_skill_level(int, int, int, int);
 
 // Load mod data from the savegame, if said data exists.
 // Also reset some vars and fix recovery after saving in TB mode.
@@ -10556,75 +10552,7 @@ static void load_game_data(void)
 {
     void *file = find_in_lod(SAVEGAME_LOD, "elemdata.bin", 1);
     if (file)
-      {
         fread(&elemdata, sizeof(elemdata), 1, file);
-        if (elemdata.version <= 403) // save file compatibility
-          {
-            // The old data structure.
-            enum { OLD_LAST_LOST_ITEM = 702 }; // vanilla scroll of waves
-            struct elemdata_v403
-              {
-                int version;
-                int reputation[12];
-                char artifacts_found[LAST_ARTIFACT-FIRST_ARTIFACT+1];
-                int training[4][SKILL_COUNT];
-                struct beacon bottle;
-                struct map_chest extra_chests[EXTRA_CHEST_COUNT];
-                int difficulty;
-                int last_region;
-                int last_tax_month, last_tax_fame;
-                int current_player;
-                struct item guild_scrolls[32][12];
-                struct item current_orders[42];
-                uint64_t order_timers[42];
-                uint32_t genie;
-                int current_map;
-                uint64_t map_enter_time;
-                struct spell_buff new_pc_buffs[4][NBUFF_COUNT];
-                int last_bank_gold;
-                int quick_spells[4][4];
-                int arena_points;
-                struct beacon beacon_masters[2];
-                int street_npc_seed[MAP_COUNT], street_npc_time[MAP_COUNT];
-                int bard_xp[12], bard_bonus[12];
-                int monster_loot_seed[MAP_COUNT];
-                uint64_t last_rest_time;
-                int next_refill_day[MAP_COUNT];
-                char lost_items[OLD_LAST_LOST_ITEM-FIRST_LOST_ITEM+1];
-                struct item stolen_items[MAX_STOLEN_ITEMS];
-                int shop_wariness[53];
-              } *old_elemdata = (struct elemdata_v403 *) &elemdata;
-            if (elemdata.version < 402) // wariness added in 4.0.2
-                memset(elemdata.shop_wariness, 0,
-                       sizeof(elemdata.shop_wariness));
-            else
-                memmove(elemdata.shop_wariness, old_elemdata->shop_wariness,
-                        sizeof(elemdata.shop_wariness));
-            memmove(elemdata.stolen_items, old_elemdata->stolen_items,
-                    sizeof(elemdata.stolen_items));
-            memset(&elemdata.lost_items[OLD_LAST_LOST_ITEM-FIRST_LOST_ITEM+1],
-                   LOST_NOTRACK, LAST_LOST_ITEM - OLD_LAST_LOST_ITEM);
-
-            // Some skill limits have changed, so trim what's illegal now.
-            static const int mastery[] = { 0, 0, SKILL_EXPERT, SKILL_MASTER };
-            for (struct player *player = PARTY; player < PARTY + 4; player++)
-              {
-                int class = player->class;
-                int race = get_race(player);
-                for (int skill = 0; skill < SKILL_COUNT; skill++)
-                  {
-                    uint16_t *value = &player->skills[skill];
-                    int limit = get_max_skill_level(class, race, skill, TRUE);
-                    if (skill_mastery(*value) > limit)
-                        *value = *value & SKILL_MASK | mastery[limit];
-                  }
-              }
-            // Must wait until load_map_rep() to fix NPCs when they're loaded.
-            update_410_npcs = TRUE;
-            // For 4.0.2 or below we have one more fix that may be delayed.
-            elemdata.version = 410 - (elemdata.version < 403);
-          }
-      }
     else // probably won't happen; reset all data just in case
         new_game_data();
     reputation_group[0] = 0; // will be set on map load
@@ -10727,47 +10655,6 @@ static void load_map_rep(void)
                 show_status_text(new_strings[text], 4);
               }
           }
-      }
-    // can't do it on game load, as that hook is before npcs are loaded
-    if (update_410_npcs)
-      {
-        // Lasker cipher hint
-        NPCS[15].events[5] = NPCS[15].events[4];
-        NPCS[15].events[4] = NPCS[15].events[3];
-        NPCS[15].events[3] = NPCDATA[15].events[3];
-        // Butler lost items
-        NPCS[58].events[2] = NPCDATA[58].events[2];
-        // Ambassador invitations
-        NPCS[75].events[0] = NPCDATA[75].events[0];
-        NPCS[76].events[0] = NPCDATA[76].events[0];
-        // Plate expert missing topic
-        NPCS[223].events[2] = NPCS[223].events[1];
-        NPCS[223].events[1] = NPCDATA[223].events[1];
-        update_410_npcs = FALSE;
-      }
-    if (elemdata.version == 410 || elemdata.version == 410 - 1)
-      {
-        // another hotfix (avlee quest bonus hirelings)
-        char *temp;
-        temp = NPCS[219].name;
-        NPCS[219] = NPCS[479];
-        NPCS[219].name = temp;
-        NPCS[479] = NPCDATA[479];
-        temp = NPCS[239].name;
-        NPCS[239] = NPCS[480];
-        NPCS[239].name = temp;
-        NPCS[480] = NPCDATA[480];
-        temp = NPCS[240].name;
-        NPCS[240] = NPCS[481];
-        NPCS[240].name = temp;
-        NPCS[481] = NPCDATA[481];
-        elemdata.version ^= 1; // will become 408 if the below code is needed
-      }
-    if (elemdata.version < 410 && !(NPCS[399].bits & NPC_HIRED))
-      {
-        // update for a game in progress, unless in party
-        NPCS[399].profession = NPCDATA[399].profession;
-        elemdata.version = 411;
       }
 }
 

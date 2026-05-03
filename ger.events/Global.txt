@@ -815,6 +815,6 @@ Global Text
 812	%d Gold
 813	nichts
 814	Dieser Charakter ist nicht verletzt
-815	Difficulty Lock
-816	If this option is on, you will no longer be able to adjust game difficulty after your party leaves the starting area.
-817	You cannot switch difficulty anymore!
+815	Schwierigkeitssperre
+816	Wenn diese Option aktiviert ist, kannst du die Schwierigkeitsstufe des Spiels nicht mehr anpassen, sobald eure Gruppe den Startbereich verlassen hat.
+817	Du kannst die Schwierigkeitsstufe nicht mehr ändern!

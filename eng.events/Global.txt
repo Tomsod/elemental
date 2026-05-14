@@ -583,7 +583,7 @@ Global Text
 580	Knight
 581	Lord
 582	You already won this trip to the Arena…
-583	No saving in the Arena
+583	You cannot save here!
 584	Click here to remove your Quick Spell
 585	Item is not of high enough quality
 586	Not enough spell points
@@ -818,3 +818,5 @@ Global Text
 815	Difficulty Lock
 816	If this option is on, you will no longer be able to adjust game difficulty after your party leaves the starting area.
 817	You cannot switch difficulty anymore!
+818	Restricted Saves
+819	If this option is on, you will only be able to save the game near towns, villages, and other NPC settlements.

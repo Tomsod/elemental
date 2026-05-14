@@ -12,6 +12,7 @@
 #define byte(address) (*(uint8_t *) (address))
 #define word(address) (*(uint16_t *) (address))
 #define dword(address) (*(uint32_t *) (address))
+#define sdword(address) (*(int32_t *) (address))
 #define pointer(address) (*(void **) (address))
 
 #ifdef CHECK_OVERWRITE
@@ -394,6 +395,8 @@ enum new_strings
     STR_DIFFICULTY_LOCK,
     STR_DIFF_LOCK_DESC,
     STR_CANNOT_SWITCH_DIFF,
+    STR_RESTRICTED_SAVES,
+    STR_RESTR_SAVES_DESC,
     NEW_STRING_COUNT
 };
 
@@ -955,6 +958,8 @@ static struct elemdata
     int shop_wariness[53];
     // New-game option: lock the difficulty setting on leaving Emerald Island.
     char fixed_difficulty;
+    // New-game option: only allow saving the game in settlements.
+    char save_in_villages;
 } elemdata;
 
 // Number of barrels in the Wall of Mist.
@@ -967,6 +972,7 @@ enum qbits
     QBIT_DARK_PATH = 100,
     QBIT_KILL_TOLBERTI = 109,
     QBIT_KILL_ROBERT = 127,
+    QBIT_CASTLE_CLEARED = 135,
     QBIT_LEFT_EMERALD_ISLAND = 136,
     QBIT_FIRST_OBELISK = 164,
     QBIT_LAST_OBELISK = 177,
@@ -1393,8 +1399,7 @@ static const char map_altar_of_wishes[] = "genie.blv";
 #define OUTDOORS 0x6be1e0
 #define OUTDOOR_REP 0x6a1140
 #define INDOOR_REP 0x6be514
-#define CURRENT_REP (*(int32_t *) (dword(OUTDOORS) == 2 ? OUTDOOR_REP \
-                                                        : INDOOR_REP))
+#define CURRENT_REP sdword(dword(OUTDOORS) == 2 ? OUTDOOR_REP : INDOOR_REP)
 
 enum profession
 {
@@ -2076,6 +2081,8 @@ static int __thiscall (*has_enchanted_item)(void *player, int enchantment)
     = (funcptr_t) 0x48d6b6;
 static int __thiscall (*load_bitmap)(void *lod, char *name, int lod_type)
     = (funcptr_t) 0x40fb2c;
+static int __thiscall (*replace_bitmap)(void *lod, void *bitmap, char *name,
+                                        int lod_type) = (funcptr_t) 0x4101bd;
 #define LOADED_BITMAPS_ADDR 0x6d06cc
 #define LOADED_BITMAPS ((uint32_t (*)[18]) 0x6d06cc)
 static void __fastcall (*aim_spell)(int spell, int pc, int skill, int flags,
@@ -2106,7 +2113,8 @@ static int __thiscall (*get_stat_bonus_from_items)(void *player, int stat,
     = (funcptr_t) 0x48eaa6;
 static funcptr_t get_text_width = (funcptr_t) 0x44c52e;
 static int __thiscall (*is_bare_fisted)(void *player) = (funcptr_t) 0x48d65c;
-static funcptr_t reset_interface = (funcptr_t) 0x422698;
+static void __fastcall (*reset_interface)(int alignment, char reload)
+    = (funcptr_t) 0x422698;
 static int __thiscall (*get_perception_bonus)(void *player)
     = (funcptr_t) 0x491252;
 static int __thiscall (*get_merchant_bonus)(void *player)
@@ -2145,6 +2153,7 @@ static int *__fastcall (*aim_at_target)(int attacker, int target, int *buffer,
 static void __fastcall (*monster_shoots)(int monster_id, void *vector,
                                          int missile, int attack)
     = (funcptr_t) 0x404874;
+static void *__cdecl (*mm7_malloc)(size_t size) = (funcptr_t) 0x4cadc2;
 static int __fastcall (*get_text_height)(void *font, char *string,
                                          const int *bounds, int unknown,
                                          int unknown2) = (funcptr_t) 0x44c5c9;
@@ -6535,6 +6544,7 @@ static void parse_statrate(void);
 static void set_colors(void);
 static void parse_clsskill(void);
 static void more_visible_facets(void);
+static void parse_savearea(void);
 
 // Let's ride on the tail of the spells.txt parsing function.
 static void __declspec(naked) spells_txt_tail(void)
@@ -6549,6 +6559,7 @@ static void __declspec(naked) spells_txt_tail(void)
         call set_colors
         call parse_clsskill
         call more_visible_facets
+        call parse_savearea
         ret
       }
 }
@@ -10507,8 +10518,8 @@ static int current_track = 0;
 // Don't run HP/SP change checks just after a reload.
 static int reset_hp_temp, reset_sp_temp;
 
-// The fixed difficulty setting from the new game menu.
-static char fixed_difficulty;
+// The toggleable settings from the new game menu.
+static char newgame_options[2];
 
 // Reset all new savegame data on a new game.
 static void new_game_data(void)
@@ -10527,7 +10538,8 @@ static void new_game_data(void)
     elemdata.genie = random() << 16 | random(); // only 15 bytes per call
     current_track = 0; // since the music has stopped at this point
     reset_hp_temp = reset_sp_temp = 0xf;
-    elemdata.fixed_difficulty = fixed_difficulty;
+    elemdata.fixed_difficulty = newgame_options[0];
+    elemdata.save_in_villages = newgame_options[1];
 }
 
 // Hook for the above.
@@ -20899,8 +20911,11 @@ static void __declspec(naked) human_skill_hint(void)
         mov dword ptr [esp], 0x4173a5 ; skill hint code
         ret
         button:
-        mov edi, dword ptr [new_strings+STR_DIFFICULTY_LOCK*4]
-        mov ecx, dword ptr [new_strings+STR_DIFF_LOCK_DESC*4]
+        cmp dword ptr [esi].s_button.action_param_1, 1
+        cmovb edi, dword ptr [new_strings+STR_DIFFICULTY_LOCK*4]
+        cmovb ecx, dword ptr [new_strings+STR_DIFF_LOCK_DESC*4]
+        cmove edi, dword ptr [new_strings+STR_RESTRICTED_SAVES*4]
+        cmove ecx, dword ptr [new_strings+STR_RESTR_SAVES_DESC*4]
         mov dword ptr [ebp-44], ecx
         mov dword ptr [esp], 0x4174f3 ; to popup code
         ret
@@ -25371,7 +25386,8 @@ static void __declspec(naked) newgame_action(void)
         cmp eax, ACTION_NEW_GAME_SKILL + 3 ; also replaced code
         ret
         click:
-        xor byte ptr [fixed_difficulty], 1
+        mov eax, dword ptr [esp+20] ; param 1
+        xor byte ptr [newgame_options+eax], 1
         jz off
         mov dword ptr [esp], 0x435a3b ; make on sound
         ret
@@ -25381,12 +25397,12 @@ static void __declspec(naked) newgame_action(void)
       }
 }
 
-// Gfx for the new button.
-static const char lock_diff_but_off[] = "ngdflkof";
-static const char lock_diff_but_on[] = "ngdflkon";
-static void *lock_diff_but_load[2];
+// Gfx for the new buttons.
+static const char *const newgame_but_gfx[] = { "ngdflkof", "ngdflkon",
+                                               "ngrssvof", "ngrssvon" };
+static void *newgame_but_load[4];
 
-// Also add a button which triggers the action (and load its graphics).
+// Also add buttons which trigger the action (and load their graphics).
 static void __declspec(naked) newgame_button(void)
 {
     asm
@@ -25405,32 +25421,22 @@ static void __declspec(naked) newgame_button(void)
         push 547
         push dword ptr [DIALOG5]
         call dword ptr ds:add_button
+        sub dword ptr [esp+4], 42
+        inc dword ptr [esp+32]
+        call dword ptr ds:add_button
         add esp, 48
-        mov byte ptr [fixed_difficulty], 0 ; reset
+        mov word ptr [newgame_options], di ; reset
+        add edi, 4
+        loop:
         push 2
-#ifdef __clang__
-        mov eax, offset lock_diff_but_off
-        push eax
-#else
-        push offset lock_diff_but_off
-#endif
+        push dword ptr [newgame_but_gfx+edi*4-4]
         mov ecx, ICONS_LOD_ADDR
         call dword ptr ds:load_bitmap
         lea eax, [eax+eax*8]
         lea eax, [LOADED_BITMAPS_ADDR+eax*8]
-        mov dword ptr [lock_diff_but_load], eax
-        push 2
-#ifdef __clang__
-        mov eax, offset lock_diff_but_on
-        push eax
-#else
-        push offset lock_diff_but_on
-#endif
-        mov ecx, ICONS_LOD_ADDR
-        call dword ptr ds:load_bitmap
-        lea eax, [eax+eax*8]
-        lea eax, [LOADED_BITMAPS_ADDR+eax*8]
-        mov dword ptr [lock_diff_but_load+4], eax
+        mov dword ptr [newgame_but_load+edi*4-4], eax
+        dec edi
+        jg loop
         ret
       }
 }
@@ -25440,13 +25446,191 @@ static void __declspec(naked) newgame_draw(void)
 {
     asm
       {
-        movzx eax, byte ptr [fixed_difficulty]
-        push dword ptr [lock_diff_but_load+eax*4]
+        movzx eax, byte ptr [newgame_options]
+        push dword ptr [newgame_but_load+eax*4]
         push 6
         push 547
         mov ecx, DRAW_IMAGE_THIS_ADDR
         call dword ptr ds:draw_background
+        movzx eax, byte ptr [newgame_options+1]
+        push dword ptr [newgame_but_load+8+eax*4]
+        push 6
+        push 547 - 42
+        mov ecx, DRAW_IMAGE_THIS_ADDR
+        call dword ptr ds:draw_background
         mov ecx, dword ptr [DIALOG5] ; replaced code
+        ret
+      }
+}
+
+// Filled in just below.
+static struct savearea
+{
+    int map;
+    union
+      {
+        struct
+          {
+            int xl, xh;
+            int yl, yh;
+            int zl, zh;
+          };
+        int coords[6];
+      };
+} *savearea;
+static int savearea_count = 0;
+
+// Init the array of allowed save locations.  Called from spells_txt_tail().
+static void parse_savearea(void)
+
+{
+    char *file = load_from_lod(EVENTS_LOD, "savearea.txt", FALSE);
+    if (!strtok(file, "\r\n")) // skip first line
+        return; // empty file?
+    char *line = strtok(0, "\r\n");
+    if (!line) return;
+    line = strchr(line, '\t');
+    if (!line) return;
+    int total = atoi(line + 1);
+    if (total <= 0) return;
+    savearea = mm7_malloc(sizeof(struct savearea) * total);
+    int i;
+    for (i = 0; i < total; i++)
+      {
+        char *line = strtok(0, "\r\n");
+        if (!line) break;
+        char *field = strchr(line, '\t');
+        if (field) *field = 0;
+        savearea[i].map = get_map_index(MAPSTATS, line);
+        for (int j = 0; j < 6; j++)
+          {
+            if (!field || *++field == '*')
+                savearea[i].coords[j] = j & 1 ? 30000 : -30000;
+            else
+                savearea[i].coords[j] = atoi(field);
+            if (field) field = strchr(field, '\t');
+          }
+      }
+    savearea_count = i;
+}
+
+// Check if the player can save the game right now (assuming restricted saves).
+static int can_save_game(void)
+{
+    if (!savearea_count) return TRUE; // failsafe
+    int map = dword(CURRENT_MAP_ID);
+    if (map == map_ids[MAP_CASTLE] && !check_bit(QBITS, QBIT_CASTLE_CLEARED))
+        return FALSE; // don't trivialize the initial fight
+    // use backup xyz since map shift may change the usual vars
+    int x = sdword(0xacd500), y = sdword(0xacd504), z = sdword(0xacd508);
+    for (int i = savearea_count - 1; i >= 0; i--)
+        if (map == savearea[i].map
+            && x >= savearea[i].xl && x <= savearea[i].xh
+            && y >= savearea[i].yl && y <= savearea[i].yh
+            && z >= savearea[i].zl && z <= savearea[i].zh)
+            return TRUE;
+    return FALSE;
+}
+
+// Forbid saving the game if applicable (new-game option, XYZ-based).
+// Awkward place for a hook, but MMExt already claimed the call above it.
+// Autosaves must still write to new.lod, otherwise the area resets.
+static void __declspec(naked) disallow_saving_game(void)
+{
+    asm
+      {
+        test eax, eax ; replaced code
+        jz skip
+        cmp byte ptr [elemdata.save_in_villages], 1
+        jne skip
+        call can_save_game
+        test eax, eax
+        jnz skip
+        cmp dword ptr [ebp-28], eax ; 1 if new game
+        jnz skip
+        test dword ptr [ebp-36], 1 ; 1 = autosave, 2 = quick, 0 = regular
+        jz skip
+        mov dword ptr [ebp-36], eax ; disable autosave.mm7 but save map status
+        skip:
+        ret 16 ; replaced stack fixup
+      }
+}
+
+// A duplicate check for a manual save.  Without it, game tries to save itself,
+// partially fails, and leaves a mess.  Also MMExt-aware, but less awkward.
+static void __declspec(naked) disallow_saving_game_from_menu(void)
+{
+    asm
+      {
+        test eax, eax ; replaced code
+        jz skip
+        cmp byte ptr [elemdata.save_in_villages], 1
+        jne skip
+        call can_save_game
+        test eax, eax
+        skip:
+        mov dword ptr [ebp-4], eax ; also replaced
+        ret
+      }
+}
+
+// Graphics for a save zone indicator (depending on party alignment).
+static const char *const save_icon_gfx[] = { "savicn-b", "savicn-a",
+                                             "savicn-c" };
+static void *save_icon;
+
+// Load the save-allowed zone indicator according to interface color.
+// We could skip this if the option is unset, but better safe than sorry.
+static void __declspec(naked) load_save_icon(void)
+{
+    asm
+      {
+        jnz ok
+        mov dword ptr [esp], 0x42344f ; replaced jz
+        ok:
+        push ecx ; preserve
+        push edx ; and this
+        test dl, dl
+        jnz replace
+        push 2
+        push dword ptr [save_icon_gfx+ecx*4]
+        mov ecx, ICONS_LOD_ADDR
+        call dword ptr ds:load_bitmap
+        lea eax, [eax+eax*8]
+        lea eax, [LOADED_BITMAPS_ADDR+eax*8]
+        mov dword ptr [save_icon], eax
+        jmp quit
+        replace:
+        push 2
+        push dword ptr [save_icon_gfx+ecx*4]
+        push dword ptr [save_icon]
+        mov ecx, ICONS_LOD_ADDR
+        call dword ptr ds:replace_bitmap
+        quit:
+        pop edx
+        pop ecx
+        ret
+      }
+}
+
+// Draw an indicator that the party is in a save-allowed zone,
+// so that the player won't have to guess (it's not always obvious).
+static void __declspec(naked) draw_save_icon(void)
+{
+    asm
+      {
+        cmp byte ptr [elemdata.save_in_villages], bl ; ebx == 0
+        jz skip
+        call can_save_game
+        test eax, eax
+        jz skip
+        push dword ptr [save_icon]
+        push 4
+        push 468 + 28
+        mov ecx, DRAW_IMAGE_THIS_ADDR
+        call dword ptr ds:draw_background
+        skip:
+        fild dword ptr [PARTY_DIR] ; replaced code
         ret
       }
 }
@@ -25497,6 +25681,10 @@ static inline void difficulty_level(void)
     hook_call(0x435774, newgame_action, 7);
     hook_call(0x497471, newgame_button, 5);
     hook_call(0x495c0e, newgame_draw, 6);
+    hook_call(0x45f4cf, disallow_saving_game, 5);
+    hook_call(0x4600d0, disallow_saving_game_from_menu, 5);
+    hook_call(0x4226a0, load_save_icon, 6);
+    hook_call(0x442904, draw_save_icon, 6);
 }
 
 // Holds an unused travel reply that can be replaced with ours.

@@ -1226,7 +1226,8 @@ struct __attribute__((packed)) map_monster
     SKIP(1);
     uint8_t attack2_chance;
     uint8_t attack2_element;
-    SKIP(5);
+    uint8_t attack2_damage_dice_count;
+    SKIP(4);
     uint8_t spell1;
     SKIP(1);
     uint8_t spell2;
@@ -1248,7 +1249,7 @@ struct __attribute__((packed)) map_monster
     uint8_t alter_spell1; // was padding
     uint8_t alter_spell2; // ditto
     uint32_t max_hp;
-    SKIP(4);
+    uint32_t ac;
     uint32_t experience;
     SKIP(4);
     uint32_t recovery;
@@ -2001,7 +2002,7 @@ static void __fastcall (*attack_monster)(int attacker, int defender,
                                          void *force, int attack_type)
     = (funcptr_t) 0x43b1d3;
 static int __fastcall (*skill_mastery)(int skill) = (funcptr_t) 0x45827d;
-static int (*random)(void) = (funcptr_t) 0x4caac2;
+static unsigned int (*random)(void) = (funcptr_t) 0x4caac2;
 static void __cdecl (*srandom)(unsigned int seed) = (funcptr_t) 0x4caab5;
 static int (*get_thread_context)(void) = (funcptr_t) 0x4cecd2;
 static int __thiscall (*save_file_to_lod)(void *lod, const void *header,
@@ -10315,7 +10316,11 @@ static void __declspec(naked) starburst_sound(void)
       }
 }
 
+// Defined below.
+static void __thiscall randomize_monster_stats(struct map_monster *mon);
+
 // Replace some outdoor-only monster spells when indoors.
+// Also here: adjust stats of newly generated monsters (incl. on map refill).
 static void __declspec(naked) indoor_monster_spells(void)
 {
     asm
@@ -10328,18 +10333,19 @@ static void __declspec(naked) indoor_monster_spells(void)
         add esp, 12
         cmp dword ptr [OUTDOORS], 2
         je skip
-        mov eax, dword ptr [esp+4] ; copied monster data
-        cmp byte ptr [eax-44].s_map_monster.alter_spell2, SPL_STARBURST
+        cmp byte ptr [esi].s_map_monster.alter_spell2, SPL_STARBURST
         jne not_starburst
-        mov byte ptr [eax-44].s_map_monster.alter_spell2, 0
-        mov byte ptr [eax-44].s_map_monster.alter_flag2, 0
+        mov byte ptr [esi].s_map_monster.alter_spell2, 0
+        mov byte ptr [esi].s_map_monster.alter_flag2, 0
         not_starburst:
-        cmp byte ptr [eax-44].s_map_monster.spell2, SPL_METEOR_SHOWER
+        cmp byte ptr [esi].s_map_monster.spell2, SPL_METEOR_SHOWER
         jne skip
-        mov byte ptr [eax-44].s_map_monster.spell2, 0
-        mov byte ptr [eax-44].s_map_monster.alter_spell2, SPL_INFERNO
-        mov byte ptr [eax-44].s_map_monster.alter_flag2, 0x81 ; normal+
+        mov byte ptr [esi].s_map_monster.spell2, 0
+        mov byte ptr [esi].s_map_monster.alter_spell2, SPL_INFERNO
+        mov byte ptr [esi].s_map_monster.alter_flag2, 0x81 ; normal+
         skip:
+        mov ecx, esi
+        call randomize_monster_stats
         ret
       }
 }
@@ -25635,7 +25641,87 @@ static void __declspec(naked) draw_save_icon(void)
       }
 }
 
+// Randomly adjust a single stat by up to +/- 10%.
+static int adjust_stat(int stat, double *diff)
+{
+    int limit = (stat + 5) / 10;
+    if (limit <= 0) return stat;
+    int new_stat = stat - limit + random() % (limit * 2 + 1);
+    *diff *= (double) new_stat / stat;
+    return new_stat;
+}
+
+// Make ID Monster more useful by adjusting individual monster stats slightly.
+static void __thiscall randomize_monster_stats(struct map_monster *mon)
+{
+    double diff = 1; // how much to adjust monster level
+    mon->hp = mon->max_hp = adjust_stat(mon->max_hp, &diff);
+    diff = 1 + (diff - 1) * 0.6; // hp/lvl grows superlinearly
+    mon->ac = adjust_stat(mon->ac, &diff);
+    int medusa = mon->physical_resistance != mon->phys_spell_resistance;
+    uint8_t *resistances = &mon->fire_resistance;
+    for (int i = 0; i < 8; i++)
+        if (resistances[i] < IMMUNE)
+            resistances[i] = adjust_stat(resistances[i], &diff);
+    if (!medusa)
+        mon->physical_resistance = mon->phys_spell_resistance;
+    uint8_t *attack = &mon->attack1_damage_dice_count;
+    for (int i = 0; i < 2; i++)
+      {
+        // [0]d[1]+[2], avg [0]*(1+[1])/2+[2], doubled to avoid half-ints
+        int total = attack[0] * (1 + attack[1]) + attack[2] * 2;
+        int limit[3] = { (attack[0] + 2) / 4, (attack[1] + 2) / 4,
+                         (attack[2] + 7) / 8 };
+        for (int i = 0; i < 20; i++)
+          {
+            int new[3];
+            int bias = random() % 2; // impede converging to mean
+            for (int i = 0; i < 3; i++)
+              {
+                if (!limit[i]) continue;
+                int adj = random() % (limit[i] + 1);
+                new[i] = attack[i] + (bias == !(random() % 3) ? adj : -adj);
+              }
+            int new_total = new[0] * (1 + new[1]) + new[2] * 2;
+            if (new_total * 10 <= total * 11 && new_total * 10 >= total * 9)
+              {
+                attack[0] = new[0];
+                attack[1] = new[1];
+                attack[2] = new[2];
+                diff *= (double) new_total / total;
+                break;
+              }
+          }
+        attack = &mon->attack2_damage_dice_count;
+      }
+    mon->spell1_skill = adjust_stat(mon->spell1_skill & SKILL_MASK, &diff)
+                        | mon->spell1_skill & ~SKILL_MASK;
+    mon->spell2_skill = adjust_stat(mon->spell2_skill & SKILL_MASK, &diff)
+                        | mon->spell2_skill & ~SKILL_MASK;
+    mon->level = mon->level * diff + 0.5;
+    mon->experience = mon->experience * diff * diff + 0.5; // also superlinear
+}
+
+// Adjust stats of monsters that were pre-placed on the map (guards etc.)
+// This hook runs at least on each map load, but we only need the first time.
+static void __declspec(naked) preplaced_monster_stats(void)
+{
+    asm
+      {
+        lea ebx, [esi-142] ; replaced code
+        cmp dword ptr [OUTDOOR_LAST_VISIT_TIME], 0 ; zero if just refilled
+        jnz quit
+        cmp dword ptr [OUTDOOR_LAST_VISIT_TIME+4], 0 ; second half
+        jnz quit
+        mov ecx, ebx ; the monster
+        call randomize_monster_stats
+        quit:
+        ret
+      }
+}
+
 // Allow optionally increasing game difficulty.
+// Also here: support various permanent new game options.
 static inline void difficulty_level(void)
 {
     hook_call(0x414fe1, get_difficulty_button, 6);
@@ -25685,6 +25771,8 @@ static inline void difficulty_level(void)
     hook_call(0x4600d0, disallow_saving_game_from_menu, 5);
     hook_call(0x4226a0, load_save_icon, 6);
     hook_call(0x442904, draw_save_icon, 6);
+    hook_call(0x4087eb, preplaced_monster_stats, 6);
+    // stats for random monsters adjusted in indoor_monster_spells() above
 }
 
 // Holds an unused travel reply that can be replaced with ours.

@@ -25720,6 +25720,18 @@ static void __declspec(naked) preplaced_monster_stats(void)
       }
 }
 
+// Since XP for killing a monster is slightly variable now, we need to
+// duplicate a MMExt hack that prevents default XP from overriding it.
+// It has to be before the gain-xp call so as not to break said hack.
+static void __declspec(naked) custom_monster_exp_chunk(void)
+{
+    asm
+      {
+        mov ecx, dword ptr [esi].s_map_monster.experience
+        nop dword ptr [eax] ; padding
+      }
+}
+
 // Allow optionally increasing game difficulty.
 // Also here: support various permanent new game options.
 static inline void difficulty_level(void)
@@ -25773,6 +25785,9 @@ static inline void difficulty_level(void)
     hook_call(0x442904, draw_save_icon, 6);
     hook_call(0x4087eb, preplaced_monster_stats, 6);
     // stats for random monsters adjusted in indoor_monster_spells() above
+    patch_bytes(0x439b23, custom_monster_exp_chunk, 6); // direct kill
+    patch_bytes(0x43a2c8, custom_monster_exp_chunk, 6); // pain reflect (melee)
+    patch_bytes(0x43a7e6, custom_monster_exp_chunk, 6); // pain reflect (proj)
 }
 
 // Holds an unused travel reply that can be replaced with ours.

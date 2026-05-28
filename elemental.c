@@ -25642,27 +25642,28 @@ static void __declspec(naked) draw_save_icon(void)
 }
 
 // Randomly adjust a single stat by up to +/- 10%.
-static int adjust_stat(int stat, double *diff)
+// Also keep track of the total relative change, adjusted by stat impact.
+static int adjust_stat(int stat, double *diff, float impact)
 {
     int limit = (stat + 5) / 10;
     if (limit <= 0) return stat;
-    int new_stat = stat - limit + random() % (limit * 2 + 1);
-    *diff *= (double) new_stat / stat;
-    return new_stat;
+    int change = random() % (limit * 2 + 1) - limit;
+    *diff *= 1 + (double) change / stat * impact;
+    return stat + change;
 }
 
 // Make ID Monster more useful by adjusting individual monster stats slightly.
 static void __thiscall randomize_monster_stats(struct map_monster *mon)
 {
     double diff = 1; // how much to adjust monster level
-    mon->hp = mon->max_hp = adjust_stat(mon->max_hp, &diff);
-    diff = 1 + (diff - 1) * 0.6; // hp/lvl grows superlinearly
-    mon->ac = adjust_stat(mon->ac, &diff);
+    // hp/lvl grows superlinearly, roughly as lvl^(13/8)
+    mon->hp = mon->max_hp = adjust_stat(mon->max_hp, &diff, 0.6);
+    mon->ac = adjust_stat(mon->ac, &diff, 1);
     int medusa = mon->physical_resistance != mon->phys_spell_resistance;
     uint8_t *resistances = &mon->fire_resistance;
     for (int i = 0; i < 8; i++)
         if (resistances[i] < IMMUNE)
-            resistances[i] = adjust_stat(resistances[i], &diff);
+            resistances[i] = adjust_stat(resistances[i], &diff, 0.125);
     if (!medusa)
         mon->physical_resistance = mon->phys_spell_resistance;
     uint8_t *attack = &mon->attack1_damage_dice_count;
@@ -25694,9 +25695,9 @@ static void __thiscall randomize_monster_stats(struct map_monster *mon)
           }
         attack = &mon->attack2_damage_dice_count;
       }
-    mon->spell1_skill = adjust_stat(mon->spell1_skill & SKILL_MASK, &diff)
+    mon->spell1_skill = adjust_stat(mon->spell1_skill & SKILL_MASK, &diff, 0.5)
                         | mon->spell1_skill & ~SKILL_MASK;
-    mon->spell2_skill = adjust_stat(mon->spell2_skill & SKILL_MASK, &diff)
+    mon->spell2_skill = adjust_stat(mon->spell2_skill & SKILL_MASK, &diff, 0.5)
                         | mon->spell2_skill & ~SKILL_MASK;
     mon->level = mon->level * diff + 0.5;
     mon->experience = mon->experience * diff * diff + 0.5; // also superlinear

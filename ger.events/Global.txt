@@ -583,7 +583,7 @@ Global Text
 580	Ritter
 581	Meister
 582	Ihr habt diesen Kampf in die Arena schon gewonnen...
-583	You cannot save here!
+583	Hier kann nicht gespeichert werden!
 584	Hier klicken, um den Quick-Zauber zu entfernen
 585	Die Qualität des Gegenstandes ist nicht hoch genug
 586	Nicht genug Zauberpunkte
@@ -818,5 +818,5 @@ Global Text
 815	Schwierigkeitssperre
 816	Wenn diese Option aktiviert ist, kannst du die Schwierigkeitsstufe des Spiels nicht mehr anpassen, sobald eure Gruppe den Startbereich verlassen hat.
 817	Du kannst die Schwierigkeitsstufe nicht mehr ändern!
-818	Restricted Saves
-819	If this option is on, you will only be able to save the game near towns, villages, and other NPC settlements.
+818	Beschränkte Speicherplätze
+819	Wenn diese Option aktiviert ist, kannst du das Spiel nur in der Nähe von Städten, Dörfern und anderen NPC-Siedlungen speichern.

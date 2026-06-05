@@ -583,7 +583,7 @@ Global Text
 580	Ritter
 581	Meister
 582	Ihr habt diesen Kampf in die Arena schon gewonnen...
-583	Hier kann nicht gespeichert werden!
+583	Hier könnt Ihr nicht speichern!
 584	Hier klicken, um den Quick-Zauber zu entfernen
 585	Die Qualität des Gegenstandes ist nicht hoch genug
 586	Nicht genug Zauberpunkte

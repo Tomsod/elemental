@@ -820,3 +820,10 @@ Global Text
 817	You cannot switch difficulty anymore!
 818	Restricted Saves
 819	If this option is on, you will only be able to save the game near towns, villages, and other NPC settlements.
+820	Drain Might
+821	Drain Intellect
+822	Drain Personality
+823	Drain Endurance
+824	Drain Speed
+825	Drain Agility
+826	Drain Luck

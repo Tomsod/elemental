@@ -820,3 +820,10 @@ Global Text
 817	Du kannst die Schwierigkeitsstufe nicht mehr ändern!
 818	Beschränkte Speicherplätze
 819	Wenn diese Option aktiviert ist, kannst du das Spiel nur in der Nähe von Städten, Dörfern und anderen NPC-Siedlungen speichern.
+820	Drain Might
+821	Drain Intellect
+822	Drain Personality
+823	Drain Endurance
+824	Drain Speed
+825	Drain Agility
+826	Drain Luck

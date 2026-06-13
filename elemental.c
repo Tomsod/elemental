@@ -397,6 +397,13 @@ enum new_strings
     STR_CANNOT_SWITCH_DIFF,
     STR_RESTRICTED_SAVES,
     STR_RESTR_SAVES_DESC,
+    STR_DRAIN_MIGHT,
+    STR_DRAIN_INTELLECT,
+    STR_DRAIN_PERSONALITY,
+    STR_DRAIN_ENDURANCE,
+    STR_DRAIN_SPEED,
+    STR_DRAIN_AGILITY,
+    STR_DRAIN_LUCK,
     NEW_STRING_COUNT
 };
 
@@ -1216,7 +1223,8 @@ struct __attribute__((packed)) map_monster
     uint8_t flight;
     SKIP(1);
     uint8_t ai_type;
-    SKIP(2);
+    SKIP(1);
+    uint8_t drain_stat; // was padding
     uint8_t attack_special;
     uint8_t attack_special_chance;
     SKIP(1);
@@ -1790,6 +1798,8 @@ enum struct_offsets
     S_SPC_PROB = offsetof(struct spcitem, probability),
     S_SPC_LEVEL = offsetof(struct spcitem, level),
     S_SI_COST = offsetof(struct spell_info, cost),
+    S_MM_TXT = offsetof(struct map_monster, name),
+    SIZE_MON_TXT = offsetof(struct map_monster, alter_flag2) + 1 - S_MM_TXT,
 };
 
 #define CURRENT_CONVERSATION 0xf8b01c
@@ -8680,15 +8690,18 @@ static void __declspec(naked) mvm_incinerate(void)
 
 // Whether to attempt stunning a hit PC (+80 hit recovery).  Used below.
 static char lightning_bolt_stun;
+// Remember if a monster applied some on-hit effect.  Used in drain_pc_stat().
+static char did_monster_bonus;
 
-// Reset the above flag on function entry.
+// Reset the above flags on function entry.
 static void __declspec(naked) init_stun_flag(void)
 {
     asm
       {
         mov esi, ecx ; replaced code
         and ecx, 7 ; ditto
-        mov byte ptr [lightning_bolt_stun], 0 ; reset
+        mov byte ptr [lightning_bolt_stun], ch ; reset
+        mov byte ptr [did_monster_bonus], ch ; ditto
         ret
       }
 }
@@ -10184,7 +10197,7 @@ static void __declspec(naked) detect_alter_spell(void)
         inc cl
         one:
         mov edx, dword ptr [ebp-4] ; line id
-        imul edx, edx, 88 ; sizeof monsters.txt item
+        imul edx, edx, SIZE_MON_TXT
         add edx, dword ptr [ebp-8] ; this
         xor eax, eax
         cmp dword ptr [esp], 0x455e07 ; second spell code
@@ -11083,7 +11096,7 @@ static void __declspec(naked) bounty_hook(void)
 {
     asm
       {
-        movzx ebx, byte ptr [MONSTERS_TXT+eax-44].s_map_monster.level
+        movzx ebx, byte ptr [MONSTERS_TXT+eax-S_MM_TXT].s_map_monster.level
         push ebx
         call bounty_rep
         mov eax, ebx
@@ -22796,6 +22809,9 @@ static char **const monster_bonus_strings[25] = {
     GLOBAL_TXT + 601, // zombie
 };
 
+// Used just below.
+char drain_buffer[60];
+
 // Loop the above code twice if the monster has two attacks.
 // Also print the inflicted condition or other attack bonus if present.
 static void __declspec(naked) print_monster_special_bonus(void)
@@ -22818,7 +22834,28 @@ static void __declspec(naked) print_monster_special_bonus(void)
         mov cl, 11 ; disease red
         ok:
         mov edx, dword ptr [monster_bonus_strings+ecx*4]
+        cmp dword ptr [elemdata.difficulty], ebx
+        jz print
+        movzx eax, byte ptr [eax].s_map_monster.drain_stat
+        test eax, eax
+        jz print
+        push dword ptr [new_strings+STR_DRAIN_MIGHT*4+eax*4-4]
+        test ecx, ecx
+        jz print_pushed
         push dword ptr [edx]
+        push 0x4f0e48 ; "%s\n%s"
+#ifdef __clang__
+        mov eax, offset drain_buffer
+        push eax
+#else
+        push offset drain_buffer
+#endif
+        call dword ptr ds:sprintf
+        mov edx, esp
+        add esp, 16
+        print:
+        push dword ptr [edx]
+        print_pushed:
         push ebx
         push dword ptr [GLOBAL_TXT_ADDR+210*4] ; "special"
         push 0x4e3308 ; the format string
@@ -24786,7 +24823,8 @@ static void __declspec(naked) difficult_monster_recovery(void)
 {
     asm
       {
-        mov eax, dword ptr [MONSTERS_TXT+eax-44].s_map_monster.recovery ; repl.
+        ; replaced code below:
+        mov eax, dword ptr [MONSTERS_TXT+eax-S_MM_TXT].s_map_monster.recovery
         cmp dword ptr [elemdata.difficulty], ebx
         jz skip
         mov ecx, eax
@@ -24806,7 +24844,8 @@ static void __declspec(naked) difficult_monster_recovery_esi(void)
 {
     asm
       {
-        mov esi, dword ptr [MONSTERS_TXT+esi-44].s_map_monster.recovery ; repl.
+        ; replaced code below:
+        mov esi, dword ptr [MONSTERS_TXT+esi-S_MM_TXT].s_map_monster.recovery
         cmp dword ptr [elemdata.difficulty], ecx
         jz skip
         mov ebx, esi
@@ -25733,6 +25772,109 @@ static void __declspec(naked) custom_monster_exp_chunk(void)
       }
 }
 
+// New monster ability (disabled on Easy): lower a primary stat until rest.
+static void __declspec(naked) drain_pc_stat(void)
+{
+    asm
+      {
+        xor eax, eax
+        cmp dword ptr [elemdata.difficulty], eax
+        jz quit
+        cmp byte ptr [esi].s_map_monster.drain_stat, al
+        jz quit
+        cmp byte ptr [did_monster_bonus], al
+        jnz quit ; two on-hit effects at once would be confusing
+        test byte ptr [0x6be1e8], 0x10 ; nodamage debug flag
+        jnz quit
+        cmp ebx, PARTY_ADDR ; two hooks use different registers
+        jae ok
+        cmp dword ptr [ebp-16], 1 ; attack type
+        ja quit ; not with spells
+        mov ebx, edi ; the pc
+        ok:
+        call dword ptr ds:random
+        xor edx, edx
+        lea ecx, [edx+100]
+        div ecx
+        cmp edx, dword ptr [ebp-4] ; damage
+        jge quit
+        movzx eax, byte ptr [esi].s_map_monster.drain_stat
+        dec word ptr [ebx+S_PL_STATS+eax*4-2]
+        mov cl, 4
+        get_pc_id:
+        cmp ebx, dword ptr [PC_POINTERS+ecx*4-4]
+        loopne get_pc_id
+        push ecx
+        push SPAN_DEBUFF
+        mov ecx, dword ptr [CGAME]
+        mov ecx, dword ptr [ecx+0xe50]
+        call dword ptr ds:spell_face_anim
+        quit:
+        cmp dword ptr [TURN_BASED], 0 ; replaced code
+        ret
+      }
+}
+
+// Remember if the monster already applied a condition or other debuff.
+static void __declspec(naked) check_monster_bonus(void)
+{
+    asm
+      {
+        push dword ptr [esp+8]
+        push dword ptr [esp+8]
+        call dword ptr ds:do_monster_bonus
+        mov byte ptr [did_monster_bonus], al
+        ret 8
+      }
+}
+
+// Used just below.
+static const char drain_token[] = "drain";
+static const char *const stat_tokens[] = { "might", "intellect", "personality",
+                                           "endurance", "speed", "agility",
+                                           "luck" };
+
+// Allow specifying the stat to drain in monsters.txt.
+static void __declspec(naked) parse_drain_stat(void)
+{
+    asm
+      {
+        cmp edi, 2 ; token count
+        jl skip
+        push dword ptr [esp+4] ; the token
+#ifdef __clang__
+        mov eax, offset drain_token
+        push eax
+#else
+        push offset drain_token
+#endif
+        call dword ptr ds:uncased_strcmp
+        add esp, 8
+        test eax, eax
+        je drain
+        skip:
+        jmp dword ptr ds:uncased_strcmp ; replaced call
+        drain:
+        push dword ptr [ebp-156] ; second token
+        lea ebx, [eax+7]
+        loop:
+        push dword ptr [stat_tokens+ebx*4-4]
+        call dword ptr ds:uncased_strcmp
+        pop ecx
+        test eax, eax
+        je got_it
+        dec ebx
+        jnz loop
+        got_it:
+        mov ecx, dword ptr [ebp-8] ; monsters.txt struct
+        mov eax, SIZE_MON_TXT
+        mul dword ptr [ebp-4] ; monster number
+        mov byte ptr [ecx+eax-S_MM_TXT].s_map_monster.drain_stat, bl
+        pop eax ; also skip vanilla code
+        ret
+      }
+}
+
 // Allow optionally increasing game difficulty.
 // Also here: support various permanent new game options.
 static inline void difficulty_level(void)
@@ -25789,6 +25931,11 @@ static inline void difficulty_level(void)
     patch_bytes(0x439b23, custom_monster_exp_chunk, 6); // direct kill
     patch_bytes(0x43a2c8, custom_monster_exp_chunk, 6); // pain reflect (melee)
     patch_bytes(0x43a7e6, custom_monster_exp_chunk, 6); // pain reflect (proj)
+    hook_call(0x43a353, drain_pc_stat, 7); // melee/explosion
+    hook_call(0x43a875, drain_pc_stat, 7); // projectile/spell
+    hook_call(0x43a34e, check_monster_bonus, 5); // melee/explosion
+    hook_call(0x43a870, check_monster_bonus, 5); // projectile/spell
+    hook_call(0x4562ea, parse_drain_stat, 5);
 }
 
 // Holds an unused travel reply that can be replaced with ours.
@@ -30586,10 +30733,10 @@ static void __declspec(naked) print_bounty_autonote(void)
         shr eax, 1
         sbb ecx, ecx
         movzx edx, word ptr [BOUNTY_MONSTER+eax*2]
-        imul edx, edx, 88 ; sizeof(monsters_txt_item)
-        movzx eax, byte ptr [MONSTERS_TXT+edx-44].s_map_monster.level
+        imul edx, edx, SIZE_MON_TXT
+        movzx eax, byte ptr [MONSTERS_TXT+edx-S_MM_TXT].s_map_monster.level
         imul eax, eax, 100
-        mov edx, dword ptr [MONSTERS_TXT+edx-44].s_map_monster.name
+        mov edx, dword ptr [MONSTERS_TXT+edx-S_MM_TXT].s_map_monster.name
         test ecx, ecx
         jz ok
         xchg eax, edx

@@ -15,6 +15,14 @@
 #define sdword(address) (*(int32_t *) (address))
 #define pointer(address) (*(void **) (address))
 
+// Clang refuses to compile "push offset var" for some reason.
+// I assume other compilers are less broken...
+#ifdef __clang__
+#define PUSH_OFFSET(var, reg) mov reg, offset var asm push reg
+#else
+#define PUSH_OFFSET(var, reg) push offset var
+#endif
+
 #ifdef CHECK_OVERWRITE
 static FILE *owlog, *binary;
 static uint8_t owbuffer[100];
@@ -2313,12 +2321,7 @@ static void __declspec(naked) new_item_drop_types(void)
         cmp byte ptr [edi], 0 ; ditto
         jz quit
         push edi
-#ifdef __clang__
-        mov eax, offset special_type
-        push eax
-#else
-        push offset special_type
-#endif
+        PUSH_OFFSET(special_type, eax)
         call dword ptr ds:uncased_strcmp
         test eax, eax
         jnz not_special
@@ -3823,12 +3826,7 @@ static void __declspec(naked) temp_enchant_height(void)
         push eax
         push dword ptr [new_strings+STR_TEMPORARY*4]
         push 0x4e2e80
-#ifdef __clang__
-        mov eax, offset enchant_buffer
-        push eax
-#else
-        push offset enchant_buffer
-#endif
+        PUSH_OFFSET(enchant_buffer, eax)
         call dword ptr ds:sprintf
         add esp, 16
         mov dword ptr [ebp-12], offset enchant_buffer
@@ -5633,12 +5631,7 @@ static void __declspec(naked) display_scroll_power(void)
         push eax
         push ecx
         push dword ptr [GLOBAL_TXT_ADDR+449*4] ; "power"
-#ifdef __clang__
-        mov eax, offset scroll_power_format
-        push eax
-#else
-        push offset scroll_power_format
-#endif
+        PUSH_OFFSET(scroll_power_format, eax)
         lea ecx, [ebp-424] ; buffer
         push ecx
         call dword ptr ds:sprintf
@@ -6393,13 +6386,7 @@ static void __declspec(naked) bless_water_reply_sizing(void)
         fimul dword ptr [esp]
         fistp dword ptr [esp]
         push dword ptr [new_strings+STR_BLESS_WATER*4]
-#ifdef __clang__
-        ; for some reason clang crashes if I try to push offsets directly
-        mov eax, offset reply_buffer
-        push eax
-#else
-        push offset reply_buffer
-#endif
+        PUSH_OFFSET(reply_buffer, eax)
         call dword ptr ds:sprintf
         add esp, 12
         pop ecx
@@ -7935,12 +7922,7 @@ static void __declspec(naked) lloyd_show_recalls(void)
         push dword ptr [remaining_recalls]
         push eax ; replaced code
         jz setting
-#ifdef __clang__
-        mov edx, offset lloyd_recall_format
-        push edx
-#else
-        push offset lloyd_recall_format
-#endif
+        PUSH_OFFSET(lloyd_recall_format, edx)
         jmp ecx
         setting:
         push 0x4e25d0 ; also replaced code
@@ -9458,12 +9440,7 @@ static void __declspec(naked) parse_zombie_special(void)
 {
     asm
       {
-#ifdef __clang__
-        mov eax, offset zombie_string
-        push eax
-#else
-        push offset zombie_string
-#endif
+        PUSH_OFFSET(zombie_string, eax)
         push ebx
         call dword ptr ds:strstr_ptr
         test eax, eax
@@ -17409,12 +17386,7 @@ static void __declspec(naked) movemap_leavetiab(void)
         mov dword ptr [esp+60], eax ; replaced code
         lea eax, [esi+31]
         push eax
-#ifdef __clang__
-        mov eax, offset leavetiab
-        push eax
-#else
-        push offset leavetiab
-#endif
+        PUSH_OFFSET(leavetiab, eax)
         call dword ptr ds:uncased_strcmp
         add esp, 8
         mov dword ptr [tiab_strcmp], eax ; for later
@@ -18531,12 +18503,7 @@ static void __declspec(naked) display_new_helm(void)
         mov dword ptr [esp+24], ecx ; x
         mov dword ptr [esp+20], 38 ; y
         push 2
-#ifdef __clang__
-        mov eax, offset minds_eye_gfx
-        push eax
-#else
-        push offset minds_eye_gfx
-#endif
+        PUSH_OFFSET(minds_eye_gfx, eax)
         mov ecx, ICONS_LOD_ADDR
         call dword ptr ds:load_bitmap
         mov ebx, eax
@@ -18559,12 +18526,7 @@ static void __declspec(naked) elven_chainmail_gfx(void)
         cmp eax, 46 ; ditto
         ret
         elven:
-#ifdef __clang__
-        mov eax, offset elven_chain_gfx
-        push eax
-#else
-        push offset elven_chain_gfx
-#endif
+        PUSH_OFFSET(elven_chain_gfx, eax)
         push ecx ; buffer
         call dword ptr ds:strcpy_ptr
         add esp, 8
@@ -22844,12 +22806,7 @@ static void __declspec(naked) print_monster_special_bonus(void)
         jz print_pushed
         push dword ptr [edx]
         push 0x4f0e48 ; "%s\n%s"
-#ifdef __clang__
-        mov eax, offset drain_buffer
-        push eax
-#else
-        push offset drain_buffer
-#endif
+        PUSH_OFFSET(drain_buffer, eax)
         call dword ptr ds:sprintf
         mov edx, esp
         add esp, 16
@@ -24283,22 +24240,10 @@ static void __declspec(naked) equipped_knife_sprite(void)
         push eax ; preserve
         push ecx ; ditto
         push dword ptr [ITEMS_TXT_ADDR+eax].s_items_txt_item.bitmap
-#ifdef __clang__
-        mov eax, offset knife_buffer
-        push eax
-#else
-        push offset knife_buffer
-#endif
+        PUSH_OFFSET(knife_buffer, eax)
         call dword ptr ds:strcpy_ptr
-#ifdef __clang__
-        mov edx, offset knife_equipped_suffix
-        mov eax, offset knife_buffer
-        push edx
-        push eax
-#else
-        push offset knife_equipped_suffix
-        push offset knife_buffer
-#endif
+        PUSH_OFFSET(knife_equipped_suffix, edx)
+        PUSH_OFFSET(knife_buffer, eax)
         call dword ptr ds:strcat_ptr
         add esp, 16
         pop ecx ; restore
@@ -25245,12 +25190,7 @@ static void __declspec(naked) invisibility_description_shared(void)
         mov eax, dword ptr [elemdata.difficulty]
         push dword ptr [new_strings+STR_INVISIBILITY_EASY*4+eax*4]
         push dword ptr [esp+16] ; pushed description
-#ifdef __clang__
-        mov eax, offset invis_buffer
-        push eax
-#else
-        push offset invis_buffer
-#endif
+        PUSH_OFFSET(invis_buffer, eax)
         call dword ptr ds:sprintf
         add esp, 12
         mov dword ptr [esp+12], offset invis_buffer
@@ -25842,12 +25782,7 @@ static void __declspec(naked) parse_drain_stat(void)
         cmp edi, 2 ; token count
         jl skip
         push dword ptr [esp+4] ; the token
-#ifdef __clang__
-        mov eax, offset drain_token
-        push eax
-#else
-        push offset drain_token
-#endif
+        PUSH_OFFSET(drain_token, eax)
         call dword ptr ds:uncased_strcmp
         add esp, 8
         test eax, eax
@@ -25993,12 +25928,7 @@ static void __declspec(naked) add_horse_reply(void)
         jb skip ; just in case
         push dword ptr [horses_cost+eax*4]
         push dword ptr [new_strings+STR_BUY_HORSE*4]
-#ifdef __clang__
-        mov eax, offset horse_buffer
-        push eax
-#else
-        push offset horse_buffer
-#endif
+        PUSH_OFFSET(horse_buffer, eax)
         call dword ptr ds:sprintf
         mov ecx, dword ptr [DIALOG1]
         mov eax, dword ptr [empty_reply_index]
@@ -26009,12 +25939,7 @@ static void __declspec(naked) add_horse_reply(void)
         push 0x4e2da8 ; color format string
         push dword ptr [ebp-12] ; reply buffer
         call dword ptr ds:sprintf
-#ifdef __clang__
-        mov eax, offset horse_buffer
-        push eax
-#else
-        push offset horse_buffer
-#endif
+        PUSH_OFFSET(horse_buffer, eax)
         push dword ptr [ebp-12]
         call dword ptr ds:strcat_ptr
         add esp, 32
@@ -26728,12 +26653,7 @@ static void __declspec(naked) print_restore_sp(void)
         call guild_sp_price
         push eax
         push dword ptr [new_strings+STR_RESTORE_SP*4]
-#ifdef __clang__
-        mov eax, offset restore_sp_buffer
-        push eax
-#else
-        push offset restore_sp_buffer
-#endif
+        PUSH_OFFSET(restore_sp_buffer, eax)
         call dword ptr ds:sprintf
         add esp, 12
         lea eax, [ebp-120]
@@ -26942,12 +26862,7 @@ static void __declspec(naked) query_order(void)
         round_down:
         push eax
         push dword ptr [new_strings+STR_ORDER_NOT_READY*4]
-#ifdef __clang__
-        mov eax, offset order_message_buffer
-        push eax
-#else
-        push offset order_message_buffer
-#endif
+        PUSH_OFFSET(order_message_buffer, eax)
         call dword ptr ds:sprintf
         add esp, 12
         mov dword ptr [CURRENT_TEXT_ADDR], offset order_message_buffer
@@ -27767,12 +27682,7 @@ static void __declspec(naked) complete_order_prompt(void)
         push CONV_QUERY_ORDER
         jmp reenter
         refused_wish:
-#ifdef __clang__
-        mov eax, offset order_result
-        push eax
-#else
-        push offset order_result
-#endif
+        PUSH_OFFSET(order_result, eax)
         push 0
         push 6
         mov ecx, ITEMS_TXT_ADDR - 4
@@ -27792,12 +27702,7 @@ static void __declspec(naked) complete_order_prompt(void)
         mov edx, 2
         call dword ptr ds:show_status_text
         mov ecx, PARTY_BIN_ADDR
-#ifdef __clang__
-        mov eax, offset order_result
-        push eax
-#else
-        push offset order_result
-#endif
+        PUSH_OFFSET(order_result, eax)
         call dword ptr ds:add_mouse_item
         jmp no_item
         bad_wish:
@@ -27877,12 +27782,7 @@ static void __declspec(naked) preload_order_images(void)
         mov dword ptr [SHOP_IMAGES+16], eax
         no_reagent:
         push 2
-#ifdef __clang__
-        mov eax, offset orderbtn
-        push eax
-#else
-        push offset orderbtn
-#endif
+        PUSH_OFFSET(orderbtn, eax)
         mov ecx, ebp ; icons.lod
         call dword ptr ds:load_bitmap
         lea eax, [eax+eax*8]
@@ -30113,12 +30013,7 @@ static void __declspec(naked) stat_screen_quick_spells(void)
         call count_quick_spells
         push eax
         push dword ptr [GLOBAL_TXT_ADDR+172*4]
-#ifdef __clang__
-        mov eax, offset x_of_5_qsp_format
-        push eax
-#else
-        push offset x_of_5_qsp_format
-#endif
+        PUSH_OFFSET(x_of_5_qsp_format, eax)
         push esi
         call dword ptr ds:sprintf
         add esp, 16
@@ -30134,12 +30029,7 @@ static void __declspec(naked) quick_ref_quick_spells(void)
         mov edx, ebp
         call count_quick_spells
         push eax
-#ifdef __clang__
-        mov eax, offset x_of_5_short_format
-        push eax
-#else
-        push offset x_of_5_short_format
-#endif
+        PUSH_OFFSET(x_of_5_short_format, eax)
         push esi
         call dword ptr ds:sprintf
         add esp, 12
@@ -30202,12 +30092,7 @@ static void __declspec(naked) provide_qspl_buffer(void)
 {
     asm
       {
-#ifdef __clang__
-        mov eax, offset qspl_buffer
-        push eax
-#else
-        push offset qspl_buffer
-#endif
+        PUSH_OFFSET(qspl_buffer, eax)
         push ebx ; the rest of the text
         call dword ptr ds:strcat_ptr
         add esp, 8
@@ -30446,12 +30331,7 @@ static void __declspec(naked) parse_unarmed_items(void)
     asm
       {
         push ebx
-#ifdef __clang__
-        mov eax, offset unarmed_skill
-        push eax
-#else
-        push offset unarmed_skill
-#endif
+        PUSH_OFFSET(unarmed_skill, eax)
         call dword ptr ds:uncased_strcmp
         pop ecx
         pop ecx

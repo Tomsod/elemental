@@ -977,6 +977,9 @@ static struct elemdata
     char save_in_villages;
 } elemdata;
 
+// For all the times I have to sprintf something.
+static char string_buffer[1000], cur_text_buffer[600];
+
 // Number of barrels in the Wall of Mist.
 #define WOM_BARREL_CNT 15
 
@@ -3719,9 +3722,6 @@ static void __declspec(naked) expire_weapon(void)
       }
 }
 
-// Additional item info paragraphs.
-static char enchant_buffer[100], charge_buffer[100];
-
 // Print the temp enchantment description and/or remaining knives.
 static void __declspec(naked) display_temp_enchant(void)
 {
@@ -3739,7 +3739,7 @@ static void __declspec(naked) display_temp_enchant(void)
         cmp dword ptr [ecx], LIVING_WOOD_KNIVES
         jne skip
         knives:
-        mov dword ptr [ebp-8], offset charge_buffer
+        mov dword ptr [ebp-8], offset string_buffer + 100
         jmp pass
         not_knives:
         cmp dword ptr [ebp-24], 2
@@ -3747,7 +3747,7 @@ static void __declspec(naked) display_temp_enchant(void)
         mov ecx, dword ptr [ebp-4]
         cmp dword ptr [ecx+4], TEMP_ENCH_MARKER
         jne skip
-        mov dword ptr [ebp-8], offset enchant_buffer
+        mov dword ptr [ebp-8], offset string_buffer
         pass:
         cmp ebx, 1
         quit:
@@ -3801,7 +3801,7 @@ static void __declspec(naked) temp_enchant_height(void)
         mov eax, offset nonzero_charges
         buffer:
         push eax
-        mov eax, offset charge_buffer
+        mov eax, offset string_buffer + 100
         push eax
 #else
         push offset zero_charges
@@ -3809,11 +3809,11 @@ static void __declspec(naked) temp_enchant_height(void)
         nonzero:
         push offset nonzero_charges
         buffer:
-        push offset charge_buffer
+        push offset string_buffer + 100
 #endif
         call dword ptr ds:sprintf
         add esp, 20
-        mov dword ptr [ebp-12], offset charge_buffer
+        mov dword ptr [ebp-12], offset string_buffer + 100
         jmp pass
         not_knives:
         cmp dword ptr [ebp-24], 2
@@ -3826,10 +3826,10 @@ static void __declspec(naked) temp_enchant_height(void)
         push eax
         push dword ptr [new_strings+STR_TEMPORARY*4]
         push 0x4e2e80
-        PUSH_OFFSET(enchant_buffer, eax)
+        PUSH_OFFSET(string_buffer, eax)
         call dword ptr ds:sprintf
         add esp, 16
-        mov dword ptr [ebp-12], offset enchant_buffer
+        mov dword ptr [ebp-12], offset string_buffer
         pass:
         cmp ebx, 1
         quit:
@@ -4417,7 +4417,7 @@ static int recursive_brew(struct player *player, int potion,
 // Sets up the recursive brew above and deals with the consequences.
 static void __thiscall brew_if_possible(struct player *player, int potion)
 {
-    static char message[128];
+    char message[128];
 
     // allow brewing from a recipe
     if (potion >= FIRST_RECIPE)
@@ -4802,7 +4802,8 @@ static char *__stdcall prefix_gender(unsigned int item_id, int enchant)
     if (!subst)
         return prefix;
 
-    static char buffer[100];
+    // NB: first 400 bytes already used for various item description tweaks
+    char *const buffer = string_buffer + 400;
     memcpy(buffer, prefix, subst - prefix);
     buffer[subst - prefix] = 0;
     int gender = GENDER_MASCULINE;
@@ -5068,8 +5069,7 @@ static void __thiscall genie_lamp(struct player *player)
     day /= 256 * 60 * 24 >> 13; // avoid long division dependency
     elemdata.genie = (day * 8u + 1664525u) * elemdata.genie + 1013904223u;
     remove_mouse_item(MOUSE_THIS); // eat lamp
-    char buffer[100];
-    char *status_text = buffer;
+    char *status_text = string_buffer;
     int good = 0;
     switch (elemdata.genie >> 28)
       {
@@ -5251,9 +5251,10 @@ static char *__thiscall two_handed_bonus_desc(struct item *item, int temp)
     char *subst = strstr(desc, "^H[");
     if (!subst)
         return desc;
-    static char buffer[200];
+    // NB: temp_enchant_height() already uses first 200 bytes
+    char *const buffer = string_buffer + 200;
     memcpy(buffer, desc, subst - desc);
-    buffer[subst - desc] = 0;
+    buffer[subst-desc] = 0;
     char *varpart = subst + 3; // strlen("^H[")
     struct items_txt_item *data = &ITEMS_TXT[item->id];
     if ((data->skill == SKILL_SWORD || data->skill == SKILL_AXE)
@@ -6337,8 +6338,6 @@ static void __declspec(naked) add_bless_water_reply(void)
       }
 }
 
-static char reply_buffer[100];
-
 // Supply the text to the new "bless water" reply
 // when calculating text position.
 static void __declspec(naked) bless_water_reply_sizing(void)
@@ -6349,7 +6348,7 @@ static void __declspec(naked) bless_water_reply_sizing(void)
         lea eax, [ebp-336] ; donate string
         cmp dword ptr [ebp-24], eax
         je new_reply
-        cmp dword ptr [ebp-24], offset reply_buffer
+        cmp dword ptr [ebp-24], offset string_buffer
         jne ordinary
         mov dword ptr [ebp-24], eax
         ordinary:
@@ -6375,7 +6374,7 @@ static void __declspec(naked) bless_water_reply_sizing(void)
         cmp eax, 87 ; temple in a bottle
         jne not_dark
         skip:
-        and dword ptr [reply_buffer], 0
+        mov byte ptr [string_buffer], 0
         inc edi
         jmp ordinary
         not_dark:
@@ -6386,11 +6385,11 @@ static void __declspec(naked) bless_water_reply_sizing(void)
         fimul dword ptr [esp]
         fistp dword ptr [esp]
         push dword ptr [new_strings+STR_BLESS_WATER*4]
-        PUSH_OFFSET(reply_buffer, eax)
+        PUSH_OFFSET(string_buffer, eax)
         call dword ptr ds:sprintf
         add esp, 12
         pop ecx
-        mov dword ptr [ebp-24], offset reply_buffer
+        mov dword ptr [ebp-24], offset string_buffer
         ret
       }
 }
@@ -6404,14 +6403,14 @@ static void __declspec(naked) bless_water_reply_text(void)
         lea eax, [ebp-336] ; donate string
         cmp dword ptr [ebp-4], eax
         je new_reply
-        cmp dword ptr [ebp-4], offset reply_buffer
+        cmp dword ptr [ebp-4], offset string_buffer
         jne ordinary
         mov dword ptr [ebp-4], eax
         ordinary:
         add dword ptr [ebp-4], 100
         ret
         new_reply:
-        cmp dword ptr [reply_buffer], 0
+        cmp byte ptr [string_buffer], 0
         jnz have_reply
         inc dword ptr [ebp-24]
         inc dword ptr [ebp-8]
@@ -6419,7 +6418,7 @@ static void __declspec(naked) bless_water_reply_text(void)
         and dword ptr [eax+20], 0 ; bottom = 0 (prevent clicking)
         jmp ordinary
         have_reply:
-        mov dword ptr [ebp-4], offset reply_buffer
+        mov dword ptr [ebp-4], offset string_buffer
         ret
       }
 }
@@ -11618,7 +11617,6 @@ static void __declspec(naked) temple_other_spells_power(void)
 // Provide more detailed info for elemental resistances.
 static char *__stdcall resistance_hint(char *description, int resistance)
 {
-    static char buffer[400];
     struct player *current = &PARTY[dword(CURRENT_PLAYER)-1];
     int element;
     int base;
@@ -11672,27 +11670,27 @@ static char *__stdcall resistance_hint(char *description, int resistance)
     int total = get_resistance(current, resistance - 9);
     if (total)
         total += get_effective_stat(get_luck(current)) * 4;
-    strcpy(buffer, description);
+    strcpy(string_buffer, description);
     if (total > 0 && !is_immune(current, element))
       {
         // the math is complicated, but it should be correct
         double chance = total / 2.0 / (total + 30);
         double square = chance * chance;
         double percent = (chance + square) * (square + 1) * 100;
-        sprintf(buffer + strlen(buffer), "\n\n%s: %.1f%%",
+        sprintf(string_buffer + strlen(string_buffer), "\n\n%s: %.1f%%",
                 new_strings[STR_AVERAGE_DAMAGE], percent);
       }
     else if (!base_immune)
-        strcat(buffer, "\n");
+        strcat(string_buffer, "\n");
     if (!base_immune)
       {
-        sprintf(buffer + strlen(buffer), "\n%s: %d",
+        sprintf(string_buffer + strlen(string_buffer), "\n%s: %d",
                 new_strings[STR_BASE_VALUE], base);
         if (racial_bonus)
-            sprintf(buffer + strlen(buffer), " (%d %s)",
+            sprintf(string_buffer + strlen(string_buffer), " (%d %s)",
                     base + racial_bonus, new_strings[STR_ACCOUNT_RACE]);
       }
-    return buffer;
+    return string_buffer;
 }
 
 // Shared subroutine that calculates melee or ranged critical hit/miss chance.
@@ -11836,36 +11834,35 @@ static int __thiscall get_backstab_chance(struct player *player)
 // Provide additional info for melee and ranged damage, too.
 static char *__stdcall damage_hint(char *description, int ranged)
 {
-    static char buffer[400];
     struct player *player = &PARTY[dword(CURRENT_PLAYER)-1];
     int display_damage = !ranged;
     if (ranged && has_anything_in_slot(player, SLOT_MISSILE))
       {
         if (equipped_item_type(player, SLOT_MISSILE) == ITEM_TYPE_WAND - 1)
           {
-            strcpy(buffer, description);
+            strcpy(string_buffer, description);
             int power = 5 + (get_effective_stat(get_intellect(player)) >> 1);
             if (has_item_in_slot(player, GADGETEERS_BELT, SLOT_BELT))
                 power += (player->class & -4) == CLASS_THIEF ? 10 : 5;
-            sprintf(buffer + strlen(buffer), "\n\n%s: %d",
+            sprintf(string_buffer + strlen(string_buffer), "\n\n%s: %d",
                     new_strings[STR_SPELL_POWER], power);
-            return buffer;
+            return string_buffer;
           }
         display_damage = TRUE;
       }
     int crit = get_critical_chance(player, NULL, ranged);
     if (!crit && !display_damage)
         return description;
-    strcpy(buffer, description);
+    strcpy(string_buffer, description);
     if (crit > 0)
-        sprintf(buffer + strlen(buffer), "\n\n%s: %d%%",
+        sprintf(string_buffer + strlen(string_buffer), "\n\n%s: %d%%",
                 new_strings[STR_CRIT_HIT_CHANCE], crit);
     else if (crit < 0)
-        sprintf(buffer + strlen(buffer), "\n\n%s: %d%%",
+        sprintf(string_buffer + strlen(string_buffer), "\n\n%s: %d%%",
                 new_strings[STR_CRIT_MISS_CHANCE], -crit);
-    else strcat(buffer, "\n");
+    else strcat(string_buffer, "\n");
     if (!display_damage)
-        return buffer;
+        return string_buffer;
     if (!ranged && player->skills[SKILL_THIEVERY] >= SKILL_GM)
       {
         // essentially also crits at this point
@@ -11887,9 +11884,9 @@ static char *__stdcall damage_hint(char *description, int ranged)
         avg = get_min_melee_damage(player) + get_max_melee_damage(player);
     // TODO: maybe account for regular hit chance somehow
     double dpr = avg / 2.0 * (100 + crit) / get_attack_delay(player, ranged);
-    sprintf(buffer + strlen(buffer), "\n%s: %.1f",
+    sprintf(string_buffer + strlen(string_buffer), "\n%s: %.1f",
             new_strings[STR_AVERAGE_DPR], dpr);
-    return buffer;
+    return string_buffer;
 }
 
 // Hook for the above.
@@ -12062,7 +12059,6 @@ static void parse_statrate(void)
 // Display skill bonus and base skill value in the tooltip.
 static char *__stdcall stat_hint(char *description, int stat)
 {
-    static char buffer[400];
     struct player *current = &PARTY[dword(CURRENT_PLAYER)-1];
     int total, base, potion;
 
@@ -12111,21 +12107,21 @@ static char *__stdcall stat_hint(char *description, int stat)
     for (rating = 0; rating < statrate_count; rating++)
         if (statrates[rating].bonus == bonus)
             break;
-    strcpy(buffer, description);
-    sprintf(buffer + strlen(buffer), "\n\n%s: %s (%+d)\n%s: %d",
+    strcpy(string_buffer, description);
+    sprintf(string_buffer + strlen(string_buffer), "\n\n%s: %s (%+d)\n%s: %d",
             new_strings[STR_RATING], statrates[rating].rating, bonus,
             new_strings[STR_BASE_VALUE], base);
     int race = get_race(current);
     int adj = base * RACE_STATS[race][stat][3] / RACE_STATS[race][stat][2];
     if (adj != base)
-        sprintf(buffer + strlen(buffer), " (%d %s)", adj,
+        sprintf(string_buffer + strlen(string_buffer), " (%d %s)", adj,
                 new_strings[STR_ACCOUNT_RACE]);
     if (current->black_potions[potion])
       {
-        strcat(buffer, "\n");
-        strcat(buffer, new_strings[STR_BLACK_POTION]);
+        strcat(string_buffer, "\n");
+        strcat(string_buffer, new_strings[STR_BLACK_POTION]);
       }
-    return buffer;
+    return string_buffer;
 }
 
 // Hook for the above.
@@ -12444,12 +12440,11 @@ static int __thiscall new_hireling_action(int id)
                     && elemdata.next_refill_day[i] <= day && !(random() % ++c))
                     refilled = i;
               }
-            static char buffer[160];
             if (refilled >= 0)
               {
-                sprintf(buffer, new_strings[STR_REFILLED_MAP],
+                sprintf(cur_text_buffer, new_strings[STR_REFILLED_MAP],
                         MAPSTATS[refilled].name);
-                map_refill_reply = buffer;
+                map_refill_reply = cur_text_buffer;
               }
             else map_refill_reply = new_strings[STR_NO_REFILL];
           }
@@ -13324,7 +13319,6 @@ static void __declspec(naked) print_tax_reply(void)
 }
 
 // Used below.
-static char tax_text[500];
 static int in_tax_dialog;
 
 // Generate the tax status reply (and perhaps add tax money to bank).
@@ -13335,12 +13329,12 @@ static void generate_tax_text(void)
     if (!elemdata.last_tax_month) // first time ever
       {
         elemdata.last_tax_month = month;
-        strcpy(tax_text, new_npc_text[835-790]);
+        strcpy(string_buffer, new_npc_text[835-790]);
         return;
       }
     if (elemdata.last_tax_month == month || elemdata.last_tax_fame == fame)
       {
-        strcpy(tax_text, new_npc_text[836-790]);
+        strcpy(string_buffer, new_npc_text[836-790]);
         return;
       }
     elemdata.last_tax_month = month;
@@ -13371,9 +13365,9 @@ static void generate_tax_text(void)
         tax_money = tax_money * 10 / (10 + reputation);
     else if (reputation < 0)
         tax_money += tax_money * -reputation / 20;
-    char buffer[200];
+    char *const buffer = string_buffer + 500;
     sprintf(buffer, new_npc_text[843+fealty-790], tax_money);
-    sprintf(tax_text, "%s  %s  %s  %s", new_npc_text[837-790],
+    sprintf(string_buffer, "%s  %s  %s  %s", new_npc_text[837-790],
             new_npc_text[840+attitude-790], buffer, new_npc_text[846-790]);
     dword(BANK_GOLD) += tax_money;
 }
@@ -13395,7 +13389,7 @@ static void __declspec(naked) tax_dialog(void)
         call generate_tax_text
         inc dword ptr [in_tax_dialog]
         repeat:
-        mov ebx, offset tax_text
+        mov ebx, offset string_buffer
         mov esi, dword ptr [DIALOG1] ; skipped instruction
         mov dword ptr [esp], 0x4b7acb ; print dialog code
         quit:
@@ -19442,7 +19436,6 @@ static void __declspec(naked) charge_shop_wands_special(void)
       }
 }
 
-static char recharge_buffer[100], name_buffer[100];
 static const float shop_recharge_multiplier = 0.2; // from 30% to 80%
 // Defined below.
 static void knife_repair_dialog(void);
@@ -19499,7 +19492,7 @@ static void __declspec(naked) shop_recharge_dialog(void)
         cannot:
         mov ecx, esi
         call dword ptr ds:item_name
-        mov ecx, offset name_buffer
+        mov ecx, offset string_buffer + 100
         push ecx ; for the second sprintf
         push eax
         push dword ptr [colors+CLR_ITEM*4]
@@ -19511,8 +19504,7 @@ static void __declspec(naked) shop_recharge_dialog(void)
         cmova eax, dword ptr [new_strings+STR_RECHARGE*4]
         cmovbe eax, dword ptr [new_strings+STR_CANNOT_RECHARGE*4]
         push eax
-        mov eax, offset recharge_buffer
-        push eax
+        PUSH_OFFSET(string_buffer, eax)
         call dword ptr ds:sprintf
         add esp, 20
         cmp ebx, 0
@@ -19520,7 +19512,7 @@ static void __declspec(naked) shop_recharge_dialog(void)
         sub esp, 8
         fstp st(0)
         no_adjust:
-        mov eax, offset recharge_buffer
+        mov eax, offset string_buffer
         xor ebx, ebx
         push 0x4b5453
         ret 4
@@ -19730,14 +19722,13 @@ static char *__stdcall multihit_message(struct player *player, void *monster,
     dead_count += kill;
     total_damage += damage;
 
-    static char buffer[100];
     if (dead_count)
-        sprintf(buffer, new_strings[STR_KILL_MANY], player->name, total_damage,
-                hit_count, dead_count);
+        sprintf(string_buffer, new_strings[STR_KILL_MANY], player->name,
+                total_damage, hit_count, dead_count);
     else
-        sprintf(buffer, new_strings[STR_DAMAGE_MANY], player->name,
+        sprintf(string_buffer, new_strings[STR_DAMAGE_MANY], player->name,
                 total_damage, hit_count);
-    return buffer;
+    return string_buffer;
 }
 
 // Check if we should display the combined message.
@@ -20703,8 +20694,6 @@ static void __declspec(naked) shift_last_human_skill(void)
       }
 }
 
-static char learning_buffer[100];
-
 // Print the human racial skill, Learning, as the third mandatory skill.
 static void __declspec(naked) print_human_racial_skill(void)
 {
@@ -20721,14 +20710,14 @@ static void __declspec(naked) print_human_racial_skill(void)
         call dword ptr ds:get_text_width
         push eax
         push 0x4ee7a8 ; format string
-        mov eax, offset learning_buffer
+        mov eax, offset string_buffer
         push eax
         call dword ptr ds:sprintf
         add esp, 16
         push ebx
         push ebx
         push ebx
-        mov eax, offset learning_buffer
+        mov eax, offset string_buffer
         push eax
         push dword ptr [esp+56] ; white color
         lea eax, [ebp+ebp*2+311*2+6]
@@ -22365,7 +22354,7 @@ static int __thiscall absorb_spell(struct player *player, int spell, int rank)
     if (new_sp <= get_full_sp(player))
       {
         player->sp = new_sp;
-        static char message[128];
+        char message[128];
         sprintf(message, new_strings[STR_ABSORB_SPELL], player->name);
         show_status_text(message, 2);
         return TRUE;
@@ -22771,9 +22760,6 @@ static char **const monster_bonus_strings[25] = {
     GLOBAL_TXT + 601, // zombie
 };
 
-// Used just below.
-char drain_buffer[60];
-
 // Loop the above code twice if the monster has two attacks.
 // Also print the inflicted condition or other attack bonus if present.
 static void __declspec(naked) print_monster_special_bonus(void)
@@ -22806,7 +22792,7 @@ static void __declspec(naked) print_monster_special_bonus(void)
         jz print_pushed
         push dword ptr [edx]
         push 0x4f0e48 ; "%s\n%s"
-        PUSH_OFFSET(drain_buffer, eax)
+        PUSH_OFFSET(string_buffer, eax)
         call dword ptr ds:sprintf
         mov edx, esp
         add esp, 16
@@ -22849,7 +22835,6 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
     if (just_check_teacher_price) return DEFAULT; // to other price code
     int train_req = 0;
     int item = -1;
-    static char reply_buffer[200];
     switch (skill)
       {
         case SKILL_STAFF:
@@ -23056,20 +23041,20 @@ static char *__stdcall gm_teaching_conditions(struct player *player, int skill)
           }
         if (reply)
           {
-            sprintf(reply_buffer, reply, SKILL_NAMES[skill]);
-            return reply_buffer;
+            sprintf(string_buffer, reply, SKILL_NAMES[skill]);
+            return string_buffer;
           }
       }
     if (item >= 0)
       {
         dword(NEW_SKILL_COST) = ~item;
-        char name_buffer[100];
+        char *const name_buffer = string_buffer + 200;
         sprintf(name_buffer, COLOR_FORMAT, colors[CLR_ITEM],
                 item_name(&player->items[player->inventory[item]-1]));
-        sprintf(reply_buffer, new_strings[STR_GM_FOR_ITEM],
+        sprintf(string_buffer, new_strings[STR_GM_FOR_ITEM],
                 SKILL_NAMES[skill], name_buffer);
         dword(TOPIC_ACTION) = TRUE;
-        return reply_buffer;
+        return string_buffer;
       }
     return DEFAULT;
 }
@@ -23661,9 +23646,6 @@ static void __declspec(naked) variable_teacher_cost(void)
       }
 }
 
-// Used just below.
-static char teacher_text_buffer[600];
-
 // Also display the variable training cost in teacher dialog.
 static void __declspec(naked) variable_teacher_dialog(void)
 {
@@ -23675,11 +23657,11 @@ static void __declspec(naked) variable_teacher_dialog(void)
         and dword ptr [just_check_teacher_price], 0
         push dword ptr [NEW_SKILL_COST]
         push dword ptr [CURRENT_TEXT_ADDR]
-        mov dword ptr [CURRENT_TEXT_ADDR], offset teacher_text_buffer
+        mov dword ptr [CURRENT_TEXT_ADDR], offset cur_text_buffer
 #ifdef __clang__
         push dword ptr [CURRENT_TEXT_ADDR]
 #else
-        push offset teacher_text_buffer
+        push offset cur_text_buffer
 #endif
         call dword ptr ds:sprintf
         add esp, 12
@@ -24605,7 +24587,7 @@ static void __declspec(naked) knife_repair_dialog(void)
         cannot:
         mov ecx, esi
         call dword ptr ds:item_name
-        mov ecx, offset name_buffer
+        mov ecx, offset string_buffer + 100
         push ecx ; for the second sprintf
         push eax
         push dword ptr [colors+CLR_ITEM*4]
@@ -24617,8 +24599,7 @@ static void __declspec(naked) knife_repair_dialog(void)
         cmova eax, dword ptr [new_strings+STR_REPAIR_KNIVES*4]
         cmovbe eax, dword ptr [new_strings+STR_CANNOT_KNIVES*4]
         push eax
-        mov eax, offset recharge_buffer
-        push eax
+        PUSH_OFFSET(string_buffer, eax)
         call dword ptr ds:sprintf
         add esp, 20
         cmp ebx, 0
@@ -24626,7 +24607,7 @@ static void __declspec(naked) knife_repair_dialog(void)
         sub esp, 8
         fstp st(0)
         no_adjust:
-        mov eax, offset recharge_buffer
+        mov eax, offset string_buffer
         xor ebx, ebx
         push 0x4b5453
         ret 4
@@ -25178,9 +25159,6 @@ static void __declspec(naked) see_through_invisibility(void)
       }
 }
 
-// Used just below.
-static char invis_buffer[500];
-
 // Shared code used by the two below hooks.
 static void __declspec(naked) invisibility_description_shared(void)
 {
@@ -25190,10 +25168,10 @@ static void __declspec(naked) invisibility_description_shared(void)
         mov eax, dword ptr [elemdata.difficulty]
         push dword ptr [new_strings+STR_INVISIBILITY_EASY*4+eax*4]
         push dword ptr [esp+16] ; pushed description
-        PUSH_OFFSET(invis_buffer, eax)
+        PUSH_OFFSET(string_buffer, eax)
         call dword ptr ds:sprintf
         add esp, 12
-        mov dword ptr [esp+12], offset invis_buffer
+        mov dword ptr [esp+12], offset string_buffer
         skip:
         jmp dword ptr ds:sprintf ; replaced call
       }
@@ -25903,8 +25881,6 @@ static void __declspec(naked) remember_empty_reply(void)
       }
 }
 
-// Used to hold the buy horse reply w/o formatting.
-static char horse_buffer[100];
 // Used below.
 static const int horses_cost[9] = { 1000, 2000, 3000, 3000, 4000, 4000, 5000 };
 
@@ -25928,7 +25904,7 @@ static void __declspec(naked) add_horse_reply(void)
         jb skip ; just in case
         push dword ptr [horses_cost+eax*4]
         push dword ptr [new_strings+STR_BUY_HORSE*4]
-        PUSH_OFFSET(horse_buffer, eax)
+        PUSH_OFFSET(string_buffer, eax)
         call dword ptr ds:sprintf
         mov ecx, dword ptr [DIALOG1]
         mov eax, dword ptr [empty_reply_index]
@@ -25939,7 +25915,7 @@ static void __declspec(naked) add_horse_reply(void)
         push 0x4e2da8 ; color format string
         push dword ptr [ebp-12] ; reply buffer
         call dword ptr ds:sprintf
-        PUSH_OFFSET(horse_buffer, eax)
+        PUSH_OFFSET(string_buffer, eax)
         push dword ptr [ebp-12]
         call dword ptr ds:strcat_ptr
         add esp, 32
@@ -25947,7 +25923,7 @@ static void __declspec(naked) add_horse_reply(void)
         push 0
         lea eax, [ebp-136]
         push eax
-        mov edx, offset horse_buffer
+        mov edx, offset string_buffer
         mov ecx, dword ptr [ARRUS_FNT]
         call dword ptr ds:get_text_height
         mov ecx, dword ptr [empty_reply]
@@ -26633,9 +26609,6 @@ static void __declspec(naked) guild_restore_sp_hook(void)
       }
 }
 
-// For storing the "restore SP" reply; also doubles as SP check cache.
-static char restore_sp_buffer[100];
-
 // Print the restore SP prompt when appropriate.
 static void __declspec(naked) print_restore_sp(void)
 {
@@ -26645,7 +26618,7 @@ static void __declspec(naked) print_restore_sp(void)
         jz quit
         cmp eax, SKILL_DARK + 36 ; no learning/meditation
         ja skip
-        mov byte ptr [restore_sp_buffer], bl ; will remain 0 if no prompt
+        mov byte ptr [string_buffer], bl ; will remain 0 if no prompt
         call dword ptr ds:get_full_sp
         mov ecx, dword ptr [ebp-24] ; player
         cmp dword ptr [ecx].s_player.sp, eax
@@ -26653,14 +26626,14 @@ static void __declspec(naked) print_restore_sp(void)
         call guild_sp_price
         push eax
         push dword ptr [new_strings+STR_RESTORE_SP*4]
-        PUSH_OFFSET(restore_sp_buffer, eax)
+        PUSH_OFFSET(string_buffer, eax)
         call dword ptr ds:sprintf
         add esp, 12
         lea eax, [ebp-120]
         push ebx
         push ebx
         push eax
-        mov edx, offset restore_sp_buffer
+        mov edx, offset string_buffer
         mov ecx, dword ptr [ARRUS_FNT]
         call dword ptr ds:get_text_height
         add dword ptr [ebp-8], eax ; total height
@@ -26681,9 +26654,9 @@ static void __declspec(naked) print_restore_sp_display(void)
         jz quit
         cmp eax, SKILL_DARK + 36 ; no learning/meditation
         ja skip
-        cmp byte ptr [restore_sp_buffer], bl
+        cmp byte ptr [string_buffer], bl
         jz skip
-        mov eax, offset restore_sp_buffer
+        mov eax, offset string_buffer
         mov dword ptr [esp], 0x4b62c4 ; print code
         ret
         skip:
@@ -26755,18 +26728,17 @@ static int order_ore_count, have_order_reagent, order_days;
 // Return a mouseover hint for the confirm order screen.
 static char *__thiscall get_order_text(int id)
 {
-    static char buffer[300];
     char hlname[100], reagent[100], reagname[100], orename[100];
     if (id > 1)
       {
-        sprintf(buffer, new_npc_text[862-790], order_ore_count);
-        return buffer;
+        sprintf(string_buffer, new_npc_text[862-790], order_ore_count);
+        return string_buffer;
       }
     sprintf(hlname, COLOR_FORMAT, colors[CLR_ITEM], item_name(&order_result));
     if (id)
       {
-        sprintf(buffer, new_npc_text[861-790], hlname);
-        return buffer;
+        sprintf(string_buffer, new_npc_text[861-790], hlname);
+        return string_buffer;
       }
     if (have_order_reagent)
       {
@@ -26801,15 +26773,13 @@ static char *__thiscall get_order_text(int id)
       }
     sprintf(orename, COLOR_FORMAT, colors[CLR_ITEM],
             ITEMS_TXT[order_ore.id].name);
-    sprintf(buffer, new_npc_text[859+have_order_reagent-790], hlname,
+    sprintf(string_buffer, new_npc_text[859+have_order_reagent-790], hlname,
             order_days, order_gold.bonus2, orename, reagent);
-    return buffer;
+    return string_buffer;
 }
 
 // 0 for initial prompt, 1 for parse failure, 2 for wrong item/shop type.
 static int order_message_type = 0;
-// Used just below.
-static char order_message_buffer[100];
 
 
 // Do a prompt when the reply is clicked.
@@ -26862,10 +26832,10 @@ static void __declspec(naked) query_order(void)
         round_down:
         push eax
         push dword ptr [new_strings+STR_ORDER_NOT_READY*4]
-        PUSH_OFFSET(order_message_buffer, eax)
+        PUSH_OFFSET(cur_text_buffer, eax)
         call dword ptr ds:sprintf
         add esp, 12
-        mov dword ptr [CURRENT_TEXT_ADDR], offset order_message_buffer
+        mov dword ptr [CURRENT_TEXT_ADDR], offset cur_text_buffer
         cmp dword ptr [SHOPKEEPER_MOOD], 0 ; skip if happy already
         jnz simple_message
         mov dword ptr [SHOPKEEPER_MOOD], 2 ; neutral
@@ -28035,22 +28005,20 @@ static void __declspec(naked) always_restock_bottles(void)
 // Provide a hint about taverns wherein the player is yet to win at Arcomage.
 static char *arcomage_hint(void)
 {
-    static char buffer[200];
     int chance = 1, tavern;
     for (int i = 108; i <= 120; i++)
         if (!byte(0xacd571+i) && !(random() % chance++))
             tavern = i;
     static const int regions[13] = { 1, 2, 3, 4, 5, 6, 7,
                                      8, 9, 10, 12, 13, 38 };
-    sprintf(buffer, new_npc_text[898-790], EVENTS2D[tavern].name,
+    sprintf(cur_text_buffer, new_npc_text[898-790], EVENTS2D[tavern].name,
             MAPSTATS[regions[tavern-108]].name);
-    return buffer;
+    return cur_text_buffer;
 }
 
 // Let the butler tell you where quest items are, since we already track them.
 static char *i_lost_it(void)
 {
-    static char buffer[300];
     replace_chest(-1); // for the below call
     track_lost_items(FALSE);
     int count = 0;
@@ -28077,11 +28045,12 @@ static char *i_lost_it(void)
         if (!check || check > 0 && elemdata.next_refill_day[lost-1] > day)
             text++; // left in another map
       }
-    char item_buffer[100];
-    sprintf(item_buffer, COLOR_FORMAT, colors[CLR_ITEM], ITEMS_TXT[item].name);
+    sprintf(string_buffer, COLOR_FORMAT,
+            colors[CLR_ITEM], ITEMS_TXT[item].name);
     // NB: the second %s is only present in the 'another map' variation
-    sprintf(buffer, new_npc_text[text], item_buffer, MAPSTATS[lost-1].name);
-    return buffer;
+    sprintf(cur_text_buffer, new_npc_text[text],
+            string_buffer, MAPSTATS[lost-1].name);
+    return cur_text_buffer;
 }
 
 // Hook for the above two functions.
@@ -28940,7 +28909,7 @@ static void __declspec(naked) genie_projectile_trigger(void)
 static void new_game_genie(void)
 {
     // this really oughta be unhardcoded, but ehh
-#define GENIE_DLV_SIZE 146281
+    enum { GENIE_DLV_SIZE = 146359 };
     static const struct file_header header = { "genie.dlv", GENIE_DLV_SIZE };
     void *file = find_in_lod(GAMES_LOD, header.name, 1);
     char buffer[GENIE_DLV_SIZE];
@@ -29972,9 +29941,8 @@ static char *__stdcall get_quick_spell_hint(int button)
         return GLOBAL_TXT[484]; // "select a spell and press button"
     if (quick == spell || !spell)
         return GLOBAL_TXT[584]; // "click to remove"
-    static char buffer[100];
-    sprintf(buffer, GLOBAL_TXT[483], pointer(SPELLS_TXT + spell * 36)); // name
-    return buffer; // "set it as ready"
+    sprintf(string_buffer, GLOBAL_TXT[483], pointer(SPELLS_TXT + spell * 36));
+    return string_buffer; // "set [spell name] as ready"
 }
 
 // Some shared code.
@@ -30040,8 +30008,6 @@ static void __declspec(naked) quick_ref_quick_spells(void)
 
 // How much to shift the active spell list down, based on quick spell count.
 static int active_spell_offset;
-// Composed in advance, so that we can know its height.
-static char qspl_buffer[400];
 
 // Print all the currently set quick spells.
 static int __thiscall portrait_rmb_quick_spells(struct player *player)
@@ -30053,7 +30019,7 @@ static int __thiscall portrait_rmb_quick_spells(struct player *player)
       {
         count += !!qspell;
         if (qspell)
-            length += sprintf(qspl_buffer + length, "\t130%s (%s)\n",
+            length += sprintf(string_buffer + length, "\t130%s (%s)\n",
                               pointer(SPELLS_TXT + qspell * 36 + 4), // sh.name
                               get_key_name(i ? quick_spell_keys[i-1]
                                              : dword(KEY_THIS + 12 + 7 * 4)));
@@ -30061,13 +30027,13 @@ static int __thiscall portrait_rmb_quick_spells(struct player *player)
       }
     active_spell_offset = 0;
     if (!count)
-        strcpy(qspl_buffer, GLOBAL_TXT[153]); // "none"
+        strcpy(string_buffer, GLOBAL_TXT[153]); // "none"
     else
-        qspl_buffer[length-1] = 0; // remove the last '\n'
-    static const int bounds[4] = { 0, 0, 1000, 1000 }; // whatever
+        string_buffer[length-1] = 0; // remove the last '\n'
+    static const int rect[4] = { 0, 0, 1000, 1000 }; // whatever
     if (count > 1)
-        active_spell_offset = get_text_height(pointer(ARRUS_FNT), qspl_buffer,
-                                              bounds, 0, 0) - 30;
+        active_spell_offset = get_text_height(pointer(ARRUS_FNT),
+                                              string_buffer, rect, 0, 0) - 30;
     return active_spell_offset;
 }
 
@@ -30092,7 +30058,7 @@ static void __declspec(naked) provide_qspl_buffer(void)
 {
     asm
       {
-        PUSH_OFFSET(qspl_buffer, eax)
+        PUSH_OFFSET(string_buffer, eax)
         push ebx ; the rest of the text
         call dword ptr ds:strcat_ptr
         add esp, 8
@@ -30126,10 +30092,9 @@ static void __declspec(naked) shift_active_spell_header(void)
 // Also print the list of quick spells by right-clicking in the stats screen.
 static char *__stdcall stats_rmb_quick_spells(char *description)
 {
-    static char buffer[1000];
     int current = dword(CURRENT_PLAYER) - 1;
-    strcpy(buffer, description);
-    char *rest = buffer + strlen(buffer);
+    strcpy(string_buffer, description);
+    char *rest = string_buffer + strlen(string_buffer);
     int qspell = PARTY[current].quick_spell;
     int found = FALSE;
     for (int i = 0; i <= 4; i++)
@@ -30149,7 +30114,7 @@ static char *__stdcall stats_rmb_quick_spells(char *description)
         *rest = '\n';
         strcpy(rest + 1, GLOBAL_TXT[153]); // "none"
       }
-    return buffer;
+    return string_buffer;
 }
 
 // Hook for the above.
@@ -30598,9 +30563,6 @@ static void __declspec(naked) bounty_autonotes(void)
       }
 }
 
-// Used just below.
-static char bounty_buffer[200];
-
 // Actually format the dynamic autonotes for printing.
 static void __declspec(naked) print_bounty_autonote(void)
 {
@@ -30621,7 +30583,7 @@ static void __declspec(naked) print_bounty_autonote(void)
         jz ok
         xchg eax, edx
         ok:
-        mov ecx, offset bounty_buffer
+        mov ecx, offset string_buffer
         mov dword ptr [esp+16], ecx
         push eax
         push edx

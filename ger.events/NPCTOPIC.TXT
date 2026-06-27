@@ -572,7 +572,7 @@
 571	Schrein
 572	Prüfungen
 573	Bevor Sie gehen...	Lantern quest holy water hint
-574	Drachenschuppenrüstung	RDSM crafter
+574	Drachen schuppen rüstung	RDSM crafter
 575	Plattenpanzer für 4000 Gold herstellen	RDSM crafter
 576	Schild für 2000 Gold herstellen	RDSM crafter
 577	Schuppen für 2500 Gold verkaufen	RDSM crafter

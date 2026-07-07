@@ -99,6 +99,35 @@ static void hook_jump(uintptr_t address, funcptr_t func)
     VirtualProtect((LPVOID) address, 5, OldProtect, &OldProtect);
 }
 
+// Various multi-byte nops (from Intel manual), one to nine bytes long.
+static void __declspec(naked) nop_chunk(void)
+{
+    asm
+      {
+        nop
+        xchg ax, ax
+        nop dword ptr [eax]
+        nop dword ptr [eax+1]
+        nop dword ptr [eax+eax+1]
+        nop word ptr [eax+eax+1]
+        nop dword ptr [eax+0x100]
+        nop dword ptr [eax+eax+0x100]
+        nop word ptr [eax+eax+0x100]
+      }
+}
+
+static void erase_code_inner(uintptr_t address, unsigned int length)
+{
+    if (length >= 10)
+      {
+        byte(address) = 0xeb;
+        byte(address + 1) = length - 2;
+        memset((void *) address + 2, 0x90, length - 2);
+      }
+    else memcpy((void *) address,
+                (char *) nop_chunk + length * (length - 1) / 2, length);
+}
+
 static void hook_call(uintptr_t address, funcptr_t func, int length)
 {
     check_overwrite(address, length);
@@ -108,7 +137,7 @@ static void hook_call(uintptr_t address, funcptr_t func, int length)
     byte(address) = 0xe8;
     pointer(address + 1) = (char *) func - address - 5;
     if (length > 5)
-        memset((void *) (address + 5), 0x90, length - 5);
+        erase_code_inner(address + 5, length - 5);
     VirtualProtect((LPVOID) address, length, OldProtect, &OldProtect);
 }
 
@@ -118,12 +147,7 @@ static void erase_code(uintptr_t address, int length)
     DWORD OldProtect;
     VirtualProtect((LPVOID) address, length, PAGE_EXECUTE_READWRITE,
                    &OldProtect);
-    memset((void *) address, 0x90, length);
-    if (length > 10)
-      {
-        byte(address) = 0xeb;
-        byte(address + 1) = length - 2;
-      }
+    erase_code_inner(address, length);
     VirtualProtect((LPVOID) address, length, OldProtect, &OldProtect);
 }
 
@@ -11551,7 +11575,8 @@ static inline void hp_sp_burnout(void)
     // Dealing with the gamescript add HP/SP commands below.
     patch_bytes(0x44b123, evt_add_hp_sp_chunk_1, 2); // hp
     patch_bytes(0x44b12c, evt_add_hp_sp_chunk_2, 10); // hp
-    erase_code(0x44b136, 5); // old hp code
+    erase_code(0x44b136, 3); // old hp code
+    erase_code(0x44b139, 2); // shared old hp & sp code
     patch_bytes(0x44b16b, evt_add_hp_sp_chunk_1, 2); // sp
     patch_bytes(0x44b174, evt_add_hp_sp_chunk_2, 10); // sp
     erase_code(0x44b17e, 3); // old sp code

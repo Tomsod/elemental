@@ -820,10 +820,10 @@ Global Text
 817	Du kannst die Schwierigkeitsstufe nicht mehr ändern!
 818	Beschränkte Speicherplätze
 819	Wenn diese Option aktiviert ist, kannst du das Spiel nur in der Nähe von Städten, Dörfern und anderen NPC-Siedlungen speichern.
-820	Entzieht Stärke
-821	Entzieht Intellekt
-822	Entzieht Charisma
-823	Entzieht Ausdauer
-824	Entzieht Reaktion
-825	Entzieht Geschick
-826	Entzieht Glück
+820	Entz. Stärke
+821	Entz. Intellekt
+822	Entz. Charisma
+823	Entz. Ausdauer
+824	Entz. Reaktion
+825	Entz. Geschick
+826	Entz. Glück

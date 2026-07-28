@@ -784,12 +784,12 @@ Global Text
 781	Tod
 782	Versteinerung
 783	Ausrottung
-784	Gegenstand beschädigen
-785	Rüstung beschädigen
-786	Waffe beschädigen
-787	Gegenstand stehlen
+784	Ggst. besch.
+785	Rüstung besch.
+786	Waffe besch.
+787	Ggst. stehlen
 788	Altern
-789	Magie entziehen
+789	Magie entz.
 790	Furcht
 791	Du hast keine Heiltränke dabei!
 792	Um diese Fähigkeitsstufe zu erlernen, müssen Sie entweder vollständig befördert werden oder ein Initiationstoken vorlegen.

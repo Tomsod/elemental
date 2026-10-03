@@ -280,8 +280,27 @@ was sie zu Mini-Paladinen macht. Priester der Finsternis erhalten stattdessen Gr
 Übrigens können Kleriker nun überhaupt keine Bögen mehr benutzen. Das können Druiden und Zauberer ebenfalls nicht,
 aber sie erhalten wenigstens Wurfmesser, während Kleriker nur Zauberstäbe oder Blaster ausrüsten können.
 
-Druiden können nun einige Magieschulen auf Großmeister steigern. Erzdruiden (Lichtpfad) erhalten Luft, Wasser und Körper, wodurch sie allein sowohl Kleriker als auch Zauberer ersetzen können, zumindest was deren nützlichste Zauber betrifft. Hexer (Finsternispfad) sind wesentlich offensiver ausgerichtet, da sie Großmeister-Erdmagie und -Geistmagie sowie sogar Meister-Finsternismagie erhalten - inspiriert vom Relikt Ring des Herrschers, das angeblich für Hexer gemacht wurde. Berücksichtigt man den Vertrauten-Bonus, stehen Hexer bei der reinen Zauberkraft wohl nur den voll beförderten Zauberern nach. Beide Druiden-Beförderungen erhalten weiterhin Großmeister-Meditation, wodurch sie nun Zauberpunkte regenerieren können, und können Ausweichen auf Experte steigern, sollten sie sich für Roben statt Lederrüstung entscheiden.
+Druiden können nun einige Magieschulen auf Großmeister steigern. Erzdruiden (Lichtpfad) erhalten Luft, Wasser und Körper,
+wodurch sie allein sowohl Kleriker als auch Zauberer ersetzen können, zumindest was deren nützlichste Zauber betrifft.
+Hexer (Finsternispfad) sind wesentlich offensiver ausgerichtet, da sie Großmeister-Erdmagie und -Geistmagie sowie sogar
+Meister-Finsternismagie erhalten - inspiriert vom Relikt Ring des Herrschers, das angeblich für Hexer gemacht wurde.
+Berücksichtigt man den Vertrauten-Bonus, stehen Hexer bei der reinen Zauberkraft wohl nur den voll beförderten Zauberern nach.
+Beide Druiden-Beförderungen erhalten weiterhin Großmeister-Meditation, wodurch sie nun Zauberpunkte regenerieren können,
+und können Ausweichen auf Experte steigern, sollten sie sich für Roben statt Lederrüstung entscheiden.
 
-Zauberer sind in dieser Mod etwas schwächer, da sie Großmeister-Erdmagie nicht mehr erreichen können; auch ihre übrigen Fähigkeiten haben sich verschoben. Erzmagier (Lichtpfad) können Dolch auf Meister steigern für einen ordentlichen Bonus auf kritische Trefferchance, und können außerdem Meister-Leder für Zauberabsorption erlangen. Schließlich erhalten sie Großmeister-Lernen. Lichs (Finsternispfad) regenerieren ihre Zauberpunkte nicht mehr von selbst, sondern müssen dafür Großmeister-Meditation erlernen. Dafür können sie bei einem unbewaffneten Angriff Lebensenergie absaugen (wie eine vampirische Waffe). Im Waffenlos-Kampf sind sie allerdings nicht gut (begrenzt auf Normal), können aber Großmeister-Stab erlangen, um ihre vampirische Berührung (plus Hammerhände-Bonus) mit einem Stabangriff zu kombinieren. Nahkampfangriffe sind natürlich bei keiner der beiden Beförderungen das entscheidende Merkmal. Lichs können außerdem nicht mehr Großmeister-Gegenstand-identifizieren erreichen, und keine der beiden Beförderungen kann nun Großmeister-Monster-erkennen erlangen. Ihre Immunitäten behalten Lichs jedoch weiterhin.
+Zauberer sind in dieser Mod etwas schwächer, da sie Großmeister-Erdmagie nicht mehr erreichen können;
+auch ihre übrigen Fähigkeiten haben sich verschoben. Erzmagier (Lichtpfad) können Dolch auf Meister steigern für einen
+ordentlichen Bonus auf kritische Trefferchance, und können außerdem Meister-Leder für Zauberabsorption erlangen.
+Schließlich erhalten sie Großmeister-Lernen. Lichs (Finsternispfad) regenerieren ihre Zauberpunkte nicht mehr von selbst,
+sondern müssen dafür Großmeister-Meditation erlernen. Dafür können sie bei einem unbewaffneten Angriff Lebensenergie
+absaugen (wie eine vampirische Waffe). Im Waffenlos-Kampf sind sie allerdings nicht gut (begrenzt auf Normal),
+können aber Großmeister-Stab erlangen, um ihre vampirische Berührung (plus Hammerhände-Bonus) mit einem Stabangriff zu kombinieren.
+Nahkampfangriffe sind natürlich bei keiner der beiden Beförderungen das entscheidende Merkmal.
+Lichs können außerdem nicht mehr Großmeister-Gegenstand-identifizieren erreichen, und keine der beiden Beförderungen
+kann nun Großmeister-Monster-erkennen erlangen. Ihre Immunitäten behalten Lichs jedoch weiterhin.
 
-Das war's. Denk daran, dass du nicht sowohl die Licht- als auch die Finsternis-Version derselben Klasse in derselben Gruppe haben kannst, aber du kannst doppelte Klassen dennoch einzigartig machen, indem du für sie unterschiedliche Rassen wählst. Noch ein wichtiges Detail: Hast du sowohl einen Kleriker als auch einen Zauberer, wirst du trotzdem nicht beide Licht- und Finsternis-Großmeisterränge erlangen können, da die Voraussetzung für die Ausbildung die Gesinnungstreue (die formale Pfadwahl) ist.
+Das war's. Denk daran, dass du nicht sowohl die Licht- als auch die Finsternis-Version derselben Klasse in derselben Gruppe haben kannst,
+aber du kannst doppelte Klassen dennoch einzigartig machen, indem du für sie unterschiedliche Rassen wählst.
+Noch ein wichtiges Detail: Hast du sowohl einen Kleriker als auch einen Zauberer,
+wirst du trotzdem nicht beide Licht- und Finsternis-Großmeisterränge erlangen können,
+da die Voraussetzung für die Ausbildung die Gesinnungstreue (die formale Pfadwahl) ist.

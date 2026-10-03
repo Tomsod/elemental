@@ -1,46 +1,171 @@
-Dies ist der Spoiler zur Gruppenerstellung für die Elemental Mod v4.0. Normalerweise würde ich nicht empfehlen, Informationen vorab zu lesen, die man eigentlich während des Spielens entdecken soll, aber einige der Entscheidungen, die du bei der Gruppenerstellung triffst (insbesondere Rassen und Klassen), sind dauerhaft - und wenn du eine optimale Gruppe spielen möchtest, ohne das Spiel neu starten zu müssen, solltest du dies lesen. Ich beschränke die Spoiler auf das notwendige Minimum. Hinweis: Damit die Tabellen unten ausgerichtet aussehen, solltest du dies mit einer Festbreitenschrift (nichtproportionale Schrift) lesen!
+Dies ist der Spoiler zur Gruppenerstellung für die Elemental Mod v4.0.
+Normalerweise würde ich nicht empfehlen, Informationen vorab zu lesen,
+die man eigentlich während des Spielens entdecken soll, aber einige der Entscheidungen,
+die du bei der Gruppenerstellung triffst (insbesondere Rassen und Klassen),
+sind dauerhaft - und wenn du eine optimale Gruppe spielen möchtest,
+ohne das Spiel neu starten zu müssen, solltest du dies lesen.
+Ich beschränke die Spoiler auf das notwendige Minimum.
+Hinweis: Damit die Tabellen unten ausgerichtet aussehen,
+solltest du dies mit einer Festbreitenschrift (nichtproportionale Schrift) lesen!
 
-Schauen wir uns zunächst die klassische Standardgruppe Ritter-Dieb-Kleriker-Zauberer an, die unverändert aus dem Originalspiel übernommen wurde. Sie ist tatsächlich nach wie vor völlig spielbar, da jeder Charakter eine wichtige Rolle erfüllt: Der Ritter absorbiert Schaden, der Dieb entschärft Truhenfallen, der Kleriker heilt und verhindert Statuszustände, und der Zauberer transportiert die Gruppe mittels Fliegen, Teleportation und anderer Reisezauber. Beachte, dass ich nichts über das Verursachen von Schaden sage - dazu ist jede Klasse fähig! Aber wenn du ein angenehmes Spiel möchtest, solltest du wahrscheinlich auch Charaktere haben, die über die vier oben genannten Fähigkeiten verfügen. Hier hast du Optionen: Anders als im Originalspiel sind Hybridklassen durchaus brauchbare Alternativen zu den vier Standardwahlen. Im Folgenden bespreche ich die Fähigkeiten der Klassen im späten Spiel (nach der zweiten Beförderung); das frühe Spiel ist anders, aber die Kosten eines Neustarts sind dort viel geringer. Denk daran, dass du Licht- und Finsternis-Beförderungen in deiner Gruppe beliebig mischen kannst.
+Schauen wir uns zunächst die klassische Standardgruppe Ritter-Dieb-Kleriker-Zauberer an,
+die unverändert aus dem Originalspiel übernommen wurde. Sie ist tatsächlich nach wie
+vor völlig spielbar, da jeder Charakter eine wichtige Rolle erfüllt: Der Ritter absorbiert Schaden,
+der Dieb entschärft Truhenfallen, der Kleriker heilt und verhindert Statuszustände,
+und der Zauberer transportiert die Gruppe mittels Fliegen, Teleportation und anderer Reisezauber.
+Beachte, dass ich nichts über das Verursachen von Schaden sage - dazu ist jede Klasse fähig!
+Aber wenn du ein angenehmes Spiel möchtest, solltest du wahrscheinlich auch Charaktere haben,
+die über die vier oben genannten Fähigkeiten verfügen. Hier hast du Optionen: Anders als im Originalspiel
+sind Hybridklassen durchaus brauchbare Alternativen zu den vier Standardwahlen. Im Folgenden bespreche
+ich die Fähigkeiten der Klassen im späten Spiel (nach der zweiten Beförderung); das frühe Spiel ist anders,
+aber die Kosten eines Neustarts sind dort viel geringer. Denk daran, dass du Licht- und
+Finsternis-Beförderungen in deiner Gruppe beliebig mischen kannst.
 
-Der Ritter übernimmt die Rolle des Tanks. Das ist nun tatsächlich relevanter als im Originalspiel, da du Monster durch Aura des Konflikts und ähnliche Effekte gezielt dazu bringen kannst, einen bestimmten Charakter anzugreifen. Ritter haben enorm viele Lebenspunkte, sind gut gepanzert und können mit den passenden Fertigkeiten bis zu 75 % physische Schadensreduktion erreichen, was sie besser als jeden anderen darin macht, Schaden einzustecken. Abgesehen davon und ihrem unverschämten Nahkampfschaden sind sie in nichts anderem besonders gut, daher kann dein Tank, wenn du Abwechslung willst, in dieser Reihenfolge auch Paladin, Mönch oder sogar Dieb sein. Paladine haben durchschnittliche Lebenspunkte, sind aber ansonsten defensiv nicht schlechter als Ritter und können bei Bedarf sogar Aura des Konflikts auf sich selbst wirken. Mönche erhalten keine Schadensreduktion durch Rüstung, aber ihre Lebenspunkte und Rüstungsklasse sind hervorragend, und im späten Spiel können sie jedem Treffer ausweichen, was statistisch gesehen einer Reduktion jeglichen (nicht nur physischen) eingehenden Schadens gleichkommt. Diebe haben ebenfalls gute Lebenspunkte und Rüstungsklasse, aber keine besonderen Vorzüge, sodass sie nicht so gut sind wie die anderen drei Optionen. Wenn du ohnehin vorhast, schwere Kämpfe (und den hohen Schwierigkeitsgrad) zu meiden, brauchst du eigentlich gar keinen Tank, da stufengerechte Gegner ohnehin recht schnell sterben.
+Der Ritter übernimmt die Rolle des Tanks. Das ist nun tatsächlich relevanter als im Originalspiel,
+da du Monster durch Aura des Konflikts und ähnliche Effekte gezielt dazu bringen kannst,
+einen bestimmten Charakter anzugreifen. Ritter haben enorm viele Lebenspunkte,
+sind gut gepanzert und können mit den passenden Fähigkeiten bis zu 75 % physische Schadensreduktion erreichen,
+was sie besser als jeden anderen darin macht, Schaden einzustecken.
+Abgesehen davon und ihrem unverschämten Nahkampfschaden sind sie in nichts anderem besonders gut,
+daher kann dein Tank, wenn du Abwechslung willst, in dieser Reihenfolge auch Paladin, Mönch oder sogar Dieb sein.
+Paladine haben durchschnittliche Lebenspunkte, sind aber ansonsten defensiv nicht schlechter als
+Ritter und können bei Bedarf sogar Aura des Konflikts auf sich selbst wirken. Mönche erhalten keine
+Schadensreduktion durch Rüstung, aber ihre Lebenspunkte und Rüstungsklasse sind hervorragend, und im späten Spiel
+können sie jedem Treffer ausweichen, was statistisch gesehen einer Reduktion jeglichen (nicht nur physischen)
+eingehenden Schadens gleichkommt. Diebe haben ebenfalls gute Lebenspunkte und Rüstungsklasse,
+aber keine besonderen Vorzüge, sodass sie nicht so gut sind wie die anderen drei Optionen.
+Wenn du ohnehin vorhast, schwere Kämpfe (und den hohen Schwierigkeitsgrad) zu meiden, brauchst du eigentlich
+gar keinen Tank, da stufengerechte Gegner ohnehin recht schnell sterben.
 
-Der Dieb entschärft Truhenfallen. Das ist es auch schon, es ist eine sehr spezialisierte Rolle, aber das Spiel wird ohne sie ziemlich frustrierend, daher bleibt sie wichtig. Diebe sind die einzige Klasse, die Fallen entschärfen auf Großmeister-Stufe bringen kann, aber so hoch braucht man es nicht immer. Die schwierigsten Fallen erfordern eine effektive Fähigkeitsstufe von 40 (das entspricht Experte 20 oder Meister 14), und du kannst deine Fertigkeit mit Gegenständen erhöhen, sodass mit etwas Glück Meister ausreicht und selbst ein Experte viele (wenn auch nicht alle) Truhen sicher öffnen kann. Ninjas (Finsternispfad-Mönche) und Kopfjäger (Finsternispfad-Ranger) können beide Meister erreichen, während andere Mönche und Ranger sowie Schattenritter (Finsternispfad) und Schützen Experte erreichen können. Erfahrene Spieler können die Notwendigkeit eines Entschärfers natürlich umgehen, indem sie Telekinese, Fliegen oder einfach das Einstecken des Schadens nutzen, aber das ist im Allgemeinen unpraktisch, daher würde ich es nicht jedem empfehlen.
+Der Dieb entschärft Truhenfallen. Das ist es auch schon, es ist eine sehr spezialisierte Rolle,
+aber das Spiel wird ohne sie ziemlich frustrierend, daher bleibt sie wichtig. Diebe sind die einzige Klasse,
+die Fallen entschärfen auf Großmeister-Stufe bringen kann, aber so hoch braucht man es nicht immer.
+Die schwierigsten Fallen erfordern eine effektive Fähigkeitsstufe von 40 (das entspricht Experte 20 oder Meister 14),
+und du kannst deine Fähigkeit mit Gegenständen erhöhen, sodass mit etwas Glück Meister ausreicht und
+selbst ein Experte viele (wenn auch nicht alle) Truhen sicher öffnen kann. Ninjas (Finsternispfad-Mönche) und
+Kopfjäger (Finsternispfad-Ranger) können beide Meister erreichen, während andere Mönche und Ranger sowie
+Schattenritter (Finsternispfad) und Schützen Experte erreichen können. Erfahrene Spieler können die Notwendigkeit
+eines Entschärfers natürlich umgehen, indem sie Telekinese, Fliegen oder einfach das Einstecken des Schadens nutzen,
+aber das ist im Allgemeinen unpraktisch, daher würde ich es nicht jedem empfehlen.
 
-Der Kleriker heilt die Gruppe und heilt Zustände - oder verhindert sie durch Großmeister-Unwandelbarkeit (im Originalspiel Schutz vor Magie) von vornherein ganz. Für beides benötigst du eigentlich nur Großmeister-Körpermagie, andere Selbstmagie-Schulen funktionieren auf Meister-Stufe ebenfalls gut. Anders als im Originalspiel können sowohl Erzdruiden (Lichtpfad) als auch Meisterjäger (ebenfalls Lichtpfad) Großmeister-Körpermagie erlernen, sodass du dafür nicht zwingend einen Kleriker brauchst. Ihre Finsternis-Varianten sowie Paladine und Meistermönche (Lichtpfad) sind auf Meister-Körpermagie beschränkt, was ausreichend, aber nicht so großartig ist. Dennoch eignen sich besonders Helden (Lichtpfad-Paladine) gut als Kleriker-Ersatz, da sie nun sowohl Großmeister-Seelenmagie als auch Meister-Lichtmagie erhalten, die beide nützlich sind, insbesondere zusammen mit Meisterjägern, die zwar Körpermagie beherrschen, aber die anderen beiden Schulen gar nicht erlernen können. Du kannst dir Großmeister-Unwandelbarkeit auch über Tempelsegen oder gekaufte Schriftrollen sichern (beide können nun als Großmeister gewirkt werden), aber das ist deutlich unpraktischer. Sichere dir in jedem Fall, sofern du keine Herausforderung suchst, mindestens Meister-Körpermagie.
+Der Kleriker heilt die Gruppe und heilt Zustände - oder verhindert sie durch Großmeister-Unwandelbarkeit
+(im Originalspiel Schutz vor Magie) von vornherein ganz. Für beides benötigst du eigentlich nur Großmeister-Körpermagie,
+andere Selbstmagie-Schulen funktionieren auf Meister-Stufe ebenfalls gut. Anders als im Originalspiel können sowohl
+Erzdruiden (Lichtpfad) als auch Meisterjäger (ebenfalls Lichtpfad) Großmeister-Körpermagie erlernen,
+sodass du dafür nicht zwingend einen Kleriker brauchst. Ihre Finsternis-Varianten sowie Paladine und
+Meistermönche (Lichtpfad) sind auf Meister-Körpermagie beschränkt, was ausreichend, aber nicht so großartig ist.
+Dennoch eignen sich besonders Helden (Lichtpfad-Paladine) gut als Kleriker-Ersatz, da sie nun sowohl Großmeister-Seelenmagie
+als auch Meister-Lichtmagie erhalten, die beide nützlich sind, insbesondere zusammen mit Meisterjägern, die zwar Körpermagie
+beherrschen, aber die anderen beiden Schulen gar nicht erlernen können. Du kannst dir Großmeister-Unwandelbarkeit auch
+über Tempelsegen oder gekaufte Schriftrollen sichern (beide können nun als Großmeister gewirkt werden), aber das ist
+deutlich unpraktischer. Sichere dir in jedem Fall, sofern du keine Herausforderung suchst, mindestens Meister-Körpermagie.
 
-Der Zauberer wirkt Reisezauber. Zwar dreht sich der Großteil der Elementarmagie tatsächlich darum, Feinde zu töten, aber auch hier gilt: Jeder kann Feinde töten, während Fliegen und Stadtportal unersetzlich sind. Du wirst also mindestens Großmeister-Luft- und -Wassermagie wollen. Auch hier hast du in dieser Mod Optionen. Konkret können sowohl Meisterschützen (Lichtpfad) als auch Erzdruiden (ebenfalls Lichtpfad) beide diese Großmeister-Ränge erreichen, und selbst Scharfschützen (Finsternispfad) erhalten noch Luftmagie, während Kopfjäger (Finsternispfad) Großmeister-Wassermagie besitzen. Ganz am unteren Ende der Skala haben Spione (Lichtpfad-Diebe) Meister-Luftmagie, während Scharfschützen (Finsternispfad) und Ranger (Lichtpfad) irgendwann Meister-Wassermagie erhalten - aber wenn du wirklich ein angenehmes Spiel willst, hol dir lieber einen Zauberer oder befördere deinen Schützen, Ranger und/oder Druiden entsprechend.
+Der Zauberer wirkt Reisezauber. Zwar dreht sich der Großteil der Elementarmagie tatsächlich darum, Feinde zu töten,
+aber auch hier gilt: Jeder kann Feinde töten, während Fliegen und Stadtportal unersetzlich sind. Du wirst also
+mindestens Großmeister-Luft- und -Wassermagie wollen. Auch hier hast du in dieser Mod Optionen. Konkret können
+sowohl Meisterschützen (Lichtpfad) als auch Erzdruiden (ebenfalls Lichtpfad) beide diese Großmeister-Ränge erreichen,
+und selbst Scharfschützen (Finsternispfad) erhalten noch Luftmagie, während Kopfjäger (Finsternispfad)
+Großmeister-Wassermagie besitzen. Ganz am unteren Ende der Skala haben Spione (Lichtpfad-Diebe) Meister-Luftmagie,
+während Scharfschützen (Finsternispfad) und Ranger (Lichtpfad) irgendwann Meister-Wassermagie erhalten - aber wenn du
+wirklich ein angenehmes Spiel willst, hol dir lieber einen Zauberer oder befördere deinen Schützen,
+Ranger und/oder Druiden entsprechend.
 
-Das sind also deine vier Rollen. Wählst du Hybriden, kann derselbe Charakter zwei Rollen gleichzeitig erfüllen, wenn auch manchmal nicht so gut. Hier eine praktische Tabelle mit den von mir vorgeschlagenen Klassen (VV ist eine gute Wahl, ?? ist ein Kompromiss) - siehe Tabellenblatt "Rollenverteilung".
+Das sind also deine vier Rollen. Wählst du Hybriden, kann derselbe Charakter zwei Rollen
+gleichzeitig erfüllen, wenn auch manchmal nicht so gut. Hier eine praktische Tabelle
+mit den von mir vorgeschlagenen Klassen (VV ist eine gute Wahl, ?? ist ein Kompromiss)
 
-          Defend  Disarm  Healer  Travel
-          LP  DP  LP  DP  LP  DP  LP  DP
-Ritter    VV  VV  --  ??  --  --  --  --
-Dieb      ??  ??  VV  VV  --  --  ??  --
-Mönch     VV  VV  ??  VV  ??  --  --  --
-Paladin   VV  VV  --  --  ??  ??  --  --
-Schütze   --  --  ??  ??  --  --  VV  ??
-Ranger    --  --  ??  VV  VV  ??  ??  ??
-Kleriker  --  --  --  --  VV  VV  --  --
-Druide    --  --  --  --  VV  ??  VV  ??
-Zauberer  --  --  --  --  --  --  VV  VV
+           Verteidigen  Entschärfen  Heiler       Reisen
+           LP  DP       LP  DP       LP  DP       LP  DP
+Ritter     VV  VV       --  ??       --  --       --  --
+Dieb       ??  ??       VV  VV       --  --       ??  --
+Mönch      VV  VV       ??  VV       ??  --       --  --
+Paladin    VV  VV       --  --       ??  ??       --  --
+Schütze    --  --       ??  ??       --  --       VV  ??
+Ranger     --  --       ??  VV       VV  ??       ??  ??
+Kleriker   --  --       --  --       VV  VV       --  --
+Druide     --  --       --  --       VV  ??       VV  ??
+Zauberer   --  --       --  --       --  --       VV  VV
 
-Kommen wir nun zu den Rassen. Sie sind inzwischen tatsächlich wichtig, wähle also mit Bedacht. Wie im Originalspiel beeinflusst die Rasse die primären Attribute und Resistenzen des Charakters - nur dass es jetzt während des gesamten Spiels eine Rolle spielt, da Rassenboni oder -mali auch auf dauerhafte Steigerungen wie Fässer oder schwarze Tränke angewendet werden und die Rassenresistenzen mit der Stufe wachsen. Trotzdem sind die Attributsmodifikatoren der Rasse selbst dabei meist nur ein paar Punkte des Attributwerts wert (des abgeleiteten Werts, der die Wirkungsstärke des Attributs bestimmt und per Rechtsklick angezeigt wird), sie sind also weiterhin nicht besonders wichtig. Wichtiger ist, dass die Rasse die Stufenaufstiegsboni beeinflusst (Lebenspunkte, Zauberpunkte und sogar Fähigkeitspunkte), und jede Rasse hat eine zugehörige Fertigkeit, die einen Rang höher gesteigert werden kann, als es die Klasse normalerweise erlaubt.
+Kommen wir nun zu den Rassen. Sie sind inzwischen tatsächlich wichtig, wähle also mit Bedacht.
+Wie im Originalspiel beeinflusst die Rasse die primären Attribute und Resistenzen des Charakters - nur dass
+es jetzt während des gesamten Spiels eine Rolle spielt, da Rassenboni oder -mali auch auf dauerhafte
+Steigerungen wie Fässer oder schwarze Tränke angewendet werden und die Rassenresistenzen mit der Stufe wachsen.
+Trotzdem sind die Attributsmodifikatoren der Rasse selbst dabei meist nur ein paar Punkte des
+Attributwerts wert (des abgeleiteten Werts, der die Wirkungsstärke des Attributs bestimmt und per Rechtsklick angezeigt wird),
+sie sind also weiterhin nicht besonders wichtig. Wichtiger ist, dass die Rasse die Stufenaufstiegsboni
+beeinflusst (Lebenspunkte, Zauberpunkte und sogar Fähigkeitspunkte), und jede Rasse hat eine zugehörige Fähigkeit,
+die einen Rang höher gesteigert werden kann, als es die Klasse normalerweise erlaubt.
 
-Zusätzlich gibt es Rassenartefakte, die früher für die Arcomage-Quest vergeben wurden (und nun anderswo zu finden sind). Zwergen- und Menschenartefakte verleihen nun praktische Elementarimmunitäten, Elfenkettenhemden verbessern die Bogenfertigkeit, und Goblins erhalten zusätzlich zu ihrem alten Schwert einen weiteren: einen Dolch, der beim Tod eines Gegners Zauberpunkte wiederherstellt. Ob deren Existenz deine Rassenwahl beeinflussen sollte, ist Ansichtssache. Ich möchte außerdem auf ein Artefaktschwert hinweisen, das einen stapelbaren Bonus auf Lichtmagie gewährt - es ist an sich nicht an eine Rasse gebunden, aber lies dazu weiter unten bei den Goblins nach. Nun werde ich die vier Rassen im Detail beschreiben, mit einigem Kommentar.
+Zusätzlich gibt es Rassenartefakte, die früher für die Arcomage-Quest vergeben wurden (und nun anderswo zu finden sind).
+Zwergen- und Menschenartefakte verleihen nun praktische Elementarimmunitäten, Elfenkettenhemden verbessern die BogenFähigkeit,
+und Goblins erhalten zusätzlich zu ihrem alten Schwert einen weiteren: einen Dolch, der beim Tod eines Gegners Zauberpunkte wiederherstellt.
+Ob deren Existenz deine Rassenwahl beeinflussen sollte, ist Ansichtssache. Ich möchte außerdem auf ein Artefaktschwert hinweisen,
+das einen stapelbaren Bonus auf Lichtmagie gewährt - es ist an sich nicht an eine Rasse gebunden,
+aber lies dazu weiter unten bei den Goblins nach. Nun werde ich die vier Rassen im Detail beschreiben, mit einigem Kommentar.
 
-Goblins erhalten +40 % auf die Basiswerte Stärke und Geschwindigkeit sowie -30 % auf Intelligenz und Persönlichkeit. Außerdem erhalten sie +1 Lebenspunkt pro Stufe, aber -1 Zauberpunkt alle zwei Stufen (aufgerundet). Sie erhalten +5 auf Feuer- und Schockresistenz und alle zwei Stufen +1 mehr. Ihre Rassenfertigkeit ist schließlich Schwert, sodass Goblin-Kleriker, -Druiden und -Zauberer die Fähigkeit erhalten, Schwerter auf Experten-Stufe zu benutzen, während die anderen Klassen einen Rang höher aufsteigen können. Dies ist tatsächlich der stärkste Vorteil dieser Rasse, da das Erreichen von Meister-Schwert das beidhändige Führen von Schwertern erlaubt, was die stärkste Wahl für die Nebenhand darstellt, und besonders Schützen, Ranger und Mönche diesen Rang ohne Goblin zu sein nicht erreichen können. Die voll-magischen Klassen erhalten auch als Goblin kein Nebenhand-Schwert, können aber trotzdem ein starkes zweihändiges Schwert führen, das einem Streitkolben oder zwei Dolchen wohl überlegen ist. Die Bonus-Lebenspunkte helfen ihnen zudem sehr, während sich der Zauberpunkte-Malus kaum bemerkbar macht. Andererseits profitieren Nahkampfklassen etwas weniger von dieser Rasse als im Originalspiel, da Ritter bereits Großmeister-Schwert besitzen (aber die Lebenspunkte- und Attributsboni sind gut), während Mönche und Diebe so wenige Basis-Zauberpunkte haben, dass sich der Malus sehr stark auswirkt, ganz zu schweigen von den Attributsmali, die ihn weiter verringern. Ob ein Doppelschwert-Mönch das Halbieren des Zauberpunktepools wert ist, musst du selbst entscheiden.
+Goblins erhalten +40 % auf die Basiswerte Stärke und Geschwindigkeit sowie -30 % auf Intelligenz und Persönlichkeit.
+Außerdem erhalten sie +1 Lebenspunkt pro Stufe, aber -1 Zauberpunkt alle zwei Stufen (aufgerundet).
+Sie erhalten +5 auf Feuer- und Schockresistenz und alle zwei Stufen +1 mehr. Ihre RassenFähigkeit ist schließlich Schwert,
+sodass Goblin-Kleriker, -Druiden und -Zauberer die Fähigkeit erhalten, Schwerter auf Experten-Stufe zu benutzen,
+während die anderen Klassen einen Rang höher aufsteigen können. Dies ist tatsächlich der stärkste Vorteil dieser Rasse,
+da das Erreichen von Meister-Schwert das beidhändige Führen von Schwertern erlaubt, was die stärkste Wahl für die Nebenhand darstellt,
+und besonders Schützen, Ranger und Mönche diesen Rang ohne Goblin zu sein nicht erreichen können.
+Die voll-magischen Klassen erhalten auch als Goblin kein Nebenhand-Schwert, können aber trotzdem ein starkes zweihändiges Schwert führen,
+das einem Streitkolben oder zwei Dolchen wohl überlegen ist. Die Bonus-Lebenspunkte helfen ihnen zudem sehr,
+während sich der Zauberpunkte-Malus kaum bemerkbar macht. Andererseits profitieren Nahkampfklassen etwas weniger von dieser
+Rasse als im Originalspiel, da Ritter bereits Großmeister-Schwert besitzen (aber die Lebenspunkte- und Attributsboni sind gut),
+während Mönche und Diebe so wenige Basis-Zauberpunkte haben, dass sich der Malus sehr stark auswirkt,
+ganz zu schweigen von den Attributsmali, die ihn weiter verringern. Ob ein Doppelschwert-Mönch das Halbieren des
+Zauberpunktepools wert ist, musst du selbst entscheiden.
 
-Zwerge erhalten +40 % auf Stärke und Ausdauer, aber -30 % auf Genauigkeit und Geschwindigkeit. Außerdem erhalten sie +1 Lebenspunkt pro Stufe, allerdings ohne den Zauberpunkte-Malus. Die Resistenzboni betragen +5 auf Gift und Kälte sowie alle zwei geraden Stufen +1 mehr. Die Rassenfertigkeit ist natürlich Axt, die für Klassen, die sie normalerweise nicht haben, bis Experte freigeschaltet wird und bei anderen einen Rang höher gesteigert werden kann. Die freigeschaltete Fertigkeit macht Zwerge zu einer guten Wahl für die magischen Klassen, genau wie Goblins. Allerdings sind Äxte (ein- oder zweihändig) vermutlich schwächer als Schwerter, besonders wenn man auf Experte begrenzt ist, was aber durch das Fehlen der Zauberpunkte-Mali der Goblins (sowohl direkt als auch indirekt) ausgeglichen wird. Klassen, die ohnehin schon Äxte benutzen können, profitieren weniger von dieser Rasse, da sie typischerweise bessere Waffen für die rechte Hand zur Verfügung haben, wobei Zwergen-Ritter tatsächlich eine gute Kombination sind, da sie sogar mehr Lebenspunkte als Goblins haben und Äxte und Schwerter mit voller Kraft beidhändig führen können. Die geringe Geschwindigkeit der Axt sowie die Attributsmali der Zwerge werden durch Waffenmeister ausgeglichen, und der geringere Schaden (im Vergleich zu Speeren) wird durch die halbierte Rüstungsschwächung ausgeglichen, von der die ganze Gruppe profitiert. Wie dem auch sei, auch wenn sie nicht unbedingt die beste Wahl sind, haben Zwerge die höchsten Lebenspunkte aller Rassen, was für jeden nützlich ist.
+Zwerge erhalten +40 % auf Stärke und Ausdauer, aber -30 % auf Genauigkeit und Geschwindigkeit.
+Außerdem erhalten sie +1 Lebenspunkt pro Stufe, allerdings ohne den Zauberpunkte-Malus. Die Resistenzboni betragen +5 auf Gift und Kälte
+sowie alle zwei geraden Stufen +1 mehr. Die RassenFähigkeit ist natürlich Axt, die für Klassen, die sie normalerweise nicht haben,
+bis Experte freigeschaltet wird und bei anderen einen Rang höher gesteigert werden kann. Die freigeschaltete Fähigkeit
+macht Zwerge zu einer guten Wahl für die magischen Klassen, genau wie Goblins. Allerdings sind Äxte (ein- oder zweihändig)
+vermutlich schwächer als Schwerter, besonders wenn man auf Experte begrenzt ist, was aber durch das Fehlen der
+Zauberpunkte-Mali der Goblins (sowohl direkt als auch indirekt) ausgeglichen wird. Klassen, die ohnehin schon Äxte benutzen können,
+profitieren weniger von dieser Rasse, da sie typischerweise bessere Waffen für die rechte Hand zur Verfügung haben,
+wobei Zwergen-Ritter tatsächlich eine gute Kombination sind, da sie sogar mehr Lebenspunkte als Goblins haben und
+Äxte und Schwerter mit voller Kraft beidhändig führen können. Die geringe Geschwindigkeit der Axt sowie die Attributsmali
+der Zwerge werden durch Waffenmeister ausgeglichen, und der geringere Schaden (im Vergleich zu Speeren) wird durch die
+halbierte Rüstungsschwächung ausgeglichen, von der die ganze Gruppe profitiert. Wie dem auch sei, auch wenn sie nicht
+unbedingt die beste Wahl sind, haben Zwerge die höchsten Lebenspunkte aller Rassen, was für jeden nützlich ist.
 
-Elfen erhalten +40 % auf Intelligenz und Genauigkeit, aber -30 % auf Stärke und Ausdauer, sowie zu Beginn 10 Geistresistenz und +1 mehr bei jedem Stufenaufstieg. Anders als andere Rassen erhalten sie -1 Lebenspunkt-Malus pro Stufe, dafür aber +1 Zauberpunkt-Bonus. Ihre Rassenfertigkeit ist erwartungsgemäß Bogen. All das macht sie zu einer sehr guten Wahl für jeden, den du zu einem Zauberwirker machen willst - nicht nur die magischen Klassen! Ein voll beförderter elfischer Priester erhält beim Stufenaufstieg 6 statt 5 Zauberpunkte (20 % mehr), aber der Zauberpunktepool eines elfischen Diebs/Schurken wird verdoppelt! Sogar mehr als verdoppelt, wenn man den Intelligenzbonus berücksichtigt. Und ein Schurke verkraftet den Lebenspunkte-Malus besser als ein Priester oder Magier. Trotzdem ist die freigeschaltete Bogenfertigkeit besonders nützlich für Kleriker, Zauberer und Druiden, die in dieser Mod normalerweise keine Bögen benutzen können (auch wenn letztere zwei immerhin Wurfmesser bekommen, und es gibt immer noch Zauberstäbe und Blaster). Sei dir nur bewusst, dass diese drei Klassen zu Elfen zu machen sie in Glaskanonen verwandelt, was im frühen Spiel frustrierend sein kann. Insgesamt können Elfen so ziemlich jede Klasse sein, außer vielleicht Ritter (es sei denn, du willst sie zu Bogenschützen machen).
+Elfen erhalten +40 % auf Intelligenz und Genauigkeit, aber -30 % auf Stärke und Ausdauer, sowie zu Beginn 10 Geistresistenz
+und +1 mehr bei jedem Stufenaufstieg. Anders als andere Rassen erhalten sie -1 Lebenspunkt-Malus pro Stufe,
+dafür aber +1 Zauberpunkt-Bonus. Ihre RassenFähigkeit ist erwartungsgemäß Bogen. All das macht sie zu einer
+sehr guten Wahl für jeden, den du zu einem Zauberwirker machen willst - nicht nur die magischen Klassen!
+Ein voll beförderter elfischer Priester erhält beim Stufenaufstieg 6 statt 5 Zauberpunkte (20 % mehr),
+aber der Zauberpunktepool eines elfischen Diebs/Schurken wird verdoppelt! Sogar mehr als verdoppelt, wenn man den
+Intelligenzbonus berücksichtigt. Und ein Schurke verkraftet den Lebenspunkte-Malus besser als ein Priester oder Magier.
+Trotzdem ist die freigeschaltete BogenFähigkeit besonders nützlich für Kleriker, Zauberer und Druiden,
+die in dieser Mod normalerweise keine Bögen benutzen können (auch wenn letztere zwei immerhin Wurfmesser bekommen,
+und es gibt immer noch Zauberstäbe und Blaster). Sei dir nur bewusst, dass diese drei Klassen zu Elfen zu machen
+sie in Glaskanonen verwandelt, was im frühen Spiel frustrierend sein kann. Insgesamt können Elfen so ziemlich jede Klasse sein,
+außer vielleicht Ritter (es sei denn, du willst sie zu Bogenschützen machen).
 
-Schließlich sind Menschen die Sonderlinge, da sie keine Mali haben, dafür aber auch weniger Boni erhalten: Sie haben +20 % auf das Basis-Glück, keine Anpassung bei Lebens- oder Zauberpunkten und 5 Magieresistenz +1 alle zwei Stufen. Sie erhalten außerdem denselben Bonus auf Heilig-Resistenz, was aber selten auffällt, da Heilig-Schaden nur Untote betrifft. Dennoch gibt es nur wenige Möglichkeiten, die Heilig-Resistenz eines Lichs zu erhöhen, und ein Mensch zu sein ist eine davon. Der größte Vorteil der Menschen ist, dass sie statt Lebens- oder Zauberpunkten 12,5 % mehr Fähigkeitspunkte pro Stufe erhalten, aufgerundet. Schon im frühen Spiel ist das wie ein kostenloses Hufeisen alle zwei Stufenaufstiege, und dieser Bonus wächst später sogar noch weiter! Das ist natürlich für jede Klasse nützlich, aber Zauberwirker werden die zusätzlichen Fähigkeitspunkte besonders zu schätzen wissen. Außerdem ist ihre Rassenfertigkeit Lernen, die zwar jede Klasse bereits erlernen kann, aber nur wenige meistern. Auf lange Sicht führt der zusätzliche Rang in Lernen zu mehr Stufenaufstiegen und noch mehr Fähigkeitspunkten. Zusammen mit dem Fehlen jeglicher Mali eignet sich diese Rasse für jeden.
+Schließlich sind Menschen die Sonderlinge, da sie keine Mali haben, dafür aber auch weniger Boni erhalten:
+Sie haben +20 % auf das Basis-Glück, keine Anpassung bei Lebens- oder Zauberpunkten und 5 Magieresistenz +1 alle zwei Stufen.
+Sie erhalten außerdem denselben Bonus auf Heilig-Resistenz, was aber selten auffällt, da Heilig-Schaden nur Untote betrifft.
+Dennoch gibt es nur wenige Möglichkeiten, die Heilig-Resistenz eines Lichs zu erhöhen, und ein Mensch zu sein ist eine davon.
+Der größte Vorteil der Menschen ist, dass sie statt Lebens- oder Zauberpunkten 12,5 % mehr Fähigkeitspunkte pro Stufe erhalten, aufgerundet.
+Schon im frühen Spiel ist das wie ein kostenloses Hufeisen alle zwei Stufenaufstiege, und dieser Bonus wächst später sogar noch weiter!
+Das ist natürlich für jede Klasse nützlich, aber Zauberwirker werden die zusätzlichen Fähigkeitspunkte besonders zu schätzen wissen.
+Außerdem ist ihre RassenFähigkeit Lernen, die zwar jede Klasse bereits erlernen kann, aber nur wenige meistern.
+Auf lange Sicht führt der zusätzliche Rang in Lernen zu mehr Stufenaufstiegen und noch mehr Fähigkeitspunkten.
+Zusammen mit dem Fehlen jeglicher Mali eignet sich diese Rasse für jeden.
 
-Zusammenfassend wollte ich damit sagen, dass fast jede Klassen-Rassen-Kombination brauchbar ist, je nachdem, wie du den Charakter spielen möchtest - also scheue dich nicht zu experimentieren! Auch wenn es völlig in Ordnung ist, einfach vier Menschen zu erstellen.
+Zusammenfassend wollte ich damit sagen, dass fast jede Klassen-Rassen-Kombination brauchbar ist, je nachdem,
+wie du den Charakter spielen möchtest - also scheue dich nicht zu experimentieren!
+Auch wenn es völlig in Ordnung ist, einfach vier Menschen zu erstellen.
 
-Schauen wir uns nun die Klassen an. Die verfügbaren Fähigkeitsstufen haben sich gegenüber dem Originalspiel geändert - am auffälligsten ist, dass die Meister-Stufe nun erst nach der ersten Beförderung freigeschaltet wird und sich jede Lichtpfad-Beförderung in mindestens ein paar Fertigkeiten von ihrem Finsternis-Gegenstück unterscheidet. Manche Klassen haben zudem einzigartige Fähigkeiten erhalten.
+Schauen wir uns nun die Klassen an. Die verfügbaren Fähigkeitsstufen haben sich gegenüber dem Originalspiel geändert - am auffälligsten ist,
+dass die Meister-Stufe nun erst nach der ersten Beförderung freigeschaltet wird und sich jede Lichtpfad-Beförderung in mindestens
+ein paar Fähigkeiten von ihrem Finsternis-Gegenstück unterscheidet. Manche Klassen haben zudem einzigartige Fähigkeiten erhalten.
 
-Zunächst die neue Tabelle der Fähigkeitsstufen (01LD steht für die Beförderungsstufen: 0 = Grundklasse, 1 = nach der 1. Beförderung, L = 2. Beförderung Lichtpfad, D = 2. Beförderung Finsternispfad) - siehe Tabellenblatt "Fähigkeitstabelle".
+Zunächst die neue Tabelle der Fähigkeitsstufen
+(01LD steht für die Beförderungsstufen: 0 = Grundklasse, 1 = nach der 1. Beförderung, L = 2. Beförderung Lichtpfad, D = 2. Beförderung Finsternispfad)
 
                Kngt  Thif  Monk  Pala  Arch  Rang  Cler  Drid  Sorc
                01LD  01LD  01LD  01LD  01LD  01LD  01LD  01LD  01LD
@@ -89,22 +214,74 @@ Lernen         NNNN  EEEE  EMGG  NNNN  EMMM  EEEE  EMMM  EMMM  EMGM
 
 Als Nächstes betrachte ich jede Klasse im Detail, einschließlich der Unterschiede zwischen Licht- und Finsternispfad.
 
-Ritter haben sich kaum verändert, sie beherrschen dank ihres verdoppelten Waffenmeister-Bonus weiterhin den Nahkampf. Ihr Großmeister-Schild jedoch, der im Originalspiel einem Nebenhand-Schwert unterlegen war, ist nun konkurrenzfähiger, da er zusammen mit Meister-Platte den eingehenden physischen Schaden um 75 % reduziert - ein Segen gegen zähe Nahkampfgegner (wie Minotauren oder Behemots). Wie oben erwähnt, macht sie das Bündeln der Aggro auf sie zu exzellenten Tanks, und das Schwert kann für leichtere Dungeons eingewechselt werden. Eine weitere bemerkenswerte Änderung ist die Möglichkeit, nach der ersten Beförderung ein Reittier zu kaufen: Jeder der sieben Ställe bietet ein Tier zum Verkauf an (meist Pferde), das der Gruppe eine Art Bonus verleiht (meist reisebezogen). Die zweite Beförderung verleiht ebenfalls einzigartige Fähigkeiten: Erste Ritter (Lichtpfad) gewähren der gesamten Gruppe +2 auf Waffen- und Rüstungsfertigkeiten (und dies summiert sich, wenn du mehrere von ihnen hast), während Schattenritter (Finsternispfad) jede Nahkampfwaffe als verflucht behandeln (wodurch das Ausrüsten einer tatsächlich verfluchten Waffe überflüssig wird) und +10 % kritische Trefferchance im Nahkampf erhalten. Fähigkeitsmäßig erhalten Erste Ritter Meister-Bogen, und Schattenritter erhalten Diebeskunst sowie Experte-Fallenentschärfung. Das kann eine weitere Nische in deiner Gruppe füllen, ist aber größtenteils kosmetisch. Insgesamt bleiben Ritter unkompliziert.
+Ritter haben sich kaum verändert, sie beherrschen dank ihres verdoppelten Waffenmeister-Bonus weiterhin den Nahkampf.
+Ihr Großmeister-Schild jedoch, der im Originalspiel einem Nebenhand-Schwert unterlegen war, ist nun konkurrenzfähiger,
+da er zusammen mit Meister-Platte den eingehenden physischen Schaden um 75 % reduziert - ein Segen gegen zähe Nahkampfgegner
+(wie Minotauren oder Behemots). Wie oben erwähnt, macht sie das Bündeln der Aggro auf sie zu exzellenten Tanks,
+und das Schwert kann für leichtere Dungeons eingewechselt werden. Eine weitere bemerkenswerte Änderung ist die Möglichkeit,
+nach der ersten Beförderung ein Reittier zu kaufen: Jeder der sieben Ställe bietet ein Tier zum Verkauf an (meist Pferde),
+das der Gruppe eine Art Bonus verleiht (meist reisebezogen). Die zweite Beförderung verleiht ebenfalls einzigartige Fähigkeiten:
+Erste Ritter (Lichtpfad) gewähren der gesamten Gruppe +2 auf Waffen- und RüstungsFähigkeiten (und dies summiert sich,
+wenn du mehrere von ihnen hast), während Schattenritter (Finsternispfad) jede Nahkampfwaffe als verflucht behandeln
+(wodurch das Ausrüsten einer tatsächlich verfluchten Waffe überflüssig wird) und +10 % kritische Trefferchance im Nahkampf erhalten.
+Fähigkeitsmäßig erhalten Erste Ritter Meister-Bogen, und Schattenritter erhalten Diebeskunst sowie Experte-Fallenentschärfung.
+Das kann eine weitere Nische in deiner Gruppe füllen, ist aber größtenteils kosmetisch. Insgesamt bleiben Ritter unkompliziert.
 
-Diebe sind nun eher eine Nützlichkeitsklasse, da sie Großmeister-Gegenstand-identifizieren sowie entweder Wahrnehmung (Lichtpfad) oder Alchemie (Finsternispfad) erhalten können. Ihre Magiefertigkeiten sind fokussierter, da sie nur Feuer und Luft erhalten, wobei eine davon (Luft bei Lichtpfad, Feuer bei Finsternispfad) auf Meister und die andere auf Experte gesteigert werden kann. Ob sie genug Zauberpunkte haben, um mehrere Zauber auf Meister-Stufe zu wirken, ist eine andere Frage, auch wenn Assassinen nun 1 Lebenspunkt pro Stufe gegen 1 Zauberpunkt alle 2 Stufen eintauschen, um die teuren Angriffszauber der Feuermagie besser nutzen zu können. Außerdem ist ihre Ausweichen-Fertigkeit nun tatsächlich relevant, da Ausweichen in Rüstung ein Vorzug der Lederrüstung ist (den sie zusammen mit Mönchen besitzen), und Großmeister-Dolch macht Diebe zu den Besten im Umgang mit Wurfmessern, selbst wenn sie sich im Nahkampf für Schwerter entscheiden. Zudem kann Diebeskunst nun durch Hinterhalt-Angriffe (Backstabs) den Nahkampfschaden verdoppeln, und auf Großmeister-Stufe musst du dafür nicht einmal mehr hinter dem Monster stehen, wodurch dies zu einem reinen Nahkampf-Schadensmultiplikator wird. Der einzige Nachteil ist, dass sich Hinterhalt-Angriffe nicht mit kritischen Treffern kombinieren.
+Diebe sind nun eher eine Nützlichkeitsklasse, da sie Großmeister-Gegenstand-identifizieren sowie entweder Wahrnehmung
+(Lichtpfad) oder Alchemie (Finsternispfad) erhalten können. Ihre MagieFähigkeiten sind fokussierter, da sie nur Feuer und Luft erhalten,
+wobei eine davon (Luft bei Lichtpfad, Feuer bei Finsternispfad) auf Meister und die andere auf Experte gesteigert werden kann.
+Ob sie genug Zauberpunkte haben, um mehrere Zauber auf Meister-Stufe zu wirken, ist eine andere Frage,
+auch wenn Assassinen nun 1 Lebenspunkt pro Stufe gegen 1 Zauberpunkt alle 2 Stufen eintauschen,
+um die teuren Angriffszauber der Feuermagie besser nutzen zu können. Außerdem ist ihre Ausweichen-Fähigkeit nun tatsächlich relevant,
+da Ausweichen in Rüstung ein Vorzug der Lederrüstung ist (den sie zusammen mit Mönchen besitzen),
+und Großmeister-Dolch macht Diebe zu den Besten im Umgang mit Wurfmessern, selbst wenn sie sich im Nahkampf für Schwerter entscheiden.
+Zudem kann Diebeskunst nun durch Hinterhalt-Angriffe (Backstabs) den Nahkampfschaden verdoppeln,
+und auf Großmeister-Stufe musst du dafür nicht einmal mehr hinter dem Monster stehen,
+wodurch dies zu einem reinen Nahkampf-Schadensmultiplikator wird. Der einzige Nachteil ist,
+dass sich Hinterhalt-Angriffe nicht mit kritischen Treffern kombinieren.
 
-Mönche entwickeln sich weiterhin spät, können aber im späten Spiel sehr stark werden, da Großmeister-Waffenlos nun die Chance gibt, jeden Gegner sofort zu töten. Es gibt sogar eine optionale Quest, um vor der zweiten Beförderung ein oder zwei Großmeister-Ränge für diese Klasse zu erlangen, was praktisch ist, wenn man nicht auf die Pfadwahl warten möchte. Zudem erhält Stab auf Großmeister-Stufe nun nicht nur die Boni von Waffenmeister und Waffenlos, sondern auch den Hammerhände-Schaden, wodurch Mönche im Endgame sehr hart zuschlagen! Es gibt sogar einen Artefakt-Stab mit guten Trefferfähigkeiten, der speziell für diese Klasse gemacht wurde. Ihre Magie ist nachsichtiger: Zwar können sie Geistmagie nicht erlernen, aber die anderen beiden Schulen können auf Experte gesteigert werden, und Meistermönche (Lichtpfad) können sogar Meister erreichen (vermutlich ohne Wortspiel beabsichtigt). Wie Assassinen tauschen sie ebenfalls Lebenspunkte gegen Zauberpunkte, um ihre Zauber hoher Stufe zu unterstützen. Ninjas (Finsternispfad) sind weiterhin besser bei Diebesfertigkeiten.
+Mönche entwickeln sich weiterhin spät, können aber im späten Spiel sehr stark werden, da Großmeister-Waffenlos nun die Chance gibt,
+jeden Gegner sofort zu töten. Es gibt sogar eine optionale Quest, um vor der zweiten Beförderung ein oder zwei Großmeister-Ränge
+für diese Klasse zu erlangen, was praktisch ist, wenn man nicht auf die Pfadwahl warten möchte. Zudem erhält Stab auf Großmeister-Stufe
+nun nicht nur die Boni von Waffenmeister und Waffenlos, sondern auch den Hammerhände-Schaden, wodurch Mönche im Endgame sehr hart zuschlagen!
+Es gibt sogar einen Artefakt-Stab mit guten Trefferfähigkeiten, der speziell für diese Klasse gemacht wurde.
+Ihre Magie ist nachsichtiger: Zwar können sie Geistmagie nicht erlernen, aber die anderen beiden Schulen können auf Experte gesteigert werden,
+und Meistermönche (Lichtpfad) können sogar Meister erreichen (vermutlich ohne Wortspiel beabsichtigt).
+Wie Assassinen tauschen sie ebenfalls Lebenspunkte gegen Zauberpunkte, um ihre Zauber hoher Stufe zu unterstützen.
+Ninjas (Finsternispfad) sind weiterhin besser bei DiebesFähigkeiten.
 
-Paladine können dieselbe 75-prozentige physische Schadensreduktion wie Ritter erreichen, was sie zu den zweitbesten Tanks macht (ihnen fehlen nur die Lebenspunkte). Sie können außerdem Seelenmagie auf Großmeister steigern, was ihnen unter anderem den nützlichen Kampf-Wiederbelebungszauber verleiht. Helden (Lichtpfad) können Lichtmagie auf Meister und Handel auf Großmeister steigern, was sie zu passablen Kleriker-Ersatzcharakteren macht. Nemesis (Finsternispfad) können Meister-Bogen und Experte-Finsternismagie erreichen, was beides ihr Kampfpotenzial erhöht (selbst Experte-Schrapnellmetall ist tödlich!). Außerdem können sie Experte-Diebeskunst für unzuverlässige Hinterhalt-Angriffe erlernen.
+Paladine können dieselbe 75-prozentige physische Schadensreduktion wie Ritter erreichen, was sie zu den zweitbesten
+Tanks macht (ihnen fehlen nur die Lebenspunkte). Sie können außerdem Seelenmagie auf Großmeister steigern,
+was ihnen unter anderem den nützlichen Kampf-Wiederbelebungszauber verleiht. Helden (Lichtpfad) können Lichtmagie auf Meister
+und Handel auf Großmeister steigern, was sie zu passablen Kleriker-Ersatzcharakteren macht. Nemesis (Finsternispfad) können
+Meister-Bogen und Experte-Finsternismagie erreichen, was beides ihr Kampfpotenzial erhöht (selbst Experte-Schrapnellmetall ist tödlich!).
+Außerdem können sie Experte-Diebeskunst für unzuverlässige Hinterhalt-Angriffe erlernen.
 
-Schützen erhalten nun Meister-Dolch, um das Speer/Dolch-Duo zu verbessern, zu dem sie gezwungen sind (es sei denn, sie sind Goblins). Beide zweiten Beförderungen erhalten zwei Magie-Großmeisterränge: Luft (gemeinsam), Wasser (Lichtpfad) und/oder Feuer (Finsternispfad). Das bedeutet, dass Meisterschützen (Lichtpfad) über alle Nützlichkeitszauber verfügen, für die im Originalspiel der Zauberer nötig war. Licht bzw. Finsternis (je nach Pfad) kann auf Experte gesteigert werden, was bedeutet, dass Scharfschützen (Finsternispfad) nun das tödliche Schrapnellmetall besitzen. Zusammen mit Großmeister-Feuer sind sie nun ziemlich starke Magier. Außerdem können Scharfschützen als einzigartige Klassenfähigkeit mit dem Bogen nie danebenschießen.
+Schützen erhalten nun Meister-Dolch, um das Speer/Dolch-Duo zu verbessern, zu dem sie gezwungen sind (es sei denn, sie sind Goblins).
+Beide zweiten Beförderungen erhalten zwei Magie-Großmeisterränge: Luft (gemeinsam), Wasser (Lichtpfad) und/oder Feuer (Finsternispfad).
+Das bedeutet, dass Meisterschützen (Lichtpfad) über alle Nützlichkeitszauber verfügen, für die im Originalspiel der Zauberer nötig war.
+Licht bzw. Finsternis (je nach Pfad) kann auf Experte gesteigert werden, was bedeutet, dass Scharfschützen (Finsternispfad)
+nun das tödliche Schrapnellmetall besitzen. Zusammen mit Großmeister-Feuer sind sie nun ziemlich starke Magier.
+Außerdem können Scharfschützen als einzigartige Klassenfähigkeit mit dem Bogen nie danebenschießen.
 
-Ranger sind nun deutlich weniger schwach. Erstens können sie Meister-Waffenmeister erreichen. Zweitens sind ihre magischen Fertigkeiten allgemein besser: Zwar können Ranger Luft- und Seelenmagie überhaupt nicht erlernen, dafür aber Großmeister-Erdmagie, und je nach Beförderung entweder (Lichtpfad) Großmeister-Körpermagie und Meister-Wassermagie, oder (Finsternispfad) Großmeister-Wassermagie und Meister-Körpermagie. Dieses Großmeister-Körpermagie macht Meisterjäger tatsächlich zu sehr guten Heilern, wodurch ein Kleriker möglicherweise sogar überflüssig wird, und sie erhalten außerdem Großmeister-Kette zur Verteidigung. Kopfjägern (Finsternispfad) fehlt beides, dafür erhalten sie Meister-Fallenentschärfung und -Diebeskunst und können mit ausreichend Fähigkeitsboni jede Truhe entschärfen und haben eine 100-prozentige Hinterhalt-Trefferchance. Zudem kann das Einlösen eines Rathaus-Kopfgelds ihnen dank ihrer Klassenfähigkeit zusätzliche Fähigkeitspunkte einbringen.
+Ranger sind nun deutlich weniger schwach. Erstens können sie Meister-Waffenmeister erreichen.
+Zweitens sind ihre magischen Fähigkeiten allgemein besser: Zwar können Ranger Luft- und Seelenmagie überhaupt nicht erlernen,
+dafür aber Großmeister-Erdmagie, und je nach Beförderung entweder (Lichtpfad) Großmeister-Körpermagie und Meister-Wassermagie,
+oder (Finsternispfad) Großmeister-Wassermagie und Meister-Körpermagie. Dieses Großmeister-Körpermagie macht Meisterjäger
+tatsächlich zu sehr guten Heilern, wodurch ein Kleriker möglicherweise sogar überflüssig wird, und sie erhalten außerdem
+Großmeister-Kette zur Verteidigung. Kopfjägern (Finsternispfad) fehlt beides, dafür erhalten sie Meister-Fallenentschärfung
+und -Diebeskunst und können mit ausreichend Fähigkeitsboni jede Truhe entschärfen und haben eine 100-prozentige Hinterhalt-Trefferchance.
+Zudem kann das Einlösen eines Rathaus-Kopfgelds ihnen dank ihrer Klassenfähigkeit zusätzliche Fähigkeitspunkte einbringen.
 
-Kleriker haben sich kaum verändert, können aber bemerkenswerterweise nun (knapp) die Fertigkeit Platte erlernen. Sie werden Plattenrüstung nie ohne Erholungsstrafe tragen können, aber da dies die Zaubergeschwindigkeit nicht beeinträchtigt, ist es zu verschmerzen. Priester des Lichts können außerdem Kondition auf Experte und Streitkolben auf Großmeister steigern, was sie zu Mini-Paladinen macht. Priester der Finsternis erhalten stattdessen Großmeister-Meditation zur Zauberpunkte-Regeneration. Übrigens können Kleriker nun überhaupt keine Bögen mehr benutzen. Das können Druiden und Zauberer ebenfalls nicht, aber sie erhalten wenigstens Wurfmesser, während Kleriker nur Zauberstäbe oder Blaster ausrüsten können.
+Kleriker haben sich kaum verändert, können aber bemerkenswerterweise nun (knapp) die Fähigkeit Platte erlernen.
+Sie werden Plattenrüstung nie ohne Erholungsstrafe tragen können, aber da dies die Zaubergeschwindigkeit nicht beeinträchtigt,
+ist es zu verschmerzen. Priester des Lichts können außerdem Kondition auf Experte und Streitkolben auf Großmeister steigern,
+was sie zu Mini-Paladinen macht. Priester der Finsternis erhalten stattdessen Großmeister-Meditation zur Zauberpunkte-Regeneration.
+Übrigens können Kleriker nun überhaupt keine Bögen mehr benutzen. Das können Druiden und Zauberer ebenfalls nicht,
+aber sie erhalten wenigstens Wurfmesser, während Kleriker nur Zauberstäbe oder Blaster ausrüsten können.
 
 Druiden können nun einige Magieschulen auf Großmeister steigern. Erzdruiden (Lichtpfad) erhalten Luft, Wasser und Körper, wodurch sie allein sowohl Kleriker als auch Zauberer ersetzen können, zumindest was deren nützlichste Zauber betrifft. Hexer (Finsternispfad) sind wesentlich offensiver ausgerichtet, da sie Großmeister-Erdmagie und -Geistmagie sowie sogar Meister-Finsternismagie erhalten - inspiriert vom Relikt Ring des Herrschers, das angeblich für Hexer gemacht wurde. Berücksichtigt man den Vertrauten-Bonus, stehen Hexer bei der reinen Zauberkraft wohl nur den voll beförderten Zauberern nach. Beide Druiden-Beförderungen erhalten weiterhin Großmeister-Meditation, wodurch sie nun Zauberpunkte regenerieren können, und können Ausweichen auf Experte steigern, sollten sie sich für Roben statt Lederrüstung entscheiden.
 
-Zauberer sind in dieser Mod etwas schwächer, da sie Großmeister-Erdmagie nicht mehr erreichen können; auch ihre übrigen Fertigkeiten haben sich verschoben. Erzmagier (Lichtpfad) können Dolch auf Meister steigern für einen ordentlichen Bonus auf kritische Trefferchance, und können außerdem Meister-Leder für Zauberabsorption erlangen. Schließlich erhalten sie Großmeister-Lernen. Lichs (Finsternispfad) regenerieren ihre Zauberpunkte nicht mehr von selbst, sondern müssen dafür Großmeister-Meditation erlernen. Dafür können sie bei einem unbewaffneten Angriff Lebensenergie absaugen (wie eine vampirische Waffe). Im Waffenlos-Kampf sind sie allerdings nicht gut (begrenzt auf Normal), können aber Großmeister-Stab erlangen, um ihre vampirische Berührung (plus Hammerhände-Bonus) mit einem Stabangriff zu kombinieren. Nahkampfangriffe sind natürlich bei keiner der beiden Beförderungen das entscheidende Merkmal. Lichs können außerdem nicht mehr Großmeister-Gegenstand-identifizieren erreichen, und keine der beiden Beförderungen kann nun Großmeister-Monster-erkennen erlangen. Ihre Immunitäten behalten Lichs jedoch weiterhin.
+Zauberer sind in dieser Mod etwas schwächer, da sie Großmeister-Erdmagie nicht mehr erreichen können; auch ihre übrigen Fähigkeiten haben sich verschoben. Erzmagier (Lichtpfad) können Dolch auf Meister steigern für einen ordentlichen Bonus auf kritische Trefferchance, und können außerdem Meister-Leder für Zauberabsorption erlangen. Schließlich erhalten sie Großmeister-Lernen. Lichs (Finsternispfad) regenerieren ihre Zauberpunkte nicht mehr von selbst, sondern müssen dafür Großmeister-Meditation erlernen. Dafür können sie bei einem unbewaffneten Angriff Lebensenergie absaugen (wie eine vampirische Waffe). Im Waffenlos-Kampf sind sie allerdings nicht gut (begrenzt auf Normal), können aber Großmeister-Stab erlangen, um ihre vampirische Berührung (plus Hammerhände-Bonus) mit einem Stabangriff zu kombinieren. Nahkampfangriffe sind natürlich bei keiner der beiden Beförderungen das entscheidende Merkmal. Lichs können außerdem nicht mehr Großmeister-Gegenstand-identifizieren erreichen, und keine der beiden Beförderungen kann nun Großmeister-Monster-erkennen erlangen. Ihre Immunitäten behalten Lichs jedoch weiterhin.
 
 Das war's. Denk daran, dass du nicht sowohl die Licht- als auch die Finsternis-Version derselben Klasse in derselben Gruppe haben kannst, aber du kannst doppelte Klassen dennoch einzigartig machen, indem du für sie unterschiedliche Rassen wählst. Noch ein wichtiges Detail: Hast du sowohl einen Kleriker als auch einen Zauberer, wirst du trotzdem nicht beide Licht- und Finsternis-Großmeisterränge erlangen können, da die Voraussetzung für die Ausbildung die Gesinnungstreue (die formale Pfadwahl) ist.

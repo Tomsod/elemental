@@ -827,3 +827,4 @@ Global Text
 824	Drain Speed
 825	Drain Agility
 826	Drain Luck
+827	Special

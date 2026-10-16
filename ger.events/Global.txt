@@ -827,3 +827,4 @@ Global Text
 824	Entz. Reaktion
 825	Entz. Geschick
 826	Entz. Glück
+827	Besond.

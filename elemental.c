@@ -436,6 +436,7 @@ enum new_strings
     STR_DRAIN_SPEED,
     STR_DRAIN_AGILITY,
     STR_DRAIN_LUCK,
+    STR_SPECIAL,
     NEW_STRING_COUNT
 };
 
@@ -22825,7 +22826,7 @@ static void __declspec(naked) print_monster_special_bonus(void)
         push dword ptr [edx]
         print_pushed:
         push ebx
-        push dword ptr [GLOBAL_TXT_ADDR+210*4] ; "special"
+        push dword ptr [new_strings+STR_SPECIAL*4]
         push 0x4e3308 ; the format string
         push esi
         call dword ptr ds:sprintf
@@ -23795,7 +23796,7 @@ static inline void skill_changes(void)
     // and cursed_monster_resists_damage() above
     hook_call(0x41efa3, print_full_monster_attack, 5);
     hook_jump(0x41efd5, print_monster_special_bonus);
-    patch_pointer(0x41f073, GLOBAL_TXT + 210); // "special" for failed id
+    patch_pointer(0x41f073, &new_strings[STR_SPECIAL]); // for failed id
     hook_call(0x4b268f, gm_teaching_conditions_hook, 6);
     hook_call(0x4b218d, learn_gm_skill, 12);
     hook_call(0x4bd856, keep_text_on_exit, 6);
